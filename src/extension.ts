@@ -19,6 +19,13 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.languages.registerCodeActionsProvider('python', 
 		new PythonOpencvImageProvider(), {	providedCodeActionKinds: [vscode.CodeActionKind.Empty] }));
 
+
+	context.subscriptions.push(
+		vscode.debug.onDidReceiveDebugSessionCustomEvent( e => {
+			console.log(e.event);
+		})
+	);
+
 }
 
 // this method is called when your extension is deactivated
@@ -58,17 +65,37 @@ export class PythonOpencvImageProvider implements vscode.CodeActionProvider {
 			return;
 		}
 
-		const variable = document.getText(document.getWordRangeAtPosition(range.start));
-		let path = join(this.workingdir,  `${variable}.png`);
+		let res = await session.customRequest('threads', {});
+		let threads = res.threads;
+		let mainThread = threads[0].id;
+
+		res = await session.customRequest('stackTrace', { threadId: mainThread });
+		let stacks = res.stackFrames;
+		let callStack = stacks[0].id;
+
+		res = await session.customRequest('scopes', {frameId: callStack});
+		let scopes = res.scopes;
+		let local = scopes[0];
+
+		res = await session.customRequest('variables', { variablesReference: local.variablesReference });
+		let variables: any[] = res.variables;
+
+		const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
+
+		let targetVariable = variables.find( v => v.name === selectedVariable);
+		if (targetVariable === undefined)
+		{
+			return;
+		}
+
+		let path = join(this.workingdir,  `${targetVariable.name}.png`);
 		let savepath = path.replace(/\\/g, '/');
-		let response = await session.customRequest('stackTrace', { threadId: 1 });
-		const frameId = response.stackFrames[0].id;
-		const expression = `cv2.imwrite('${savepath}', ${variable})`;
-		response = await session.customRequest("evaluate", { expression: expression, frameId: frameId });
-		console.log(`evaluate ${expression} result: ${response.result}`);
+		const expression = `cv2.imwrite('${savepath}', ${targetVariable.evaluateName})`;
+		res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context:'hover' });
+		console.log(`evaluate ${expression} result: ${res.result}`);
 
 		return [
-			{ command:"vscode.open", title: 'View Image', arguments: [vscode.Uri.file(path), vscode.ViewColumn.Beside ] }
+			{ command:"vscode.open", title: 'View Image', arguments: [ vscode.Uri.file(path), vscode.ViewColumn.Beside ] }
 		];
 	}
 }

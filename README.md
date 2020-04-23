@@ -30,7 +30,7 @@ Due to vscode do not allow extension customizes hover when you are debugging so 
 
 3. Break on a certain line
 
-4. Click a variable that contains image data and waiting for the code action icon (a little yellow light bubble) popup.   
+4. Click a variable that contains image data and waiting for the code action icon (a little yellow light bubble) popup.
 
 5. Click the icon or press ctrl+. to popup a menu then click the menu to view image.
 

@@ -90,7 +90,10 @@ export class PythonOpencvImageProvider implements vscode.CodeActionProvider {
 
 		let path = join(this.workingdir,  `${targetVariable.name}.png`);
 		let savepath = path.replace(/\\/g, '/');
-		const expression = `cv2.imwrite('${savepath}', ${targetVariable.evaluateName})`;
+
+		const vn = targetVariable.evaluateName; // var name
+		const float_expression =  `${vn} * 255.0 if (${vn}.dtype == np.float64 or ${vn}.dtype == np.float32) else ${vn}`;
+		const expression = `cv2.imwrite('${savepath}', ${float_expression})`;
 		res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context:'hover' });
 		console.log(`evaluate ${expression} result: ${res.result}`);
 

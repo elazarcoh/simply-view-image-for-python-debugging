@@ -6,11 +6,12 @@ This simple extension can and **only** can let you view the image of a variable 
 
 Currently, It's only support python with opencv module *(opencv-python)* debugging.
 
-There is a limition that's your python codes must import opencv as cv2.
+There is a limition that's your python codes must import opencv as cv2 and import numpy as np.
 
 For example:
 
     import cv2
+    import numpy as np
 
 ## Requirements
 
@@ -48,7 +49,7 @@ The initail version is hardcode so there are some limitations:
 
 2. The python opencv module **must** support imwrite("filename to save", image_variable) function.
 
-3. The python file **must** import opencv module as cv2 such as "import cv2".
+3. The python file **must** import opencv module as cv2 such as "import cv2" and import numpy as np such as "import numpy as np";
 
 4. The extension use imwrite to save the temporary image file.
 
@@ -62,7 +63,12 @@ The initail version is hardcode so there are some limitations:
 
 ## Release Notes
 
+### 0.0.3
+
+Change the ReadMe. Due to 0.0.2 version change, the python file must import numpy as np also.
+
 ### 0.0.2
+
 Thanks to [marisancans](https://github.com/marisancans) add support for float np array. Notice it's a hardcode workaround.
 
 ### 0.0.1

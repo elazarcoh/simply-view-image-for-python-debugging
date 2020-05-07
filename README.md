@@ -63,13 +63,9 @@ The initail version is hardcode so there are some limitations:
 
 ## Release Notes
 
-### 0.0.3
-
-Change the ReadMe. Due to 0.0.2 version change, the python file must import numpy as np also.
-
 ### 0.0.2
 
-Thanks to [marisancans](https://github.com/marisancans) add support for float np array. Notice it's a hardcode workaround.
+Thanks to [marisancans](https://github.com/marisancans) add support for float np array. Notice it's a hardcode workaround. Because of this fixing the python file must import numpy as np also.
 
 ### 0.0.1
 

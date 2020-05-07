@@ -4,6 +4,10 @@ All notable changes to the "simply-view-image-for-python-opencv-debugging" exten
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.4]
+
+- Add ndarray checking to avoid some exceptions.
+
 ## [0.0.3]
 
 - Update README.md

@@ -63,6 +63,10 @@ The initail version is hardcode so there are some limitations:
 
 ## Release Notes
 
+### 0.0.4
+
+Add ndarray checking to avoid some exceptions.
+
 ### 0.0.3
 
 Update README.md

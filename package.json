@@ -2,7 +2,7 @@
 	"name": "simply-view-image-for-python-opencv-debugging",
 	"displayName": "simply_view_image_for_python_opencv_debugging",
 	"description": "simply view the image of the image variables when debugging python with opencv",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"publisher": "johnguo",
 	"engines": {
 		"vscode": "^1.44.0"

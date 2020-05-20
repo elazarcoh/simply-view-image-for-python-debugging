@@ -4,6 +4,11 @@ All notable changes to the "simply-view-image-for-python-opencv-debugging" exten
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.5]
+
+- Add a command "View Image".
+- Add a keyboard shortcut "ctrl+alt+v" for quickly image viewing.
+
 ## [0.0.4]
 
 - Add ndarray checking to avoid some exceptions.

@@ -23,6 +23,8 @@ Python module of OpenCV support **imwrite** function installed (official module 
 
 Due to vscode do not allow extension customizes hover when you are debugging so that this extension use the code action command to open a new editor to view the image.
 
+Since 0.0.5 add a command "View Image" and a keybord shortcut "ctrl+alt+v" to open the image.
+
 ### Step
 
 1. Open a python file which has "import cv2".
@@ -62,6 +64,11 @@ The initail version is hardcode so there are some limitations:
 8. Unsupport variable tracking while debugging so the image cannot be refreshed automatically. You must click the variable again to refresh.
 
 ## Release Notes
+
+### 0.0.5
+
+Add a command "View Image".
+Add a keyboard shortcut "ctrl+alt+v" for quickly image viewing.
 
 ### 0.0.4
 

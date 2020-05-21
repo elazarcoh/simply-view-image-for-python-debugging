@@ -21,14 +21,14 @@
 	"contributes": { 
 		"commands": [
 			{
-				"command": "extension.viewimage",
-				"title": "View Image",
+				"command": "extension.viewimagepythonopencvdebug",
+				"title": "View Image(Python OpenCV Debug)",
 				"enablement": "inDebugMode"
 			}
 		],
 		"keybindings":[
 			{
-				"command": "extension.viewimage",
+				"command": "extension.viewimagepythonopencvdebug",
 				"key": "ctrl+alt+q",
 				"when": "inDebugMode"
 			}

@@ -6,7 +6,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.0.5]
 
-- Add a command "View Image".
+- Add a command "View Image(Python OpenCV Debug)".
 - Add a keyboard shortcut "ctrl+alt+v" for quickly image viewing.
 
 ## [0.0.4]

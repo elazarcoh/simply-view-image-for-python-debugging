@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("extension.viewimage", async editor => {
+		vscode.commands.registerTextEditorCommand("extension.viewimagepythonopencvdebug", async editor => {
 			let path = await viewImageSvc.ViewImage(editor.document, editor.selection);
 			if (path === undefined) {
 				return;

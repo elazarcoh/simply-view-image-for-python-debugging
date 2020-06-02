@@ -69,7 +69,7 @@ The initail version is hardcode so there are some limitations:
 
 Add a command "View Image(Python OpenCV Debug)".
 
-Add a keyboard shortcut "ctrl+alt+v" for quickly image viewing.
+Add a keyboard shortcut "ctrl+alt+Q" for quickly image viewing.
 
 ### 0.0.4
 

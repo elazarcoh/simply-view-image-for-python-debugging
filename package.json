@@ -32,7 +32,18 @@
 				"key": "ctrl+alt+q",
 				"when": "inDebugMode"
 			}
-		]
+		],
+		"configuration":
+		{
+			"title": "View Image(Python OpenCV Debug)",
+			"properties": {
+				"svifpod.usetmppathtosave" : {
+					"type" : "boolean",
+					"default": true,
+					"description": "Use the system tmp path to save image otherwise use the storage path."
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode production",

@@ -4,6 +4,10 @@ All notable changes to the "simply-view-image-for-python-opencv-debugging" exten
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.6]
+
+- Add an option "svifpod.usetmppathtosave" to choose which path (tmp or extenion private storage path) to save, default is tmp path.
+
 ## [0.0.5]
 
 - Add a command "View Image(Python OpenCV Debug)".

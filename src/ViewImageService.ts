@@ -1,30 +1,11 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
-import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-
-const WORKING_DIR = 'svifpod';
 
 export default class ViewImageService {
 	private workingdir :string;
 
-	public constructor()
+	public constructor(dir: string)
 	{
-		let dir = tmpdir();
-		dir = join(dir, WORKING_DIR);
-		if (existsSync(dir))
-		{
-			let files = readdirSync(dir);
-			files.forEach(file => {
-				let curPath = join(dir, file);
-				unlinkSync(curPath);
-			});
-		}
-		else
-		{
-			mkdirSync(dir);
-		}
-
 		this.workingdir = dir;
 	}
 

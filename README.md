@@ -65,6 +65,10 @@ The initail version is hardcode so there are some limitations:
 
 ## Release Notes
 
+### 0.0.6
+
+Add an option "svifpod.usetmppathtosave" to choose which path (tmp or extenion private storage path) to save, default is tmp path.
+
 ### 0.0.5
 
 Add a command "View Image(Python OpenCV Debug)".

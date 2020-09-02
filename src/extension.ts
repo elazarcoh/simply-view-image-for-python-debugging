@@ -16,22 +16,19 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let usetmp = vscode.workspace.getConfiguration("svifpod").get("usetmppathtosave", true);
 	let dir = context.storagePath as string;
-	if (usetmp || dir === undefined)
-	{
+	if (usetmp || dir === undefined) {
 		dir = tmpdir();
 		dir = join(dir, WORKING_DIR);
 	}
-	
-	if (existsSync(dir))
-	{
+
+	if (existsSync(dir)) {
 		let files = readdirSync(dir);
 		files.forEach(file => {
 			let curPath = join(dir, file);
 			unlinkSync(curPath);
 		});
 	}
-	else
-	{
+	else {
 		mkdirSync(dir);
 	}
 
@@ -39,15 +36,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "simply-view-image-for-python-opencv-debugging" is now active!');
-
-	context.subscriptions.push(
-		vscode.languages.registerCodeActionsProvider('python', 
-		new PythonOpencvImageProvider(), {	providedCodeActionKinds: [vscode.CodeActionKind.Empty] }));
+	console.log('Congratulations, your extension "simply-view-image-for-python-debugging" is now active!');
 
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("extension.viewimagepythonopencvdebug", async editor => {
+		vscode.languages.registerCodeActionsProvider('python',
+			new PythonViewImageProvider(), { providedCodeActionKinds: [vscode.CodeActionKind.Empty] })
+	);
+
+
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand("extension.viewimagepythondebug", async editor => {
 			let path = await viewImageSvc.ViewImage(editor.document, editor.selection);
 			if (path === undefined) {
 				return;
@@ -59,23 +58,21 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
 
 
 /**
  * Provides code actions for python opencv image.
  */
-export class PythonOpencvImageProvider implements vscode.CodeActionProvider {
+export class PythonViewImageProvider implements vscode.CodeActionProvider {
 
 	public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range): Promise<vscode.Command[] | undefined> {
-
-		let path = await viewImageSvc.ViewImage(document, range);
-		if (path === undefined) {
-			return;
+		if (vscode.debug.activeDebugSession === undefined) {
+			return undefined;
 		}
-
+		
 		return [
-			{ command:"vscode.open", title: 'View Image', arguments: [ vscode.Uri.file(path), vscode.ViewColumn.Beside ] }
+			{ command: "extension.viewimagepythondebug", title: 'View Image' }
 		];
 	}
 }

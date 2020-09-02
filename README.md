@@ -14,13 +14,13 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 ## Dependencies
 
 * python>=3.4
-* At least of the following packages are need to be installed:
-  - opencv
-  - skimage
-  more to come (see [TODO 1](#TODO))
+* At least of the following packages needs to be installed:
+  - [skimage](https://pypi.org/project/scikit-image/)
+  - [opencv](https://pypi.org/project/opencv-python/)
+  - [Pillow](https://pypi.org/project/Pillow/)
+  - [imageio](https://pypi.org/project/imageio/)
 
 ## TODO
-1. add more backends (Pillow, matplotlib, imageio)
 1. add no-backend option that uses: https://stackoverflow.com/a/19174800 (a pure python implementation)
 1. (optionally) allow users to choose the preference order of the save backends
 1. allow users to define custom preprocess

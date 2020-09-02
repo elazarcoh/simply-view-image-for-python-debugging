@@ -17,7 +17,8 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 * At least one of the following packages are need to be installed:
   - opencv
   - skimage
-  more options to come (see [TODO 1](#TODO))
+  
+  - more options to come (see [TODO 1](#TODO))
 
 ## TODO
 1. add more backends (Pillow, matplotlib, imageio)

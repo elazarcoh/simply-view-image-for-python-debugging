@@ -14,7 +14,7 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 ## Dependencies
 
 * python>=3.4
-* At least of the following packages needs to be installed:
+* At least one of the following packages needs to be installed:
   - [skimage](https://pypi.org/project/scikit-image/)
   - [opencv](https://pypi.org/project/opencv-python/)
   - [Pillow](https://pypi.org/project/Pillow/)

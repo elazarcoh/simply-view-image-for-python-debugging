@@ -7,6 +7,9 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 * No need for opencv (we support multiple backend)
 * No include is needed by the user
 * Support view image from expression
+  
+  ![Expression View](expression-example.gif)
+
 
 ## Dependencies
 
@@ -14,11 +17,11 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 * At least of the following packages are need to be installed:
   - opencv
   - skimage
-  more to come
+  more to come (see [TODO 1](#TODO))
 
 ## TODO
-1. allow users to choose default save backend
+1. add more backends (Pillow, matplotlib, imageio)
+1. add no-backend option that uses: https://stackoverflow.com/a/19174800 (a pure python implementation)
 1. (optionally) allow users to choose the preference order of the save backends
-1. allow users to choose preprocess method
 1. allow users to define custom preprocess
-1. (optionally) add standalone image save backend
+1. allow users to define custom save backend

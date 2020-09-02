@@ -44,11 +44,13 @@
 				"svifpd.preferredBackend": {
 					"type": "string",
 					"enum": [
-						"skimage.io",
-						"cv2"
+						"skimage",
+						"opencv",
+						"imageio",
+						"Pillow"
 					],
-					"default": "skimage.io",
-					"description": "Preferred backend package to save the image with"
+					"default": "skimage",
+					"description": "Preferred backend package to save the image with. Automatically falls back to one of the other."
 				},
 				"svifpd.normalizationMethod": {
 					"type": "string",

@@ -41,7 +41,7 @@ def prepare_image(img, preprocess_method='normalize'):
     else:
         return img
 
-def cv2_imsave(path, img):
+def opencv_imsave(path, img):
     import cv2
     cv2.imwrite(path, img)
 
@@ -49,21 +49,33 @@ def skimage_imsave(path, img):
     import skimage.io
     skimage.io.imsave(path, img)
 
+def imageio_imsave(path, img):
+    import imageio
+    imageio.imwrite(path, img)
+
+def pillow_imsave(path, img):
+    from PIL import Image
+    img = Image.fromarray(img)
+    img.save(path)
+
 options = {
-    'skimage.io': skimage_imsave,
-    'cv2': cv2_imsave,
+    'skimage': ('skimage.io', skimage_imsave),
+    'opencv': ('cv2', opencv_imsave),
+    'imageio': ('imageio', imageio_imsave),
+    'Pillow' : ('PIL', pillow_imsave)
 }
 
 def get_function(preferred=None):
     save_function = None
     
-    if preferred is not None:
-        module = try_import(preferred)
+    if preferred is not None and preferred in options:
+        module_test, function = options[preferred] 
+        module = try_import(module_test)
         if module:
-            return options[preferred]    
+            return function
     
-    for module_name, function in options.items():
-        module = try_import(module_name)
+    for name, (module_test, function) in options.items():
+        module = try_import(module_test)
         if module:
             save_function = function
             break

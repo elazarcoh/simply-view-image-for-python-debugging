@@ -33,11 +33,6 @@ export function activate(context: vscode.ExtensionContext) {
 		mkdirSync(dir);
 	}
 
-	const config: ImageViewConfig = {
-		preferredBackend: vscode.workspace.getConfiguration("svifpd").get("preferredBackend", "skimage.io"),
-		normalizationMethod: vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", "normalize"),
-	};
-
 	viewImageSvc = new ViewImageService(dir);
 
 	console.log('Congratulations, your extension "simply-view-image-for-python-debugging" is now active!');
@@ -47,9 +42,12 @@ export function activate(context: vscode.ExtensionContext) {
 			new PythonViewImageProvider(), { providedCodeActionKinds: [vscode.CodeActionKind.Empty] })
 	);
 
-
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand("extension.viewimagepythondebug", async editor => {
+			const config: ImageViewConfig = {
+				preferredBackend: vscode.workspace.getConfiguration("svifpd").get("preferredBackend", "skimage.io"),
+				normalizationMethod: vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", "normalize"),
+			};
 			let path = await viewImageSvc.ViewImage(editor.document, editor.selection, config);
 			if (path === undefined) {
 				return;

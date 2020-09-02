@@ -1,6 +1,6 @@
 {
 	"name": "simply-view-image-for-python-debugging",
-	"displayName": "simply_view_image_for_python_debugging",
+	"displayName": "View Image for Python Debugging",
 	"description": "simply view the image of the image variables when debugging python",
 	"version": "0.0.1",
 	"publisher": "elazarcoh",
@@ -36,10 +36,34 @@
 		"configuration": {
 			"title": "View Image (Python Debug)",
 			"properties": {
-				"svifpod.usetmppathtosave": {
+				"svifpd.useTmpPathToSave": {
 					"type": "boolean",
 					"default": true,
 					"description": "Use the system tmp path to save image otherwise use the storage path."
+				},
+				"svifpd.preferredBackend": {
+					"type": "string",
+					"enum": [
+						"skimage.io",
+						"cv2"
+					],
+					"default": "skimage.io",
+					"description": "Preferred backend package to save the image with"
+				},
+				"svifpd.normalizationMethod": {
+					"type": "string",
+					"enum": [
+						"normalize",
+						"skimage.img_as_ubyte",
+						"None"
+					],
+					"enumDescriptions": [
+						"First subtracts the minimal value, and then scale the values between [0, 255]",
+						"Negative input values will be clipped. Positive values are scaled between 0 and 255.",
+						"Image saved as is, behavior as specified for the backend."
+					],
+					"default": "normalize",
+					"description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
 				}
 			}
 		}

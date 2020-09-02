@@ -5,16 +5,17 @@ import ViewImageService from './ViewImageService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { ImageViewConfig } from './types';
 
 let viewImageSvc: ViewImageService;
 
-const WORKING_DIR = 'svifpod';
+const WORKING_DIR = 'svifpd';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	let usetmp = vscode.workspace.getConfiguration("svifpod").get("usetmppathtosave", true);
+	let usetmp = vscode.workspace.getConfiguration("svifpd").get("useTmpPathToSave", true);
 	let dir = context.storagePath as string;
 	if (usetmp || dir === undefined) {
 		dir = tmpdir();
@@ -32,12 +33,14 @@ export function activate(context: vscode.ExtensionContext) {
 		mkdirSync(dir);
 	}
 
+	const config: ImageViewConfig = {
+		preferredBackend: vscode.workspace.getConfiguration("svifpd").get("preferredBackend", "skimage.io"),
+		normalizationMethod: vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", "normalize"),
+	};
+
 	viewImageSvc = new ViewImageService(dir);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "simply-view-image-for-python-debugging" is now active!');
-
 
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider('python',
@@ -47,7 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand("extension.viewimagepythondebug", async editor => {
-			let path = await viewImageSvc.ViewImage(editor.document, editor.selection);
+			let path = await viewImageSvc.ViewImage(editor.document, editor.selection, config);
 			if (path === undefined) {
 				return;
 			}
@@ -70,7 +73,7 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 		if (vscode.debug.activeDebugSession === undefined) {
 			return undefined;
 		}
-		
+
 		return [
 			{ command: "extension.viewimagepythondebug", title: 'View Image' }
 		];

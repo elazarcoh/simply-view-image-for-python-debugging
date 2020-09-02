@@ -1,13 +1,20 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
+import { ImageViewConfig } from './types';
 
 export default class ViewImageService {
 
+	// define all the needed stuff in python.
+	// keeps it in __python_view_image_mod variable to minimize the namespace pollution as much as possible
 	static readonly define_writer_expression: string = `
-from types import ModuleType
-__python_view_image_mod = ModuleType('python_view_image_mod', '')
+try:
+    __python_view_image_mod
+except NameError:
+    
+    from types import ModuleType
+    __python_view_image_mod = ModuleType('python_view_image_mod', '')
 
-exec(
+    exec(
 '''
 import importlib
 def try_import(package):
@@ -42,19 +49,33 @@ def skimage_imsave(path, img):
     import skimage.io
     skimage.io.imsave(path, img)
 
-options = [
-    ('skimage.io', skimage_imsave),
-    ('cv2', cv2_imsave),
-]
-save_function = None
-for module_name, function in options:
-    module = try_import(module_name)
-    if module:
-        save_function = function
-        break
+options = {
+    'skimage.io': skimage_imsave,
+    'cv2': cv2_imsave,
+}
+
+def get_function(preferred=None):
+    save_function = None
+    
+    if preferred is not None:
+        module = try_import(preferred)
+        if module:
+            return options[preferred]    
+    
+    for module_name, function in options.items():
+        module = try_import(module_name)
+        if module:
+            save_function = function
+            break
+    return save_function
+
+def save(path, img, backend, preprocess):
+    func = get_function(backend)
+    img = prepare_image(img, preprocess)
+    func(path, img)
 '''
-, __python_view_image_mod.__dict__
-)
+    , __python_view_image_mod.__dict__
+    )
 `;
 
 	private workingdir: string;
@@ -63,7 +84,7 @@ for module_name, function in options:
 		this.workingdir = dir;
 	}
 
-	public async ViewImage(document: vscode.TextDocument, range: vscode.Range): Promise<string | undefined> {
+	public async ViewImage(document: vscode.TextDocument, range: vscode.Range, config: ImageViewConfig): Promise<string | undefined> {
 		const session = vscode.debug.activeDebugSession;
 		if (session === undefined) {
 			return;
@@ -89,8 +110,7 @@ for module_name, function in options:
 		const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
 		let targetVariable = variables.find(v => v.name === selectedVariable);
 
-		let filename = undefined;
-		let vn : string = "";
+		let vn: string = "";
 		let path = undefined;
 		if (selected !== "") {
 			const tmp = require('tmp');
@@ -104,13 +124,13 @@ for module_name, function in options:
 			return;
 		}
 
-		const savepath = path.replace(/\\/g, '/');
+		const py_save_path = path.replace(/\\/g, '/');
 
 		const expression = (
 			`
 exec(\"\"\"
 ${ViewImageService.define_writer_expression}
-__python_view_image_mod.save_function('${savepath}',  __python_view_image_mod.prepare_image(${vn}, "skimage.img_as_ubyte"))
+__python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferredBackend}", preprocess="${config.normalizationMethod}")
 \"\"\"
 )
 `

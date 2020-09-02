@@ -2,7 +2,7 @@
 	"name": "simply-view-image-for-python-debugging",
 	"displayName": "View Image for Python Debugging",
 	"description": "simply view the image of the image variables when debugging python",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "elazarcoh",
 	"engines": {
 		"vscode": "^1.44.0"

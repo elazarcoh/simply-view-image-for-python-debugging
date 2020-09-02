@@ -14,10 +14,10 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 ## Dependencies
 
 * python>=3.4
-* At least of the following packages are need to be installed:
+* At least םמק of the following packages are need to be installed:
   - opencv
   - skimage
-  more to come (see [TODO 1](#TODO))
+  more options to come (see [TODO 1](#TODO))
 
 ## TODO
 1. add more backends (Pillow, matplotlib, imageio)

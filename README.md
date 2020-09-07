@@ -5,6 +5,7 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 ## New features
 
 * No need for opencv (we support multiple backend)
+  * We also have a support of a pure-python implementation (depends only on **numpy**)
 * No include is needed by the user
 * Support view image from expression
   
@@ -15,13 +16,13 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 
 * python>=3.4
 * At least one of the following packages needs to be installed:
+  - [numpy](https://pypi.org/project/numpy/)
   - [skimage](https://pypi.org/project/scikit-image/)
   - [opencv](https://pypi.org/project/opencv-python/)
   - [Pillow](https://pypi.org/project/Pillow/)
   - [imageio](https://pypi.org/project/imageio/)
 
 ## TODO
-1. add no-backend option that uses: https://stackoverflow.com/a/19174800 (a pure python implementation)
 1. (optionally) allow users to choose the preference order of the save backends
 1. allow users to define custom preprocess
 1. allow users to define custom save backend

@@ -4,6 +4,7 @@
 	"description": "simply view the image of the image variables when debugging python",
 	"version": "0.0.3",
 	"publisher": "elazarcoh",
+	"icon": "icon.png",
 	"engines": {
 		"vscode": "^1.44.0"
 	},

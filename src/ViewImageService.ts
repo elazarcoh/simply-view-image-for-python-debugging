@@ -225,7 +225,7 @@ __python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferr
         res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context: 'hover' })
             .then(undefined, error => {
                 console.log(error);
-                vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`)
+                vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);
             });
         console.log(`evaluate ${expression} result: ${res.result}`);
 

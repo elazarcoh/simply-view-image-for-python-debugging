@@ -1,23 +1,22 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
-import { ImageViewConfig } from './types';
+import { ImageViewConfig, backends, normalizationMethods } from './types';
 
 export default class ViewImageService {
 
     // define all the needed stuff in python.
-    // keeps it in __python_view_image_mod variable to minimize the namespace pollution as much as possible
+    // keeps it in _python_view_image_mod variable to minimize the namespace pollution as much as possible
     static readonly define_writer_expression: string = `
 try:
-    __python_view_image_mod
+    _python_view_image_mod
 except NameError:
     
     from types import ModuleType
-    __python_view_image_mod = ModuleType('python_view_image_mod', '')
+    _python_view_image_mod = ModuleType('python_view_image_mod', '')
 
     exec(
 '''
 def standalone_imsave(path, img):
-
     def preprocess_for_png(img):
         import numpy as np
         assert img.ndim >= 2 and img.ndim <= 3
@@ -160,7 +159,7 @@ def save(path, img, backend, preprocess):
     img = prepare_image(img, preprocess)
     func(path, img)
 '''
-    , __python_view_image_mod.__dict__
+    , _python_view_image_mod.__dict__
     )
 `;
 
@@ -216,17 +215,20 @@ def save(path, img, backend, preprocess):
             `
 exec(\"\"\"
 ${ViewImageService.define_writer_expression}
-__python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferredBackend}", preprocess="${config.normalizationMethod}")
+_python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferredBackend}", preprocess="${config.normalizationMethod}")
 \"\"\"
 )
 `
         );
 
-        res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context: 'hover' })
-            .then(undefined, error => {
-                console.log(error);
-                vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);
-            });
+        try {
+            res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context: 'hover' });
+        } catch (error) {
+            console.log(error);
+            vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);
+            return;
+        }
+
         console.log(`evaluate ${expression} result: ${res.result}`);
 
         return path;
@@ -290,7 +292,7 @@ ${ViewImageService.define_writer_expression}
         const expression = (`(np.array(${vn}).ndim == 2) or (np.array(${vn}).ndim == 3 and np.array(${vn}).shape[2] in (1, 3, 4))`);
         res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context: 'hover' });
         console.log(`evaluate expression result: ${res.result}`);
-        if(res.result === "True") {
+        if (res.result === "True") {
             return true;
         }
     } catch (error) {
@@ -299,4 +301,131 @@ ${ViewImageService.define_writer_expression}
     }
 
     return false;
+}
+
+export async function validateConfig(config: ImageViewConfig): Promise<boolean> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+        return false;
+    }
+    let res = await session.customRequest('threads', {});
+    let threads = res.threads;
+    let mainThread = threads[0].id;
+
+    res = await session.customRequest('stackTrace', { threadId: mainThread });
+    let stacks = res.stackFrames;
+    let callStack = stacks[0].id;
+
+    // add testing expression for each relevent configuration
+    const validationExpressions = [];
+
+    if (config.normalizationMethod === normalizationMethods.skimage_img_as_ubyte) {
+        // we need to validate skimage is avaliable
+        const testExpression = (
+            `
+exec(
+'''
+try:
+    import skimage
+except ImportError:
+    pass
+''', _python_view_image_tmp_mod.__dict__)
+`
+        );
+        validationExpressions.push({
+            test: testExpression,
+            validate: `'skimage' in _python_view_image_tmp_mod.__dict__`,
+            message: "skimage could not be imported. try to change the normalization method at the settings to 'normalize'",
+            isError: true,
+        })
+    }
+
+    { // test preferredBackend
+        let needToBeImported: string;
+        switch (config.preferredBackend) {
+            case backends.Pillow:
+                needToBeImported = "PIL"
+                break;
+            case backends.imageio:
+                needToBeImported = "imageio"
+                break;
+            case backends.opencv:
+                needToBeImported = "cv2"
+                break;
+            case backends.skimage:
+                needToBeImported = "skimage"
+                break;
+            case backends.Standalone:
+            default:
+                needToBeImported = "numpy"
+                break;
+        }
+        const testExpression = (
+            `
+exec(
+'''
+try:
+    import ${needToBeImported}
+except ImportError:
+    pass
+''', _python_view_image_tmp_mod.__dict__)
+`
+        );
+        const validateExpression = `'${needToBeImported}' in _python_view_image_tmp_mod.__dict__`;
+        validationExpressions.push({
+            test: testExpression,
+            validate: validateExpression,
+            message: `preferred backend ${config.preferredBackend} can't be used, as it depends on '${needToBeImported}'. will try to fall back to other method`,
+            isError: false,
+        })
+    }
+
+    const setupExpression = (
+        `
+exec(\"\"\"
+from types import ModuleType
+_python_view_image_tmp_mod = ModuleType('_python_view_image_tmp_mod', '')
+\"\"\"
+)
+`
+    );
+
+    const cleanupExpression = `exec('del _python_view_image_tmp_mod')`;
+
+    try {
+        res = await session.customRequest("evaluate", { expression: setupExpression, frameId: callStack, context: 'hover' });
+        console.log(`evaluate setupExpression result: ${res.result}`);
+
+        for (const { test, validate, message, isError } of validationExpressions) {
+            res = await session.customRequest("evaluate", { expression: test, frameId: callStack, context: 'hover' });
+            console.log(`evaluate test result: ${res.result}`);
+            res = await session.customRequest("evaluate", { expression: validate, frameId: callStack, context: 'hover' });
+            console.log(`evaluate validateExpression result: ${res.result}`);
+            if (res.result !== "True") {
+                if (isError) {
+                    vscode.window.showErrorMessage(message);
+                    try {
+                        res = await session.customRequest("evaluate", { expression: cleanupExpression, frameId: callStack, context: 'hover' });
+                        console.log(`evaluate cleanupExpression result: ${res.result}`);
+                    } catch (error) {
+                        console.log(error);
+                    }
+                    return false;
+                }
+                else {
+                    vscode.window.showWarningMessage(message);
+                    continue;
+                }
+            }
+        }
+        res = await session.customRequest("evaluate", { expression: cleanupExpression, frameId: callStack, context: 'hover' });
+        console.log(`evaluate cleanupExpression result: ${res.result}`);
+    } catch (error) {
+        console.log(error);
+        await session.customRequest("evaluate", { expression: cleanupExpression, frameId: callStack, context: 'hover' });
+        return false;
+    }
+
+    // not fails on any step
+    return true;
 }

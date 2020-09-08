@@ -8,9 +8,9 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
   * We also have a support of a pure-python implementation (depends only on **numpy**)
 * No include is needed by the user
 * Support view image from expression
-  
+  * **NOTE when using this feature, the expression is actullay executed, so beware of side-effects**
   ![Expression View](expression-example.gif)
-
+  
 
 ## Dependencies
 

@@ -2,9 +2,10 @@
 	"name": "simply-view-image-for-python-debugging",
 	"displayName": "View Image for Python Debugging",
 	"description": "simply view the image of the image variables when debugging python",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"publisher": "elazarcoh",
 	"icon": "icon.png",
+	"preview": true,
 	"engines": {
 		"vscode": "^1.44.0"
 	},
@@ -51,7 +52,7 @@
 						"Pillow",
 						"Standalone"
 					],
-					"default": "skimage",
+					"default": "Standalone",
 					"description": "Preferred backend package to save the image with. Automatically falls back to one of the other."
 				},
 				"svifpd.normalizationMethod": {

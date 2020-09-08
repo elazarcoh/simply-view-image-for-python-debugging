@@ -1,12 +1,13 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import ViewImageService from './ViewImageService';
+import ViewImageService, { validateConfig } from './ViewImageService';
 import { isAnImage } from './ViewImageService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { ImageViewConfig } from './types';
+import { ImageViewConfig, backends, normalizationMethods } from './types';
+import { stringToEnumValue } from './utils';
 
 let viewImageSvc: ViewImageService;
 
@@ -45,10 +46,19 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand("extension.viewimagepythondebug", async editor => {
+			const preferredBackend = vscode.workspace.getConfiguration("svifpd").get("preferredBackend", backends.Standalone);
+			const normalizationMethod = vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", normalizationMethods.normalize);
 			const config: ImageViewConfig = {
-				preferredBackend: vscode.workspace.getConfiguration("svifpd").get("preferredBackend", "skimage.io"),
-				normalizationMethod: vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", "normalize"),
+				//@ts-ignore we know it must return a value because preferredBackend is set with default
+				preferredBackend: stringToEnumValue(backends, preferredBackend),
+				//@ts-ignore we know it must return a value because normalizationMethod is set with default
+				normalizationMethod: stringToEnumValue(normalizationMethods, normalizationMethod),
 			};
+			const configValid = await validateConfig(config);
+			if(!configValid)
+			{
+				return;
+			}
 			let path = await viewImageSvc.ViewImage(editor.document, editor.selection, config);
 			if (path === undefined) {
 				return;

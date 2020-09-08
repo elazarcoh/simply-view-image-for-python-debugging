@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import ViewImageService from './ViewImageService';
+import { isAnImage } from './ViewImageService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
@@ -69,6 +70,10 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 
 	public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range): Promise<vscode.Command[] | undefined> {
 		if (vscode.debug.activeDebugSession === undefined) {
+			return undefined;
+		}
+		const valid = await isAnImage(document, range);
+		if (!valid) {
 			return undefined;
 		}
 

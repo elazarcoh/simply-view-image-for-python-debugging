@@ -232,3 +232,71 @@ __python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferr
         return path;
     }
 }
+
+export async function isAnImage(document: vscode.TextDocument, range: vscode.Range): Promise<boolean> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+        return false;
+    }
+
+    let res = await session.customRequest('threads', {});
+    let threads = res.threads;
+    let mainThread = threads[0].id;
+
+    res = await session.customRequest('stackTrace', { threadId: mainThread });
+    let stacks = res.stackFrames;
+    let callStack = stacks[0].id;
+
+    res = await session.customRequest('scopes', { frameId: callStack });
+    let scopes = res.scopes;
+    let local = scopes[0];
+
+    res = await session.customRequest('variables', { variablesReference: local.variablesReference });
+    let variables: any[] = res.variables;
+
+    let selected = document.getText(range);
+
+    const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
+    let targetVariable = variables.find(v => v.name === selectedVariable);
+
+    let vn: string = "";
+    if (selected !== "") {
+        vn = selected;
+    } else if (targetVariable !== undefined) {
+        vn = targetVariable.evaluateName; // var name
+    } else {
+        return false;
+    }
+
+    // test if evaluated to numpy array legal image
+
+    try {
+        const initExpression = (
+            `
+exec(\"\"\"
+${ViewImageService.define_writer_expression}
+\"\"\"
+)
+`
+        );
+        res = await session.customRequest("evaluate", { expression: initExpression, frameId: callStack, context: 'hover' });
+        console.log(`evaluate initExpression result: ${res.result}`);
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+
+    try {
+        const expression = (`(np.array(${vn}).ndim == 2) or (np.array(${vn}).ndim == 3 and np.array(${vn}).shape[2] in (1, 3, 4))`);
+        res = await session.customRequest("evaluate", { expression: expression, frameId: callStack, context: 'hover' });
+        console.log(`evaluate expression result: ${res.result}`);
+        if(res.result === "True") {
+            return true;
+        }
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+
+    return false;
+}

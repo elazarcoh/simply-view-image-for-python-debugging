@@ -1,28 +1,67 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import ViewImageService, { validateConfig } from './ViewImageService';
-import { isAnImage } from './ViewImageService';
+import ViewImageService from './ViewImageService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { ImageViewConfig, backends, normalizationMethods } from './types';
 import { stringToEnumValue } from './utils';
 
-let viewImageSvc: ViewImageService;
+let viewImageSrv: ViewImageService;
 
 const WORKING_DIR = 'svifpd';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	
+	// register watcher for the debugging session. used to identify the running-frame,
+	// so multi-thread will work
+	// based on https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
+	vscode.debug.registerDebugAdapterTrackerFactory("python", {
+		createDebugAdapterTracker: _ => {
+			return {
+				onWillReceiveMessage: async msg => {
+					interface ScopesRequest {
+						type: "request";
+						command: "scopes";
+						arguments: {
+							frameId: number;
+						}
+					}
+					const m = msg as ScopesRequest;
+					if (m.type === "request" && m.command === "scopes") {
+						const currentFrame = m.arguments.frameId;
+						viewImageSrv.setFrameId(currentFrame);
+					}
+				},
+				onDidSendMessage: async msg => {
+					interface StoppedEvent {
+						type: "event";
+						event: "stopped";
+						body: {
+							threadId: number;
+						};
+					}
+					const m = msg as StoppedEvent;
+					if (m.type === "event" && m.event === "stopped") {
+						const currentThread = m.body.threadId;
+						viewImageSrv.setThreadId(currentThread);
+					}
+				},
+			};
+		},
+	});
 
+	
 	let usetmp = vscode.workspace.getConfiguration("svifpd").get("useTmpPathToSave", true);
 	let dir = context.storagePath as string;
 	if (usetmp || dir === undefined) {
 		dir = tmpdir();
 		dir = join(dir, WORKING_DIR);
 	}
+	viewImageSrv = new ViewImageService(dir);
 
 	if (existsSync(dir)) {
 		let files = readdirSync(dir);
@@ -34,10 +73,6 @@ export function activate(context: vscode.ExtensionContext) {
 	else {
 		mkdirSync(dir);
 	}
-
-	viewImageSvc = new ViewImageService(dir);
-
-	console.log('Congratulations, your extension "simply-view-image-for-python-debugging" is now active!');
 
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider('python',
@@ -54,12 +89,11 @@ export function activate(context: vscode.ExtensionContext) {
 				//@ts-ignore we know it must return a value because normalizationMethod is set with default
 				normalizationMethod: stringToEnumValue(normalizationMethods, normalizationMethod),
 			};
-			const configValid = await validateConfig(config);
-			if(!configValid)
-			{
+			const configValid = await viewImageSrv.validateConfig(config);
+			if (!configValid) {
 				return;
 			}
-			let path = await viewImageSvc.ViewImage(editor.document, editor.selection, config);
+			let path = await viewImageSrv.ViewImage(editor.document, editor.selection, config);
 			if (path === undefined) {
 				return;
 			}
@@ -82,7 +116,7 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 		if (vscode.debug.activeDebugSession === undefined) {
 			return undefined;
 		}
-		const valid = await isAnImage(document, range);
+		const valid = await viewImageSrv.isAnImage(document, range);
 		if (!valid) {
 			return undefined;
 		}

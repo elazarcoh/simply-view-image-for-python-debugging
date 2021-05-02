@@ -23,14 +23,14 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.viewimagepythondebug",
+				"command": "svifpd.view-image",
 				"title": "View Image (Python Debug)",
 				"enablement": "inDebugMode"
 			}
 		],
 		"keybindings": [
 			{
-				"command": "extension.viewimagepythondebug",
+				"command": "svifpd.view-image",
 				"key": "ctrl+alt+q",
 				"when": "inDebugMode"
 			}

@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	// register watcher for the debugging session. used to identify the running-frame,
 	// so multi-thread will work
-	// based on https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
+	// inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
 	vscode.debug.registerDebugAdapterTrackerFactory("python", {
 		createDebugAdapterTracker: _ => {
 			return {
@@ -80,7 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("extension.viewimagepythondebug", async editor => {
+		vscode.commands.registerTextEditorCommand("svifpd.view-image", async editor => {
 			const preferredBackend = vscode.workspace.getConfiguration("svifpd").get("preferredBackend", backends.Standalone);
 			const normalizationMethod = vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", normalizationMethods.normalize);
 			const config: ImageViewConfig = {
@@ -122,7 +122,7 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 		}
 
 		return [
-			{ command: "extension.viewimagepythondebug", title: 'View Image' }
+			{ command: "svifpd.view-image", title: 'View Image' }
 		];
 	}
 }

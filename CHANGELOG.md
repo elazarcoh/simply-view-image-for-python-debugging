@@ -1,30 +1,55 @@
 # Change Log
 
-All notable changes to the "simply-view-image-for-python-opencv-debugging" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.1.0]
+
+### Changed
+
+- Command id `extension.viewimagepythondebug` to `svifpd.view-image`
 
 ## [0.0.6]
 
-- Add an option "svifpod.usetmppathtosave" to choose which path (tmp or extenion private storage path) to save, default is tmp path.
+### Fixed 
+
+- Multi-threading bug
 
 ## [0.0.5]
 
-- Add a command "View Image(Python OpenCV Debug)".
-- Add a keyboard shortcut "ctrl+alt+Q" for quickly image viewing.
+### Added
+
+- Configuration verification
 
 ## [0.0.4]
 
-- Add ndarray checking to avoid some exceptions.
+### Added
+
+- Extension icon
+
+### Changed
+
+- Show view-image tooltip only if it's an image.
 
 ## [0.0.3]
 
-- Update README.md
+### Added
+
+- backends: Stand-alone png saver. Only needs numpy.
 
 ## [0.0.2]
 
-- Thanks to [marisancans](https://github.com/marisancans) add support for float np array.
+### Added
+
+- backends: Pillow, imageio
 
 ## [0.0.1]
 
-- Initial release
+### Added
+
+- Display image with no need fot `import cv2`
+- Saving backends: skimage, cv2
+- Preprocess image before viewing
+
+## fork 
+
+link for pre-forking changelog (up to version 0.6.0):
+https://github.com/elazarcoh/simply-view-image-for-python-debugging/blob/forked-here/CHANGELOG.md

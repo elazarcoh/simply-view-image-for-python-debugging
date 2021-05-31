@@ -1,11 +1,11 @@
 # simply-view-image-for-python-debugging
 
-Based on the great work of [john-guo](https://github.com/john-guo/simply-view-image-for-python-opencv-debugging), a more general version for the extenstion.
+Based on the great work of [john-guo](https://github.com/john-guo/simply-view-image-for-python-opencv-debugging), a more general version for the extension.
 
 ## features
 
 * Support view image from expression
-  * **NOTE when using this feature, the expression is actullay executed, so beware of side-effects**
+  * **NOTE when using this feature, the expression is actually executed, so beware of side-effects**
   ![Expression View](expression-example.gif)
 * Support plot (matplotlib) view
   * Currently supports:

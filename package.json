@@ -5,7 +5,7 @@
 	"version": "0.1.0",
 	"publisher": "elazarcoh",
 	"icon": "icon.png",
-	"preview": true,
+	"preview": false,
 	"engines": {
 		"vscode": "^1.44.0"
 	},
@@ -15,6 +15,13 @@
 	},
 	"categories": [
 		"Other"
+	],
+	"keywords": [
+		"Python",
+		"image",
+		"debug",
+		"plot",
+		"view"
 	],
 	"activationEvents": [
 		"onDebugResolve:python"

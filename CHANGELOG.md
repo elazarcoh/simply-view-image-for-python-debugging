@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.0]
+
+- add support for matplotlib figure & axes preview
 
 ## [0.1.0]
 

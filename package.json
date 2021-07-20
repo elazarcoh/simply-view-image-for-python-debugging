@@ -38,6 +38,11 @@
 				"command": "svifpd.view-plot",
 				"title": "View Plot (Python Debug)",
 				"enablement": "inDebugMode"
+			},
+			{
+				"command": "svifpd.view-tensor",
+				"title": "View Tensor (Python Debug)",
+				"enablement": "inDebugMode"
 			}
 		],
 		"keybindings": [

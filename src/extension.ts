@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import ViewImageService from './ViewImageService';
 import ViewPlotService from './ViewPlotService';
+import ViewTensorService from './ViewTorchService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
@@ -11,6 +12,9 @@ import { stringToEnumValue } from './utils';
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
+let viewTensorSrv: ViewTensorService;
+
+let services: IStackWatcher[] = [];
 
 const WORKING_DIR = 'svifpd';
 
@@ -35,8 +39,9 @@ export function activate(context: vscode.ExtensionContext) {
 					const m = msg as ScopesRequest;
 					if (m.type === "request" && m.command === "scopes") {
 						const currentFrame = m.arguments.frameId;
-						viewImageSrv.setFrameId(currentFrame);
-						viewPlotSrv.setFrameId(currentFrame);
+						for (const service of services) {
+							service.setFrameId(currentFrame);
+						}
 					}
 				},
 				onDidSendMessage: async msg => {
@@ -50,8 +55,9 @@ export function activate(context: vscode.ExtensionContext) {
 					const m = msg as StoppedEvent;
 					if (m.type === "event" && m.event === "stopped") {
 						const currentThread = m.body.threadId;
-						viewImageSrv.setThreadId(currentThread);
-						viewPlotSrv.setThreadId(currentThread);
+						for (const service of services) {
+							service.setThreadId(currentThread);
+						}
 					}
 				},
 			};
@@ -66,7 +72,11 @@ export function activate(context: vscode.ExtensionContext) {
 		dir = join(dir, WORKING_DIR);
 	}
 	viewImageSrv = new ViewImageService(dir);
+	services.push(viewImageSrv);
 	viewPlotSrv = new ViewPlotService(dir);
+	services.push(viewPlotSrv);
+	viewTensorSrv = new ViewTensorService(dir);
+	services.push(viewTensorSrv);
 
 	if (existsSync(dir)) {
 		let files = readdirSync(dir);
@@ -115,6 +125,17 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand("svifpd.view-tensor", async editor => {
+
+			let path = await viewTensorSrv.ViewTensor(editor.document, editor.selection);
+			if (path === undefined) {
+				return;
+			}
+			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
+		})
+	);
+
 }
 
 // this method is called when your extension is deactivated
@@ -136,10 +157,18 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 				{ command: "svifpd.view-image", title: 'View Image' }
 			];
 		}
+
 		const [isAPlot, plotType] = await viewPlotSrv.isAPlot(document, range);
 		if (isAPlot) {
 			return [
 				{ command: "svifpd.view-plot", title: `View Plot (${plotType})` }
+			];
+		}
+
+		const [isATensor, tensorType] = await viewTensorSrv.isATensor(document, range);
+		if (isATensor) {
+			return [
+				{ command: "svifpd.view-tensor", title: `View Tensor (${tensorType})` }
 			];
 		}
 

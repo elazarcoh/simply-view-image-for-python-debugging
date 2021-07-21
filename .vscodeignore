@@ -9,3 +9,4 @@ vsc-exdtension-quickstart.md
 **/*.map
 **/*.ts
 webpack.config.js
+python_test

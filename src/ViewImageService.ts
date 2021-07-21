@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { join } from 'path';
 import { ImageViewConfig, backends, normalizationMethods } from './types';
 import { isVariableSelection, ScopeVariables, UserSelection, Variable } from './PythonSelection';
+import { ViewerService } from './ViewerService';
 
 
-export default class ViewImageService {
+export default class ViewImageService extends ViewerService {
 
     // define all the needed stuff in python.
     // keeps it in _python_view_image_mod variable to minimize the namespace pollution as much as possible
@@ -168,24 +168,9 @@ def save(path, img, backend, preprocess):
 `;
 
     public constructor(
-        private readonly workingDir: string,
-    ) { }
-
-    public setThreadId(threadId: number) {
-        this.threadId = threadId;
-    }
-    public setFrameId(frameId: number) {
-        this.frameId = frameId;
-    }
-
-    private threadId: number = 0;
-    private frameId: number = 0;
-
-    private currentIdx: number = 0;
-
-    private get currentImgIdx(): number {
-        this.currentIdx = (this.currentIdx + 1) % 10;
-        return this.currentIdx;
+        workingDir: string,
+    ) {
+        super(workingDir);
     }
 
     public async ViewImage(document: vscode.TextDocument, range: vscode.Range, config: ImageViewConfig): Promise<string | undefined> {
@@ -198,17 +183,8 @@ def save(path, img, backend, preprocess):
             return;
         }
 
-        let vn: string = "";
-        let path = undefined;
-        if (isVariableSelection(userSelection)) {
-            vn = userSelection.variable; // var name
-            path = join(this.workingDir, `${vn}(${this.currentImgIdx}).png`);
-        } else {
-            const tmp = require('tmp');
-            const options = { postfix: ".png", dir: this.workingDir };
-            path = tmp.tmpNameSync(options);
-            vn = userSelection.range;
-        }
+        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
+        const path = this.pathForSelection(userSelection);
 
         const py_save_path = path.replace(/\\/g, '/');
 
@@ -232,45 +208,6 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
         }
 
         return path;
-    }
-
-    private async viewableVariables(session: vscode.DebugSession): Promise<ScopeVariables> {
-        let res = await session.customRequest('scopes', { frameId: this.frameId });
-        const scopes = res.scopes;
-        const local = scopes[0];
-        const global = scopes[1];
-
-        const getVars = async (scope: any): Promise<Variable[]> => {
-            const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
-            const variables: any[] = res.variables;
-            return variables;
-        };
-
-        const [localVariables, globalVariables] = await Promise.all([
-            local ? getVars(local) : [],
-            global ? getVars(global) : [],
-        ]);
-
-        return { locals: localVariables, globals: globalVariables };
-    }
-
-    async variableNameOrExpression(session: vscode.DebugSession, document: vscode.TextDocument, range: vscode.Range): Promise<UserSelection | undefined> {
-        const selected = document.getText(range);
-        if (selected !== "") {
-            return { range: selected };  // the user selection
-        }
-
-        // the user not selected a range. need to figure out which variable he's on
-        const { locals, globals } = await this.viewableVariables(session);
-
-        const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
-        const targetVariable = locals.find(v => v.name === selectedVariable) ?? globals.find(v => v.name === selectedVariable);
-
-        if (targetVariable !== undefined) {
-            return { variable: targetVariable.evaluateName }; // var name 
-        } else {
-            return undefined;
-        }
     }
 
     async isAnImage(document: vscode.TextDocument, range: vscode.Range): Promise<boolean> {
@@ -440,9 +377,5 @@ _python_view_image_tmp_mod = ModuleType('_python_view_image_tmp_mod', '')
 
         // not fails on any step
         return true;
-    }
-
-    private evaluate(session: vscode.DebugSession, expression: string) {
-        return session.customRequest("evaluate", { expression: expression, frameId: this.frameId, context: 'hover' });
     }
 }

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
+import { ViewerService } from './ViewerService';
+import { isVariableSelection } from './PythonSelection';
 
-export default class ViewTensorService {
+export default class ViewTensorService extends ViewerService {
 
     // define all the needed stuff in python.
     // keeps it in _python_view_tensor_mod variable to minimize the namespace pollution as much as possible
@@ -68,24 +70,9 @@ def ${ViewTensorService.save_func}(path, obj):
 `;
 
     public constructor(
-        private readonly workingDir: string,
-    ) { }
-
-    public setThreadId(threadId: number) {
-        this.threadId = threadId;
-    }
-    public setFrameId(frameId: number) {
-        this.frameId = frameId;
-    }
-
-    private threadId: number = 0;
-    private frameId: number = 0;
-
-    private currentIdx: number = 0;
-
-    private get currentImgIdx(): number {
-        this.currentIdx = (this.currentIdx + 1) % 10;
-        return this.currentIdx;
+        workingDir: string,
+    ) {
+        super(workingDir);
     }
 
     public async ViewTensor(document: vscode.TextDocument, range: vscode.Range): Promise<string | undefined> {
@@ -93,27 +80,13 @@ def ${ViewTensorService.save_func}(path, obj):
         if (session === undefined) {
             return;
         }
-
-        let variables = await this.localVariables(session);
-
-        let selected = document.getText(range);
-
-        const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
-        let targetVariable = variables.find(v => v.name === selectedVariable);
-
-        let vn: string = "";
-        let path = undefined;
-        if (selected !== "") {
-            const tmp = require('tmp');
-            const options = { postfix: ".png", dir: this.workingDir };
-            path = tmp.tmpNameSync(options);
-            vn = selected;
-        } else if (targetVariable !== undefined) {
-            path = join(this.workingDir, `${targetVariable.name}(${this.currentImgIdx}).png`);
-            vn = targetVariable.evaluateName; // var name
-        } else {
+        const userSelection = await this.variableNameOrExpression(session, document, range);
+        if (userSelection === undefined) {
             return;
         }
+
+        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
+        const path = this.pathForSelection(userSelection);
 
         const py_save_path = path.replace(/\\/g, '/');
 
@@ -139,40 +112,17 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
         return path;
     }
 
-    private async localVariables(session: vscode.DebugSession): Promise<any[]> {
-        let res = await session.customRequest('scopes', { frameId: this.frameId });
-        let scopes = res.scopes;
-        let local = scopes[0];
-
-        res = await session.customRequest('variables', { variablesReference: local.variablesReference });
-        let variables: any[] = res.variables;
-
-        return variables;
-    }
-
     async isATensor(document: vscode.TextDocument, range: vscode.Range): Promise<[boolean, string]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return [false, ""];
         }
-
-        let variables = await this.localVariables(session);
-
-        let selected = document.getText(range);
-
-        const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
-        let targetVariable = variables.find(v => v.name === selectedVariable);
-
-        let vn: string = "";
-        if (selected !== "") {
-            vn = selected;
-        } else if (targetVariable !== undefined) {
-            vn = targetVariable.evaluateName; // var name
-        } else {
+        const userSelection = await this.variableNameOrExpression(session, document, range);
+        if (userSelection === undefined) {
             return [false, ""];
         }
 
-        // test if evaluated to numpy array legal image
+        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
 
         try {
             const initExpression = (
@@ -204,9 +154,5 @@ ${ViewTensorService.define_writer_expression}
         }
 
         return [false, ""];
-    }
-
-    private evaluate(session: vscode.DebugSession, expression: string) {
-        return session.customRequest("evaluate", { expression: expression, frameId: this.frameId, context: 'hover' });
     }
 }

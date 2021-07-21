@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import ViewImageService from './ViewImageService';
 import ViewPlotService from './ViewPlotService';
-import ViewTensorService from './ViewTorchService';
+import ViewTensorService from './ViewTensorService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';

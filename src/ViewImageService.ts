@@ -2,6 +2,24 @@ import * as vscode from 'vscode';
 import { join } from 'path';
 import { ImageViewConfig, backends, normalizationMethods } from './types';
 
+interface Variable {
+    name: string,
+    evaluateName: string,
+}
+
+type ScopeVariables = {
+    locals: Variable[],
+    globals: Variable[],
+}
+
+type VariableSelection = { variable: string };
+type RangeSelection = { range: string };
+type UserSelection = VariableSelection | RangeSelection;
+
+function isVariableSelection(pet: UserSelection): pet is VariableSelection {
+    return (pet as VariableSelection).variable !== undefined;
+}
+
 export default class ViewImageService {
 
     // define all the needed stuff in python.
@@ -191,26 +209,21 @@ def save(path, img, backend, preprocess):
         if (session === undefined) {
             return;
         }
-
-        let variables = await this.localVariables(session);
-
-        let selected = document.getText(range);
-
-        const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
-        let targetVariable = variables.find(v => v.name === selectedVariable);
+        const userSelection = await this.variableNameOrExpression(session, document, range);
+        if (userSelection === undefined) {
+            return;
+        }
 
         let vn: string = "";
         let path = undefined;
-        if (selected !== "") {
+        if (isVariableSelection(userSelection)) {
+            vn = userSelection.variable; // var name
+            path = join(this.workingDir, `${vn}(${this.currentImgIdx}).png`);
+        } else {
             const tmp = require('tmp');
             const options = { postfix: ".png", dir: this.workingDir };
             path = tmp.tmpNameSync(options);
-            vn = selected;
-        } else if (targetVariable !== undefined) {
-            path = join(this.workingDir, `${targetVariable.name}(${this.currentImgIdx}).png`);
-            vn = targetVariable.evaluateName; // var name
-        } else {
-            return;
+            vn = userSelection.range;
         }
 
         const py_save_path = path.replace(/\\/g, '/');
@@ -237,15 +250,43 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
         return path;
     }
 
-    private async localVariables(session: vscode.DebugSession): Promise<any[]> {
+    private async viewableVariables(session: vscode.DebugSession): Promise<ScopeVariables> {
         let res = await session.customRequest('scopes', { frameId: this.frameId });
-        let scopes = res.scopes;
-        let local = scopes[0];
+        const scopes = res.scopes;
+        const local = scopes[0];
+        const global = scopes[1];
 
-        res = await session.customRequest('variables', { variablesReference: local.variablesReference });
-        let variables: any[] = res.variables;
+        const getVars = async (scope: any): Promise<Variable[]> => {
+            const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
+            const variables: any[] = res.variables;
+            return variables;
+        };
 
-        return variables;
+        const [localVariables, globalVariables] = await Promise.all([
+            local ? getVars(local) : [],
+            global ? getVars(global) : [],
+        ]);
+
+        return { locals: localVariables, globals: globalVariables };
+    }
+
+    async variableNameOrExpression(session: vscode.DebugSession, document: vscode.TextDocument, range: vscode.Range): Promise<UserSelection | undefined> {
+        const selected = document.getText(range);
+        if (selected !== "") {
+            return { range: selected };  // the user selection
+        }
+
+        // the user not selected a range. need to figure out which variable he's on
+        const { locals, globals } = await this.viewableVariables(session);
+
+        const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
+        const targetVariable = locals.find(v => v.name === selectedVariable) ?? globals.find(v => v.name === selectedVariable);
+
+        if (targetVariable !== undefined) {
+            return { variable: targetVariable.evaluateName }; // var name 
+        } else {
+            return undefined;
+        }
     }
 
     async isAnImage(document: vscode.TextDocument, range: vscode.Range): Promise<boolean> {
@@ -253,22 +294,12 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
         if (session === undefined) {
             return false;
         }
-
-        let variables = await this.localVariables(session);
-
-        let selected = document.getText(range);
-
-        const selectedVariable = document.getText(document.getWordRangeAtPosition(range.start));
-        let targetVariable = variables.find(v => v.name === selectedVariable);
-
-        let vn: string = "";
-        if (selected !== "") {
-            vn = selected;
-        } else if (targetVariable !== undefined) {
-            vn = targetVariable.evaluateName; // var name
-        } else {
+        const userSelection = await this.variableNameOrExpression(session, document, range);
+        if (userSelection === undefined) {
             return false;
         }
+
+        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
 
         // test if evaluated to numpy array legal image
 
@@ -314,7 +345,7 @@ ${ViewImageService.define_writer_expression}
         const validationExpressions = [];
 
         if (config.normalizationMethod === normalizationMethods.skimage_img_as_ubyte) {
-            // we need to validate skimage is avaliable
+            // we need to validate skimage is available
             const testExpression = (
                 `
 exec(

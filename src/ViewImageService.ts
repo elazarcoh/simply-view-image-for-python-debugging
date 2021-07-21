@@ -1,24 +1,8 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
 import { ImageViewConfig, backends, normalizationMethods } from './types';
+import { isVariableSelection, ScopeVariables, UserSelection, Variable } from './PythonSelection';
 
-interface Variable {
-    name: string,
-    evaluateName: string,
-}
-
-type ScopeVariables = {
-    locals: Variable[],
-    globals: Variable[],
-}
-
-type VariableSelection = { variable: string };
-type RangeSelection = { range: string };
-type UserSelection = VariableSelection | RangeSelection;
-
-function isVariableSelection(pet: UserSelection): pet is VariableSelection {
-    return (pet as VariableSelection).variable !== undefined;
-}
 
 export default class ViewImageService {
 

@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.0.1]
+
+- add support for pytorch Tensors, via `torchvision.utils.save_image`
+
+
 ## [1.0.0]
 
 - add support for matplotlib figure & axes preview

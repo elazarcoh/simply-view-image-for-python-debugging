@@ -2,7 +2,7 @@
 
 Based on the great work of [john-guo](https://github.com/john-guo/simply-view-image-for-python-opencv-debugging), a more general version for the extension.
 
-## features
+## Features
 
 * Support view image from expression
   * **NOTE when using this feature, the expression is actually executed, so beware of side-effects**
@@ -13,13 +13,13 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
     * matplotlib.pyplot.Axis
   
   ![Plotting View](pyplot-example.gif)
+* Support Tensor view (only pytorch, for now) 
+
+
+## Feature-Requests
+
+If you want me to add other debug-viewers for your objects, please open an issue for it, and provide simple example (in python, of course) of how to save an image from your object.
 
 ## Dependencies
 
 * python>=3.4
-* At least one of the following packages needs to be installed:
-  - [numpy](https://pypi.org/project/numpy/)
-  - [skimage](https://pypi.org/project/scikit-image/)
-  - [opencv](https://pypi.org/project/opencv-python/)
-  - [Pillow](https://pypi.org/project/Pillow/)
-  - [imageio](https://pypi.org/project/imageio/)

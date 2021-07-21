@@ -23,7 +23,7 @@ def is_torch_tensor(obj):
         return is_valid
     except:
         return False
-def save_torch_tensor(path, tensor, normalize=True, pad=0):
+def save_torch_tensor(path, tensor, normalize=True, pad=10):
     pad_value = 255
     torchvision.utils.save_image(tensor, path, normalize=normalize,  pad_value=pad_value, padding=pad)
 ${ViewTensorService.tensor_types}['torch_tensor'] = ("torch.Tensor", is_torch_tensor, save_torch_tensor)

@@ -2,7 +2,9 @@
 
 ## [1.0.1]
 
-- add support for pytorch Tensors, via `torchvision.utils.save_image`
+### Added
+- Support for pytorch Tensors, via `torchvision.utils.save_image`
+- Support for global variables view (local variables take precedence).
 
 
 ## [1.0.0]

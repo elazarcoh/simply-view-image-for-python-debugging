@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import { join } from 'path';
 import { ViewerService } from './ViewerService';
-import { isVariableSelection } from './PythonSelection';
+import { isVariableSelection, UserSelection } from './PythonSelection';
 
 export default class ViewTensorService extends ViewerService {
 
@@ -75,13 +74,9 @@ def ${ViewTensorService.save_func}(path, obj):
         super(workingDir);
     }
 
-    public async ViewTensor(document: vscode.TextDocument, range: vscode.Range): Promise<string | undefined> {
+    public async SaveTensor(userSelection: UserSelection): Promise<string | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return;
-        }
-        const userSelection = await this.variableNameOrExpression(session, document, range);
-        if (userSelection === undefined) {
             return;
         }
 
@@ -112,13 +107,9 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
         return path;
     }
 
-    async isATensor(document: vscode.TextDocument, range: vscode.Range): Promise<[boolean, string]> {
+    async isATensor(userSelection: UserSelection): Promise<[boolean, string]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return [false, ""];
-        }
-        const userSelection = await this.variableNameOrExpression(session, document, range);
-        if (userSelection === undefined) {
             return [false, ""];
         }
 

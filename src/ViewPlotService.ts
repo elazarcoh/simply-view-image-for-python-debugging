@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import { join } from 'path';
 import { ViewerService } from './ViewerService';
-import { isVariableSelection } from './PythonSelection';
+import { isVariableSelection, UserSelection } from './PythonSelection';
 
 export default class ViewPlotService extends ViewerService {
 
@@ -87,14 +86,10 @@ def save(path, obj):
         super(workingDir);
     }
 
-    public async ViewPlot(document: vscode.TextDocument, range: vscode.Range): Promise<string | undefined> {
-        const session = vscode.debug.activeDebugSession;
+    public async SavePlot(userSelection : UserSelection): Promise<string | undefined> {
+         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return;
-        }
-        const userSelection = await this.variableNameOrExpression(session, document, range);
-        if (userSelection === undefined) {
-            return;
+            return ;
         }
 
         const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
@@ -124,13 +119,9 @@ ${ViewPlotService.py_module}.save("${py_save_path}", ${vn})
         return path;
     }
 
-    async isAPlot(document: vscode.TextDocument, range: vscode.Range): Promise<[boolean, string]> {
+    async isAPlot(userSelection : UserSelection): Promise<[boolean, string]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return [false, ""];
-        }
-        const userSelection = await this.variableNameOrExpression(session, document, range);
-        if (userSelection === undefined) {
             return [false, ""];
         }
 

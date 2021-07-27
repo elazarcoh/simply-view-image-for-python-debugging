@@ -9,7 +9,10 @@ import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { ImageViewConfig, backends, normalizationMethods } from './types';
 import { stringToEnumValue } from './utils';
+import { UserSelection } from './PythonSelection';
+import { PythonVariablesService } from './PythonVariablesService';
 
+let pythonVariablesService: PythonVariablesService;
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
 let viewTensorSrv: ViewTensorService;
@@ -71,6 +74,10 @@ export function activate(context: vscode.ExtensionContext) {
 		dir = tmpdir();
 		dir = join(dir, WORKING_DIR);
 	}
+
+	// init services
+	pythonVariablesService = new PythonVariablesService();
+	services.push(pythonVariablesService);
 	viewImageSrv = new ViewImageService(dir);
 	services.push(viewImageSrv);
 	viewPlotSrv = new ViewPlotService(dir);
@@ -95,7 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("svifpd.view-image", async editor => {
+		vscode.commands.registerTextEditorCommand("svifpd.view-image", async (editor, _, userSelection?: UserSelection) => {
 			const preferredBackend = vscode.workspace.getConfiguration("svifpd").get("preferredBackend", backends.Standalone);
 			const normalizationMethod = vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", normalizationMethods.normalize);
 			const config: ImageViewConfig = {
@@ -106,7 +113,13 @@ export function activate(context: vscode.ExtensionContext) {
 			if (!configValid) {
 				return;
 			}
-			let path = await viewImageSrv.ViewImage(editor.document, editor.selection, config);
+
+			userSelection ?? (userSelection = await pythonVariablesService.userSelection(editor.document, editor.selection));
+			if (userSelection === undefined) {
+				return;
+			}
+
+			let path = await viewImageSrv.SaveImage(userSelection, config);
 			if (path === undefined) {
 				return;
 			}
@@ -115,9 +128,14 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("svifpd.view-plot", async editor => {
+		vscode.commands.registerTextEditorCommand("svifpd.view-plot", async (editor, _, userSelection?: UserSelection) => {
 
-			let path = await viewPlotSrv.ViewPlot(editor.document, editor.selection);
+			userSelection ?? (userSelection = await pythonVariablesService.userSelection(editor.document, editor.selection));
+			if (userSelection === undefined) {
+				return;
+			}
+
+			let path = await viewPlotSrv.SavePlot(userSelection);
 			if (path === undefined) {
 				return;
 			}
@@ -126,9 +144,14 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("svifpd.view-tensor", async editor => {
+		vscode.commands.registerTextEditorCommand("svifpd.view-tensor", async (editor, _, userSelection?: UserSelection) => {
 
-			let path = await viewTensorSrv.ViewTensor(editor.document, editor.selection);
+			userSelection ?? (userSelection = await pythonVariablesService.userSelection(editor.document, editor.selection));
+			if (userSelection === undefined) {
+				return;
+			}
+
+			let path = await viewTensorSrv.SaveTensor(userSelection);
 			if (path === undefined) {
 				return;
 			}
@@ -151,24 +174,30 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 		if (vscode.debug.activeDebugSession === undefined) {
 			return undefined;
 		}
-		const isAnImage = await viewImageSrv.isAnImage(document, range);
+
+		const userSelection = await pythonVariablesService.userSelection(document, range);
+		if (userSelection === undefined) {
+			return;
+		}
+
+		const [isAnImage, _] = await viewImageSrv.isAnImage(userSelection);
 		if (isAnImage) {
 			return [
-				{ command: "svifpd.view-image", title: 'View Image' }
+				{ command: "svifpd.view-image", title: 'View Image', arguments: [userSelection] }
 			];
 		}
 
-		const [isAPlot, plotType] = await viewPlotSrv.isAPlot(document, range);
+		const [isAPlot, plotType] = await viewPlotSrv.isAPlot(userSelection);
 		if (isAPlot) {
 			return [
-				{ command: "svifpd.view-plot", title: `View Plot (${plotType})` }
+				{ command: "svifpd.view-plot", title: `View Plot (${plotType})`, arguments: [userSelection] }
 			];
 		}
 
-		const [isATensor, tensorType] = await viewTensorSrv.isATensor(document, range);
+		const [isATensor, tensorType] = await viewTensorSrv.isATensor(userSelection);
 		if (isATensor) {
 			return [
-				{ command: "svifpd.view-tensor", title: `View Tensor (${tensorType})` }
+				{ command: "svifpd.view-tensor", title: `View Tensor (${tensorType})`, arguments: [userSelection] }
 			];
 		}
 

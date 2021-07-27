@@ -173,13 +173,9 @@ def save(path, img, backend, preprocess):
         super(workingDir);
     }
 
-    public async ViewImage(document: vscode.TextDocument, range: vscode.Range, config: ImageViewConfig): Promise<string | undefined> {
+    public async SaveImage(userSelection : UserSelection, config: ImageViewConfig): Promise<string | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return;
-        }
-        const userSelection = await this.variableNameOrExpression(session, document, range);
-        if (userSelection === undefined) {
             return;
         }
 
@@ -210,14 +206,10 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
         return path;
     }
 
-    async isAnImage(document: vscode.TextDocument, range: vscode.Range): Promise<boolean> {
+    async isAnImage(userSelection : UserSelection): Promise<[boolean, string?]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return false;
-        }
-        const userSelection = await this.variableNameOrExpression(session, document, range);
-        if (userSelection === undefined) {
-            return false;
+            return [false];
         }
 
         const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
@@ -237,7 +229,7 @@ ${ViewImageService.define_writer_expression}
             console.log(`evaluate initExpression result: ${res.result}`);
         } catch (error) {
             console.log(error);
-            return false;
+            return [false];
         }
 
         try {
@@ -246,14 +238,14 @@ ${ViewImageService.define_writer_expression}
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
             if (res.result === "True") {
-                return true;
+                return [true, ""];
             }
         } catch (error) {
             console.log(error);
-            return false;
+            return [false];
         }
 
-        return false;
+        return [false];
     }
 
     async validateConfig(config: ImageViewConfig): Promise<boolean> {

@@ -7,15 +7,17 @@ import ViewTensorService from './ViewTensorService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { ImageViewConfig, backends, normalizationMethods } from './types';
+import { ImageViewConfig, backends, normalizationMethods, currentConfigurations } from './config';
 import { stringToEnumValue } from './utils';
-import { UserSelection } from './PythonSelection';
-import { PythonVariablesService } from './PythonVariablesService';
+import { UserSelection, Variable } from './PythonSelection';
+import { pythonVariablesService } from './PythonVariablesService';
+import { VariableWatchTreeProvider, VariableItem } from './VariableWatcher';
+import { pythonInContextExecutor } from './PythonInContextExecutor';
 
-let pythonVariablesService: PythonVariablesService;
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
 let viewTensorSrv: ViewTensorService;
+let variableWatchTreeProvider: VariableWatchTreeProvider;
 
 let services: IStackWatcher[] = [];
 
@@ -25,12 +27,43 @@ const WORKING_DIR = 'svifpd';
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
+	let usetmp = vscode.workspace.getConfiguration("svifpd").get("useTmpPathToSave", true);
+	let dir = context.storagePath as string;
+	if (usetmp || dir === undefined) {
+		dir = tmpdir();
+		dir = join(dir, WORKING_DIR);
+	}
+	viewImageSrv = new ViewImageService(dir);
+	viewPlotSrv = new ViewPlotService(dir);
+	viewTensorSrv = new ViewTensorService(dir);
+
+	if (existsSync(dir)) {
+		let files = readdirSync(dir);
+		files.forEach(file => {
+			let curPath = join(dir, file);
+			unlinkSync(curPath);
+		});
+	}
+	else {
+		mkdirSync(dir);
+	}
+
+	variableWatchTreeProvider = new VariableWatchTreeProvider([viewImageSrv]);
+
 	// register watcher for the debugging session. used to identify the running-frame,
 	// so multi-thread will work
 	// inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
 	vscode.debug.registerDebugAdapterTrackerFactory("python", {
 		createDebugAdapterTracker: _ => {
 			return {
+				onWillStartSession: () => {
+					variableWatchTreeProvider.activate();
+				},
+
+				onWillStopSession: () => {
+					variableWatchTreeProvider.deactivate();
+				},
+
 				onWillReceiveMessage: async msg => {
 					interface ScopesRequest {
 						type: "request";
@@ -47,6 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					}
 				},
+
 				onDidSendMessage: async msg => {
 					interface StoppedEvent {
 						type: "event";
@@ -61,40 +95,30 @@ export function activate(context: vscode.ExtensionContext) {
 						for (const service of services) {
 							service.setThreadId(currentThread);
 						}
+						variableWatchTreeProvider.refresh();
+
+						// workaround for the debugger does not set the variables before it stops,
+						// so we'll retry until it works
+						const tryRefresh = () => {
+							setTimeout(
+								() => {
+									if (!variableWatchTreeProvider.hasInfo) {
+										variableWatchTreeProvider.refresh();
+										tryRefresh();
+									}
+								}, 1000
+							)
+						};
+						tryRefresh();
 					}
 				},
 			};
 		},
 	});
 
-
-	let usetmp = vscode.workspace.getConfiguration("svifpd").get("useTmpPathToSave", true);
-	let dir = context.storagePath as string;
-	if (usetmp || dir === undefined) {
-		dir = tmpdir();
-		dir = join(dir, WORKING_DIR);
-	}
-
 	// init services
-	pythonVariablesService = new PythonVariablesService();
-	services.push(pythonVariablesService);
-	viewImageSrv = new ViewImageService(dir);
-	services.push(viewImageSrv);
-	viewPlotSrv = new ViewPlotService(dir);
-	services.push(viewPlotSrv);
-	viewTensorSrv = new ViewTensorService(dir);
-	services.push(viewTensorSrv);
-
-	if (existsSync(dir)) {
-		let files = readdirSync(dir);
-		files.forEach(file => {
-			let curPath = join(dir, file);
-			unlinkSync(curPath);
-		});
-	}
-	else {
-		mkdirSync(dir);
-	}
+	services.push(pythonVariablesService());
+	services.push(pythonInContextExecutor());
 
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider('python',
@@ -102,24 +126,18 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand("svifpd.view-image", async (editor, _, userSelection?: UserSelection) => {
-			const preferredBackend = vscode.workspace.getConfiguration("svifpd").get("preferredBackend", backends.Standalone);
-			const normalizationMethod = vscode.workspace.getConfiguration("svifpd").get("normalizationMethod", normalizationMethods.normalize);
-			const config: ImageViewConfig = {
-				preferredBackend: stringToEnumValue(backends, preferredBackend)!,
-				normalizationMethod: stringToEnumValue(normalizationMethods, normalizationMethod)!,
-			};
-			const configValid = await viewImageSrv.validateConfig(config);
-			if (!configValid) {
-				return;
-			}
+		vscode.window.registerTreeDataProvider('pythonDebugImageWatch', variableWatchTreeProvider)
+	);
 
-			userSelection ?? (userSelection = await pythonVariablesService.userSelection(editor.document, editor.selection));
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand("svifpd.view-image", async (editor, _, userSelection?: UserSelection) => {
+
+			userSelection ?? (userSelection = await pythonVariablesService().userSelection(editor.document, editor.selection));
 			if (userSelection === undefined) {
 				return;
 			}
 
-			let path = await viewImageSrv.SaveImage(userSelection, config);
+			let path = await viewImageSrv.save(userSelection);
 			if (path === undefined) {
 				return;
 			}
@@ -130,12 +148,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand("svifpd.view-plot", async (editor, _, userSelection?: UserSelection) => {
 
-			userSelection ?? (userSelection = await pythonVariablesService.userSelection(editor.document, editor.selection));
+			userSelection ?? (userSelection = await pythonVariablesService().userSelection(editor.document, editor.selection));
 			if (userSelection === undefined) {
 				return;
 			}
 
-			let path = await viewPlotSrv.SavePlot(userSelection);
+			let path = await viewPlotSrv.save(userSelection);
 			if (path === undefined) {
 				return;
 			}
@@ -146,12 +164,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand("svifpd.view-tensor", async (editor, _, userSelection?: UserSelection) => {
 
-			userSelection ?? (userSelection = await pythonVariablesService.userSelection(editor.document, editor.selection));
+			userSelection ?? (userSelection = await pythonVariablesService().userSelection(editor.document, editor.selection));
 			if (userSelection === undefined) {
 				return;
 			}
 
-			let path = await viewTensorSrv.SaveTensor(userSelection);
+			let path = await viewTensorSrv.save(userSelection);
 			if (path === undefined) {
 				return;
 			}
@@ -159,6 +177,19 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// image watch command
+	context.subscriptions.push(
+		vscode.commands.registerCommand("svifpd.watch-view", async (watchVariable: VariableItem) => {
+
+			console.log(watchVariable)
+
+			let path = await watchVariable.viewService.save({ variable: watchVariable.evaluateName });
+			if (path === undefined) {
+				return;
+			}
+			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
+		})
+	);
 }
 
 // this method is called when your extension is deactivated
@@ -175,7 +206,7 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
 			return undefined;
 		}
 
-		const userSelection = await pythonVariablesService.userSelection(document, range);
+		const userSelection = await pythonVariablesService().userSelection(document, range);
 		if (userSelection === undefined) {
 			return;
 		}

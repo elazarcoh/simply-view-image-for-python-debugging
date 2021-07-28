@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
-import { ImageViewConfig, backends, normalizationMethods } from './types';
-import { isVariableSelection, ScopeVariables, UserSelection, Variable } from './PythonSelection';
-import { ViewerService } from './ViewerService';
+import { ImageViewConfig, backends, normalizationMethods, currentConfigurations } from './config';
+import { isVariableSelection, ScopeVariables, UserSelection, Variable, VariableSelection } from './PythonSelection';
+import { VariableInformation, ViewerService } from './ViewerService';
 
+type ImageInformation = {
+    shape: string,
+    dtype: string,
+}
 
 export default class ViewImageService extends ViewerService {
 
@@ -162,6 +166,12 @@ def save(path, img, backend, preprocess):
     func = get_function(backend)
     img = prepare_image(img, preprocess)
     func(path, img)
+
+def image_info(img):
+    img = np.array(img)
+    shape = str(img.shape)
+    dtype = str(img.dtype)
+    return ";".join([shape, dtype])
 '''
     , _python_view_image_mod.__dict__
     )
@@ -173,9 +183,14 @@ def save(path, img, backend, preprocess):
         super(workingDir);
     }
 
-    public async SaveImage(userSelection : UserSelection, config: ImageViewConfig): Promise<string | undefined> {
+    public async save(userSelection: UserSelection): Promise<string | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
+            return;
+        }
+        const config = currentConfigurations();
+        const configValid = await this.validateConfig(config);
+        if (!configValid) {
             return;
         }
 
@@ -206,7 +221,70 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
         return path;
     }
 
-    async isAnImage(userSelection : UserSelection): Promise<[boolean, string?]> {
+    async variableInformation(variableSelection: VariableSelection): Promise<VariableInformation | undefined> {
+        const session = vscode.debug.activeDebugSession;
+        if (session === undefined) {
+            return;
+        }
+        const [isAnImage, _] = await this.isAnImage(variableSelection);
+        if (!isAnImage) {
+            return;
+        }
+
+        const imageInfo = await this.imageInformation(variableSelection);
+        if (imageInfo)
+            return { name: variableSelection.variable, more: imageInfo }
+        else
+            return undefined;
+    }
+
+    private async imageInformation(userSelection: UserSelection): Promise<ImageInformation | undefined> {
+        const session = vscode.debug.activeDebugSession;
+        if (session === undefined) {
+            return;
+        }
+
+        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
+
+        // test if evaluated to numpy array legal image
+
+        try {
+            const initExpression = (
+                `
+exec(\"\"\"
+${ViewImageService.define_writer_expression}
+\"\"\"
+)
+`
+            );
+            const res = await this.evaluate(session, initExpression);
+            console.log(`evaluate initExpression result: ${res.result}`);
+        } catch (error) {
+            console.log(error);
+            return;
+        }
+
+        try {
+            const expression = (`${ViewImageService.py_module}.image_info(${vn})`);
+            const res = await this.evaluate(session, expression);
+            console.log(`evaluate expression result: ${res.result}`);
+            const [shapeStr, dtypeStr] = res.result.replaceAll("'", "").split(";")
+            if (shapeStr) {
+                return {
+                    shape: shapeStr,
+                    dtype: dtypeStr,
+                };
+            }
+        } catch (error) {
+            console.log(error);
+            return;
+        }
+
+        return;
+
+    }
+
+    async isAnImage(userSelection: UserSelection): Promise<[boolean, string?]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return [false];

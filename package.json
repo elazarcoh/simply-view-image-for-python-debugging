@@ -43,8 +43,34 @@
 				"command": "svifpd.view-tensor",
 				"title": "View Tensor (Python Debug)",
 				"enablement": "inDebugMode"
+			},
+			{
+				"command": "svifpd.watch-view",
+				"title": "View",
+				"enablement": "inDebugMode",
+				"icon": "$(eye)"
 			}
 		],
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "svifpd.watch-view",
+					"when": "view == pythonDebugImageWatch && viewItem == variable",
+					"group": "inline"
+				}
+			]
+		},
+		"views": {
+			"debug": [
+				{
+					"id": "pythonDebugImageWatch",
+					"name": "Image Watch",
+					"icon": "eye",
+					"visibility": "visible",
+					"type": "tree"
+				}
+			]
+		},
 		"keybindings": [
 			{
 				"command": "svifpd.view-image",

@@ -24,9 +24,9 @@ export abstract class ViewerService {
     }
 
     abstract variableInformation(userSelection: VariableSelection) : Promise<VariableInformation | undefined>;
-    abstract save(userSelection : UserSelection) : Promise<string | undefined>;
+    abstract save(userSelection : UserSelection, path?: string) : Promise<string | undefined>;
 
-    protected pathForSelection(userSelection: UserSelection) {
+    public pathForSelection(userSelection: UserSelection): string {
         if (isVariableSelection(userSelection)) {
             return join(this.workingDir, `${userSelection.variable}(${this.currentImgIdx}).png`);
         } else {

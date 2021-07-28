@@ -86,14 +86,14 @@ def save(path, obj):
         super(workingDir);
     }
 
-    public async save(userSelection : UserSelection): Promise<string | undefined> {
+    public async save(userSelection : UserSelection, path?: string): Promise<string | undefined> {
          const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return ;
         }
 
         const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
-        const path = this.pathForSelection(userSelection);
+        path ?? (path = this.pathForSelection(userSelection));
 
         const py_save_path = path.replace(/\\/g, '/');
 

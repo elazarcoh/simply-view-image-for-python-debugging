@@ -7,16 +7,15 @@ import ViewTensorService from './ViewTensorService';
 import { tmpdir } from 'os';
 import { mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { ImageViewConfig, backends, normalizationMethods, currentConfigurations } from './config';
-import { stringToEnumValue } from './utils';
-import { UserSelection, Variable } from './PythonSelection';
+import { UserSelection } from './PythonSelection';
 import { pythonVariablesService } from './PythonVariablesService';
-import { VariableWatchTreeProvider, VariableItem } from './VariableWatcher';
+import { VariableWatchTreeProvider, VariableItem, VariableWatcher } from './VariableWatcher';
 import { pythonInContextExecutor } from './PythonInContextExecutor';
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
 let viewTensorSrv: ViewTensorService;
+let variableWatcherSrv: VariableWatcher;
 let variableWatchTreeProvider: VariableWatchTreeProvider;
 
 let services: IStackWatcher[] = [];
@@ -48,7 +47,8 @@ export function activate(context: vscode.ExtensionContext) {
 		mkdirSync(dir);
 	}
 
-	variableWatchTreeProvider = new VariableWatchTreeProvider([viewImageSrv]);
+	variableWatcherSrv = new VariableWatcher([viewImageSrv]);
+	variableWatchTreeProvider = new VariableWatchTreeProvider(variableWatcherSrv);
 
 	// register watcher for the debugging session. used to identify the running-frame,
 	// so multi-thread will work
@@ -57,11 +57,12 @@ export function activate(context: vscode.ExtensionContext) {
 		createDebugAdapterTracker: _ => {
 			return {
 				onWillStartSession: () => {
-					variableWatchTreeProvider.activate();
+					variableWatcherSrv.activate();
 				},
 
 				onWillStopSession: () => {
-					variableWatchTreeProvider.deactivate();
+					variableWatcherSrv.deactivate();
+					variableWatchTreeProvider.refresh();
 				},
 
 				onWillReceiveMessage: async msg => {
@@ -91,25 +92,38 @@ export function activate(context: vscode.ExtensionContext) {
 					}
 					const m = msg as StoppedEvent;
 					if (m.type === "event" && m.event === "stopped") {
+						// just in case it wasn't set earlier for some reason
+						variableWatcherSrv.activate();
+
 						const currentThread = m.body.threadId;
 						for (const service of services) {
 							service.setThreadId(currentThread);
 						}
-						variableWatchTreeProvider.refresh();
 
+						const updateWatchView = () => {
+							variableWatcherSrv.refreshVariablesAndWatches().then(() => variableWatchTreeProvider.refresh()).catch();
+						}
 						// workaround for the debugger does not set the variables before it stops,
 						// so we'll retry until it works
-						const tryRefresh = () => {
-							setTimeout(
-								() => {
-									if (!variableWatchTreeProvider.hasInfo) {
-										variableWatchTreeProvider.refresh();
-										tryRefresh();
-									}
-								}, 1000
-							)
-						};
-						tryRefresh();
+						if (!variableWatcherSrv.hasInfo) {
+							const tryRefresh = () => {
+								setTimeout(
+									async () => {
+										if (!variableWatcherSrv.hasInfo) {
+											await updateWatchView();
+											tryRefresh();
+										}
+										else {
+											variableWatchTreeProvider.refresh();
+										}
+									}, 500
+								)
+							};
+							tryRefresh();
+						}
+						else {
+							updateWatchView();
+						}
 					}
 				},
 			};
@@ -183,13 +197,31 @@ export function activate(context: vscode.ExtensionContext) {
 
 			console.log(watchVariable)
 
-			let path = await watchVariable.viewService.save({ variable: watchVariable.evaluateName });
+			let path = await watchVariable.viewService.save({ variable: watchVariable.evaluateName }, watchVariable.path);
 			if (path === undefined) {
 				return;
 			}
 			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
 		})
 	);
+
+	// image watch track commands
+	context.subscriptions.push(
+		vscode.commands.registerCommand("svifpd.watch-track-enable", async (watchVariable: VariableItem) => {
+			watchVariable.setTracked();
+			variableWatchTreeProvider.refresh();
+		})
+	);
+
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand("svifpd.watch-track-disable", async (watchVariable: VariableItem) => {
+			watchVariable.setNonTracked();
+			variableWatchTreeProvider.refresh();
+		})
+	);
+
+
 }
 
 // this method is called when your extension is deactivated

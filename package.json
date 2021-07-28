@@ -48,15 +48,51 @@
 				"command": "svifpd.watch-view",
 				"title": "View",
 				"enablement": "inDebugMode",
+				"icon": "$(link-external)"
+			},
+			{
+				"command": "svifpd.watch-track-enable",
+				"title": "Track - Enable",
+				"enablement": "inDebugMode",
 				"icon": "$(eye)"
+			},
+			{
+				"command": "svifpd.watch-track-disable",
+				"title": "Track - Disable",
+				"enablement": "inDebugMode",
+				"icon": "$(eye-closed)"
+			}
+		],
+		"commandPalette": [
+			{
+				"command": "svifpd.watch-view",
+				"when": "false"
+			},
+			{
+				"command": "svifpd.watch-track-enable",
+				"when": "false"
+			},
+			{
+				"command": "svifpd.watch-track-disable",
+				"when": "false"
 			}
 		],
 		"menus": {
 			"view/item/context": [
 				{
 					"command": "svifpd.watch-view",
-					"when": "view == pythonDebugImageWatch && viewItem == variable",
-					"group": "inline"
+					"when": "view == pythonDebugImageWatch && viewItem == nonTrackedVariable || view == pythonDebugImageWatch && viewItem == trackedVariable",
+					"group": "inline@1"
+				},
+				{
+					"command": "svifpd.watch-track-enable",
+					"when": "view == pythonDebugImageWatch && viewItem == nonTrackedVariable",
+					"group": "inline@2"
+				},
+				{
+					"command": "svifpd.watch-track-disable",
+					"when": "view == pythonDebugImageWatch && viewItem == trackedVariable",
+					"group": "inline@3"
 				}
 			]
 		},

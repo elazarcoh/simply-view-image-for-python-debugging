@@ -62,10 +62,11 @@ export class VariableWatcher {
 
         this._variables = newVariables;
 
-        await allFulfilled(
-            this._variables
-                .filter(v => v.trackingState === VariableTrackingState.tracked)
-                .map(v => v.viewService.save({ variable: v.evaluateName }, v.path)));
+        // must be processes sequentially
+        for(const v of this._variables.filter(v => v.trackingState === VariableTrackingState.tracked))
+        {
+            await v.viewService.save({variable:v.evaluateName}, v.path)
+        }
     }
 
     private async acquireVariables() {

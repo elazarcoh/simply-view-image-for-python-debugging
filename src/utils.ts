@@ -20,6 +20,14 @@ export function allFulfilled<T>(ps: Promise<T>[]): Promise<T[]> {
     return resolvedPromises;
 }
 
+export async function resolveSequentially<T>(ps: Promise<T>[]): Promise<T[]> {
+    const resolved = []
+    for (const p of ps) {
+        resolved.push(await p);
+    }
+    return resolved;
+}
+
 export function notEmpty<T>(value: T | null | undefined): value is T {
     return value !== null && value !== undefined;
 }

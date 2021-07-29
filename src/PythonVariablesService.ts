@@ -45,7 +45,7 @@ class PythonVariablesService {
 
         const getVars = async (scope: any): Promise<Variable[]> => {
             try {
-                const res = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
+                const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
                 return res.variables;
             } catch (error) {
                 console.log(error)

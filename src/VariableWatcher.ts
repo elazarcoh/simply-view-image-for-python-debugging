@@ -41,7 +41,29 @@ export class VariableWatcher {
 
     async refreshVariablesAndWatches(): Promise<void> {
         if (!this._activated) return;
-        const newVariables = await this.acquireVariables();
+
+        // workaround for the debugger does not set the variables before it stops,
+        // so we'll retry until it works
+        const getVariablesFunc = async () => {
+            if (!this._activated) return;
+            return this.acquireVariables();
+        };
+        const tryGetVariableRec = (resolve: any, reject: any) => {
+            setTimeout(async () => {
+                try {
+                    const res = await getVariablesFunc()
+                    resolve(res)
+                }
+                catch
+                {
+                    tryGetVariableRec(resolve, reject)
+                }
+            }, 500);
+        };
+        function getVariables(): Promise<VariableItem[] | undefined> {
+            return new Promise(tryGetVariableRec);
+        }
+        const newVariables = await getVariables();
         if (newVariables === undefined) return;
         this._hasInfo = true;
 
@@ -63,9 +85,8 @@ export class VariableWatcher {
         this._variables = newVariables;
 
         // must be processes sequentially
-        for(const v of this._variables.filter(v => v.trackingState === VariableTrackingState.tracked))
-        {
-            await v.viewService.save({variable:v.evaluateName}, v.path)
+        for (const v of this._variables.filter(v => v.trackingState === VariableTrackingState.tracked)) {
+            await v.viewService.save({ variable: v.evaluateName }, v.path)
         }
     }
 
@@ -175,8 +196,6 @@ export class VariableWatchTreeProvider implements vscode.TreeDataProvider<WatchV
     }
 
     async getChildren(element?: WatchVariableTreeItem): Promise<WatchVariableTreeItem[] | null | undefined> {
-        if (!this.watcherService.hasInfo) return;
-
         if (!element) {
             return this.watcherService.variables();
         }

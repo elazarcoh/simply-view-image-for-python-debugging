@@ -91,39 +91,21 @@ export function activate(context: vscode.ExtensionContext) {
 						};
 					}
 					const m = msg as StoppedEvent;
+					if (m.type === "event") {
+						console.log(m.event)
+					}
 					if (m.type === "event" && m.event === "stopped") {
-						// just in case it wasn't set earlier for some reason
-						variableWatcherSrv.activate();
-
 						const currentThread = m.body.threadId;
 						for (const service of services) {
 							service.setThreadId(currentThread);
 						}
 
+						// just in case it wasn't set earlier for some reason
+						variableWatcherSrv.activate();
 						const updateWatchView = () => {
-							variableWatcherSrv.refreshVariablesAndWatches().then(() => variableWatchTreeProvider.refresh()).catch();
+							return variableWatcherSrv.refreshVariablesAndWatches().then(() => variableWatchTreeProvider.refresh()).catch();
 						}
-						// workaround for the debugger does not set the variables before it stops,
-						// so we'll retry until it works
-						if (!variableWatcherSrv.hasInfo) {
-							const tryRefresh = () => {
-								setTimeout(
-									async () => {
-										if (!variableWatcherSrv.hasInfo) {
-											await updateWatchView();
-											tryRefresh();
-										}
-										else {
-											variableWatchTreeProvider.refresh();
-										}
-									}, 500
-								)
-							};
-							tryRefresh();
-						}
-						else {
-							updateWatchView();
-						}
+						return updateWatchView();
 					}
 				},
 			};

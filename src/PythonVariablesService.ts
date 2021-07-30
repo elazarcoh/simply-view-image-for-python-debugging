@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { ScopeVariables, UserSelection, Variable } from './PythonSelection';
-import { allFulfilled } from './utils';
 
 
 class PythonVariablesService {
@@ -44,16 +43,11 @@ class PythonVariablesService {
         const global = scopes[1];
 
         const getVars = async (scope: any): Promise<Variable[]> => {
-            try {
-                const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
-                return res.variables;
-            } catch (error) {
-                console.log(error)
-            }
-            return [];
+            const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
+            return res.variables;
         };
 
-        const [localVariables, globalVariables] = await allFulfilled([
+        const [localVariables, globalVariables] = await Promise.all([
             local ? getVars(local) : Promise.resolve([]),
             global ? getVars(global) : Promise.resolve([]),
         ]);

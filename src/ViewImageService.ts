@@ -4,6 +4,7 @@ import { isVariableSelection, ScopeVariables, UserSelection, Variable, VariableS
 import { VariableInformation, ViewerService } from './ViewerService';
 
 type ImageInformation = {
+    type: string,
     shape: string,
     dtype: string,
 }
@@ -168,10 +169,11 @@ def save(path, img, backend, preprocess):
     func(path, img)
 
 def image_info(img):
+    obj_type = type(img).__name__
     img = np.array(img)
     shape = str(img.shape)
     dtype = str(img.dtype)
-    return ";".join([shape, dtype])
+    return ";".join([obj_type, shape, dtype])
 '''
     , _python_view_image_mod.__dict__
     )
@@ -268,15 +270,16 @@ ${ViewImageService.define_writer_expression}
             const expression = (`${ViewImageService.py_module}.image_info(${vn})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
-            const [shapeStr, dtypeStr] = res.result.replaceAll("'", "").split(";")
+            const [objTypeStr, shapeStr, dtypeStr] = res.result.replaceAll("'", "").split(";")
             if (shapeStr) {
                 return {
+                    type: objTypeStr,
                     shape: shapeStr,
                     dtype: dtypeStr,
                 };
             }
         } catch (error) {
-            console.log(error);
+            console.log("imageInformation python eval error:", error);
             return;
         }
 

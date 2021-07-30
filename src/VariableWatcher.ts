@@ -30,7 +30,7 @@ export class VariableWatcher {
     }
 
     activate(): void {
-        this._activated = true;
+        this._activated = vscode.workspace.getConfiguration("svifpd").get<boolean>("imageWatch", true);
     }
 
     deactivate(): void {
@@ -39,13 +39,17 @@ export class VariableWatcher {
         this._variables = [];
     }
 
+    get activated(): boolean {
+        return this._activated;
+    }
+
     async refreshVariablesAndWatches(): Promise<void> {
-        if (!this._activated) return;
+        if (!this.activated) return;
 
         // workaround for the debugger does not set the variables before it stops,
         // so we'll retry until it works
         const getVariablesFunc = async () => {
-            if (!this._activated) return;
+            if (!this.activated) return;
             return this.acquireVariables();
         };
         const tryGetVariableRec = (resolve: any, reject: any) => {

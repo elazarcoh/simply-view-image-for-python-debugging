@@ -91,9 +91,6 @@ export function activate(context: vscode.ExtensionContext) {
 						};
 					}
 					const m = msg as StoppedEvent;
-					if (m.type === "event") {
-						console.log(m.event)
-					}
 					if (m.type === "event" && m.event === "stopped") {
 						const currentThread = m.body.threadId;
 						for (const service of services) {
@@ -103,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
 						// just in case it wasn't set earlier for some reason
 						variableWatcherSrv.activate();
 						const updateWatchView = () => {
-							return variableWatcherSrv.refreshVariablesAndWatches().then(() => variableWatchTreeProvider.refresh()).catch();
+							return variableWatcherSrv.refreshVariablesAndWatches().then(() => variableWatchTreeProvider.refresh()).catch(e => console.log(e));
 						}
 						return updateWatchView();
 					}
@@ -177,8 +174,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand("svifpd.watch-view", async (watchVariable: VariableItem) => {
 
-			console.log(watchVariable)
-
 			let path = await watchVariable.viewService.save({ variable: watchVariable.evaluateName }, watchVariable.path);
 			if (path === undefined) {
 				return;
@@ -195,15 +190,12 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-
 	context.subscriptions.push(
 		vscode.commands.registerCommand("svifpd.watch-track-disable", async (watchVariable: VariableItem) => {
 			watchVariable.setNonTracked();
 			variableWatchTreeProvider.refresh();
 		})
 	);
-
-
 }
 
 // this method is called when your extension is deactivated

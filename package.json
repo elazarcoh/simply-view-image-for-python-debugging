@@ -103,7 +103,8 @@
 					"name": "Image Watch",
 					"icon": "eye",
 					"visibility": "visible",
-					"type": "tree"
+					"type": "tree",
+					"when": "config.svifpd.imageWatch"
 				}
 			]
 		},
@@ -148,6 +149,11 @@
 					],
 					"default": "normalize",
 					"description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
+				},
+				"svifpd.imageWatch": {
+					"type": "boolean",
+					"default": true,
+					"description": "Use the extension to track images (reshow the image at each debugger step)"
 				}
 			}
 		}

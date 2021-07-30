@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { VariableInformation, ViewerService } from './ViewerService';
-import { isVariableSelection, UserSelection } from './PythonSelection';
+import { isVariableSelection, UserSelection, VariableSelection } from './PythonSelection';
 
 export default class ViewTensorService extends ViewerService {
 
@@ -107,17 +107,19 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
         return path;
     }
 
-    async variableInformation(userSelection: UserSelection): Promise<VariableInformation | undefined> {
+    async variableInformation(variableSelection: VariableSelection): Promise<VariableInformation | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return;
         }
-
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
-
-        return { name: vn, more: {} }
+        const [isATensor, type] = await this.isATensor(variableSelection);
+        if (isATensor) {
+            return { name: variableSelection.variable, more: { type: type } };
+        } else {
+            return undefined;
+        }
     }
-    
+
     async isATensor(userSelection: UserSelection): Promise<[boolean, string]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {

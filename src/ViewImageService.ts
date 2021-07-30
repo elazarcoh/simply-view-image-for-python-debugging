@@ -235,7 +235,7 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
 
         const imageInfo = await this.imageInformation(variableSelection);
         if (imageInfo)
-            return { name: variableSelection.variable, more: imageInfo }
+            return { name: variableSelection.variable, more: imageInfo };
         else
             return undefined;
     }

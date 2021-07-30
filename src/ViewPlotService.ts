@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { VariableInformation, ViewerService } from './ViewerService';
-import { isVariableSelection, UserSelection } from './PythonSelection';
+import { isVariableSelection, UserSelection, VariableSelection } from './PythonSelection';
 
 export default class ViewPlotService extends ViewerService {
 
@@ -86,10 +86,10 @@ def save(path, obj):
         super(workingDir);
     }
 
-    public async save(userSelection : UserSelection, path?: string): Promise<string | undefined> {
-         const session = vscode.debug.activeDebugSession;
+    public async save(userSelection: UserSelection, path?: string): Promise<string | undefined> {
+        const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
-            return ;
+            return;
         }
 
         const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
@@ -119,18 +119,20 @@ ${ViewPlotService.py_module}.save("${py_save_path}", ${vn})
         return path;
     }
 
-    async variableInformation(userSelection: UserSelection): Promise<VariableInformation | undefined> {
+    async variableInformation(variableSelection: VariableSelection): Promise<VariableInformation | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return;
         }
-
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
-
-        return { name: vn, more: {} }
+        const [isAPlot, type] = await this.isAPlot(variableSelection);
+        if (isAPlot) {
+            return { name: variableSelection.variable, more: { type: type } };
+        } else {
+            return undefined;
+        }
     }
-    
-    async isAPlot(userSelection : UserSelection): Promise<[boolean, string]> {
+
+    async isAPlot(userSelection: UserSelection): Promise<[boolean, string]> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return [false, ""];

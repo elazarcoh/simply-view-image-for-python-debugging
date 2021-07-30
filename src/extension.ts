@@ -11,19 +11,20 @@ import { UserSelection } from './PythonSelection';
 import { pythonVariablesService } from './PythonVariablesService';
 import { VariableWatchTreeProvider, VariableItem, VariableWatcher } from './VariableWatcher';
 import { pythonInContextExecutor } from './PythonInContextExecutor';
+import { ViewerService } from './ViewerService';
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
 let viewTensorSrv: ViewTensorService;
+
 let variableWatcherSrv: VariableWatcher;
 let variableWatchTreeProvider: VariableWatchTreeProvider;
 
-let services: IStackWatcher[] = [];
+const services: IStackWatcher[] = [];
+const viewServices: Record<string, ViewerService> = {};
 
 const WORKING_DIR = 'svifpd';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	let usetmp = vscode.workspace.getConfiguration("svifpd").get("useTmpPathToSave", true);
@@ -33,8 +34,11 @@ export function activate(context: vscode.ExtensionContext) {
 		dir = join(dir, WORKING_DIR);
 	}
 	viewImageSrv = new ViewImageService(dir);
+	viewServices["images"] = viewImageSrv;
 	viewPlotSrv = new ViewPlotService(dir);
+	viewServices["plots"] = viewPlotSrv;
 	viewTensorSrv = new ViewTensorService(dir);
+	viewServices["image-tensors"] = viewTensorSrv;
 
 	if (existsSync(dir)) {
 		let files = readdirSync(dir);
@@ -47,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
 		mkdirSync(dir);
 	}
 
-	variableWatcherSrv = new VariableWatcher([viewImageSrv]);
+	variableWatcherSrv = new VariableWatcher(viewServices);
 	variableWatchTreeProvider = new VariableWatchTreeProvider(variableWatcherSrv);
 
 	// register watcher for the debugging session. used to identify the running-frame,

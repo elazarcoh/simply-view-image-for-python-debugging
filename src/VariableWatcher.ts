@@ -21,7 +21,7 @@ export class VariableWatcher {
     private _variables: VariableItem[] = [];
 
     constructor(
-        private readonly viewServices: ViewerService[],
+        private readonly viewServices: Record<string, ViewerService>,
         private readonly variablesService = pythonVariablesService(),
     ) { }
 
@@ -106,8 +106,12 @@ export class VariableWatcher {
         const names = allVariables.map(v => v.name);
         const uniqueVariables = allVariables.filter((value, index) => names.indexOf(value.name) === index);
 
+        const watchServicesInConfig = vscode.workspace.getConfiguration("svifpd").get<string[]>("imageWatch.objects", ["images"]);
+        const viewerServicesToUse = Object.entries(this.viewServices)
+            .filter(([id, _]) => watchServicesInConfig.includes(id))
+            .map(([_, srv]) => srv);
         const items = await allFulfilled(
-            uniqueVariables.map(v => toWatchVariable(v, this.viewServices)).filter(notEmpty)
+            uniqueVariables.map(v => toWatchVariable(v, viewerServicesToUse)).filter(notEmpty)
         );
         return items.filter(notEmpty);
     }

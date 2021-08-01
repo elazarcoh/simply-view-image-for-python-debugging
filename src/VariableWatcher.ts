@@ -72,17 +72,17 @@ export class VariableWatcher {
         this._hasInfo = true;
 
         const currentVariables = this._variables.reduce(
-            (map: Record<string, [VariableTrackingState, string]>, obj: VariableItem) => {
-                map[obj.evaluateName] = [obj.trackingState, obj.path];
+            (map: Record<string, VariableItem>, obj: VariableItem) => {
+                map[obj.evaluateName] = obj;
                 return map;
             }, {});
 
         for (let variable of newVariables) {
             const current = currentVariables[variable.evaluateName];
             if (current !== undefined) {
-                const [state, path] = current;
-                variable.contextValue = state;
-                variable.path = path;
+                variable.contextValue = current.trackingState;
+                variable.path = current.path;
+                variable.iconPath = current.iconPath;
             }
         }
 

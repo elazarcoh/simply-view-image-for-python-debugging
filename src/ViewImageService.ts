@@ -15,6 +15,9 @@ export default class ViewImageService extends ViewerService {
     // keeps it in _python_view_image_mod variable to minimize the namespace pollution as much as possible
     static readonly py_module = '_python_view_image_mod';
     static readonly np = '_python_view_image_mod.np';
+    static readonly save_func = 'save';
+    static readonly check_obj_func = 'is_a';
+    static readonly info_func = 'image_info'
     static readonly define_writer_expression: string = `
 try:
     _python_view_image_mod
@@ -163,14 +166,22 @@ def get_function(preferred=None):
             break
     return save_function
 
-def save(path, img, backend, preprocess):
+def ${ViewImageService.save_func}(path, img, backend, preprocess):
     func = get_function(backend)
     img = prepare_image(img, preprocess)
     func(path, img)
 
-def image_info(img):
+def ${ViewImageService.check_obj_func}(img):
+    try:    
+        img = np.asarray(img)
+        is_image = (img.ndim == 2) or (img.ndim == 3 and img.shape[2] in (1, 3, 4))
+        return is_image
+    except TypeError:
+        return False
+
+def ${ViewImageService.info_func}(img):
     obj_type = type(img).__name__
-    img = np.array(img)
+    img = np.asarray(img)
     shape = str(img.shape)
     dtype = str(img.dtype)
     return ";".join([obj_type, shape, dtype])
@@ -314,11 +325,11 @@ ${ViewImageService.define_writer_expression}
         }
 
         try {
-            const np = ViewImageService.np;
-            const expression = (`(${np}.array(${vn}).ndim == 2) or (${np}.array(${vn}).ndim == 3 and ${np}.array(${vn}).shape[2] in (1, 3, 4))`);
+            const expression = (`${ViewImageService.py_module}.${ViewImageService.check_obj_func}(${vn})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
-            if (res.result === "True") {
+            const isImage = res.result;
+            if (isImage === "True") {
                 return [true, ""];
             }
         } catch (error) {

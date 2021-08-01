@@ -171,8 +171,21 @@ def ${ViewImageService.save_func}(path, img, backend, preprocess):
     img = prepare_image(img, preprocess)
     func(path, img)
 
-def ${ViewImageService.check_obj_func}(img):
-    try:    
+def is_pillow_image(img):
+    PIL = try_import('PIL')
+    if PIL:
+        return isinstance(img, PIL.Image.Image)
+    else:
+        return False
+def is_numpy_image(img):
+    return isinstance(img, np.ndarray)
+restricted_types_check_functions = [is_pillow_image, is_numpy_image]
+
+def ${ViewImageService.check_obj_func}(img, restricted_types=False):
+    try: 
+        if restricted_types:
+            if not any(f(img) for f in restricted_types_check_functions):
+                return False
         img = np.asarray(img)
         is_image = (img.ndim == 2) or (img.ndim == 3 and img.shape[2] in (1, 3, 4))
         return is_image
@@ -325,7 +338,8 @@ ${ViewImageService.define_writer_expression}
         }
 
         try {
-            const expression = (`${ViewImageService.py_module}.${ViewImageService.check_obj_func}(${vn})`);
+            const restrictImageTypes = vscode.workspace.getConfiguration("svifpd").get<boolean>("restrictImageTypes", true) ? "True" : "False";
+            const expression = (`${ViewImageService.py_module}.${ViewImageService.check_obj_func}(${vn}, restricted_types=${restrictImageTypes})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
             const isImage = res.result;

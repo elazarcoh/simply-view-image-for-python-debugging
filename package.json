@@ -150,12 +150,16 @@
 					"default": "normalize",
 					"description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
 				},
+				"svifpd.restrictImageTypes": {
+					"type": "boolean",
+					"default": true,
+					"description": "Restrict image types to numpy.ndarray/PIL.Image only"
+				},
 				"svifpd.imageWatch.enable": {
 					"type": "boolean",
 					"default": true,
 					"description": "Use the extension to track images (reshow the image at each debugger step)"
 				},
-
 				"svifpd.imageWatch.objects": {
 					"type": "array",
 					"items": {

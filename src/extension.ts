@@ -25,6 +25,11 @@ const viewServices: Record<string, ViewerService> = {};
 
 const WORKING_DIR = 'svifpd';
 
+function viewImage(path: string, preview: boolean) {
+	const options = { viewColumn: vscode.ViewColumn.Beside, preview: preview, preserveFocus: true};
+	return vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), options);
+}
+
 export function activate(context: vscode.ExtensionContext) {
 
 	let usetmp = vscode.workspace.getConfiguration("svifpd").get("useTmpPathToSave", true);
@@ -138,7 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (path === undefined) {
 				return;
 			}
-			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
+			viewImage(path, true);
 		})
 	);
 
@@ -154,7 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (path === undefined) {
 				return;
 			}
-			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
+			viewImage(path, true);
 		})
 	);
 
@@ -170,7 +175,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (path === undefined) {
 				return;
 			}
-			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
+			viewImage(path, true);
 		})
 	);
 
@@ -182,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (path === undefined) {
 				return;
 			}
-			vscode.commands.executeCommand("vscode.open", vscode.Uri.file(path), vscode.ViewColumn.Beside);
+			viewImage(path, false);
 		})
 	);
 

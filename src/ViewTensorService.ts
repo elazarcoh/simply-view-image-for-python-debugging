@@ -2,6 +2,11 @@ import * as vscode from 'vscode';
 import { VariableInformation, ViewerService } from './ViewerService';
 import { isVariableSelection, UserSelection, VariableSelection } from './PythonSelection';
 
+type TensorInformation = {
+    shape: string,
+    dtype: string,
+}
+
 export default class ViewTensorService extends ViewerService {
 
     // define all the needed stuff in python.
@@ -10,6 +15,7 @@ export default class ViewTensorService extends ViewerService {
     static readonly tensor_types = 'tensor_types';
     static readonly save_func = 'save';
     static readonly check_obj_func = 'is_a';
+    static readonly info_func = 'tensor_info';
 
     static readonly torch_utils: string = `
 import torchvision, torch
@@ -63,6 +69,10 @@ def ${ViewTensorService.save_func}(path, obj):
     if save_args is not None:
         _, save_func, kwargs = save_args
         save_func(path, obj, **kwargs)
+def ${ViewTensorService.info_func}(tensor):
+    shape = str(tuple(tensor.shape))
+    dtype = str(tensor.dtype)
+    return ";".join([shape, dtype])
 '''
     , ${ViewTensorService.py_module}.__dict__
     )
@@ -112,12 +122,62 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
         if (session === undefined) {
             return;
         }
-        const [isATensor, type] = await this.isATensor(variableSelection);
-        if (isATensor) {
-            return { name: variableSelection.variable, more: { type: type } };
-        } else {
-            return undefined;
+        const [isATensor, _] = await this.isATensor(variableSelection);
+        if (!isATensor) {
+            return;
         }
+
+        const tensorInfo = await this.tensorInformation(variableSelection);
+        if (tensorInfo)
+            return { name: variableSelection.variable, more: tensorInfo };
+        else
+            return undefined;
+    }
+
+    private async tensorInformation(userSelection: UserSelection): Promise<TensorInformation | undefined> {
+        const session = vscode.debug.activeDebugSession;
+        if (session === undefined) {
+            return;
+        }
+
+        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
+
+        // test if evaluated to numpy array legal image
+
+        try {
+            const initExpression = (
+                `
+exec(\"\"\"
+${ViewTensorService.define_writer_expression}
+\"\"\"
+)
+`
+            );
+            const res = await this.evaluate(session, initExpression);
+            console.log(`evaluate initExpression result: ${res.result}`);
+        } catch (error) {
+            console.log(error);
+            return;
+        }
+
+        try {
+            const expression = (`${ViewTensorService.py_module}.${ViewTensorService.info_func}(${vn})`);
+            const res = await this.evaluate(session, expression);
+            console.log(`evaluate expression result: ${res.result}`);
+            const [shapeStr, dtypeStr] = res.result.replaceAll("'", "").split(";")
+            if (shapeStr) {
+                return {
+                    shape: shapeStr,
+                    dtype: dtypeStr,
+                };
+            }
+        } catch (error) {
+            console.log("imageInformation python eval error:", error);
+            return;
+        }
+
+        return;
+
     }
 
     async isATensor(userSelection: UserSelection): Promise<[boolean, string]> {

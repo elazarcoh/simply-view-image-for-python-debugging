@@ -200,6 +200,18 @@ export function activate(context: vscode.ExtensionContext) {
 			variableWatchTreeProvider.refresh();
 		})
 	);
+
+	// image watch manual refresh command
+	context.subscriptions.push(
+		vscode.commands.registerCommand("svifpd.watch-refresh", async () => {
+			// just in case it wasn't set earlier for some reason
+			variableWatcherSrv.activate();
+			await variableWatcherSrv.refreshVariablesAndWatches();
+			variableWatchTreeProvider.refresh();
+		})
+	);
+
+
 }
 
 // this method is called when your extension is deactivated

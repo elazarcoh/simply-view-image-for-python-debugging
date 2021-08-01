@@ -61,23 +61,40 @@
 				"title": "Track - Disable",
 				"enablement": "inDebugMode",
 				"icon": "$(eye-closed)"
-			}
-		],
-		"commandPalette": [
-			{
-				"command": "svifpd.watch-view",
-				"when": "false"
 			},
 			{
-				"command": "svifpd.watch-track-enable",
-				"when": "false"
-			},
-			{
-				"command": "svifpd.watch-track-disable",
-				"when": "false"
+				"command": "svifpd.watch-refresh",
+				"title": "Refresh",
+				"enablement": "inDebugMode",
+				"icon": "$(timeline-refresh)"
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "svifpd.watch-view",
+					"when": "false"
+				},
+				{
+					"command": "svifpd.watch-track-enable",
+					"when": "false"
+				},
+				{
+					"command": "svifpd.watch-track-disable",
+					"when": "false"
+				},
+				{
+					"command": "svifpd.watch-refresh",
+					"when": "false"
+				}
+			],
+			"view/title": [
+				{
+					"command": "svifpd.watch-refresh",
+					"when": "view == pythonDebugImageWatch",
+					"group": "navigation@1"
+				}
+			],
 			"view/item/context": [
 				{
 					"command": "svifpd.watch-view",

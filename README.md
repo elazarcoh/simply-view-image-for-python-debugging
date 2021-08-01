@@ -15,6 +15,14 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
   ![Plotting View](pyplot-example.gif)
 * Support Tensor view (only pytorch, for now) 
 
+### Watch view
+
+Added a watch view, for watching image/plot/tensor variables, while refreshing the image-view at each breakpoint.
+
+* By default, it'll show only image variables. To show plot/tensor, edit the configuration at: "svifpd.imageWatch.objects".
+
+![Watch View](watch-view.png)
+
 
 ## Feature-Requests
 

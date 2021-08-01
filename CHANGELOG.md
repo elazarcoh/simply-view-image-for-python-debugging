@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.0]
+
+### Added
+
+- Image variables watch view, support tracking images (refresh at each step)
+
+
 ## [1.0.1]
 
 ### Added

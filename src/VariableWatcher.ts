@@ -126,13 +126,14 @@ class WatchVariableTreeItem extends vscode.TreeItem { }
 export class VariableItem extends WatchVariableTreeItem {
 
     public path: string;
+    iconPath: vscode.ThemeIcon | undefined = undefined;
 
     constructor(
         public readonly label: string,
         public readonly evaluateName: string,
         public readonly variableInformation: Record<string, string>,
         public readonly viewService: ViewerService,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed,
     ) {
         super(label, collapsibleState);
         this.path = viewService.pathForSelection({ variable: evaluateName });
@@ -140,9 +141,11 @@ export class VariableItem extends WatchVariableTreeItem {
 
     setTracked(): void {
         this.contextValue = VariableTrackingState.tracked;
+        this.iconPath = new vscode.ThemeIcon("eye");
     }
     setNonTracked(): void {
         this.contextValue = VariableTrackingState.nonTracked;
+        this.iconPath = undefined;
     }
     contextValue = VariableTrackingState.nonTracked;
 

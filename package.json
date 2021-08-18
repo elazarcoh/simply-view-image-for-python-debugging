@@ -172,6 +172,11 @@
 					"default": true,
 					"description": "Restrict image types to numpy.ndarray/PIL.Image only"
 				},
+				"svifpd.matplotlibUseAgg": {
+					"type":"boolean",
+					"default": false,
+					"description": "Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc."
+				},
 				"svifpd.imageWatch.enable": {
 					"type": "boolean",
 					"default": true,

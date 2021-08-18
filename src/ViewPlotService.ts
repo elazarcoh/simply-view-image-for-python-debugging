@@ -7,6 +7,14 @@ export default class ViewPlotService extends ViewerService {
     // define all the needed stuff in python.
     // keeps it in _python_view_plot_mod variable to minimize the namespace pollution as much as possible
     static readonly py_module = '_python_view_plot_mod';
+    static readonly matplotlib_use_agg = `
+try:
+    import matplotlib
+    matplotlib.use('agg')
+except ImportError:
+    # can't load matplotlib, but we don't care
+    pass
+`
     static readonly pyplot_utils: string = `
 import matplotlib.pyplot as plt
 def is_pyplot_figure(obj):
@@ -86,6 +94,15 @@ def save(path, obj):
         super(workingDir);
     }
 
+    private matplotlibUseAggIfConfigured(): string {
+        if (vscode.workspace.getConfiguration("svifpd").get<boolean>("matplotlibUseAgg", false)) {
+            return ViewPlotService.matplotlib_use_agg;
+        }
+        else {
+            return "";
+        }
+    }
+
     public async save(userSelection: UserSelection, path?: string): Promise<string | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
@@ -100,6 +117,7 @@ def save(path, obj):
         const expression = (
             `
 exec(\"\"\"
+${this.matplotlibUseAggIfConfigured()}
 ${ViewPlotService.define_writer_expression}
 ${ViewPlotService.py_module}.save("${py_save_path}", ${vn})
 \"\"\"
@@ -144,6 +162,7 @@ ${ViewPlotService.py_module}.save("${py_save_path}", ${vn})
             const initExpression = (
                 `
 exec(\"\"\"
+${this.matplotlibUseAggIfConfigured()}
 ${ViewPlotService.define_writer_expression}
 \"\"\"
 )

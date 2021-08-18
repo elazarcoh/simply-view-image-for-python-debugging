@@ -40,7 +40,7 @@ def save_pyplot_ax(path, ax, dpi=150, tight=False):
     extent = bbox.transformed(fig.dpi_scale_trans.inverted())
     fig.savefig(path, bbox_inches=extent, dpi=dpi)
 plotting_types['pyplot_axis'] = ("pyplot.Axis", is_pyplot_ax, save_pyplot_ax)
-`
+`;
     static readonly define_writer_expression: string = `
 try:
     ${ViewPlotService.py_module}
@@ -160,9 +160,9 @@ ${ViewPlotService.define_writer_expression}
             const expression = (`${ViewPlotService.py_module}.is_a_plot(${vn})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
-            const [isPlot, reprName] = res.result.replaceAll("(", "").replaceAll(")", "").replaceAll(" ", "").split(",")
+            const [isPlot, reprName] = res.result.replace(/\(|\)| |/g, "").split(",");
             if (isPlot === "True") {
-                return [true, reprName.replaceAll("'", "")];
+                return [true, reprName.replace(/'/g, "")];
             }
         } catch (error) {
             console.log(error);

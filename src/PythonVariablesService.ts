@@ -37,14 +37,21 @@ class PythonVariablesService {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) return;
 
-        let res = await session.customRequest('scopes', { frameId: this.frameId });
+        const frameId = this.frameId;
+
+        let res = await session.customRequest('scopes', { frameId: frameId });
         const scopes = res.scopes;
         const local = scopes[0];
         const global = scopes[1];
 
         const getVars = async (scope: any): Promise<Variable[]> => {
-            const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
-            return res.variables;
+            try {
+                const res = await session.customRequest('variables', { variablesReference: scope.variablesReference });
+                return res.variables.filter(({ name }: { name: string }) => !name.includes(' ')); // filter obviously not variables
+            } catch (error) {
+                console.error(error)
+                return [];
+            }
         };
 
         const [localVariables, globalVariables] = await Promise.all([

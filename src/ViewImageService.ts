@@ -238,7 +238,7 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
 
         try {
             const res = await this.evaluate(session, expression);
-            console.log(`evaluate ${expression} result: ${res.result}`);
+            console.log(`result: ${res.result}`);
         } catch (error) {
             console.log(error);
             vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);

@@ -7,7 +7,7 @@ type ImageInformation = {
     type: string,
     shape: string,
     dtype: string,
-}
+};
 
 export default class ViewImageService extends ViewerService {
 
@@ -17,7 +17,7 @@ export default class ViewImageService extends ViewerService {
     static readonly np = '_python_view_image_mod.np';
     static readonly save_func = 'save';
     static readonly check_obj_func = 'is_a';
-    static readonly info_func = 'image_info'
+    static readonly info_func = 'image_info';
     static readonly define_writer_expression: string = `
 try:
     _python_view_image_mod
@@ -174,6 +174,7 @@ def ${ViewImageService.save_func}(path, img, backend, preprocess):
 def is_pillow_image(img):
     PIL = try_import('PIL')
     if PIL:
+        import PIL.Image
         return isinstance(img, PIL.Image.Image)
     else:
         return False
@@ -258,10 +259,12 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
         }
 
         const imageInfo = await this.imageInformation(variableSelection);
-        if (imageInfo)
+        if (imageInfo) {
             return { name: variableSelection.variable, more: imageInfo };
-        else
+        }
+        else {
             return undefined;
+        }
     }
 
     private async imageInformation(userSelection: UserSelection): Promise<ImageInformation | undefined> {
@@ -294,7 +297,7 @@ ${ViewImageService.define_writer_expression}
             const expression = (`${ViewImageService.py_module}.image_info(${vn})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
-            const [objTypeStr, shapeStr, dtypeStr] = res.result.replaceAll("'", "").split(";")
+            const [objTypeStr, shapeStr, dtypeStr] = res.result.replace(/\'/g, "").split(";");
             if (shapeStr) {
                 return {
                     type: objTypeStr,
@@ -381,27 +384,27 @@ except ImportError:
                 validate: `'skimage' in _python_view_image_tmp_mod.__dict__`,
                 message: "skimage could not be imported. try to change the normalization method at the settings to 'normalize'",
                 isError: true,
-            })
+            });
         }
 
         { // test preferredBackend
             let needToBeImported: string;
             switch (config.preferredBackend) {
                 case backends.Pillow:
-                    needToBeImported = "PIL"
+                    needToBeImported = "PIL";
                     break;
                 case backends.imageio:
-                    needToBeImported = "imageio"
+                    needToBeImported = "imageio";
                     break;
                 case backends.opencv:
-                    needToBeImported = "cv2"
+                    needToBeImported = "cv2";
                     break;
                 case backends.skimage:
-                    needToBeImported = "skimage"
+                    needToBeImported = "skimage";
                     break;
                 case backends.Standalone:
                 default:
-                    needToBeImported = "numpy"
+                    needToBeImported = "numpy";
                     break;
             }
             const testExpression = (
@@ -422,7 +425,7 @@ except ImportError:
                 validate: validateExpression,
                 message: `preferred backend ${config.preferredBackend} can't be used, as it depends on '${needToBeImported}'. will try to fall back to other method`,
                 isError: false,
-            })
+            });
         }
 
         const setupExpression = (

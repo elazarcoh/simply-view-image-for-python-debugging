@@ -44,23 +44,23 @@ export class VariableWatcher {
     }
 
     async refreshVariablesAndWatches(): Promise<void> {
-        if (!this.activated) return;
+        if (!this.activated) { return; }
 
         // workaround for the debugger does not set the variables before it stops,
         // so we'll retry until it works
         const getVariablesFunc = async () => {
-            if (!this.activated) return;
+            if (!this.activated) { return; }
             return this.acquireVariables();
         };
         const tryGetVariableRec = (resolve: any, reject: any) => {
             setTimeout(async () => {
                 try {
-                    const res = await getVariablesFunc()
-                    resolve(res)
+                    const res = await getVariablesFunc();
+                    resolve(res);
                 }
                 catch
                 {
-                    tryGetVariableRec(resolve, reject)
+                    tryGetVariableRec(resolve, reject);
                 }
             }, 500);
         };
@@ -68,7 +68,7 @@ export class VariableWatcher {
             return new Promise(tryGetVariableRec);
         }
         const newVariables = await getVariables();
-        if (newVariables === undefined) return;
+        if (newVariables === undefined) { return; }
         this._hasInfo = true;
 
         const currentVariables = this._variables.reduce(
@@ -90,14 +90,14 @@ export class VariableWatcher {
 
         // must be processes sequentially
         for (const v of this._variables.filter(v => v.trackingState === VariableTrackingState.tracked)) {
-            await v.viewService.save({ variable: v.evaluateName }, v.path)
+            await v.viewService.save({ variable: v.evaluateName }, v.path);
         }
     }
 
     private async acquireVariables() {
 
         const maybeVariables = await this.variablesService.viewableVariables();
-        if (!maybeVariables) return;
+        if (!maybeVariables) { return; }
 
         const { locals, globals } = maybeVariables;
 
@@ -172,12 +172,12 @@ function isVariableItem(v: WatchVariableTreeItem): v is VariableItem {
 async function toWatchVariable(v: Variable, viewerServices: ViewerService[]): Promise<VariableItem | undefined> {
     let watchVariable: [VariableInformation, ViewerService] | undefined;
     for (const viewSrv of viewerServices) {
-        const varInfo = await viewSrv.variableInformation({ variable: v.evaluateName })
+        const varInfo = await viewSrv.variableInformation({ variable: v.evaluateName });
         if (varInfo !== undefined) {
             watchVariable = [varInfo, viewSrv];
         };
     }
-    if (watchVariable === undefined) return;
+    if (watchVariable === undefined) { return; }
     const [varInfo, viewSrv] = watchVariable;
 
     return new VariableItem(

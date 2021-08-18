@@ -5,7 +5,7 @@ import { isVariableSelection, UserSelection, VariableSelection } from './PythonS
 type TensorInformation = {
     shape: string,
     dtype: string,
-}
+};
 
 export default class ViewTensorService extends ViewerService {
 
@@ -34,7 +34,7 @@ def save_torch_tensor(path, tensor, normalize=True, pad=10):
     pad_value = 255
     torchvision.utils.save_image(tensor, path, normalize=normalize,  pad_value=pad_value, padding=pad)
 ${ViewTensorService.tensor_types}['torch_tensor'] = ("torch.Tensor", is_torch_tensor, save_torch_tensor)
-`
+`;
     static readonly define_writer_expression: string = `
 try:
     ${ViewTensorService.py_module}
@@ -128,10 +128,12 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
         }
 
         const tensorInfo = await this.tensorInformation(variableSelection);
-        if (tensorInfo)
+        if (tensorInfo) {
             return { name: variableSelection.variable, more: tensorInfo };
-        else
+        }
+        else {
             return undefined;
+        }
     }
 
     private async tensorInformation(userSelection: UserSelection): Promise<TensorInformation | undefined> {
@@ -164,7 +166,7 @@ ${ViewTensorService.define_writer_expression}
             const expression = (`${ViewTensorService.py_module}.${ViewTensorService.info_func}(${vn})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
-            const [shapeStr, dtypeStr] = res.result.replaceAll("'", "").split(";")
+            const [shapeStr, dtypeStr] = res.result.replace(/'/g, "").split(";");
             if (shapeStr) {
                 return {
                     shape: shapeStr,
@@ -208,9 +210,9 @@ ${ViewTensorService.define_writer_expression}
             const expression = (`${ViewTensorService.py_module}.${ViewTensorService.check_obj_func}(${vn})`);
             const res = await this.evaluate(session, expression);
             console.log(`evaluate expression result: ${res.result}`);
-            const [isTensor, reprName] = res.result.replaceAll("(", "").replaceAll(")", "").replaceAll(" ", "").split(",")
+            const [isTensor, reprName] = res.result.replace(/\(|\)| |/g, "").split(",");
             if (isTensor === "True") {
-                return [true, reprName.replaceAll("'", "")];
+                return [true, reprName.replace(/'/g, "")];
             }
         } catch (error) {
             console.log(error);

@@ -2,7 +2,7 @@
 	"name": "simply-view-image-for-python-debugging",
 	"displayName": "View Image for Python Debugging",
 	"description": "simply view the image of the image variables when debugging python",
-	"version": "2.0.2",
+	"version": "2.0.3",
 	"publisher": "elazarcoh",
 	"icon": "icon.png",
 	"preview": false,
@@ -173,7 +173,7 @@
 					"description": "Restrict image types to numpy.ndarray/PIL.Image only"
 				},
 				"svifpd.matplotlibUseAgg": {
-					"type":"boolean",
+					"type": "boolean",
 					"default": false,
 					"description": "Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc."
 				},

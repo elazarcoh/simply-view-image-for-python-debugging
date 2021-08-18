@@ -189,7 +189,8 @@
 					},
 					"default": [
 						"images"
-					]
+					],
+					"uniqueItems": true
 				}
 			}
 		}

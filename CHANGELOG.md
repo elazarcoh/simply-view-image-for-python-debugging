@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.3]
+
+### Added
+
+- config: set matplotlib to use 'agg' backend (default to false)
+
+
 ## [2.0.0]
 
 ### Added

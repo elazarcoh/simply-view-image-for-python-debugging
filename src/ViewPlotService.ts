@@ -1,22 +1,25 @@
-import * as vscode from 'vscode';
-import { VariableInformation, ViewerService } from './ViewerService';
-import { isVariableSelection, UserSelection, VariableSelection } from './PythonSelection';
-import { getConfiguration } from './config';
+import * as vscode from "vscode";
+import { VariableInformation, ViewerService } from "./ViewerService";
+import {
+  isVariableSelection,
+  UserSelection,
+  VariableSelection,
+} from "./PythonSelection";
+import { getConfiguration } from "./config";
 
 export default class ViewPlotService extends ViewerService {
-
-    // define all the needed stuff in python.
-    // keeps it in _python_view_plot_mod variable to minimize the namespace pollution as much as possible
-    static readonly py_module = '_python_view_plot_mod';
-    static readonly matplotlib_use_agg = `
+  // define all the needed stuff in python.
+  // keeps it in _python_view_plot_mod variable to minimize the namespace pollution as much as possible
+  static readonly py_module = "_python_view_plot_mod";
+  static readonly matplotlib_use_agg = `
 try:
     import matplotlib
     matplotlib.use('agg')
 except ImportError:
     # can't load matplotlib, but we don't care
     pass
-`
-    static readonly pyplot_utils: string = `
+`;
+  static readonly pyplot_utils: string = `
 import matplotlib.pyplot as plt
 def is_pyplot_figure(obj):
     try:
@@ -50,7 +53,7 @@ def save_pyplot_ax(path, ax, dpi=150, tight=False):
     fig.savefig(path, bbox_inches=extent, dpi=dpi)
 plotting_types['pyplot_axis'] = ("pyplot.Axis", is_pyplot_ax, save_pyplot_ax)
 `;
-    static readonly define_writer_expression: string = `
+  static readonly define_writer_expression: string = `
 try:
     ${ViewPlotService.py_module}
 except NameError:
@@ -89,106 +92,110 @@ def save(path, obj):
     )
 `;
 
-    public constructor(
-        workingDir: string,
-    ) {
-        super(workingDir);
+  public constructor(workingDir: string) {
+    super(workingDir);
+  }
+
+  private matplotlibUseAggIfConfigured(): string {
+    if (getConfiguration("matplotlibUseAgg")) {
+      return ViewPlotService.matplotlib_use_agg;
+    } else {
+      return "";
+    }
+  }
+
+  public async save(
+    userSelection: UserSelection,
+    path?: string
+  ): Promise<string | undefined> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return;
     }
 
-    private matplotlibUseAggIfConfigured(): string {
-        if (getConfiguration("matplotlibUseAgg")) {
-            return ViewPlotService.matplotlib_use_agg;
-        }
-        else {
-            return "";
-        }
-    }
+    const vn: string = isVariableSelection(userSelection)
+      ? userSelection.variable
+      : userSelection.range;
+    path ?? (path = this.pathForSelection(userSelection));
 
-    public async save(userSelection: UserSelection, path?: string): Promise<string | undefined> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return;
-        }
+    const py_save_path = path.replace(/\\/g, "/");
 
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
-        path ?? (path = this.pathForSelection(userSelection));
-
-        const py_save_path = path.replace(/\\/g, '/');
-
-        const expression = (
-            `
+    const expression = `
 exec(\"\"\"
 ${this.matplotlibUseAggIfConfigured()}
 ${ViewPlotService.define_writer_expression}
 ${ViewPlotService.py_module}.save("${py_save_path}", ${vn})
 \"\"\"
 )
-`
-        );
+`;
 
-        try {
-            const res = await this.evaluate(session, expression);
-            console.log(`result: ${res.result}`);
-        } catch (error) {
-            console.log(error);
-            vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);
-            return;
-        }
-
-        return path;
+    try {
+      const res = await this.evaluate(session, expression);
+      console.log(`result: ${res.result}`);
+    } catch (error) {
+      console.log(error);
+      vscode.window.showErrorMessage(
+        `could not show image for "${vn}". please check log.`
+      );
+      return;
     }
 
-    async variableInformation(variableSelection: VariableSelection): Promise<VariableInformation | undefined> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return;
-        }
-        const [isAPlot, type] = await this.isAPlot(variableSelection);
-        if (isAPlot) {
-            return { name: variableSelection.variable, more: { type: type } };
-        } else {
-            return undefined;
-        }
+    return path;
+  }
+
+  async variableInformation(
+    variableSelection: VariableSelection
+  ): Promise<VariableInformation | undefined> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return;
+    }
+    const [isAPlot, type] = await this.isAPlot(variableSelection);
+    if (isAPlot) {
+      return { name: variableSelection.variable, more: { type: type } };
+    } else {
+      return undefined;
+    }
+  }
+
+  async isAPlot(userSelection: UserSelection): Promise<[boolean, string]> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return [false, ""];
     }
 
-    async isAPlot(userSelection: UserSelection): Promise<[boolean, string]> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return [false, ""];
-        }
+    const vn: string = isVariableSelection(userSelection)
+      ? userSelection.variable
+      : userSelection.range;
 
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
-
-        try {
-            const initExpression = (
-                `
+    try {
+      const initExpression = `
 exec(\"\"\"
 ${this.matplotlibUseAggIfConfigured()}
 ${ViewPlotService.define_writer_expression}
 \"\"\"
 )
-`
-            );
-            const res = await this.evaluate(session, initExpression);
-            console.log(`evaluate initExpression result: ${res.result}`);
-        } catch (error) {
-            console.log(error);
-            return [false, ""];
-        }
-
-        try {
-            const expression = (`${ViewPlotService.py_module}.is_a_plot(${vn})`);
-            const res = await this.evaluate(session, expression);
-            console.log(`evaluate expression result: ${res.result}`);
-            const [isPlot, reprName] = res.result.replace(/\(|\)| |/g, "").split(",");
-            if (isPlot === "True") {
-                return [true, reprName.replace(/'/g, "")];
-            }
-        } catch (error) {
-            console.log(error);
-            return [false, ""];
-        }
-
-        return [false, ""];
+`;
+      const res = await this.evaluate(session, initExpression);
+      console.log(`evaluate initExpression result: ${res.result}`);
+    } catch (error) {
+      console.log(error);
+      return [false, ""];
     }
+
+    try {
+      const expression = `${ViewPlotService.py_module}.is_a_plot(${vn})`;
+      const res = await this.evaluate(session, expression);
+      console.log(`evaluate expression result: ${res.result}`);
+      const [isPlot, reprName] = res.result.replace(/\(|\)| |/g, "").split(",");
+      if (isPlot === "True") {
+        return [true, reprName.replace(/'/g, "")];
+      }
+    } catch (error) {
+      console.log(error);
+      return [false, ""];
+    }
+
+    return [false, ""];
+  }
 }

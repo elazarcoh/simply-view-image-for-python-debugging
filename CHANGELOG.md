@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.4]
+
+### Fixed
+
+- testing for pytorch tensor dimensions fix
+
+
 ## [2.0.3]
 
 ### Added

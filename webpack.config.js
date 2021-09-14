@@ -4,9 +4,7 @@
 
 const {
   VSCodeExtensionsPackageJsonGenerator,
-} = require("vscode-extension-config");
-
-const transformer = require("ts-reflection/transformer").default;
+} = require("vscode-extension-config/webpack");
 
 const path = require("path");
 
@@ -38,11 +36,6 @@ const config = {
         use: [
           {
             loader: "ts-loader",
-            options: {
-              getCustomTransformers: (program) => ({
-                before: [transformer(program)],
-              }),
-            },
           },
         ],
       },

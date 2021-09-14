@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
+import { DebugProtocol } from "vscode-debugprotocol";
 import { ScopeVariables, UserSelection, Variable } from "./PythonSelection";
+import type { Body } from "./utils";
 
-class PythonVariablesService {
-  protected threadId: number = 0;
-  protected frameId: number = 0;
+class PythonVariablesService implements IStackWatcher {
+  protected threadId = 0;
+  protected frameId = 0;
 
   public setThreadId(threadId: number) {
     this.threadId = threadId;
@@ -46,19 +48,26 @@ class PythonVariablesService {
 
     const frameId = this.frameId;
 
-    let res = await session.customRequest("scopes", { frameId: frameId });
+    const res: Body<DebugProtocol.ScopesResponse> = await session.customRequest(
+      "scopes",
+      { frameId: frameId }
+    );
     const scopes = res.scopes;
     const local = scopes[0];
     const global = scopes[1];
 
-    const getVars = async (scope: any): Promise<Variable[]> => {
+    const getVars = async (scope: DebugProtocol.Scope): Promise<Variable[]> => {
       try {
-        const res = await session.customRequest("variables", {
-          variablesReference: scope.variablesReference,
-        });
-        return res.variables.filter(
-          ({ name }: { name: string }) => !name.includes(" ")
-        ); // filter obviously not variables
+        const res: Body<DebugProtocol.VariablesResponse> =
+          await session.customRequest("variables", {
+            variablesReference: scope.variablesReference,
+          });
+        return res.variables
+          .filter((v) => !v.name.includes(" ")) // filter obviously not variables
+          .map((v) => ({
+            name: v.name,
+            evaluateName: v.evaluateName ?? v.name,
+          }));
       } catch (error) {
         console.error(error);
         return [];

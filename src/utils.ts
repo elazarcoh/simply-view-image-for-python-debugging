@@ -1,4 +1,4 @@
-type Enum<T = any> = {
+type Enum<T = string> = {
   [id: string]: T | string;
   [nu: number]: string;
 };
@@ -7,7 +7,6 @@ export function stringToEnumValue<T extends Enum, K extends keyof T>(
   enumObj: T,
   value: string
 ): T[keyof T] | undefined {
-  // @ts-ignore toString(), we know it's an enum, so it must have toString
   return enumObj[
     Object.keys(enumObj).filter(
       (k) => enumObj[k as K].toString() === value
@@ -17,7 +16,7 @@ export function stringToEnumValue<T extends Enum, K extends keyof T>(
 
 export function allFulfilled<T>(ps: Promise<T>[]): Promise<T[]> {
   const FAIL_TOKEN = {};
-  const fulfilled = (t: any): t is T => {
+  const fulfilled = (t: T | typeof FAIL_TOKEN): t is T => {
     return t !== FAIL_TOKEN;
   };
   const resolvedPromises: Promise<T[]> = Promise.all(
@@ -37,3 +36,6 @@ export async function resolveSequentially<T>(ps: Promise<T>[]): Promise<T[]> {
 export function notEmpty<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
 }
+
+export type Body<T extends { body: unknown }> = T["body"];
+

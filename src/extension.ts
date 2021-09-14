@@ -26,7 +26,7 @@ let variableWatcherSrv: VariableWatcher;
 let variableWatchTreeProvider: VariableWatchTreeProvider;
 
 const services: IStackWatcher[] = [];
-const viewServices: {[key in WatchServices]?: ViewerService} = {};
+const viewServices: { [key in WatchServices]?: ViewerService } = {};
 
 const WORKING_DIR = "svifpd";
 
@@ -43,8 +43,8 @@ function viewImage(path: string, preview: boolean) {
   );
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  let usetmp = getConfiguration("useTmpPathToSave");
+export function activate(context: vscode.ExtensionContext): void {
+  const usetmp = getConfiguration("useTmpPathToSave");
   let dir = context.globalStorageUri.fsPath;
   if (usetmp || dir === undefined) {
     dir = tmpdir();
@@ -59,9 +59,9 @@ export function activate(context: vscode.ExtensionContext) {
   viewServices["image-tensors"] = viewTensorSrv;
 
   if (existsSync(dir)) {
-    let files = readdirSync(dir);
+    const files = readdirSync(dir);
     files.forEach((file) => {
-      let curPath = join(dir, file);
+      const curPath = join(dir, file);
       unlinkSync(curPath);
     });
   } else {
@@ -165,7 +165,7 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        let path = await viewImageSrv.save(userSelection);
+        const path = await viewImageSrv.save(userSelection);
         if (path === undefined) {
           return;
         }
@@ -187,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        let path = await viewPlotSrv.save(userSelection);
+        const path = await viewPlotSrv.save(userSelection);
         if (path === undefined) {
           return;
         }
@@ -209,7 +209,7 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        let path = await viewTensorSrv.save(userSelection);
+        const path = await viewTensorSrv.save(userSelection);
         if (path === undefined) {
           return;
         }
@@ -223,7 +223,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       "svifpd.watch-view",
       async (watchVariable: VariableItem) => {
-        let path = await watchVariable.viewService.save(
+        const path = await watchVariable.viewService.save(
           { variable: watchVariable.evaluateName },
           watchVariable.path
         );
@@ -266,9 +266,6 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 }
-
-// this method is called when your extension is deactivated
-export function deactivate() {}
 
 /**
  * Provides code actions for python opencv image.

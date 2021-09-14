@@ -1,7 +1,6 @@
-export interface Variable {
-  name: string;
-  evaluateName: string;
-}
+import { DebugProtocol } from "vscode-debugprotocol";
+
+export type Variable = Required<Pick<DebugProtocol.Variable, 'name' | 'evaluateName'>>;
 
 export type ScopeVariables = {
   locals: Variable[];

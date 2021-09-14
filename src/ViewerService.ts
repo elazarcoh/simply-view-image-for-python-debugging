@@ -6,6 +6,9 @@ import {
   VariableSelection,
 } from "./PythonSelection";
 import { pythonInContextExecutor } from "./PythonInContextExecutor";
+import * as tmp from "tmp";
+import { DebugProtocol } from "vscode-debugprotocol";
+import type { Body } from "./utils";
 
 export type VariableInformation = {
   name: string;
@@ -41,13 +44,15 @@ export abstract class ViewerService {
         `${userSelection.variable}(${this.currentImgIdx}).png`
       );
     } else {
-      const tmp = require("tmp");
       const options = { postfix: ".png", dir: this.workingDir };
       return tmp.tmpNameSync(options);
     }
   }
 
-  protected evaluate(session: vscode.DebugSession, expression: string) {
+  protected evaluate(
+    session: vscode.DebugSession,
+    expression: string
+  ): Thenable<Body<DebugProtocol.EvaluateResponse>> {
     return this.inContextExecutor.evaluate(session, expression);
   }
 }

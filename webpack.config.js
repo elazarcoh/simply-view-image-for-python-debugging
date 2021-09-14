@@ -2,6 +2,8 @@
 
 "use strict";
 
+const ESLintPlugin = require("eslint-webpack-plugin");
+
 const {
   VSCodeExtensionsPackageJsonGenerator,
 } = require("vscode-extension-config/webpack");
@@ -41,6 +43,12 @@ const config = {
       },
     ],
   },
-  plugins: [new VSCodeExtensionsPackageJsonGenerator("vscode-ext-config.json")],
+  plugins: [
+    // @ts-expect-error. it is constructible
+    new ESLintPlugin({
+      extensions: ['ts']
+    }),
+    new VSCodeExtensionsPackageJsonGenerator("vscode-ext-config.json"),
+  ],
 };
 module.exports = config;

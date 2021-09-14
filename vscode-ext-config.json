@@ -6,5 +6,6 @@
             "name": "Config"
         }
     ],
-    "targetFile": "example_package.json"
+    "targetFile": "package.json",
+    "tsconfig": "tsconfig.json"
 }

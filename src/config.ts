@@ -1,4 +1,4 @@
-import { configUtils } from "vscode-extension-config/utils";
+import { configUtils } from "vscode-extensions-json-generator/utils";
 
 export enum Backends {
   skimage = "skimage",

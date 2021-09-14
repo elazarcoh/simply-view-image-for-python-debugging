@@ -6,7 +6,7 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 
 const {
   VSCodeExtensionsPackageJsonGenerator,
-} = require("vscode-extension-config/webpack");
+} = require("vscode-extensions-json-generator/webpack");
 
 const path = require("path");
 

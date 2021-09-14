@@ -201,7 +201,7 @@
     }
   },
   "scripts": {
-    "update-package-schema": "update-package-schema",
+    "update-package-json": "update-package-json",
     "vscode:prepublish": "webpack --mode production",
     "build": "webpack --mode development",
     "watch": "webpack --mode development --watch",

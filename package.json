@@ -24,7 +24,8 @@
     "view"
   ],
   "activationEvents": [
-    "onDebugResolve:python"
+    "onDebugResolve:python",
+    "onCommand:svifpd.open-watch-settings"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -67,6 +68,11 @@
         "title": "Refresh",
         "enablement": "inDebugMode",
         "icon": "$(timeline-refresh)"
+      },
+      {
+        "command": "svifpd.open-watch-settings",
+        "title": "Configure...",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -86,6 +92,10 @@
         {
           "command": "svifpd.watch-refresh",
           "when": "false"
+        },
+        {
+          "command": "svifpd.open-watch-settings",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -93,6 +103,11 @@
           "command": "svifpd.watch-refresh",
           "when": "view == pythonDebugImageWatch",
           "group": "navigation@1"
+        },
+        {
+          "command": "svifpd.open-watch-settings",
+          "when": "view == pythonDebugImageWatch",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [

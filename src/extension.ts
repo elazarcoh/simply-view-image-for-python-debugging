@@ -265,6 +265,15 @@ export function activate(context: vscode.ExtensionContext): void {
       variableWatchTreeProvider.refresh();
     })
   );
+
+  // image watch open settings
+  context.subscriptions.push(
+    vscode.commands.registerCommand("svifpd.open-watch-settings", async () => {
+      await vscode.commands.executeCommand("workbench.action.openSettings", {
+        query: "svifpd.imageWatch.objects",
+      });
+    })
+  );
 }
 
 /**

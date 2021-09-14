@@ -2,6 +2,10 @@
 
 "use strict";
 
+const {
+  VSCodeExtensionsPackageJsonGenerator,
+} = require("vscode-extension-config");
+
 const transformer = require("ts-reflection/transformer").default;
 
 const path = require("path");
@@ -44,5 +48,6 @@ const config = {
       },
     ],
   },
+  plugins: [new VSCodeExtensionsPackageJsonGenerator("vscode-ext-config.json")],
 };
 module.exports = config;

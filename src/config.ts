@@ -1,5 +1,4 @@
-import * as vscode from "vscode";
-import { propertiesOf } from "ts-reflection";
+import { configUtils } from "vscode-extension-config";
 
 export enum Backends {
   skimage = "skimage",
@@ -25,7 +24,7 @@ export interface ImageViewConfig {
   normalizationMethod: NormalizationMethods;
 }
 
-interface Config {
+export interface Config {
   /**
    * @default true
    * @description Use the system tmp path to save image otherwise use the storage path.
@@ -74,14 +73,4 @@ interface Config {
 }
 
 const section = "svifpd";
-export type ConfigField = keyof Config;
-// @ts-ignore, I actually works OK, I don't know why typescript compiler is complaining...
-export const ConfigFields: { [key in ConfigField]: ConfigField } =
-  Object.fromEntries(propertiesOf<Config>().map((k) => [k, k]));
-
-export function getConfiguration<K extends keyof Config>(
-  subsection: K
-): Config[K] | undefined {
-  const config = vscode.workspace.getConfiguration(section);
-  return config.get<Config[K]>(subsection);
-}
+export const getConfiguration = configUtils.ConfigurationGetter<Config>(section);

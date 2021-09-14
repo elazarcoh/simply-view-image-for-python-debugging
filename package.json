@@ -135,48 +135,6 @@
 		"configuration": {
 			"title": "View Image (Python Debug)",
 			"properties": {
-				"svifpd.useTmpPathToSave": {
-					"type": "boolean",
-					"default": true,
-					"description": "Use the system tmp path to save image otherwise use the storage path."
-				},
-				"svifpd.preferredBackend": {
-					"type": "string",
-					"enum": [
-						"skimage",
-						"opencv",
-						"imageio",
-						"Pillow",
-						"Standalone"
-					],
-					"default": "Standalone",
-					"description": "Preferred backend package to save the image with. Automatically falls back to one of the other."
-				},
-				"svifpd.normalizationMethod": {
-					"type": "string",
-					"enum": [
-						"normalize",
-						"skimage.img_as_ubyte",
-						"None"
-					],
-					"enumDescriptions": [
-						"First subtracts the minimal value, and then scale the values between [0, 255]",
-						"Negative input values will be clipped. Positive values are scaled between 0 and 255.",
-						"Image saved as is, behavior as specified for the backend."
-					],
-					"default": "normalize",
-					"description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
-				},
-				"svifpd.restrictImageTypes": {
-					"type": "boolean",
-					"default": true,
-					"description": "Restrict image types to numpy.ndarray/PIL.Image only"
-				},
-				"svifpd.matplotlibUseAgg": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc."
-				},
 				"svifpd.imageWatch.enable": {
 					"type": "boolean",
 					"default": true,
@@ -196,11 +154,54 @@
 						"images"
 					],
 					"uniqueItems": true
+				},
+				"svifpd.matplotlibUseAgg": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc."
+				},
+				"svifpd.normalizationMethod": {
+					"type": "string",
+					"enum": [
+						"normalize",
+						"skimage.img_as_ubyte",
+						"None"
+					],
+					"enumDescriptions": [
+						"First subtracts the minimal value, and then scale the values between [0, 255]",
+						"Negative input values will be clipped. Positive values are scaled between 0 and 255.",
+						"Image saved as is, behavior as specified for the backend."
+					],
+					"default": "normalize",
+					"description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
+				},
+				"svifpd.preferredBackend": {
+					"type": "string",
+					"enum": [
+						"skimage",
+						"opencv",
+						"imageio",
+						"Pillow",
+						"Standalone"
+					],
+					"default": "Standalone",
+					"description": "Preferred backend package to save the image with. Automatically falls back to one of the other."
+				},
+				"svifpd.restrictImageTypes": {
+					"type": "boolean",
+					"default": true,
+					"description": "Restrict image types to numpy.ndarray/PIL.Image only"
+				},
+				"svifpd.useTmpPathToSave": {
+					"type": "boolean",
+					"default": true,
+					"description": "Use the system tmp path to save image otherwise use the storage path."
 				}
 			}
 		}
 	},
 	"scripts": {
+		"update-package-schema": "update-package-schema",
 		"vscode:prepublish": "webpack --mode production",
 		"webpack": "webpack --mode development",
 		"webpack-dev": "webpack --mode development --watch",
@@ -220,6 +221,7 @@
 		"glob": "^7.1.7",
 		"mocha": "^7.2.0",
 		"ts-loader": "^7.0.5",
+		"ts-reflection": "^0.3.0",
 		"typescript": "^3.9.10",
 		"vscode-test": "^1.6.1",
 		"webpack": "^5.50.0",

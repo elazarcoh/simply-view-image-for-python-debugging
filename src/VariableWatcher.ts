@@ -3,6 +3,7 @@ import { Variable } from './PythonSelection';
 import { pythonVariablesService } from './PythonVariablesService';
 import { VariableInformation, ViewerService } from './ViewerService';
 import { allFulfilled, notEmpty } from './utils';
+import { getConfiguration, WatchServices } from './config';
 
 enum VariableTrackingState {
     tracked = "trackedVariable",
@@ -21,7 +22,7 @@ export class VariableWatcher {
     private _variables: VariableItem[] = [];
 
     constructor(
-        private readonly viewServices: Record<string, ViewerService>,
+        private readonly viewServices: {[key in WatchServices]?: ViewerService},
         private readonly variablesService = pythonVariablesService(),
     ) { }
 
@@ -30,7 +31,7 @@ export class VariableWatcher {
     }
 
     activate(): void {
-        this._activated = vscode.workspace.getConfiguration("svifpd").get<boolean>("imageWatch", true);
+        this._activated = getConfiguration('imageWatch.enable') ?? false;
     }
 
     deactivate(): void {
@@ -106,12 +107,12 @@ export class VariableWatcher {
         const names = allVariables.map(v => v.name);
         const uniqueVariables = allVariables.filter((value, index) => names.indexOf(value.name) === index);
 
-        const watchServicesInConfig = vscode.workspace.getConfiguration("svifpd").get<string[]>("imageWatch.objects", ["images"]);
+        const watchServicesInConfig = getConfiguration("imageWatch.objects") ?? [];
         const viewerServicesToUse = Object.entries(this.viewServices)
-            .filter(([id, _]) => watchServicesInConfig.includes(id))
+            .filter(([id, _]) => watchServicesInConfig.includes(id as WatchServices))
             .map(([_, srv]) => srv);
         const items = await allFulfilled(
-            uniqueVariables.map(v => toWatchVariable(v, viewerServicesToUse)).filter(notEmpty)
+            uniqueVariables.map(v => toWatchVariable(v, viewerServicesToUse.filter(notEmpty))).filter(notEmpty)
         );
         return items.filter(notEmpty);
     }

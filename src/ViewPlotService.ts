@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { VariableInformation, ViewerService } from './ViewerService';
 import { isVariableSelection, UserSelection, VariableSelection } from './PythonSelection';
+import { getConfiguration } from './config';
 
 export default class ViewPlotService extends ViewerService {
 
@@ -95,7 +96,7 @@ def save(path, obj):
     }
 
     private matplotlibUseAggIfConfigured(): string {
-        if (vscode.workspace.getConfiguration("svifpd").get<boolean>("matplotlibUseAgg", false)) {
+        if (getConfiguration("matplotlibUseAgg")) {
             return ViewPlotService.matplotlib_use_agg;
         }
         else {

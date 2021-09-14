@@ -20,13 +20,16 @@ export default class ViewTensorService extends ViewerService {
     static readonly torch_utils: string = `
 import torchvision, torch
 def is_torch_tensor(obj):
+    valid_channels = (1, 2, 3, 4)
     try:
         is_valid = isinstance(obj, torch.Tensor)
-        is_valid &= len(obj.shape) in (3, 4)
-        if len(obj) == 3:
-            is_valid &= obj.shape[0] in (1, 3)
-        elif len(obj) == 4:
-            is_valid &= obj.shape[1] in (1, 3)
+        is_valid &= len(obj.shape) in (2, 3, 4)
+        if len(obj.shape) == 2:
+            pass
+        elif len(obj.shape) == 3:
+            is_valid &= obj.shape[0] in valid_channels
+        elif len(obj.shape) == 4:
+            is_valid &= obj.shape[1] in valid_channels
         return is_valid
     except:
         return False

@@ -1,24 +1,32 @@
-import * as vscode from 'vscode';
-import { ImageViewConfig, backends, normalizationMethods, currentConfigurations } from './config';
-import { isVariableSelection, ScopeVariables, UserSelection, Variable, VariableSelection } from './PythonSelection';
-import { VariableInformation, ViewerService } from './ViewerService';
+import * as vscode from "vscode";
+import {
+  Backends,
+  getConfiguration,
+  ImageViewConfig,
+  NormalizationMethods,
+} from "./config";
+import {
+  isVariableSelection,
+  UserSelection,
+  VariableSelection,
+} from "./PythonSelection";
+import { VariableInformation, ViewerService } from "./ViewerService";
 
 type ImageInformation = {
-    type: string,
-    shape: string,
-    dtype: string,
+  type: string;
+  shape: string;
+  dtype: string;
 };
 
 export default class ViewImageService extends ViewerService {
-
-    // define all the needed stuff in python.
-    // keeps it in _python_view_image_mod variable to minimize the namespace pollution as much as possible
-    static readonly py_module = '_python_view_image_mod';
-    static readonly np = '_python_view_image_mod.np';
-    static readonly save_func = 'save';
-    static readonly check_obj_func = 'is_a';
-    static readonly info_func = 'image_info';
-    static readonly define_writer_expression: string = `
+  // define all the needed stuff in python.
+  // keeps it in _python_view_image_mod variable to minimize the namespace pollution as much as possible
+  static readonly py_module = "_python_view_image_mod";
+  static readonly np = "_python_view_image_mod.np";
+  static readonly save_func = "save";
+  static readonly check_obj_func = "is_a";
+  static readonly info_func = "image_info";
+  static readonly define_writer_expression: string = `
 try:
     _python_view_image_mod
 except NameError:
@@ -204,172 +212,197 @@ def ${ViewImageService.info_func}(img):
     )
 `;
 
-    public constructor(
-        workingDir: string,
-    ) {
-        super(workingDir);
+  public constructor(workingDir: string) {
+    super(workingDir);
+  }
+
+  public async save(
+    userSelection: UserSelection,
+    path?: string
+  ): Promise<string | undefined> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return;
     }
 
-    public async save(userSelection: UserSelection, path?: string): Promise<string | undefined> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return;
-        }
-        const config = currentConfigurations();
-        const configValid = await this.validateConfig(config);
-        if (!configValid) {
-            return;
-        }
+    // TODO make this more simple
+    const config = {
+      preferredBackend: getConfiguration("preferredBackend"),
+      normalizationMethod: getConfiguration("normalizationMethod"),
+    };
+    if (
+      config.normalizationMethod === undefined ||
+      config.preferredBackend === undefined
+    ) {
+      return;
+    }
+    if (
+      !(await this.validateConfig({
+        normalizationMethod: config.normalizationMethod,
+        preferredBackend: config.preferredBackend,
+      }))
+    ) {
+      return;
+    }
 
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
-        path ?? (path = this.pathForSelection(userSelection));
+    const vn: string = isVariableSelection(userSelection)
+      ? userSelection.variable
+      : userSelection.range;
+    path ?? (path = this.pathForSelection(userSelection));
 
-        const py_save_path = path.replace(/\\/g, '/');
+    const py_save_path = path.replace(/\\/g, "/");
 
-        const expression = (
-            `
+    const expression = `
 exec(\"\"\"
 ${ViewImageService.define_writer_expression}
 _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferredBackend}", preprocess="${config.normalizationMethod}")
 \"\"\"
 )
-`
-        );
+`;
 
-        try {
-            const res = await this.evaluate(session, expression);
-            console.log(`result: ${res.result}`);
-        } catch (error) {
-            console.log(error);
-            vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);
-            return;
-        }
-
-        return path;
+    try {
+      const res = await this.evaluate(session, expression);
+      console.log(`result: ${res.result}`);
+    } catch (error) {
+      console.log(error);
+      vscode.window.showErrorMessage(
+        `could not show image for "${vn}". please check log.`
+      );
+      return;
     }
 
-    async variableInformation(variableSelection: VariableSelection): Promise<VariableInformation | undefined> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return;
-        }
-        const [isAnImage, _] = await this.isAnImage(variableSelection);
-        if (!isAnImage) {
-            return;
-        }
+    return path;
+  }
 
-        const imageInfo = await this.imageInformation(variableSelection);
-        if (imageInfo) {
-            return { name: variableSelection.variable, more: imageInfo };
-        }
-        else {
-            return undefined;
-        }
+  async variableInformation(
+    variableSelection: VariableSelection
+  ): Promise<VariableInformation | undefined> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return;
+    }
+    const [isAnImage, _] = await this.isAnImage(variableSelection);
+    if (!isAnImage) {
+      return;
     }
 
-    private async imageInformation(userSelection: UserSelection): Promise<ImageInformation | undefined> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return;
-        }
+    const imageInfo = await this.imageInformation(variableSelection);
+    if (imageInfo) {
+      return { name: variableSelection.variable, more: imageInfo };
+    } else {
+      return undefined;
+    }
+  }
 
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
+  private async imageInformation(
+    userSelection: UserSelection
+  ): Promise<ImageInformation | undefined> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return;
+    }
 
-        // test if evaluated to numpy array legal image
+    const vn: string = isVariableSelection(userSelection)
+      ? userSelection.variable
+      : userSelection.range;
 
-        try {
-            const initExpression = (
-                `
+    // test if evaluated to numpy array legal image
+
+    try {
+      const initExpression = `
 exec(\"\"\"
 ${ViewImageService.define_writer_expression}
 \"\"\"
 )
-`
-            );
-            const res = await this.evaluate(session, initExpression);
-            console.log(`evaluate initExpression result: ${res.result}`);
-        } catch (error) {
-            console.log(error);
-            return;
-        }
-
-        try {
-            const expression = (`${ViewImageService.py_module}.image_info(${vn})`);
-            const res = await this.evaluate(session, expression);
-            console.log(`evaluate expression result: ${res.result}`);
-            const [objTypeStr, shapeStr, dtypeStr] = res.result.replace(/\'/g, "").split(";");
-            if (shapeStr) {
-                return {
-                    type: objTypeStr,
-                    shape: shapeStr,
-                    dtype: dtypeStr,
-                };
-            }
-        } catch (error) {
-            console.log("imageInformation python eval error:", error);
-            return;
-        }
-
-        return;
-
+`;
+      const res = await this.evaluate(session, initExpression);
+      console.log(`evaluate initExpression result: ${res.result}`);
+    } catch (error) {
+      console.log(error);
+      return;
     }
 
-    async isAnImage(userSelection: UserSelection): Promise<[boolean, string?]> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return [false];
-        }
+    try {
+      const expression = `${ViewImageService.py_module}.image_info(${vn})`;
+      const res = await this.evaluate(session, expression);
+      console.log(`evaluate expression result: ${res.result}`);
+      const [objTypeStr, shapeStr, dtypeStr] = res.result
+        .replace(/\'/g, "")
+        .split(";");
+      if (shapeStr) {
+        return {
+          type: objTypeStr,
+          shape: shapeStr,
+          dtype: dtypeStr,
+        };
+      }
+    } catch (error) {
+      console.log("imageInformation python eval error:", error);
+      return;
+    }
 
-        const vn: string = isVariableSelection(userSelection) ? userSelection.variable : userSelection.range;
+    return;
+  }
 
-        // test if evaluated to numpy array legal image
+  async isAnImage(userSelection: UserSelection): Promise<[boolean, string?]> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return [false];
+    }
 
-        try {
-            const initExpression = (
-                `
+    const vn: string = isVariableSelection(userSelection)
+      ? userSelection.variable
+      : userSelection.range;
+
+    // test if evaluated to numpy array legal image
+
+    try {
+      const initExpression = `
 exec(\"\"\"
 ${ViewImageService.define_writer_expression}
 \"\"\"
 )
-`
-            );
-            const res = await this.evaluate(session, initExpression);
-            console.log(`evaluate initExpression result: ${res.result}`);
-        } catch (error) {
-            console.log(error);
-            return [false];
-        }
-
-        try {
-            const restrictImageTypes = vscode.workspace.getConfiguration("svifpd").get<boolean>("restrictImageTypes", true) ? "True" : "False";
-            const expression = (`${ViewImageService.py_module}.${ViewImageService.check_obj_func}(${vn}, restricted_types=${restrictImageTypes})`);
-            const res = await this.evaluate(session, expression);
-            console.log(`evaluate expression result: ${res.result}`);
-            const isImage = res.result;
-            if (isImage === "True") {
-                return [true, ""];
-            }
-        } catch (error) {
-            console.log(error);
-            return [false];
-        }
-
-        return [false];
+`;
+      const res = await this.evaluate(session, initExpression);
+      console.log(`evaluate initExpression result: ${res.result}`);
+    } catch (error) {
+      console.log(error);
+      return [false];
     }
 
-    async validateConfig(config: ImageViewConfig): Promise<boolean> {
-        const session = vscode.debug.activeDebugSession;
-        if (session === undefined) {
-            return false;
-        }
+    try {
+      const restrictImageTypes = getConfiguration("restrictImageTypes")
+        ? "True"
+        : "False";
+      const expression = `${ViewImageService.py_module}.${ViewImageService.check_obj_func}(${vn}, restricted_types=${restrictImageTypes})`;
+      const res = await this.evaluate(session, expression);
+      console.log(`evaluate expression result: ${res.result}`);
+      const isImage = res.result;
+      if (isImage === "True") {
+        return [true, ""];
+      }
+    } catch (error) {
+      console.log(error);
+      return [false];
+    }
 
-        // add testing expression for each relevant configuration
-        const validationExpressions = [];
+    return [false];
+  }
 
-        if (config.normalizationMethod === normalizationMethods.skimage_img_as_ubyte) {
-            // we need to validate skimage is available
-            const testExpression = (
-                `
+  async validateConfig(config: ImageViewConfig): Promise<boolean> {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
+      return false;
+    }
+
+    // add testing expression for each relevant configuration
+    const validationExpressions = [];
+
+    if (
+      config.normalizationMethod === NormalizationMethods.skimage_img_as_ubyte
+    ) {
+      // we need to validate skimage is available
+      const testExpression = `
 exec(
 '''
 try:
@@ -377,38 +410,38 @@ try:
 except ImportError:
     pass
 ''', _python_view_image_tmp_mod.__dict__)
-`
-            );
-            validationExpressions.push({
-                test: testExpression,
-                validate: `'skimage' in _python_view_image_tmp_mod.__dict__`,
-                message: "skimage could not be imported. try to change the normalization method at the settings to 'normalize'",
-                isError: true,
-            });
-        }
+`;
+      validationExpressions.push({
+        test: testExpression,
+        validate: `'skimage' in _python_view_image_tmp_mod.__dict__`,
+        message:
+          "skimage could not be imported. try to change the normalization method at the settings to 'normalize'",
+        isError: true,
+      });
+    }
 
-        { // test preferredBackend
-            let needToBeImported: string;
-            switch (config.preferredBackend) {
-                case backends.Pillow:
-                    needToBeImported = "PIL";
-                    break;
-                case backends.imageio:
-                    needToBeImported = "imageio";
-                    break;
-                case backends.opencv:
-                    needToBeImported = "cv2";
-                    break;
-                case backends.skimage:
-                    needToBeImported = "skimage";
-                    break;
-                case backends.Standalone:
-                default:
-                    needToBeImported = "numpy";
-                    break;
-            }
-            const testExpression = (
-                `
+    {
+      // test preferredBackend
+      let needToBeImported: string;
+      switch (config.preferredBackend) {
+        case Backends.Pillow:
+          needToBeImported = "PIL";
+          break;
+        case Backends.imageio:
+          needToBeImported = "imageio";
+          break;
+        case Backends.opencv:
+          needToBeImported = "cv2";
+          break;
+        case Backends.skimage:
+          needToBeImported = "skimage";
+          break;
+        case Backends.Standalone:
+        default:
+          needToBeImported = "numpy";
+          break;
+      }
+      const testExpression = `
 exec(
 '''
 try:
@@ -416,67 +449,67 @@ try:
 except ImportError:
     pass
 ''', _python_view_image_tmp_mod.__dict__)
-`
-            );
+`;
 
-            const validateExpression = `'${needToBeImported}' in _python_view_image_tmp_mod.__dict__`;
-            validationExpressions.push({
-                test: testExpression,
-                validate: validateExpression,
-                message: `preferred backend ${config.preferredBackend} can't be used, as it depends on '${needToBeImported}'. will try to fall back to other method`,
-                isError: false,
-            });
-        }
+      const validateExpression = `'${needToBeImported}' in _python_view_image_tmp_mod.__dict__`;
+      validationExpressions.push({
+        test: testExpression,
+        validate: validateExpression,
+        message: `preferred backend ${config.preferredBackend} can't be used, as it depends on '${needToBeImported}'. will try to fall back to other method`,
+        isError: false,
+      });
+    }
 
-        const setupExpression = (
-            `
+    const setupExpression = `
 exec(\"\"\"
 from types import ModuleType
 _python_view_image_tmp_mod = ModuleType('_python_view_image_tmp_mod', '')
 \"\"\"
 )
-`
-        );
+`;
 
-        const cleanupExpression = `exec('del _python_view_image_tmp_mod')`;
+    const cleanupExpression = `exec('del _python_view_image_tmp_mod')`;
 
-        try {
-            let res = await this.evaluate(session, setupExpression);
-            console.log(`evaluate setupExpression result: ${res.result}`);
+    try {
+      let res = await this.evaluate(session, setupExpression);
+      console.log(`evaluate setupExpression result: ${res.result}`);
 
-            for (const { test, validate, message, isError } of validationExpressions) {
-                res = await this.evaluate(session, test);
-                console.log(`evaluate test result: ${res.result}`);
+      for (const {
+        test,
+        validate,
+        message,
+        isError,
+      } of validationExpressions) {
+        res = await this.evaluate(session, test);
+        console.log(`evaluate test result: ${res.result}`);
 
-                res = await this.evaluate(session, validate);
-                console.log(`evaluate validateExpression result: ${res.result}`);
-                if (res.result !== "True") {
-                    if (isError) {
-                        vscode.window.showErrorMessage(message);
-                        try {
-                            res = await this.evaluate(session, cleanupExpression);
-                            console.log(`evaluate cleanupExpression result: ${res.result}`);
-                        } catch (error) {
-                            console.log(error);
-                        }
-                        return false;
-                    }
-                    else {
-                        vscode.window.showWarningMessage(message);
-                        continue;
-                    }
-                }
+        res = await this.evaluate(session, validate);
+        console.log(`evaluate validateExpression result: ${res.result}`);
+        if (res.result !== "True") {
+          if (isError) {
+            vscode.window.showErrorMessage(message);
+            try {
+              res = await this.evaluate(session, cleanupExpression);
+              console.log(`evaluate cleanupExpression result: ${res.result}`);
+            } catch (error) {
+              console.log(error);
             }
-            res = await this.evaluate(session, cleanupExpression);
-            console.log(`evaluate cleanupExpression result: ${res.result}`);
-
-        } catch (error) {
-            console.log(error);
-            await this.evaluate(session, cleanupExpression);
             return false;
+          } else {
+            vscode.window.showWarningMessage(message);
+            continue;
+          }
         }
-
-        // not fails on any step
-        return true;
+      }
+      res = await this.evaluate(session, cleanupExpression);
+      console.log(`evaluate cleanupExpression result: ${res.result}`);
+    } catch (error) {
+      console.log(error);
+      await this.evaluate(session, cleanupExpression);
+      return false;
     }
+
+    // not fails on any step
+    return true;
+  }
 }

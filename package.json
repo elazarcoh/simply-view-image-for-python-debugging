@@ -1,233 +1,247 @@
 {
-	"name": "simply-view-image-for-python-debugging",
-	"displayName": "View Image for Python Debugging",
-	"description": "simply view the image of the image variables when debugging python",
-	"version": "2.0.4",
-	"publisher": "elazarcoh",
-	"icon": "icon.png",
-	"preview": false,
-	"engines": {
-		"vscode": "^1.59.0"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/elazarcoh/simply-view-image-for-python-debugging"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"Python",
-		"image",
-		"debug",
-		"plot",
-		"view"
-	],
-	"activationEvents": [
-		"onDebugResolve:python"
-	],
-	"main": "./dist/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "svifpd.view-image",
-				"title": "View Image (Python Debug)",
-				"enablement": "inDebugMode"
-			},
-			{
-				"command": "svifpd.view-plot",
-				"title": "View Plot (Python Debug)",
-				"enablement": "inDebugMode"
-			},
-			{
-				"command": "svifpd.view-tensor",
-				"title": "View Tensor (Python Debug)",
-				"enablement": "inDebugMode"
-			},
-			{
-				"command": "svifpd.watch-view",
-				"title": "View",
-				"enablement": "inDebugMode",
-				"icon": "$(link-external)"
-			},
-			{
-				"command": "svifpd.watch-track-enable",
-				"title": "Track - Enable",
-				"enablement": "inDebugMode",
-				"icon": "$(eye)"
-			},
-			{
-				"command": "svifpd.watch-track-disable",
-				"title": "Track - Disable",
-				"enablement": "inDebugMode",
-				"icon": "$(eye-closed)"
-			},
-			{
-				"command": "svifpd.watch-refresh",
-				"title": "Refresh",
-				"enablement": "inDebugMode",
-				"icon": "$(timeline-refresh)"
-			}
-		],
-		"menus": {
-			"commandPalette": [
-				{
-					"command": "svifpd.watch-view",
-					"when": "false"
-				},
-				{
-					"command": "svifpd.watch-track-enable",
-					"when": "false"
-				},
-				{
-					"command": "svifpd.watch-track-disable",
-					"when": "false"
-				},
-				{
-					"command": "svifpd.watch-refresh",
-					"when": "false"
-				}
-			],
-			"view/title": [
-				{
-					"command": "svifpd.watch-refresh",
-					"when": "view == pythonDebugImageWatch",
-					"group": "navigation@1"
-				}
-			],
-			"view/item/context": [
-				{
-					"command": "svifpd.watch-view",
-					"when": "view == pythonDebugImageWatch && viewItem == nonTrackedVariable || view == pythonDebugImageWatch && viewItem == trackedVariable",
-					"group": "inline@1"
-				},
-				{
-					"command": "svifpd.watch-track-enable",
-					"when": "view == pythonDebugImageWatch && viewItem == nonTrackedVariable",
-					"group": "inline@2"
-				},
-				{
-					"command": "svifpd.watch-track-disable",
-					"when": "view == pythonDebugImageWatch && viewItem == trackedVariable",
-					"group": "inline@3"
-				}
-			]
-		},
-		"views": {
-			"debug": [
-				{
-					"id": "pythonDebugImageWatch",
-					"name": "Image Watch",
-					"icon": "eye",
-					"visibility": "visible",
-					"type": "tree",
-					"when": "config.svifpd.imageWatch.enable"
-				}
-			]
-		},
-		"keybindings": [
-			{
-				"command": "svifpd.view-image",
-				"key": "ctrl+alt+q",
-				"when": "inDebugMode"
-			}
-		],
-		"configuration": {
-			"title": "View Image (Python Debug)",
-			"properties": {
-				"svifpd.useTmpPathToSave": {
-					"type": "boolean",
-					"default": true,
-					"description": "Use the system tmp path to save image otherwise use the storage path."
-				},
-				"svifpd.preferredBackend": {
-					"type": "string",
-					"enum": [
-						"skimage",
-						"opencv",
-						"imageio",
-						"Pillow",
-						"Standalone"
-					],
-					"default": "Standalone",
-					"description": "Preferred backend package to save the image with. Automatically falls back to one of the other."
-				},
-				"svifpd.normalizationMethod": {
-					"type": "string",
-					"enum": [
-						"normalize",
-						"skimage.img_as_ubyte",
-						"None"
-					],
-					"enumDescriptions": [
-						"First subtracts the minimal value, and then scale the values between [0, 255]",
-						"Negative input values will be clipped. Positive values are scaled between 0 and 255.",
-						"Image saved as is, behavior as specified for the backend."
-					],
-					"default": "normalize",
-					"description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
-				},
-				"svifpd.restrictImageTypes": {
-					"type": "boolean",
-					"default": true,
-					"description": "Restrict image types to numpy.ndarray/PIL.Image only"
-				},
-				"svifpd.matplotlibUseAgg": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc."
-				},
-				"svifpd.imageWatch.enable": {
-					"type": "boolean",
-					"default": true,
-					"description": "Use the extension to track images (reshow the image at each debugger step)"
-				},
-				"svifpd.imageWatch.objects": {
-					"type": "array",
-					"items": {
-						"type": "string",
-						"enum": [
-							"images",
-							"plots",
-							"image-tensors"
-						]
-					},
-					"default": [
-						"images"
-					],
-					"uniqueItems": true
-				}
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "webpack --mode production",
-		"webpack": "webpack --mode development",
-		"webpack-dev": "webpack --mode development --watch",
-		"test-compile": "tsc -p ./",
-		"compile": "tsc -p ./",
-		"lint": "eslint src --ext ts",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.4",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.13.52",
-		"@types/vscode": "^1.59.0",
-		"@typescript-eslint/eslint-plugin": "^2.34.0",
-		"@typescript-eslint/parser": "^2.34.0",
-		"eslint": "^6.8.0",
-		"glob": "^7.1.7",
-		"mocha": "^7.2.0",
-		"ts-loader": "^7.0.5",
-		"typescript": "^3.9.10",
-		"vscode-test": "^1.6.1",
-		"webpack": "^5.50.0",
-		"webpack-cli": "^3.3.12"
-	},
-	"dependencies": {
-		"tmp": "^0.2.1"
-	}
+  "name": "simply-view-image-for-python-debugging",
+  "displayName": "View Image for Python Debugging",
+  "description": "simply view the image of the image variables when debugging python",
+  "version": "2.0.4",
+  "publisher": "elazarcoh",
+  "icon": "icon.png",
+  "preview": false,
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elazarcoh/simply-view-image-for-python-debugging"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "Python",
+    "image",
+    "debug",
+    "plot",
+    "view"
+  ],
+  "activationEvents": [
+    "onDebugResolve:python",
+    "onCommand:svifpd.open-watch-settings"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "svifpd.view-image",
+        "title": "View Image (Python Debug)",
+        "enablement": "inDebugMode"
+      },
+      {
+        "command": "svifpd.view-plot",
+        "title": "View Plot (Python Debug)",
+        "enablement": "inDebugMode"
+      },
+      {
+        "command": "svifpd.view-tensor",
+        "title": "View Tensor (Python Debug)",
+        "enablement": "inDebugMode"
+      },
+      {
+        "command": "svifpd.watch-view",
+        "title": "View",
+        "enablement": "inDebugMode",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "svifpd.watch-track-enable",
+        "title": "Track - Enable",
+        "enablement": "inDebugMode",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "svifpd.watch-track-disable",
+        "title": "Track - Disable",
+        "enablement": "inDebugMode",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "svifpd.watch-refresh",
+        "title": "Refresh",
+        "enablement": "inDebugMode",
+        "icon": "$(timeline-refresh)"
+      },
+      {
+        "command": "svifpd.open-watch-settings",
+        "title": "Configure...",
+        "icon": "$(settings-gear)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "svifpd.watch-view",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.watch-track-enable",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.watch-track-disable",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.watch-refresh",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.open-watch-settings",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "svifpd.watch-refresh",
+          "when": "view == pythonDebugImageWatch",
+          "group": "navigation@1"
+        },
+        {
+          "command": "svifpd.open-watch-settings",
+          "when": "view == pythonDebugImageWatch",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "svifpd.watch-view",
+          "when": "view == pythonDebugImageWatch && viewItem == nonTrackedVariable || view == pythonDebugImageWatch && viewItem == trackedVariable",
+          "group": "inline@1"
+        },
+        {
+          "command": "svifpd.watch-track-enable",
+          "when": "view == pythonDebugImageWatch && viewItem == nonTrackedVariable",
+          "group": "inline@2"
+        },
+        {
+          "command": "svifpd.watch-track-disable",
+          "when": "view == pythonDebugImageWatch && viewItem == trackedVariable",
+          "group": "inline@3"
+        }
+      ]
+    },
+    "views": {
+      "debug": [
+        {
+          "id": "pythonDebugImageWatch",
+          "name": "Image Watch",
+          "icon": "eye",
+          "visibility": "visible",
+          "type": "tree",
+          "when": "config.svifpd.imageWatch.enable"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "svifpd.view-image",
+        "key": "ctrl+alt+q",
+        "when": "inDebugMode"
+      }
+    ],
+    "configuration": {
+      "title": "View Image (Python Debug)",
+      "properties": {
+        "svifpd.imageWatch.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use the extension to track images (reshow the image at each debugger step)"
+        },
+        "svifpd.imageWatch.objects": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "images",
+              "plots",
+              "image-tensors"
+            ]
+          },
+          "default": [
+            "images"
+          ],
+          "uniqueItems": true
+        },
+        "svifpd.matplotlibUseAgg": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc."
+        },
+        "svifpd.normalizationMethod": {
+          "type": "string",
+          "enum": [
+            "normalize",
+            "skimage.img_as_ubyte",
+            "None"
+          ],
+          "enumDescriptions": [
+            "First subtracts the minimal value, and then scale the values between [0, 255]",
+            "Negative input values will be clipped. Positive values are scaled between 0 and 255.",
+            "Image saved as is, behavior as specified for the backend."
+          ],
+          "default": "normalize",
+          "description": "Image normalization method: The image pixels must be in [0, 255] to be saved correctly. For that, we perform a normalization before save is being called. For more information, see the description for each method."
+        },
+        "svifpd.preferredBackend": {
+          "type": "string",
+          "enum": [
+            "skimage",
+            "opencv",
+            "imageio",
+            "Pillow",
+            "Standalone"
+          ],
+          "default": "Standalone",
+          "description": "Preferred backend package to save the image with. Automatically falls back to one of the other."
+        },
+        "svifpd.restrictImageTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restrict image types to numpy.ndarray/PIL.Image only"
+        },
+        "svifpd.useTmpPathToSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use the system tmp path to save image otherwise use the storage path."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "update-package-json": "update-package-json",
+    "vscode:prepublish": "webpack --mode production",
+    "build": "webpack --mode development",
+    "watch": "webpack --mode development --watch",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.4",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.13.52",
+    "@types/tmp": "^0.2.1",
+    "@types/vscode": "^1.60.0",
+    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/parser": "^4.31.0",
+    "eslint": "^7.32.0",
+    "eslint-webpack-plugin": "^3.0.1",
+    "glob": "^7.1.7",
+    "ts-loader": "^7.0.5",
+    "typescript": "^3.9.10",
+    "vscode-debugprotocol": "^1.49.0",
+    "vscode-test": "^1.6.1",
+    "webpack": "^5.50.0",
+    "webpack-cli": "^4.8.0"
+  },
+  "dependencies": {
+    "tmp": "^0.2.1",
+    "vscode-extensions-json-generator": "^0.1.0"
+  }
 }

@@ -1,0 +1,11 @@
+{
+    "prefix": "svifpd",
+    "configurations": [
+        {
+            "filePath": "./src/config.ts",
+            "name": "Config"
+        }
+    ],
+    "targetFile": "package.json",
+    "tsconfig": "tsconfig.json"
+}

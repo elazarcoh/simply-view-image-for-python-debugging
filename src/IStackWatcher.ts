@@ -1,6 +1,7 @@
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface IStackWatcher
 {
-    setThreadId(threadId: number): any;
-    setFrameId(frameId: number): any;
+    setThreadId(threadId: number): unknown;
+    setFrameId(frameId: number): unknown;
 }

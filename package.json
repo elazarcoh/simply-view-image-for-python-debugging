@@ -241,6 +241,7 @@
     "webpack-cli": "^4.8.0"
   },
   "dependencies": {
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.1",
+    "vscode-extensions-json-generator": "^0.1.0"
   }
 }

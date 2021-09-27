@@ -27,7 +27,7 @@
     "onDebugResolve:python",
     "onCommand:svifpd.open-watch-settings"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {

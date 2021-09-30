@@ -38,6 +38,35 @@ def save_torch_tensor(path, tensor, normalize=True, pad=10):
     torchvision.utils.save_image(tensor, path, normalize=normalize,  pad_value=pad_value, padding=pad)
 ${ViewTensorService.tensor_types}['torch_tensor'] = ("torch.Tensor", is_torch_tensor, save_torch_tensor)
 `;
+
+static readonly np_utils: string = `
+import numpy as np
+import skimage.util
+import skimage.io
+from skimage import img_as_ubyte
+def is_numpy_tensor(obj):
+    valid_channels = (1, 3, 4)
+    try:
+        is_valid = isinstance(obj, np.ndarray)
+        is_valid &= len(obj.shape) in (3, 4)
+        if len(obj.shape) == 3:
+            pass
+        elif len(obj.shape) == 4:
+            is_valid &= obj.shape[3] in valid_channels
+        return is_valid
+    except:
+        return False
+def save_numpy_tensor(path, tensor, normalize=True, pad=10):
+    is_color = tensor.ndim == 4
+    if is_color:
+        pad_value = (1.0,) * tensor.shape[-1]
+    else:
+        pad_value = 1.0
+    montage = skimage.util.montage(tensor, fill=pad_value, rescale_intensity=normalize, padding_width=pad, multichannel=is_color)
+    skimage.io.imsave(path, img_as_ubyte(montage), check_contrast=False)
+${ViewTensorService.tensor_types}['numpy_tensor'] = ("np.ndarray", is_numpy_tensor, save_numpy_tensor)
+`;
+
     static readonly define_writer_expression: string = `
 try:
     ${ViewTensorService.py_module}
@@ -53,6 +82,11 @@ try:
     ${ViewTensorService.torch_utils.replace(/^/gm, "    ")}
 except ImportError:
     # can't load torch, but we don't care
+    pass
+try:
+    ${ViewTensorService.np_utils.replace(/^/gm, "    ")}
+except ImportError:
+    # can't load skimage, but we don't care
     pass
 
 def tensor_save_util_for_object(obj):  # -> Tuple[str, function, kwargs]

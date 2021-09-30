@@ -1,4 +1,8 @@
 # Change Log
+## [2.1.0]
+
+### Added
+- Support for numpy Tensors, via `skimage.util.montage`
 
 ## [2.0.4]
 

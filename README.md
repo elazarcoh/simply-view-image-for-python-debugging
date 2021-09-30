@@ -13,7 +13,8 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
     * matplotlib.pyplot.Axis
   
   ![Plotting View](pyplot-example.gif)
-* Support Tensor view (only pytorch, for now) 
+* Support Tensor view: pytorch and numpy
+  * `numpy.ndarray` is considered a tensor if it has 4 channels, or 3 channels but it does not pass as an single image.
 
 ### Watch view
 

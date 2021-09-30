@@ -2284,9 +2284,9 @@ vscode-debugprotocol@^1.49.0:
   integrity sha512-3VkK3BmaqN+BGIq4lavWp9a2IC6VYgkWkkMQm6Sa5ACkhBF6ThJDrkP+/3rFE4G7F8+mM3f4bhhJhhMax2IPfg==
 
 vscode-extensions-json-generator@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/vscode-extensions-json-generator/-/vscode-extensions-json-generator-0.1.0.tgz#e14e2cb857c0f7bd878c2a9c6ef62ae19fce5421"
-  integrity sha512-ekAUWDRECDIi+eZKOE7b35a+/RBfM2BKHLN5RV3FuURn1hM8A42+rve21u1AlFZVUB5OhuQmtbRrRzbtduxjkA==
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/vscode-extensions-json-generator/-/vscode-extensions-json-generator-0.1.1.tgz#d0387b58c4bc89eb090c867adf3883c1c15d67a6"
+  integrity sha512-bq4DHdNr39bDZu2XOJXz1WgbfX4n2Fmy2qFunItIIcRNNF4xyNyRamWVwzu+0T4GbKVTKA/PE01Cv/WFySJbLQ==
   dependencies:
     "@stoplight/better-ajv-errors" "^0.2.0"
     ajv "^8.6.3"

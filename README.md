@@ -24,6 +24,12 @@ Added a watch view, for watching image/plot/tensor variables, while refreshing t
 
 ![Watch View](watch-view.png)
 
+## Q & A
+
+* **Memory blows-up when using the extension.**
+
+  It might happen when (very) large, non-`numpy` array object, is being used.
+  The solution to it is to set the `restrictImageTypes` setting to `true` (should be by default).
 
 ## Feature-Requests
 

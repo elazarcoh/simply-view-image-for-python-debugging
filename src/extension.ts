@@ -5,7 +5,7 @@ import ViewImageService from "./ViewImageService";
 import ViewPlotService from "./ViewPlotService";
 import ViewTensorService from "./ViewTensorService";
 import { tmpdir } from "os";
-import { mkdirSync, existsSync, readdirSync, unlinkSync } from "fs";
+import { mkdirSync, existsSync, readdirSync, unlinkSync, chmodSync } from "fs";
 import { join } from "path";
 import { UserSelection } from "./PythonSelection";
 import { pythonVariablesService } from "./PythonVariablesService";
@@ -66,6 +66,9 @@ export function activate(context: vscode.ExtensionContext): void {
     });
   } else {
     mkdirSync(dir);
+    if (usetmp) {
+      chmodSync(dir, 0o777); // make the folder world writable for other users uses the extension
+    }
   }
 
   variableWatcherSrv = new VariableWatcher(viewServices);

@@ -4,18 +4,19 @@ import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 import { Body } from "./utils";
 
 class PythonInContextExecutor {
-
   public evaluate(
     session: vscode.DebugSession,
-    expression: string
+    expression: string,
+    frameId?: number
   ): Thenable<Body<DebugProtocol.EvaluateResponse>> {
-    return debugVariablesTrackerService().currentFrameId().then((frameId) => {
-      return session.customRequest("evaluate", {
-        expression: expression,
-        frameId,
-        context: "hover",
+    return (frameId === undefined ? debugVariablesTrackerService().currentFrameId() : Promise.resolve(frameId))
+      .then((frameId) => {
+        return session.customRequest("evaluate", {
+          expression: expression,
+          frameId,
+          context: "hover",
+        });
       });
-    });
   }
 }
 

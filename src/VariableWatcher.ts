@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { Variable } from "./PythonSelection";
-import { pythonVariablesService } from "./PythonVariablesService";
 import { VariableInformation, ViewerService } from "./ViewerService";
 import { allFulfilled, notEmpty } from "./utils";
 import { getConfiguration, WatchServices } from "./config";
+import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 
 enum VariableTrackingState {
   tracked = "trackedVariable",
@@ -23,8 +23,7 @@ export class VariableWatcher {
 
   constructor(
     private readonly viewServices: { [key in WatchServices]?: ViewerService },
-    private readonly variablesService = pythonVariablesService()
-  ) {}
+  ) { }
 
   get hasInfo(): boolean {
     return this._hasInfo;
@@ -67,6 +66,7 @@ export class VariableWatcher {
         }
       }, 500);
     };
+
     function getVariables(): Promise<VariableItem[] | undefined> {
       return new Promise(tryGetVariableRec);
     }
@@ -104,12 +104,11 @@ export class VariableWatcher {
   }
 
   private async acquireVariables() {
-    const maybeVariables = await this.variablesService.viewableVariables();
-    if (!maybeVariables) {
-      return;
+    const { locals, globals } = await debugVariablesTrackerService().currentFrameVariables();
+    if (!globals) {
+      // ask again
+      await this.refreshVariablesAndWatches();
     }
-
-    const { locals, globals } = maybeVariables;
 
     // take only unique variables by name
     const allVariables = [...locals, ...globals];
@@ -124,6 +123,7 @@ export class VariableWatcher {
       .map(([_, srv]) => srv);
     const items = await allFulfilled(
       uniqueVariables
+        .filter(mightBeViewable)
         .map((v) => toWatchVariable(v, viewerServicesToUse.filter(notEmpty)))
         .filter(notEmpty)
     );
@@ -135,7 +135,7 @@ export class VariableWatcher {
   }
 }
 
-class WatchVariableTreeItem extends vscode.TreeItem {}
+class WatchVariableTreeItem extends vscode.TreeItem { }
 
 export class VariableItem extends WatchVariableTreeItem {
   public path: string;
@@ -194,7 +194,7 @@ async function toWatchVariable(
   for (const viewSrv of viewerServices) {
     const varInfo = await viewSrv.variableInformation({
       variable: v.evaluateName,
-    });
+    }, v.type);
     if (varInfo !== undefined) {
       watchVariable = [varInfo, viewSrv];
     }
@@ -210,7 +210,7 @@ async function toWatchVariable(
 export class VariableWatchTreeProvider
   implements vscode.TreeDataProvider<WatchVariableTreeItem>
 {
-  constructor(private readonly watcherService: VariableWatcher) {}
+  constructor(private readonly watcherService: VariableWatcher) { }
 
   private _onDidChangeTreeData = new vscode.EventEmitter<
     WatchVariableTreeItem | undefined
@@ -243,3 +243,14 @@ export class VariableWatchTreeProvider
     }
   }
 }
+
+function mightBeViewable(mightBeViewable: { type?: string }): boolean {
+  // list of python types that cannot be viewed. 
+  // this will help to avoid querying the viewer service for types that cannot be viewed anyway.
+  const NonViewableTypes = [
+    "", "module", "dict", "tuple", "set", "str", "bytes",
+    "NoneType", "int", "float", "bool", "ZMQExitAutocall"
+  ];
+  return mightBeViewable.type !== undefined && !NonViewableTypes.includes(mightBeViewable.type);
+}
+

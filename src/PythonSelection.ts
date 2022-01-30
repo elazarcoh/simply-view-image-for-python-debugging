@@ -1,6 +1,6 @@
 import { DebugProtocol } from "vscode-debugprotocol";
 
-export type Variable = Required<Pick<DebugProtocol.Variable, 'name' | 'evaluateName'>>;
+export type Variable = Required<Pick<DebugProtocol.Variable, 'name' | 'evaluateName' | 'type'>>;
 
 export type ScopeVariables = {
   locals: Variable[];

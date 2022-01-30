@@ -73,6 +73,12 @@
         "command": "svifpd.open-watch-settings",
         "title": "Configure...",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "svifpd.update-frame-id",
+        "title": "Update Frame ID",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
       }
     ],
     "menus": {

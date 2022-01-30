@@ -39,7 +39,7 @@ def save_torch_tensor(path, tensor, normalize=True, pad=10):
 ${ViewTensorService.tensor_types}['torch_tensor'] = ("torch.Tensor", is_torch_tensor, save_torch_tensor)
 `;
 
-static readonly np_utils: string = `
+    static readonly np_utils: string = `
 import numpy as np
 import skimage.util
 import skimage.io
@@ -154,7 +154,9 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
         return path;
     }
 
-    async variableInformation(variableSelection: VariableSelection): Promise<VariableInformation | undefined> {
+    async variableInformation(
+        variableSelection: VariableSelection,
+    ): Promise<VariableInformation | undefined> {
         const session = vscode.debug.activeDebugSession;
         if (session === undefined) {
             return;

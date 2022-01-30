@@ -1,17 +1,11 @@
-import { setTimeout } from 'timers';
-import * as vscode from 'vscode';
 import { DebugProtocol } from "vscode-debugprotocol";
 
 type TrackedVariable = {
+    name: string;
     evaluateName: string;
     frameId: number;
+    type: string;
 };
-
-async function findCurrentFrameId() {
-    if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.selection.isEmpty) {
-        await vscode.commands.executeCommand('editor.debug.action.selectionToRepl', {})
-    }
-}
 
 export class DebugVariablesTracker {
     readonly localVariables: TrackedVariable[] = [];
@@ -32,8 +26,6 @@ export class DebugVariablesTracker {
     _currentFrameId: number | undefined;
 
     async currentFrameId(): Promise<number> {
-
-        await findCurrentFrameId()
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this._currentFrameId!;
     }
@@ -45,7 +37,6 @@ export class DebugVariablesTracker {
         const requestId = request.seq;
         const frameId = request.arguments.frameId;
         this.scopesRequests.set(requestId, { frameId });
-        this._currentFrameId = frameId;
     }
 
     onScopesResponse(response: DebugProtocol.ScopesResponse): void {
@@ -74,24 +65,38 @@ export class DebugVariablesTracker {
         if (request !== undefined) {
             const frameId = request.frameId;
             this.variablesRequests.delete(response.request_seq);
+            if (request.scope === 'local') {
+                this.localVariables.length = 0;
+            } else {
+                this.globalVariables.length = 0;
+            }
             const variablesForScope = request.scope === 'local' ? this.localVariables : this.globalVariables;
+            this._currentFrameId = frameId;
             for (const variable of response.body.variables) {
                 variablesForScope.push({
+                    name: variable.name,
                     evaluateName: variable.evaluateName ?? variable.name,
-                    frameId
+                    frameId,
+                    type: variable.type ?? 'unknown'
                 });
             }
         }
     }
 
     onContinued(): void {
-        this.localVariables.length = 0;
-        this.globalVariables.length = 0;
+        //
     }
 
     getVariable(name: string): TrackedVariable | undefined {
         return this.localVariables.find((v) => v.evaluateName === name)
             ?? this.globalVariables.find((v) => v.evaluateName === name);
+    }
+
+    async currentFrameVariables(): Promise<{ locals: TrackedVariable[], globals: TrackedVariable[] }> {
+        return {
+            locals: this.localVariables.filter((v) => v.frameId === this._currentFrameId),
+            globals: this.globalVariables.filter((v) => v.frameId === this._currentFrameId)
+        }
     }
 }
 

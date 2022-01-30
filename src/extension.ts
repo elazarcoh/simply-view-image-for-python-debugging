@@ -74,12 +74,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
   variableWatcherSrv = new VariableWatcher(viewServices);
   variableWatchTreeProvider = new VariableWatchTreeProvider(variableWatcherSrv);
-  vscode.commands.getCommands().then
-    (
-      cs =>
-        console.log(`Commands: ${JSON.stringify(cs)}`)
-    )
-
 
   // register watcher for the debugging session. used to identify the running-frame,
   // so multi-thread will work
@@ -117,7 +111,8 @@ export function activate(context: vscode.ExtensionContext): void {
             return debugVariablesTrackerService().onScopesRequest(msg);
           } else if (msg.type === "request" && msg.command === "variables") {
             return debugVariablesTrackerService().onVariablesRequest(msg);
-          } else if (msg.type === "request" && msg.command === "evaluate") {
+          } else if (msg.type === "request" && msg.command === "evaluate" && /^\s*$/.test(msg.arguments.expression)) {
+            // this is our call, in "update-frame-id" command.
             return debugVariablesTrackerService().setFrameId(msg.arguments.frameId);
           }
         },
@@ -125,15 +120,14 @@ export function activate(context: vscode.ExtensionContext): void {
         onDidSendMessage: async (msg: SendMsg) => {
 
           if (msg.type === "event" && msg.event === "stopped" && msg.body.threadId !== undefined) {
-            // just in case it wasn't set earlier for some reason
-            variableWatcherSrv.activate();
+            variableWatcherSrv.activate();  // just in case it wasn't set earlier for some reason
             const updateWatchView = () => {
               return variableWatcherSrv
                 .refreshVariablesAndWatches()
                 .then(() => variableWatchTreeProvider.refresh())
                 .catch((e) => console.log(e));
             };
-            return updateWatchView();
+            return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
 
           } else if (msg.type === 'response' && msg.command === 'variables') {
             return debugVariablesTrackerService().onVariablesResponse(msg);
@@ -146,10 +140,6 @@ export function activate(context: vscode.ExtensionContext): void {
       };
     },
   });
-
-  // init services
-  // services.push(pythonVariablesService());
-  // services.push(pythonInContextExecutor());
 
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
@@ -230,6 +220,29 @@ export function activate(context: vscode.ExtensionContext): void {
         viewImage(path, true);
       }
     )
+  );
+
+  // command to get the current frame, using a hacky way.
+  context.subscriptions.push(
+    vscode.commands.registerCommand("svifpd.update-frame-id", async () => {
+      const activeTextEditor = vscode.window.activeTextEditor;
+      if (activeTextEditor) {
+        const prevSelection = activeTextEditor.selection;
+        let whitespaceLocation = null;
+        for (let i = 0; i < activeTextEditor.document.lineCount && whitespaceLocation === null; i++) {
+          const line = activeTextEditor.document.lineAt(i);
+          const whitespaceIndex = line.text.search(/\s/);
+          if (whitespaceIndex !== -1) {
+            whitespaceLocation = new vscode.Position(i, whitespaceIndex);
+          }
+        }
+        if(whitespaceLocation === null) return;
+        activeTextEditor.selection = new vscode.Selection(whitespaceLocation, whitespaceLocation.translate({ characterDelta: 1 }));
+        await vscode.commands.executeCommand('editor.debug.action.selectionToRepl', {}).then(() => {
+          activeTextEditor.selection = prevSelection;
+        });
+      }
+    })
   );
 
   // image watch command

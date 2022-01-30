@@ -1,27 +1,20 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
+import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 import { Body } from "./utils";
 
-class PythonInContextExecutor implements IStackWatcher {
-  protected threadId = 0;
-  protected frameId = 0;
-
-  public setThreadId(threadId: number) {
-    this.threadId = threadId;
-  }
-
-  public setFrameId(frameId: number) {
-    this.frameId = frameId;
-  }
+class PythonInContextExecutor {
 
   public evaluate(
     session: vscode.DebugSession,
     expression: string
   ): Thenable<Body<DebugProtocol.EvaluateResponse>> {
-    return session.customRequest("evaluate", {
-      expression: expression,
-      frameId: this.frameId,
-      context: "hover",
+    return debugVariablesTrackerService().currentFrameId().then((frameId) => {
+      return session.customRequest("evaluate", {
+        expression: expression,
+        frameId,
+        context: "hover",
+      });
     });
   }
 }

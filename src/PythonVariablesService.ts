@@ -1,18 +1,10 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
+import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 import { ScopeVariables, UserSelection, Variable } from "./PythonSelection";
 import type { Body } from "./utils";
 
-class PythonVariablesService implements IStackWatcher {
-  protected threadId = 0;
-  protected frameId = 0;
-
-  public setThreadId(threadId: number) {
-    this.threadId = threadId;
-  }
-  public setFrameId(frameId: number) {
-    this.frameId = frameId;
-  }
+class PythonVariablesService {
 
   protected async variableNameOrExpression(
     document: vscode.TextDocument,
@@ -23,15 +15,16 @@ class PythonVariablesService implements IStackWatcher {
       return { range: selected }; // the user selection
     }
 
-    // the user not selected a range. need to figure out which variable he's on
-    const { locals, globals } = (await this.viewableVariables()) ?? {};
+    // const { locals, globals } = (await this.viewableVariables()) ?? {};
 
+    // the user not selected a range. need to figure out which variable he's on
     const selectedVariable = document.getText(
       document.getWordRangeAtPosition(range.start)
     );
-    const targetVariable =
-      locals?.find((v) => v.name === selectedVariable) ??
-      globals?.find((v) => v.name === selectedVariable);
+    const targetVariable = debugVariablesTrackerService().getVariable(selectedVariable);
+    // const targetVariable =
+    //   locals?.find((v) => v.name === selectedVariable) ??
+      // globals?.find((v) => v.name === selectedVariable);
 
     if (targetVariable !== undefined) {
       return { variable: targetVariable.evaluateName }; // var name
@@ -46,7 +39,7 @@ class PythonVariablesService implements IStackWatcher {
       return;
     }
 
-    const frameId = this.frameId;
+    const frameId = await debugVariablesTrackerService().currentFrameId();
 
     const res: Body<DebugProtocol.ScopesResponse> = await session.customRequest(
       "scopes",

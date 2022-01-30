@@ -1,4 +1,10 @@
 # Change Log
+
+## [2.1.1] - Pre-release
+
+### Bug Fixes
+- [#11](#11) - Fixes various bugs and improves performance to allow debug IPython cells.
+
 ## [2.1.0]
 
 ### Added

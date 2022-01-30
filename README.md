@@ -31,6 +31,16 @@ Added a watch view, for watching image/plot/tensor variables, while refreshing t
   It might happen when (very) large, non-`numpy` array object, is being used.
   The solution to it is to set the `restrictImageTypes` setting to `true` (should be by default).
 
+* **Selecting different call-stack frame does not work as expected.**
+  
+  Use the command: `Debug View Python: Update Frame ID`.
+
+  Why:
+  > I couldn't find a way to get the current frame, if it was changed by the user (again and again).
+  > So, I've added a command to force VSCode "tell" me the current frame.
+  > It's a bit hacky, but it works, I think.
+
+
 ## Feature-Requests
 
 If you want me to add other debug-viewers for your objects, please open an issue for it, and provide simple example (in python, of course) of how to save an image from your object.

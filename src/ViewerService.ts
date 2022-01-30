@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import { join } from "path";
 import {
   isVariableSelection,
@@ -7,12 +6,9 @@ import {
 } from "./PythonSelection";
 import { pythonInContextExecutor } from "./PythonInContextExecutor";
 import * as tmp from "tmp";
-import { DebugProtocol } from "vscode-debugprotocol";
-import type { Body } from "./utils";
 
 export type VariableInformation = {
   name: string;
-  // watchCommand: vscode.Command
   more: Record<string, string>;
 };
 
@@ -22,7 +18,7 @@ export abstract class ViewerService {
   public constructor(
     protected readonly workingDir: string,
     protected readonly inContextExecutor = pythonInContextExecutor()
-  ) {}
+  ) { }
 
   protected get currentImgIdx(): number {
     this.currentIdx = (this.currentIdx + 1) % 10;
@@ -30,11 +26,13 @@ export abstract class ViewerService {
   }
 
   abstract variableInformation(
-    userSelection: VariableSelection
+    userSelection: VariableSelection,
+    type?: string
   ): Promise<VariableInformation | undefined>;
+
   abstract save(
     userSelection: UserSelection,
-    path?: string
+    path?: string,
   ): Promise<string | undefined>;
 
   public pathForSelection(userSelection: UserSelection): string {
@@ -49,10 +47,6 @@ export abstract class ViewerService {
     }
   }
 
-  protected evaluate(
-    session: vscode.DebugSession,
-    expression: string
-  ): Thenable<Body<DebugProtocol.EvaluateResponse>> {
-    return this.inContextExecutor.evaluate(session, expression);
-  }
+  protected readonly evaluate = this.inContextExecutor.evaluate;
+
 }

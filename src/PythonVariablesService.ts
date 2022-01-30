@@ -1,18 +1,8 @@
 import * as vscode from "vscode";
-import { DebugProtocol } from "vscode-debugprotocol";
-import { ScopeVariables, UserSelection, Variable } from "./PythonSelection";
-import type { Body } from "./utils";
+import { debugVariablesTrackerService } from "./DebugVariablesTracker";
+import { UserSelection } from "./PythonSelection";
 
-class PythonVariablesService implements IStackWatcher {
-  protected threadId = 0;
-  protected frameId = 0;
-
-  public setThreadId(threadId: number) {
-    this.threadId = threadId;
-  }
-  public setFrameId(frameId: number) {
-    this.frameId = frameId;
-  }
+class PythonVariablesService {
 
   protected async variableNameOrExpression(
     document: vscode.TextDocument,
@@ -24,62 +14,16 @@ class PythonVariablesService implements IStackWatcher {
     }
 
     // the user not selected a range. need to figure out which variable he's on
-    const { locals, globals } = (await this.viewableVariables()) ?? {};
-
     const selectedVariable = document.getText(
       document.getWordRangeAtPosition(range.start)
     );
-    const targetVariable =
-      locals?.find((v) => v.name === selectedVariable) ??
-      globals?.find((v) => v.name === selectedVariable);
+    const targetVariable = debugVariablesTrackerService().getVariable(selectedVariable);
 
     if (targetVariable !== undefined) {
       return { variable: targetVariable.evaluateName }; // var name
     } else {
       return undefined;
     }
-  }
-
-  public async viewableVariables(): Promise<ScopeVariables | undefined> {
-    const session = vscode.debug.activeDebugSession;
-    if (session === undefined) {
-      return;
-    }
-
-    const frameId = this.frameId;
-
-    const res: Body<DebugProtocol.ScopesResponse> = await session.customRequest(
-      "scopes",
-      { frameId: frameId }
-    );
-    const scopes = res.scopes;
-    const local = scopes[0];
-    const global = scopes[1];
-
-    const getVars = async (scope: DebugProtocol.Scope): Promise<Variable[]> => {
-      try {
-        const res: Body<DebugProtocol.VariablesResponse> =
-          await session.customRequest("variables", {
-            variablesReference: scope.variablesReference,
-          });
-        return res.variables
-          .filter((v) => !v.name.includes(" ")) // filter obviously not variables
-          .map((v) => ({
-            name: v.name,
-            evaluateName: v.evaluateName ?? v.name,
-          }));
-      } catch (error) {
-        console.error(error);
-        return [];
-      }
-    };
-
-    const [localVariables, globalVariables] = await Promise.all([
-      local ? getVars(local) : Promise.resolve([]),
-      global ? getVars(global) : Promise.resolve([]),
-    ]);
-
-    return { locals: localVariables ?? [], globals: globalVariables ?? [] };
   }
 
   async userSelection(

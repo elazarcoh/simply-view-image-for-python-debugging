@@ -14,7 +14,7 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
   
   ![Plotting View](pyplot-example.gif)
 * Support Tensor view: pytorch and numpy
-  * `numpy.ndarray` is considered a tensor if it has 4 channels, or 3 channels but it does not pass as an single image.
+  * `numpy.ndarray` is considered a tensor if it has 4 channels, or 3 channels but it does not pass as an single image. `scikit-image` is required for this.
 
 ### Watch view
 
@@ -30,6 +30,16 @@ Added a watch view, for watching image/plot/tensor variables, while refreshing t
 
   It might happen when (very) large, non-`numpy` array object, is being used.
   The solution to it is to set the `restrictImageTypes` setting to `true` (should be by default).
+
+* **Selecting different call-stack frame does not work as expected.**
+  
+  Use the command: `Debug View Python: Update Frame ID`.
+
+  Why:
+  > I couldn't find a way to get the current frame, if it was changed by the user (again and again).
+  > So, I've added a command to force VSCode "tell" me the current frame.
+  > It's a bit hacky, but it works, I think.
+
 
 ## Feature-Requests
 

@@ -249,7 +249,7 @@ function mightBeViewable(mightBeViewable: { type?: string }): boolean {
   // this will help to avoid querying the viewer service for types that cannot be viewed anyway.
   const NonViewableTypes = [
     "", "module", "dict", "tuple", "set", "str", "bytes",
-    "NoneType", "int", "float", "bool", "ZMQExitAutocall"
+    "NoneType", "int", "float", "bool", "ZMQExitAutocall", "function",
   ];
   return mightBeViewable.type !== undefined && !NonViewableTypes.includes(mightBeViewable.type);
 }

@@ -4,6 +4,7 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 
 ## Features
 
+* Support in Jupyter notebooks
 * Support view image from expression
   * **NOTE when using this feature, the expression is actually executed, so beware of side-effects**
   ![Expression View](expression-example.gif)

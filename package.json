@@ -25,6 +25,7 @@
   ],
   "activationEvents": [
     "onDebugResolve:python",
+    "onDebugResolve:Python Kernel Debug Adapter",
     "onCommand:svifpd.open-watch-settings"
   ],
   "main": "./dist/extension.js",

@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.1.5] - Pre-release
+
+### Added
+- [#11](#11) - Support Jupyter notebooks
+
 ## [2.1.3] - Pre-release
 
 ### Bug Fixes

@@ -78,67 +78,71 @@ export function activate(context: vscode.ExtensionContext): void {
   // register watcher for the debugging session. used to identify the running-frame,
   // so multi-thread will work
   // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
+  const createDebugAdapterTracker = () => {
+    type Request<T> = T & { type: 'request' };
+    type Response<T> = T & { type: 'response' };
+    type WithEvent<T, Event> = T & { type: 'event', event: Event }
+    type WithCommand<T, Command> = T & { command: Command }
+    type RecvMsg =
+      WithCommand<Request<DebugProtocol.ScopesRequest>, "scopes">
+      | WithCommand<Request<DebugProtocol.VariablesRequest>, 'variables'>
+      | WithCommand<Request<DebugProtocol.EvaluateRequest>, 'evaluate'>
+
+    type SendMsg =
+      WithEvent<DebugProtocol.StoppedEvent, "stopped">
+      | WithEvent<DebugProtocol.ContinuedEvent, "continued">
+      | WithCommand<Response<DebugProtocol.VariablesResponse>, "variables">
+      | WithCommand<Response<DebugProtocol.ScopesResponse>, "scopes">
+
+    return {
+      onWillStartSession: () => {
+        variableWatcherSrv.activate();
+      },
+
+      onWillStopSession: () => {
+        variableWatcherSrv.deactivate();
+        variableWatchTreeProvider.refresh();
+      },
+
+      onWillReceiveMessage: async (msg: RecvMsg) => {
+        if (msg.type === "request" && msg.command === "scopes") {
+          return debugVariablesTrackerService().onScopesRequest(msg);
+        } else if (msg.type === "request" && msg.command === "variables") {
+          return debugVariablesTrackerService().onVariablesRequest(msg);
+        } else if (msg.type === "request" && msg.command === "evaluate" && /^\s*$/.test(msg.arguments.expression)) {
+          // this is our call, in "update-frame-id" command.
+          return debugVariablesTrackerService().setFrameId(msg.arguments.frameId);
+        }
+      },
+
+      onDidSendMessage: async (msg: SendMsg) => {
+
+        if (msg.type === "event" && msg.event === "stopped" && msg.body.threadId !== undefined) {
+          variableWatcherSrv.activate();  // just in case it wasn't set earlier for some reason
+          const updateWatchView = () => {
+            return variableWatcherSrv
+              .refreshVariablesAndWatches()
+              .then(() => variableWatchTreeProvider.refresh())
+              .catch((e) => console.log(e));
+          };
+          return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
+
+        } else if (msg.type === 'response' && msg.command === 'variables') {
+          return debugVariablesTrackerService().onVariablesResponse(msg);
+        } else if (msg.type === "event" && msg.event === "continued") {
+          return debugVariablesTrackerService().onContinued();
+        } else if (msg.type === "response" && msg.command === "scopes") {
+          return debugVariablesTrackerService().onScopesResponse(msg);
+        }
+      },
+    };
+  };
+
   vscode.debug.registerDebugAdapterTrackerFactory("python", {
-    createDebugAdapterTracker: (_) => {
-
-      type Request<T> = T & { type: 'request' };
-      type Response<T> = T & { type: 'response' };
-      type WithEvent<T, Event> = T & { type: 'event', event: Event }
-      type WithCommand<T, Command> = T & { command: Command }
-      type RecvMsg =
-        WithCommand<Request<DebugProtocol.ScopesRequest>, "scopes">
-        | WithCommand<Request<DebugProtocol.VariablesRequest>, 'variables'>
-        | WithCommand<Request<DebugProtocol.EvaluateRequest>, 'evaluate'>
-
-      type SendMsg =
-        WithEvent<DebugProtocol.StoppedEvent, "stopped">
-        | WithEvent<DebugProtocol.ContinuedEvent, "continued">
-        | WithCommand<Response<DebugProtocol.VariablesResponse>, "variables">
-        | WithCommand<Response<DebugProtocol.ScopesResponse>, "scopes">
-
-      return {
-        onWillStartSession: () => {
-          variableWatcherSrv.activate();
-        },
-
-        onWillStopSession: () => {
-          variableWatcherSrv.deactivate();
-          variableWatchTreeProvider.refresh();
-        },
-
-        onWillReceiveMessage: async (msg: RecvMsg) => {
-          if (msg.type === "request" && msg.command === "scopes") {
-            return debugVariablesTrackerService().onScopesRequest(msg);
-          } else if (msg.type === "request" && msg.command === "variables") {
-            return debugVariablesTrackerService().onVariablesRequest(msg);
-          } else if (msg.type === "request" && msg.command === "evaluate" && /^\s*$/.test(msg.arguments.expression)) {
-            // this is our call, in "update-frame-id" command.
-            return debugVariablesTrackerService().setFrameId(msg.arguments.frameId);
-          }
-        },
-
-        onDidSendMessage: async (msg: SendMsg) => {
-
-          if (msg.type === "event" && msg.event === "stopped" && msg.body.threadId !== undefined) {
-            variableWatcherSrv.activate();  // just in case it wasn't set earlier for some reason
-            const updateWatchView = () => {
-              return variableWatcherSrv
-                .refreshVariablesAndWatches()
-                .then(() => variableWatchTreeProvider.refresh())
-                .catch((e) => console.log(e));
-            };
-            return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
-
-          } else if (msg.type === 'response' && msg.command === 'variables') {
-            return debugVariablesTrackerService().onVariablesResponse(msg);
-          } else if (msg.type === "event" && msg.event === "continued") {
-            return debugVariablesTrackerService().onContinued();
-          } else if (msg.type === "response" && msg.command === "scopes") {
-            return debugVariablesTrackerService().onScopesResponse(msg);
-          }
-        },
-      };
-    },
+    createDebugAdapterTracker
+  });
+  vscode.debug.registerDebugAdapterTrackerFactory("Python Kernel Debug Adapter", {
+    createDebugAdapterTracker
   });
 
   context.subscriptions.push(
@@ -236,7 +240,7 @@ export function activate(context: vscode.ExtensionContext): void {
             whitespaceLocation = new vscode.Position(i, whitespaceIndex);
           }
         }
-        if(whitespaceLocation === null) return;
+        if (whitespaceLocation === null) return;
         activeTextEditor.selection = new vscode.Selection(whitespaceLocation, whitespaceLocation.translate({ characterDelta: 1 }));
         await vscode.commands.executeCommand('editor.debug.action.selectionToRepl', {}).then(() => {
           activeTextEditor.selection = prevSelection;

@@ -157,6 +157,16 @@
     "configuration": {
       "title": "View Image (Python Debug)",
       "properties": {
+        "svifpd.debug": {
+          "type": "string",
+          "enum": [
+            "none",
+            "debug",
+            "verbose"
+          ],
+          "default": "none",
+          "description": "Enable debug mode (show debug info in `View Image for Python` output)"
+        },
         "svifpd.imageWatch.enable": {
           "type": "boolean",
           "default": true,

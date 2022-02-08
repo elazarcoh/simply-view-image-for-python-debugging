@@ -70,7 +70,13 @@ export interface Config {
    * @uniqueItems true
    */
   "imageWatch.objects": WatchServices[];
+
+  /**
+   * @default "none"
+   * @description Enable debug mode (show debug info in `View Image for Python` output)
+   */
+  debug: "none" | "debug" | "verbose";
 }
 
-const section = "svifpd";
-export const getConfiguration = configUtils.ConfigurationGetter<Config>(section);
+export const extensionConfigSection = "svifpd";
+export const getConfiguration = configUtils.ConfigurationGetter<Config>(extensionConfigSection);

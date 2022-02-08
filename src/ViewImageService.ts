@@ -5,6 +5,7 @@ import {
   ImageViewConfig,
   NormalizationMethods,
 } from "./config";
+import { logTrace } from "./logging";
 import {
   isVariableSelection,
   UserSelection,
@@ -262,9 +263,9 @@ _python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferre
 
     try {
       const res = await this.evaluate(session, expression);
-      console.log(`result: ${res.result}`);
+      logTrace(`result: ${res.result}`);
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       vscode.window.showErrorMessage(
         `could not show image for "${vn}". please check log.`
       );
@@ -316,16 +317,16 @@ ${ViewImageService.define_writer_expression}
 )
 `;
       const res = await this.evaluate(session, initExpression);
-      console.log(`evaluate initExpression result: ${res.result}`);
+      logTrace(`evaluate initExpression result: ${res.result}`);
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       return;
     }
 
     try {
       const expression = `${ViewImageService.py_module}.image_info(${vn})`;
       const res = await this.evaluate(session, expression);
-      console.log(`evaluate expression result: ${res.result}`);
+      logTrace(`evaluate expression result: ${res.result}`);
       const [objTypeStr, shapeStr, dtypeStr] = res.result
         .replace(/\'/g, "")
         .split(";");
@@ -337,7 +338,7 @@ ${ViewImageService.define_writer_expression}
         };
       }
     } catch (error) {
-      console.log("imageInformation python eval error:", error);
+      logTrace("imageInformation python eval error:", error);
       return;
     }
 
@@ -364,9 +365,9 @@ ${ViewImageService.define_writer_expression}
 )
 `;
       const res = await this.evaluate(session, initExpression);
-      console.log(`evaluate initExpression result: ${res.result}`);
+      logTrace(`evaluate initExpression result: ${res.result}`);
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       return [false];
     }
 
@@ -376,13 +377,13 @@ ${ViewImageService.define_writer_expression}
         : "False";
       const expression = `${ViewImageService.py_module}.${ViewImageService.check_obj_func}(${vn}, restricted_types=${restrictImageTypes})`;
       const res = await this.evaluate(session, expression);
-      console.log(`evaluate expression result: ${res.result}`);
+      logTrace(`evaluate expression result: ${res.result}`);
       const isImage = res.result;
       if (isImage === "True") {
         return [true, ""];
       }
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       return [false];
     }
 
@@ -472,7 +473,7 @@ _python_view_image_tmp_mod = ModuleType('_python_view_image_tmp_mod', '')
 
     try {
       let res = await this.evaluate(session, setupExpression);
-      console.log(`evaluate setupExpression result: ${res.result}`);
+      logTrace(`evaluate setupExpression result: ${res.result}`);
 
       for (const {
         test,
@@ -481,18 +482,18 @@ _python_view_image_tmp_mod = ModuleType('_python_view_image_tmp_mod', '')
         isError,
       } of validationExpressions) {
         res = await this.evaluate(session, test);
-        console.log(`evaluate test result: ${res.result}`);
+        logTrace(`evaluate test result: ${res.result}`);
 
         res = await this.evaluate(session, validate);
-        console.log(`evaluate validateExpression result: ${res.result}`);
+        logTrace(`evaluate validateExpression result: ${res.result}`);
         if (res.result !== "True") {
           if (isError) {
             vscode.window.showErrorMessage(message);
             try {
               res = await this.evaluate(session, cleanupExpression);
-              console.log(`evaluate cleanupExpression result: ${res.result}`);
+              logTrace(`evaluate cleanupExpression result: ${res.result}`);
             } catch (error) {
-              console.log(error);
+              logTrace(error);
             }
             return false;
           } else {
@@ -502,9 +503,9 @@ _python_view_image_tmp_mod = ModuleType('_python_view_image_tmp_mod', '')
         }
       }
       res = await this.evaluate(session, cleanupExpression);
-      console.log(`evaluate cleanupExpression result: ${res.result}`);
+      logTrace(`evaluate cleanupExpression result: ${res.result}`);
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       await this.evaluate(session, cleanupExpression);
       return false;
     }

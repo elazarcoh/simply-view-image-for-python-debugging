@@ -6,6 +6,7 @@ import {
   VariableSelection,
 } from "./PythonSelection";
 import { getConfiguration } from "./config";
+import { logTrace } from "./logging";
 
 export default class ViewPlotService extends ViewerService {
   // define all the needed stuff in python.
@@ -131,9 +132,9 @@ ${ViewPlotService.py_module}.save("${py_save_path}", ${vn})
 
     try {
       const res = await this.evaluate(session, expression);
-      console.log(`result: ${res.result}`);
+      logTrace(`result: ${res.result}`);
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       vscode.window.showErrorMessage(
         `could not show image for "${vn}". please check log.`
       );
@@ -177,22 +178,22 @@ ${ViewPlotService.define_writer_expression}
 )
 `;
       const res = await this.evaluate(session, initExpression);
-      console.log(`evaluate initExpression result: ${res.result}`);
+      logTrace(`evaluate initExpression result: ${res.result}`);
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       return [false, ""];
     }
 
     try {
       const expression = `${ViewPlotService.py_module}.is_a_plot(${vn})`;
       const res = await this.evaluate(session, expression);
-      console.log(`evaluate expression result: ${res.result}`);
+      logTrace(`evaluate expression result: ${res.result}`);
       const [isPlot, reprName] = res.result.replace(/\(|\)| |/g, "").split(",");
       if (isPlot === "True") {
         return [true, reprName.replace(/'/g, "")];
       }
     } catch (error) {
-      console.log(error);
+      logTrace(error);
       return [false, ""];
     }
 

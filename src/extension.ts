@@ -15,9 +15,10 @@ import {
   VariableWatcher,
 } from "./VariableWatcher";
 import { ViewerService } from "./ViewerService";
-import { getConfiguration, WatchServices } from "./config";
+import { extensionConfigSection, getConfiguration, WatchServices } from "./config";
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 import { DebugProtocol } from "vscode-debugprotocol";
+import { initLog, logTrace } from "./logging";
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
@@ -44,7 +45,18 @@ function viewImage(path: string, preview: boolean) {
   );
 }
 
+function onConfigChange(): void {
+  initLog();
+}
+
 export function activate(context: vscode.ExtensionContext): void {
+  onConfigChange();
+  vscode.workspace.onDidChangeConfiguration(config => {
+    if (config.affectsConfiguration(extensionConfigSection)) {
+      onConfigChange();
+    }
+  });
+
   const usetmp = getConfiguration("useTmpPathToSave");
   let dir = context.globalStorageUri.fsPath;
   if (usetmp || dir === undefined) {
@@ -123,7 +135,7 @@ export function activate(context: vscode.ExtensionContext): void {
             return variableWatcherSrv
               .refreshVariablesAndWatches()
               .then(() => variableWatchTreeProvider.refresh())
-              .catch((e) => console.log(e));
+              .catch((e) => logTrace(e));
           };
           return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
 

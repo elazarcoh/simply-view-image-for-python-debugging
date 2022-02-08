@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { VariableInformation, ViewerService } from './ViewerService';
 import { isVariableSelection, UserSelection, VariableSelection } from './PythonSelection';
+import { logTrace } from './logging';
 
 type TensorInformation = {
     shape: string,
@@ -144,9 +145,9 @@ ${ViewTensorService.py_module}.${ViewTensorService.save_func}("${py_save_path}",
 
         try {
             const res = await this.evaluate(session, expression);
-            console.log(`result: ${res.result}`);
+            logTrace(`result: ${res.result}`);
         } catch (error) {
-            console.log(error);
+            logTrace(error);
             vscode.window.showErrorMessage(`could not show image for "${vn}". please check log.`);
             return;
         }
@@ -195,16 +196,16 @@ ${ViewTensorService.define_writer_expression}
 `
             );
             const res = await this.evaluate(session, initExpression);
-            console.log(`evaluate initExpression result: ${res.result}`);
+            logTrace(`evaluate initExpression result: ${res.result}`);
         } catch (error) {
-            console.log(error);
+            logTrace(error);
             return;
         }
 
         try {
             const expression = (`${ViewTensorService.py_module}.${ViewTensorService.info_func}(${vn})`);
             const res = await this.evaluate(session, expression);
-            console.log(`evaluate expression result: ${res.result}`);
+            logTrace(`evaluate expression result: ${res.result}`);
             const [shapeStr, dtypeStr] = res.result.replace(/'/g, "").split(";");
             if (shapeStr) {
                 return {
@@ -213,7 +214,7 @@ ${ViewTensorService.define_writer_expression}
                 };
             }
         } catch (error) {
-            console.log("imageInformation python eval error:", error);
+            logTrace("imageInformation python eval error:", error);
             return;
         }
 
@@ -239,22 +240,22 @@ ${ViewTensorService.define_writer_expression}
 `
             );
             const res = await this.evaluate(session, initExpression);
-            console.log(`evaluate initExpression result: ${res.result}`);
+            logTrace(`evaluate initExpression result: ${res.result}`);
         } catch (error) {
-            console.log(error);
+            logTrace(error);
             return [false, ""];
         }
 
         try {
             const expression = (`${ViewTensorService.py_module}.${ViewTensorService.check_obj_func}(${vn})`);
             const res = await this.evaluate(session, expression);
-            console.log(`evaluate expression result: ${res.result}`);
+            logTrace(`evaluate expression result: ${res.result}`);
             const [isTensor, reprName] = res.result.replace(/\(|\)| |/g, "").split(",");
             if (isTensor === "True") {
                 return [true, reprName.replace(/'/g, "")];
             }
         } catch (error) {
-            console.log(error);
+            logTrace(error);
             return [false, ""];
         }
 

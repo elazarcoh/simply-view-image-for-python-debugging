@@ -18,7 +18,7 @@ import { ViewerService } from "./ViewerService";
 import { extensionConfigSection, getConfiguration, WatchServices } from "./config";
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { initLog, logTrace } from "./logging";
+import { initLog, logDebug, logTrace } from "./logging";
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
@@ -63,7 +63,10 @@ export function activate(context: vscode.ExtensionContext): void {
     dir = tmpdir();
     dir = join(dir, WORKING_DIR);
   }
+  logDebug(`Using ${dir} as save directory`);
 
+  // setup the services
+  logDebug("Setting up view services");
   viewImageSrv = new ViewImageService(dir);
   viewServices["images"] = viewImageSrv;
   viewPlotSrv = new ViewPlotService(dir);
@@ -71,13 +74,16 @@ export function activate(context: vscode.ExtensionContext): void {
   viewTensorSrv = new ViewTensorService(dir);
   viewServices["image-tensors"] = viewTensorSrv;
 
+  // create output directory if it doesn't exist
   if (existsSync(dir)) {
+    logDebug("cleanup old files in save directory");
     const files = readdirSync(dir);
     files.forEach((file) => {
       const curPath = join(dir, file);
       unlinkSync(curPath);
     });
   } else {
+    logDebug("create save directory");
     mkdirSync(dir);
     if (usetmp) {
       chmodSync(dir, 0o777); // make the folder world writable for other users uses the extension
@@ -150,13 +156,17 @@ export function activate(context: vscode.ExtensionContext): void {
     };
   };
 
+  // register the debug adapter tracker
+  logDebug("Registering debug adapter tracker for python");
   vscode.debug.registerDebugAdapterTrackerFactory("python", {
     createDebugAdapterTracker
   });
+  logDebug("Registering debug adapter tracker for python-Jupyter");
   vscode.debug.registerDebugAdapterTrackerFactory("Python Kernel Debug Adapter", {
     createDebugAdapterTracker
   });
 
+  logDebug("Registering code actions provider (the lightbulb)");
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       "python",
@@ -165,6 +175,7 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
+  logDebug("Registering image watch tree view provider");
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
       "pythonDebugImageWatch",
@@ -172,6 +183,8 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
+  // add commands
+  logDebug("Registering commands");
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand(
       "svifpd.view-image",

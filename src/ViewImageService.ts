@@ -33,10 +33,12 @@ try:
 except NameError:
     
     from types import ModuleType
-    _python_view_image_mod = ModuleType('python_view_image_mod', '')
+    ${ViewImageService.py_module} = ModuleType('python_view_image_mod', '')
 
     exec(
 '''
+${ViewImageService.catch_exception_decorator}
+
 import numpy as np
 def standalone_imsave(path, img):
     def preprocess_for_png(img):
@@ -175,6 +177,7 @@ def get_function(preferred=None):
             break
     return save_function
 
+@${ViewImageService.catch_exception_decorator_name}
 def ${ViewImageService.save_func}(path, img, backend, preprocess):
     func = get_function(backend)
     img = prepare_image(img, preprocess)
@@ -209,7 +212,7 @@ def ${ViewImageService.info_func}(img):
     dtype = str(img.dtype)
     return ";".join([obj_type, shape, dtype])
 '''
-    , _python_view_image_mod.__dict__
+    , ${ViewImageService.py_module}.__dict__
     )
 `;
 
@@ -256,13 +259,21 @@ def ${ViewImageService.info_func}(img):
     const expression = `
 exec(\"\"\"
 ${ViewImageService.define_writer_expression}
-_python_view_image_mod.save("${py_save_path}", ${vn}, backend="${config.preferredBackend}", preprocess="${config.normalizationMethod}")
+${ViewImageService.py_module}.last_save_result = (
+    ${ViewImageService.py_module}.${ViewImageService.save_func}("${py_save_path}", ${vn}, backend="${config.preferredBackend}", preprocess="${config.normalizationMethod}")
+)
 \"\"\"
 )
 `;
 
     try {
       const res = await this.evaluate(session, expression);
+      const lastSaveResult = await this.evaluate(session, `${ViewImageService.py_module}.last_save_result`);
+      const [isError, result] = this.resultOrError(lastSaveResult.result);
+      if (isError) {
+        logTrace("Error", result);
+        return;
+      }
       logTrace(`result: ${res.result}`);
     } catch (error) {
       logTrace(error);

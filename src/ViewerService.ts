@@ -13,6 +13,18 @@ export type VariableInformation = {
 };
 
 export abstract class ViewerService {
+
+  static readonly catch_exception_decorator_name = `catch_exception_to_object`
+  static readonly catch_exception_decorator = `
+def ${ViewerService.catch_exception_decorator_name}(func):
+    def warper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return f"Error({type(e).__name__},'{e}')"
+    return warper
+`
+
   protected currentIdx: number = 0;
 
   public constructor(
@@ -44,6 +56,19 @@ export abstract class ViewerService {
     } else {
       const options = { postfix: ".png", dir: this.workingDir };
       return tmp.tmpNameSync(options);
+    }
+  }
+
+  parsePythonError(error: string): { message?: string; type?: string } {
+    const match = /"Error\((?<type>.*?),'(?<message>.*?)\)"/.exec(error);
+    return { message: match?.groups?.message, type: match?.groups?.type };
+  }
+
+  resultOrError(result: string): [false, string] | [true, { message?: string; type?: string }] {
+    if (result.startsWith("\"Error(")) {
+      return [true, this.parsePythonError(result)];
+    } else {
+      return [false, result];
     }
   }
 

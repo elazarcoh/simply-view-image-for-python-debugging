@@ -5,7 +5,7 @@ import ViewTensorService from "./ViewTensorService";
 import { tmpdir } from "os";
 import { mkdirSync, existsSync, readdirSync, unlinkSync, chmodSync } from "fs";
 import { join } from "path";
-import { UserSelection } from "./PythonSelection";
+import { UserSelection, VariableSelection } from "./PythonSelection";
 import { pythonVariablesService } from "./PythonVariablesService";
 import {
   VariableWatchTreeProvider,
@@ -319,6 +319,55 @@ export function activate(context: vscode.ExtensionContext): void {
       });
     })
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "svifpd.view-image-debug-variable",
+      async ({ variable }) => {
+        const variableSelection: VariableSelection = {
+          variable: variable.evaluateName
+        }
+        const command = await inspectToGetCommand(variableSelection);
+        if (command !== undefined) {
+          await vscode.commands.executeCommand(command.command, variableSelection);
+        }
+      }
+    )
+  );
+}
+
+async function inspectToGetCommand(userSelection: UserSelection) {
+
+  const [isAnImage, _] = await viewImageSrv.isAnImage(userSelection);
+  if (isAnImage) {
+    return {
+      command: "svifpd.view-image",
+      title: "View Image",
+      arguments: [userSelection],
+    };
+  }
+
+  const [isAPlot, plotType] = await viewPlotSrv.isAPlot(userSelection);
+  if (isAPlot) {
+    return {
+      command: "svifpd.view-plot",
+      title: `View Plot (${plotType})`,
+      arguments: [userSelection],
+    };
+  }
+
+  const [isATensor, tensorType] = await viewTensorSrv.isATensor(
+    userSelection
+  );
+  if (isATensor) {
+    return {
+      command: "svifpd.view-tensor",
+      title: `View Tensor (${tensorType})`,
+      arguments: [userSelection],
+    };
+  }
+
+  return undefined;
 }
 
 /**
@@ -341,41 +390,11 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
       return;
     }
 
-    const [isAnImage, _] = await viewImageSrv.isAnImage(userSelection);
-    if (isAnImage) {
-      return [
-        {
-          command: "svifpd.view-image",
-          title: "View Image",
-          arguments: [userSelection],
-        },
-      ];
+    const command = await inspectToGetCommand(userSelection);
+    if (command !== undefined) {
+      return [command];
+    } else {
+      return undefined;
     }
-
-    const [isAPlot, plotType] = await viewPlotSrv.isAPlot(userSelection);
-    if (isAPlot) {
-      return [
-        {
-          command: "svifpd.view-plot",
-          title: `View Plot (${plotType})`,
-          arguments: [userSelection],
-        },
-      ];
-    }
-
-    const [isATensor, tensorType] = await viewTensorSrv.isATensor(
-      userSelection
-    );
-    if (isATensor) {
-      return [
-        {
-          command: "svifpd.view-tensor",
-          title: `View Tensor (${tensorType})`,
-          arguments: [userSelection],
-        },
-      ];
-    }
-
-    return undefined;
   }
 }

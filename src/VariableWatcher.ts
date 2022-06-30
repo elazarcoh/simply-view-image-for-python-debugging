@@ -4,6 +4,10 @@ import { VariableInformation, ViewerService } from "./ViewerService";
 import { allFulfilled, notEmpty } from "./utils";
 import { getConfiguration, WatchServices } from "./config";
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
+import ViewImageService from "./ViewImageService";
+import ViewPlotService from "./ViewPlotService";
+import ViewTensorService from "./ViewTensorService";
+import type { SupportedServicesNames } from "./supported-services";
 
 enum VariableTrackingState {
   tracked = "trackedVariable",
@@ -87,9 +91,10 @@ export class VariableWatcher {
     for (const variable of newVariables) {
       const current = currentVariables[variable.evaluateName];
       if (current !== undefined) {
-        variable.contextValue = current.trackingState;
+        variable.tracking = current.trackingState;
         variable.path = current.path;
         variable.iconPath = current.iconPath;
+        variable.updateContext();
       }
     }
 
@@ -99,7 +104,8 @@ export class VariableWatcher {
     for (const v of this._variables.filter(
       (v) => v.trackingState === VariableTrackingState.tracked
     )) {
-      await v.viewService.save({ variable: v.evaluateName }, v.path);
+      // TODO: temporary solution is to use the first viewer service
+      await v.viewServices[0].save({ variable: v.evaluateName }, v.path);
     }
   }
 
@@ -140,32 +146,56 @@ class WatchVariableTreeItem extends vscode.TreeItem { }
 export class VariableItem extends WatchVariableTreeItem {
   public path: string;
   iconPath: vscode.ThemeIcon | undefined = undefined;
+  tracking: VariableTrackingState = VariableTrackingState.nonTracked;
+  types: SupportedServicesNames[] = [];
 
   constructor(
     public readonly label: string,
     public readonly evaluateName: string,
     public readonly variableInformation: Record<string, string>,
-    public readonly viewService: ViewerService,
+    public readonly viewServices: ViewerService[],
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
       .TreeItemCollapsibleState.Collapsed
   ) {
     super(label, collapsibleState);
-    this.path = viewService.pathForSelection({ variable: evaluateName });
+    this.path = viewServices[0].pathForSelection({ variable: evaluateName });
+    for (const service of viewServices) {
+      if (service instanceof ViewImageService) {
+        this.types.push("image");
+      }
+      if (service instanceof ViewPlotService) {
+        this.types.push("plot");
+      }
+      if (service instanceof ViewTensorService) {
+        this.types.push("tensor");
+      }
+    }
+    this.updateContext();
   }
-
-  setTracked(): void {
-    this.contextValue = VariableTrackingState.tracked;
-    this.iconPath = new vscode.ThemeIcon("eye");
-  }
-  setNonTracked(): void {
-    this.contextValue = VariableTrackingState.nonTracked;
-    this.iconPath = undefined;
-  }
-  contextValue = VariableTrackingState.nonTracked;
 
   get trackingState(): VariableTrackingState {
-    return this.contextValue;
+    return this.tracking;
   }
+
+  updateContext(): void {
+    this.contextValue = this.tracking + "-" + this.types.join("_");
+  }
+  setTracked(): void {
+    this.tracking = VariableTrackingState.tracked;
+    this.iconPath = new vscode.ThemeIcon("eye");
+    this.updateContext();
+  }
+  setNonTracked(): void {
+    this.tracking = VariableTrackingState.nonTracked;
+    this.iconPath = undefined;
+    this.updateContext();
+  }
+
+  viewerServiceByType(type: SupportedServicesNames): ViewerService | undefined {
+    const cls = type === "image" ? ViewImageService : type === "plot" ? ViewPlotService : ViewTensorService;
+    return this.viewServices.find((s) => s instanceof cls);
+  }
+
 }
 
 class VariableInfoItem extends WatchVariableTreeItem {
@@ -180,31 +210,30 @@ class VariableInfoItem extends WatchVariableTreeItem {
 }
 
 function isVariableItem(v: WatchVariableTreeItem): v is VariableItem {
-  return (
-    v.contextValue === VariableTrackingState.nonTracked ||
-    v.contextValue === VariableTrackingState.tracked
-  );
+  return v instanceof VariableItem;
 }
 
 async function toWatchVariable(
   v: Variable,
   viewerServices: ViewerService[]
 ): Promise<VariableItem | undefined> {
-  let watchVariable: [VariableInformation, ViewerService] | undefined;
+
+  let variableInformation: VariableInformation | undefined;
+  const services: ViewerService[] = [];
+
   for (const viewSrv of viewerServices) {
     const varInfo = await viewSrv.variableInformation({
       variable: v.evaluateName,
     }, v.type);
     if (varInfo !== undefined) {
-      watchVariable = [varInfo, viewSrv];
+      variableInformation = varInfo;
+      services.push(viewSrv);
     }
   }
-  if (watchVariable === undefined) {
+  if (variableInformation === undefined) {
     return;
   }
-  const [varInfo, viewSrv] = watchVariable;
-
-  return new VariableItem(varInfo.name, varInfo.name, varInfo.more, viewSrv);
+  return new VariableItem(variableInformation.name, variableInformation.name, variableInformation.more, services);
 }
 
 export class VariableWatchTreeProvider

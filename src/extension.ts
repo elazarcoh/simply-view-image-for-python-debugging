@@ -1,5 +1,3 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import ViewImageService from "./ViewImageService";
 import ViewPlotService from "./ViewPlotService";
@@ -19,6 +17,8 @@ import { extensionConfigSection, getConfiguration, WatchServices } from "./confi
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { initLog, logDebug, logTrace } from "./logging";
+import SUPPORTED_SERVICES from "./supported-services";
+import { openImageToTheSide } from "./open-image";
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
@@ -31,19 +31,6 @@ let variableWatchTreeProvider: VariableWatchTreeProvider;
 const viewServices: { [key in WatchServices]?: ViewerService } = {};
 
 const WORKING_DIR = "svifpd";
-
-function viewImage(path: string, preview: boolean) {
-  const options = {
-    viewColumn: vscode.ViewColumn.Beside,
-    preview: preview,
-    preserveFocus: true,
-  };
-  return vscode.commands.executeCommand(
-    "vscode.open",
-    vscode.Uri.file(path),
-    options
-  );
-}
 
 function onConfigChange(): void {
   initLog();
@@ -202,7 +189,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (path === undefined) {
           return;
         }
-        viewImage(path, true);
+        openImageToTheSide(path, true);
       }
     )
   );
@@ -224,7 +211,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (path === undefined) {
           return;
         }
-        viewImage(path, true);
+        openImageToTheSide(path, true);
       }
     )
   );
@@ -246,7 +233,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (path === undefined) {
           return;
         }
-        viewImage(path, true);
+        openImageToTheSide(path, true);
       }
     )
   );
@@ -275,21 +262,23 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // image watch command
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "svifpd.watch-view",
-      async (watchVariable: VariableItem) => {
-        const path = await watchVariable.viewService.save(
-          { variable: watchVariable.evaluateName },
-          watchVariable.path
-        );
-        if (path === undefined) {
-          return;
+  for (const [type, _] of SUPPORTED_SERVICES) {
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        `svifpd.watch-view-${type}`,
+        async (watchVariable: VariableItem) => {
+          const path = await watchVariable.viewerServiceByType(type)?.save(
+            { variable: watchVariable.evaluateName },
+            watchVariable.path
+          );
+          if (path === undefined) {
+            return;
+          }
+          openImageToTheSide(path, false);
         }
-        viewImage(path, false);
-      }
-    )
-  );
+      )
+    );
+  }
 
   // image watch track commands
   context.subscriptions.push(

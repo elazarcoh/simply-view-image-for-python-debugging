@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.2.9] - Pre-release
+
+### Added
+- [#17](#17) - Debug context menu view for plots.
+
 ## [2.1.5] - Pre-release
 
 ### Added

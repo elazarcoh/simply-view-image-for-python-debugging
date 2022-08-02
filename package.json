@@ -92,6 +92,11 @@
         "title": "Update Frame ID",
         "enablement": "inDebugMode",
         "category": "Debug View Python"
+      },
+      {
+        "command": "svifpd.view-debug-variable",
+        "title": "View as Image",
+        "enablement": "inDebugMode"
       }
     ],
     "menus": {
@@ -123,6 +128,10 @@
         {
           "command": "svifpd.open-watch-settings",
           "when": "false"
+        },
+        {
+          "command": "svifpd.view-debug-variable",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -135,6 +144,13 @@
           "command": "svifpd.open-watch-settings",
           "when": "view == pythonDebugImageWatch",
           "group": "navigation@2"
+        }
+      ],
+      "debug/variables/context": [
+        {
+          "command": "svifpd.view-debug-variable",
+          "group": "1_view",
+          "when": "debugProtocolVariableMenuContext == viewableInGraphicViewer"
         }
       ],
       "view/item/context": [

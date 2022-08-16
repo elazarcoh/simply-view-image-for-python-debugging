@@ -280,10 +280,11 @@
   },
   "scripts": {
     "update-package-json": "update-package-json",
-    "vscode:prepublish": "webpack --mode production",
-    "build": "webpack --mode development",
-    "watch": "webpack --mode development --watch",
-    "lint": "eslint src --ext ts"
+    "vscode:prepublish": "yarn run clean && webpack --config webpack.config.prod.js",
+    "build": "yarn run clean && webpack --mode development",
+    "watch": "yarn run clean && webpack --mode development --watch",
+    "lint": "eslint src --ext ts",
+    "clean": "rimraf dist"
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
@@ -296,6 +297,7 @@
     "eslint": "^7.32.0",
     "eslint-webpack-plugin": "^3.0.1",
     "glob": "^7.1.7",
+    "rimraf": "^3.0.2",
     "ts-loader": "^7.0.5",
     "typescript": "^3.9.10",
     "vscode-debugprotocol": "^1.49.0",

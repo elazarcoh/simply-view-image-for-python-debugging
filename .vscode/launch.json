@@ -6,7 +6,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run Extension",
+			"name": "Extension",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
@@ -14,10 +14,17 @@
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"${workspaceFolder}/python_test"
 			],
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
+			"smartStep": true,
+			"sourceMaps": true,
+			//"outFiles": ["${workspaceFolder}/out/**/*", "!${workspaceFolder}/**/node_modules**/*"],
+			"preLaunchTask": "Compile",
+			"skipFiles": [
+				"<node_internals>/**"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"presentation": {
+				"group": "1_extension",
+				"order": 1
+			}
 		},
 		{
 			"name": "Extension Tests",

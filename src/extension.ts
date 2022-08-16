@@ -147,7 +147,7 @@ export function activate(context: vscode.ExtensionContext): void {
           return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
 
         } else if (msg.type === 'response' && msg.command === 'variables') {
-          if (msg.body) patchDebugVariableContext(msg);
+          if (msg.body && getConfiguration('addViewContextEntryToVSCodeDebugVariables')) patchDebugVariableContext(msg);
           return debugVariablesTrackerService().onVariablesResponse(msg);
         } else if (msg.type === "event" && msg.event === "continued") {
           return debugVariablesTrackerService().onContinued();

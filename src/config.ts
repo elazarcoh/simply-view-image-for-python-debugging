@@ -76,6 +76,12 @@ export interface Config {
    * @description Enable debug mode (show debug info in `View Image for Python` output)
    */
   debug: "none" | "debug" | "verbose";
+
+  /**
+   * @default true
+   * @description Whether to show a context menu entry in VSCode debug variables view for custom objects (currently only plots).
+   */
+  addViewContextEntryToVSCodeDebugVariables: boolean;
 }
 
 export const extensionConfigSection = "svifpd";

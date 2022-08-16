@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.2.11] - Pre-release
+
+- [#28](#28) - Add config to allow control of whether the view plot in debug variables is shown.
+               `"svifpd.addViewContextEntryToVSCodeDebugVariables": true`
+
 ## [2.2.9] - Pre-release
 
 ### Added

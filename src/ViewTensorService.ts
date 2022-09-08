@@ -63,7 +63,7 @@ def save_numpy_tensor(path, tensor, normalize=True, pad=10):
         pad_value = (1.0,) * tensor.shape[-1]
     else:
         pad_value = 1.0
-    montage = skimage.util.montage(tensor, fill=pad_value, rescale_intensity=normalize, padding_width=pad, multichannel=is_color)
+    montage = skimage.util.montage(tensor.copy(), fill=pad_value, rescale_intensity=normalize, padding_width=pad, multichannel=is_color)
     skimage.io.imsave(path, img_as_ubyte(montage), check_contrast=False)
 ${ViewTensorService.tensor_types}['numpy_tensor'] = ("np.ndarray", is_numpy_tensor, save_numpy_tensor)
 `;

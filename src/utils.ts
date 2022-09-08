@@ -19,6 +19,7 @@ export function allFulfilled<T>(ps: Promise<T>[]): Promise<T[]> {
   const fulfilled = (t: T | typeof FAIL_TOKEN): t is T => {
     return t !== FAIL_TOKEN;
   };
+  // @ts-expect-error: Seems like a bug in typescript
   const resolvedPromises: Promise<T[]> = Promise.all(
     ps.map((p) => p.catch((_) => FAIL_TOKEN))
   ).then((values) => values.filter(fulfilled));

@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.3.0] - Release
+
+### Added
+- Pre-release features (see below)
+
+### Bug Fixes
+- Tensor save mutate the image. Now copy the image before saving.
+
 ## [2.2.11] - Pre-release
 
 - [#28](#28) - Add config to allow control of whether the view plot in debug variables is shown.

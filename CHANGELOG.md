@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.3.1] - Release
+
+### Added
+- Support for Plotly figures
+
 ## [2.3.0] - Release
 
 ### Added

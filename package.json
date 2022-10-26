@@ -2,7 +2,7 @@
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
   "description": "simply view the image of the image variables when debugging python",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "publisher": "elazarcoh",
   "icon": "icon.png",
   "preview": false,

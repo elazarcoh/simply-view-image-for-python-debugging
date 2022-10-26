@@ -54,6 +54,18 @@ def save_pyplot_ax(path, ax, dpi=150, tight=False):
     fig.savefig(path, bbox_inches=extent, dpi=dpi)
 plotting_types['pyplot_axis'] = ("pyplot.Axis", is_pyplot_ax, save_pyplot_ax)
 `;
+  static readonly plotly_utils: string = `
+from plotly.basedatatypes import BaseFigure
+def is_plotly_figure(obj):
+    try:
+        return isinstance(obj, BaseFigure)
+    except:
+        return False
+def save_plotly_figure(path, fig):
+    fig.write_image(path)
+
+plotting_types['plotly_figure'] = ("plotly.Figure", is_plotly_figure, save_plotly_figure)
+`;
   static readonly define_writer_expression: string = `
 try:
     ${ViewPlotService.py_module}
@@ -69,6 +81,11 @@ try:
     ${ViewPlotService.pyplot_utils.replace(/^/gm, "    ")}
 except ImportError:
     # can't load matplotlib, but we don't care
+    pass
+try:
+    ${ViewPlotService.plotly_utils.replace(/^/gm, "    ")}
+except ImportError:
+    # can't load plotly, but we don't care
     pass
 
 def plot_save_util_for_object(obj):  # -> Tuple[str, function, kwargs]

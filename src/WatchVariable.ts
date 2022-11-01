@@ -8,6 +8,7 @@ import ViewImageService from "./ViewImageService";
 import ViewPlotService from "./ViewPlotService";
 import ViewTensorService from "./ViewTensorService";
 import type { SupportedServicesNames } from "./supported-services";
+import { WatchTreeItem } from "./WatchTreeItem";
 
 enum VariableTrackingState {
   tracked = "trackedVariable",
@@ -23,7 +24,7 @@ export class VariableWatcher {
   // whether the watcher is activate
   private _activated: boolean = false;
 
-  private _variables: VariableItem[] = [];
+  private _variables: VariableWatchTreeItem[] = [];
 
   constructor(
     private readonly viewServices: { [key in WatchServices]?: ViewerService },
@@ -60,7 +61,7 @@ export class VariableWatcher {
       }
       return this.acquireVariables();
     };
-    const tryGetVariableRec = (resolve: (arg0: VariableItem[] | undefined) => void, _: unknown) => {
+    const tryGetVariableRec = (resolve: (arg0: VariableWatchTreeItem[] | undefined) => void, _: unknown) => {
       setTimeout(async () => {
         try {
           const res = await getVariablesFunc();
@@ -71,7 +72,7 @@ export class VariableWatcher {
       }, 500);
     };
 
-    function getVariables(): Promise<VariableItem[] | undefined> {
+    function getVariables(): Promise<VariableWatchTreeItem[] | undefined> {
       return new Promise(tryGetVariableRec);
     }
     const newVariables = await getVariables();
@@ -81,7 +82,7 @@ export class VariableWatcher {
     this._hasInfo = true;
 
     const currentVariables = this._variables.reduce(
-      (map: Record<string, VariableItem>, obj: VariableItem) => {
+      (map: Record<string, VariableWatchTreeItem>, obj: VariableWatchTreeItem) => {
         map[obj.evaluateName] = obj;
         return map;
       },
@@ -136,14 +137,12 @@ export class VariableWatcher {
     return items.filter(notEmpty);
   }
 
-  variables(): VariableItem[] {
+  variables(): VariableWatchTreeItem[] {
     return this._variables;
   }
 }
 
-class WatchVariableTreeItem extends vscode.TreeItem { }
-
-export class VariableItem extends WatchVariableTreeItem {
+export class VariableWatchTreeItem extends WatchTreeItem {
   public path: string;
   iconPath: vscode.ThemeIcon | undefined = undefined;
   tracking: VariableTrackingState = VariableTrackingState.nonTracked;
@@ -209,14 +208,14 @@ class VariableInfoItem extends WatchVariableTreeItem {
   readonly contextValue = VariableInfoItem.contextValue;
 }
 
-function isVariableItem(v: WatchVariableTreeItem): v is VariableItem {
-  return v instanceof VariableItem;
+function isVariableItem(v: WatchVariableTreeItem): v is VariableWatchTreeItem {
+  return v instanceof VariableWatchTreeItem;
 }
 
 async function toWatchVariable(
   v: Variable,
   viewerServices: ViewerService[]
-): Promise<VariableItem | undefined> {
+): Promise<VariableWatchTreeItem | undefined> {
 
   let variableInformation: VariableInformation | undefined;
   const services: ViewerService[] = [];
@@ -233,7 +232,7 @@ async function toWatchVariable(
   if (variableInformation === undefined) {
     return;
   }
-  return new VariableItem(variableInformation.name, variableInformation.name, variableInformation.more, services);
+  return new VariableWatchTreeItem(variableInformation.name, variableInformation.name, variableInformation.more, services);
 }
 
 export class VariableWatchTreeProvider

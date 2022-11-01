@@ -9,9 +9,9 @@ import { UserSelection, VariableSelection } from "./PythonSelection";
 import { pythonVariablesService } from "./PythonVariablesService";
 import {
   VariableWatchTreeProvider,
-  VariableItem,
+  VariableWatchTreeItem,
   VariableWatcher,
-} from "./VariableWatcher";
+} from "./WatchVariable";
 import { ViewerService } from "./ViewerService";
 import { extensionConfigSection, getConfiguration, WatchServices } from "./config";
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
@@ -281,7 +281,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         `svifpd.watch-view-${type}`,
-        async (watchVariable: VariableItem) => {
+        async (watchVariable: VariableWatchTreeItem) => {
           const path = await watchVariable.viewerServiceByType(type)?.save(
             { variable: watchVariable.evaluateName },
             watchVariable.path
@@ -299,7 +299,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "svifpd.watch-track-enable",
-      async (watchVariable: VariableItem) => {
+      async (watchVariable: VariableWatchTreeItem) => {
         watchVariable.setTracked();
         variableWatchTreeProvider.refresh();
       }
@@ -309,7 +309,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "svifpd.watch-track-disable",
-      async (watchVariable: VariableItem) => {
+      async (watchVariable: VariableWatchTreeItem) => {
         watchVariable.setNonTracked();
         variableWatchTreeProvider.refresh();
       }

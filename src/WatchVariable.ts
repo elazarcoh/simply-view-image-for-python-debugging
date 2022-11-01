@@ -197,21 +197,6 @@ export class VariableWatchTreeItem extends WatchTreeItem {
 
 }
 
-class VariableInfoItem extends WatchVariableTreeItem {
-  constructor(
-    public readonly label: string,
-    public readonly description: string
-  ) {
-    super(label, vscode.TreeItemCollapsibleState.None);
-  }
-  static readonly contextValue = "infoItem";
-  readonly contextValue = VariableInfoItem.contextValue;
-}
-
-function isVariableItem(v: WatchVariableTreeItem): v is VariableWatchTreeItem {
-  return v instanceof VariableWatchTreeItem;
-}
-
 async function toWatchVariable(
   v: Variable,
   viewerServices: ViewerService[]
@@ -233,43 +218,6 @@ async function toWatchVariable(
     return;
   }
   return new VariableWatchTreeItem(variableInformation.name, variableInformation.name, variableInformation.more, services);
-}
-
-export class VariableWatchTreeProvider
-  implements vscode.TreeDataProvider<WatchVariableTreeItem>
-{
-  constructor(private readonly watcherService: VariableWatcher) { }
-
-  private _onDidChangeTreeData = new vscode.EventEmitter<
-    WatchVariableTreeItem | undefined
-  >();
-  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-
-  refresh(): void {
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  getTreeItem(
-    element: WatchVariableTreeItem
-  ): vscode.TreeItem | Thenable<vscode.TreeItem> {
-    return element;
-  }
-
-  async getChildren(
-    element?: WatchVariableTreeItem
-  ): Promise<WatchVariableTreeItem[] | null | undefined> {
-    if (!element) {
-      return this.watcherService.variables();
-    } else if (isVariableItem(element)) {
-      const keys = Object.keys(element.variableInformation);
-      keys.sort();
-      return keys.map(
-        (k) => new VariableInfoItem(k, element.variableInformation[k])
-      );
-    } else {
-      return [];
-    }
-  }
 }
 
 function mightBeViewable(mightBeViewable: { type?: string }): boolean {

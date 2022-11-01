@@ -1,17 +1,15 @@
 import * as vscode from 'vscode';
-import { VariableWatcher } from './WatchVariable';
-import { WatchTreeItem } from './WatchTreeItem';
-
-export class ExpressionWatchTreeItem extends WatchTreeItem { 
-    static isinstance(item: WatchTreeItem): item is ExpressionWatchTreeItem {
-        return item instanceof ExpressionWatchTreeItem;
-    }
-}
+import { VariableWatcher, VariableWatchTreeItem } from './WatchVariable';
+import { InfoTreeItem, WatchTreeItem } from './WatchTreeItem';
+import { ExpressionsWatcher, ExpressionWatchTreeItem } from './WatchExpression';
 
 export class WatchTreeProvider
     implements vscode.TreeDataProvider<WatchTreeItem>
 {
-    constructor(private readonly watcherService: VariableWatcher) { }
+    constructor(
+        private readonly variableWatcherService: VariableWatcher,
+        private readonly expressionsWatcherService: ExpressionsWatcher,
+    ) { }
 
     private _onDidChangeTreeData = new vscode.EventEmitter<WatchTreeItem | undefined>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -30,12 +28,22 @@ export class WatchTreeProvider
         element?: WatchTreeItem
     ): Promise<WatchTreeItem[] | null | undefined> {
         if (!element) {
-            return this.watcherService.variables();
-        } else if (VariableWatchTreeItem.isinstance(element)) {
+            return [
+                ...this.variableWatcherService.variables(),
+                ...this.expressionsWatcherService.expressions()
+            ];
+        } else if (element instanceof VariableWatchTreeItem) {
             const keys = Object.keys(element.variableInformation);
             keys.sort();
             return keys.map(
-                (k) => new VariableInfoItem(k, element.variableInformation[k])
+                (k) => new InfoTreeItem(k, element.variableInformation[k])
+            );
+        } else if (element instanceof ExpressionWatchTreeItem) {
+            const expressionInfo = await element.resolveInformation();
+            const keys = Object.keys(expressionInfo);
+            keys.sort();
+            return keys.map(
+                (k) => new InfoTreeItem(k, expressionInfo[k])
             );
         } else {
             return [];

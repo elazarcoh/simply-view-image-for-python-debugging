@@ -8,7 +8,6 @@ import { join } from "path";
 import { UserSelection, VariableSelection } from "./PythonSelection";
 import { pythonVariablesService } from "./PythonVariablesService";
 import {
-  VariableWatchTreeProvider,
   VariableWatchTreeItem,
   VariableWatcher,
 } from "./WatchVariable";
@@ -19,13 +18,19 @@ import { DebugProtocol } from "vscode-debugprotocol";
 import { initLog, logDebug, logTrace } from "./logging";
 import SUPPORTED_SERVICES from "./supported-services";
 import { openImageToTheSide } from "./open-image";
+import { WatchTreeProvider } from "./WatchTreeProvider";
+import { ExpressionsWatcher } from "./WatchExpression";
+import { InformationResolver } from "./InformationResolver";
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
 let viewTensorSrv: ViewTensorService;
 
+let informationResolver: InformationResolver;
+
 let variableWatcherSrv: VariableWatcher;
-let variableWatchTreeProvider: VariableWatchTreeProvider;
+let expressionsWatcherSrv: ExpressionsWatcher;
+let watchTreeProvider: WatchTreeProvider;
 
 // const services: IStackWatcher[] = [];
 const viewServices: { [key in WatchServices]?: ViewerService } = {};
@@ -91,8 +96,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   }
 
+  informationResolver = new InformationResolver(
+    [viewImageSrv, viewPlotSrv, viewTensorSrv],
+  );
+
   variableWatcherSrv = new VariableWatcher(viewServices);
-  variableWatchTreeProvider = new VariableWatchTreeProvider(variableWatcherSrv);
+  expressionsWatcherSrv = new ExpressionsWatcher(informationResolver);
+  watchTreeProvider = new WatchTreeProvider(variableWatcherSrv, expressionsWatcherSrv);
 
   // register watcher for the debugging session. used to identify the running-frame,
   // so multi-thread will work
@@ -120,7 +130,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       onWillStopSession: () => {
         variableWatcherSrv.deactivate();
-        variableWatchTreeProvider.refresh();
+        watchTreeProvider.refresh();
       },
 
       onWillReceiveMessage: async (msg: RecvMsg) => {
@@ -141,7 +151,7 @@ export function activate(context: vscode.ExtensionContext): void {
           const updateWatchView = () => {
             return variableWatcherSrv
               .refreshVariablesAndWatches()
-              .then(() => variableWatchTreeProvider.refresh())
+              .then(() => watchTreeProvider.refresh())
               .catch((e) => logTrace(e));
           };
           return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
@@ -181,7 +191,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
       "pythonDebugImageWatch",
-      variableWatchTreeProvider
+      watchTreeProvider
     )
   );
 
@@ -301,7 +311,7 @@ export function activate(context: vscode.ExtensionContext): void {
       "svifpd.watch-track-enable",
       async (watchVariable: VariableWatchTreeItem) => {
         watchVariable.setTracked();
-        variableWatchTreeProvider.refresh();
+        watchTreeProvider.refresh();
       }
     )
   );
@@ -311,7 +321,7 @@ export function activate(context: vscode.ExtensionContext): void {
       "svifpd.watch-track-disable",
       async (watchVariable: VariableWatchTreeItem) => {
         watchVariable.setNonTracked();
-        variableWatchTreeProvider.refresh();
+        watchTreeProvider.refresh();
       }
     )
   );
@@ -322,7 +332,7 @@ export function activate(context: vscode.ExtensionContext): void {
       // just in case it wasn't set earlier for some reason
       variableWatcherSrv.activate();
       await variableWatcherSrv.refreshVariablesAndWatches();
-      variableWatchTreeProvider.refresh();
+      watchTreeProvider.refresh();
     })
   );
 
@@ -346,6 +356,25 @@ export function activate(context: vscode.ExtensionContext): void {
         if (command !== undefined) {
           await vscode.commands.executeCommand(command.command, variableSelection);
         }
+      }
+    )
+  );
+
+  // Add expression command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `svifpd.add-expression`,
+      async () => {
+        expressionsWatcherSrv.addExpression("x[::2, ::2]")
+        // const maybeExpression = await vscode.window.showInputBox({
+        //   prompt: "Enter expression to watch",
+        //   placeHolder: "e.g. images[0]",
+        //   ignoreFocusOut: true,
+        // });
+        // if (maybeExpression !== undefined) {
+        //   expressionsWatcherSrv.addExpression(maybeExpression);
+        //   watchTreeProvider.refresh();
+        // }
       }
     )
   );

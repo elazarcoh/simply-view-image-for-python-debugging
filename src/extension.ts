@@ -365,7 +365,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(
       `svifpd.add-expression`,
       async () => {
-        expressionsWatcherSrv.addExpression("x[::2, ::2]")
+
+        expressionsWatcherSrv.addExpression("img[::2, ::2]")
         // const maybeExpression = await vscode.window.showInputBox({
         //   prompt: "Enter expression to watch",
         //   placeHolder: "e.g. images[0]",

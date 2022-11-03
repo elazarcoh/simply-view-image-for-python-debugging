@@ -42,6 +42,10 @@ const config = {
                     },
                 ],
             },
+            {
+                test: /\.py$/i,
+                type: 'asset/source',
+            },
         ],
     },
     plugins: [

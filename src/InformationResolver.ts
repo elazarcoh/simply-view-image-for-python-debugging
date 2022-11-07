@@ -1,7 +1,5 @@
 import * as vscode from "vscode";
-import { SupportedServicesNames } from "./supported-services";
-import { ViewerService } from "./ViewerService";
-import {evaluatePython, execInModuleCode, execPython, pyModuleName } from "./PythonCodeHelper";
+import { evaluatePython, execInModuleCode, execPython, pyModuleName } from "./PythonCodeHelper";
 import RESOLVE_INFORMATION_CODE from "./python/resolve_information.py?raw";
 import { pythonInContextExecutor } from "./PythonInContextExecutor";
 import { mapValueOrError, ValueOrError } from "./ValueOrError";
@@ -21,29 +19,14 @@ class InformationResolver {
     ) {
     }
 
-    // async setupPython() {
-    //     const session = vscode.debug.activeDebugSession;
-    //     if (session === undefined) {
-    //         return;
-    //     }
-    //     try {
-    //         await this.inContextExecutor.evaluate(session, this.setupPythonCode)
-    //     } catch (error) {
-    //         logTrace(error);
-    //         vscode.window.showErrorMessage(
-    //             "could not setup python side. please check log."
-    //         );
-    //     }
-    // }
-
     async resolveExpression(expression: string): Promise<ValueOrError<Information>> {
         const setupResult = await execPython(this.setupPythonCode);
         if (setupResult.isError) {
             return setupResult;
         }
-      const restrictImageTypes = getConfiguration("restrictImageTypes")
-        ? "True"
-        : "False";
+        const restrictImageTypes = getConfiguration("restrictImageTypes")
+            ? "True"
+            : "False";
         const code = `${this.findObjectTypesPythonFunction}(${expression}, restrict_types=${restrictImageTypes})`;
         const result = await evaluatePython(code);
         return mapValueOrError(

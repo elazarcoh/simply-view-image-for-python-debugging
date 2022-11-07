@@ -3,6 +3,12 @@ import ViewImageService from "./ViewImageService";
 import ViewPlotService from "./ViewPlotService";
 import ViewTensorService from "./ViewTensorService";
 
+export enum ObjectTypeGroup {
+    Image = "image",
+    Plot = "plot",
+    Tensor = "tensor",
+}
+
 export type SupportedServicesNames = "image" | "plot" | "tensor";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

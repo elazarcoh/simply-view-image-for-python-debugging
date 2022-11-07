@@ -1,4 +1,20 @@
 import * as vscode from 'vscode';
+import { Information } from './InformationResolver';
+import { ObjectTypeGroup } from './supported-services';
+
+export enum VariableTrackingState {
+  tracked = "trackedVariable",
+  nonTracked = "nonTrackedVariable",
+}
+
+export function buildWatchTreeItemContext(
+  obj: {
+    info: Information
+    trackingState: VariableTrackingState
+  }
+): string {
+  return obj.trackingState + "-" + obj.info.types.join("_");
+}
 
 export class WatchTreeItem extends vscode.TreeItem { }
 

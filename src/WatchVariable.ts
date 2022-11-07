@@ -8,12 +8,8 @@ import ViewImageService from "./ViewImageService";
 import ViewPlotService from "./ViewPlotService";
 import ViewTensorService from "./ViewTensorService";
 import type { SupportedServicesNames } from "./supported-services";
-import { WatchTreeItem } from "./WatchTreeItem";
+import { VariableTrackingState, WatchTreeItem } from "./WatchTreeItem";
 
-enum VariableTrackingState {
-  tracked = "trackedVariable",
-  nonTracked = "nonTrackedVariable",
-}
 
 export class VariableWatcher {
   // this variable is used as a workaround. the debugger stopped event is emitted before the variables

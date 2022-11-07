@@ -55,6 +55,7 @@ export class ExpressionWatchTreeItem extends WatchTreeItem {
     }
 
     async resolveInformation() {
-        return await this._informationResolver.resolveExpression(this.expression);
+        const info = await this._informationResolver.resolveExpression(this.expression);
+        return info;
     }
 }

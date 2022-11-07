@@ -9,5 +9,8 @@
     "npm.packageManager": "yarn",
     "files.associations": {
         "vscode-ext-config.json": "jsonc"
-    }
+    },
+    "python.analysis.ignore": [
+        "src/**/*.py"
+    ]
 }

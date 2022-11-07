@@ -6,11 +6,11 @@ import * as P from 'parsimmon';
 import { ValueOrError } from "./ValueOrError";
 
 const PythonConstructs = P.createLanguage({
-    Quote: r => P.oneOf("'\""),
+    Quote: _ => P.oneOf("'\""),
     Tuple: r => r.PythonValue.sepBy(P.string(",").trim(P.optWhitespace)).wrap(P.string("("), P.string(")")),
     List: r => r.PythonValue.sepBy(P.string(",").trim(P.optWhitespace)).wrap(P.string("["), P.string("]")),
     String: r => r.Quote.chain(quote => P.takeWhile(c => c !== quote).skip(P.string(quote))),
-    None: r => P.string("None").result(null),
+    None: _ => P.string("None").result(null),
     KeyValue: r => P.seqObj<string, any>(
         ["key", r.String],
         P.string(":").trim(P.optWhitespace),
@@ -40,12 +40,9 @@ const PythonConstructs = P.createLanguage({
     ),
 });
 
-
-
-
 export const pyModuleName = "_python_view_image_mod";
 
-export function execInModuleCode(content: string, tryExpression: string) {
+export function execInModuleCode(content: string, tryExpression: string): string {
     const code: string = `
 try:
     ${pyModuleName}
@@ -103,7 +100,7 @@ ${pyModuleName}.get_bookkeeping("${requestId}")
 }
 
 
-async function runPython(code: string, session?: vscode.DebugSession): Promise<ValueOrError<unknown | string>> {
+async function runPython<T = unknown>(code: string, session?: vscode.DebugSession): Promise<ValueOrError<T>> {
     session = session ?? vscode.debug.activeDebugSession;
     if (session === undefined) {
         return {
@@ -137,9 +134,9 @@ ${code}
 \"\"\"
 )
 `;
-    return runPython(code, session) as Promise<ValueOrError<null>>;
+    return runPython<null>(code, session);
 }
 
-export async function evaluatePython(code: string, session?: vscode.DebugSession): Promise<ValueOrError<unknown | string>> {
-    return runPython(code, session);
+export async function evaluatePython<T = unknown>(code: string, session?: vscode.DebugSession): Promise<ValueOrError<T>> {
+    return runPython<T>(code, session);
 }

@@ -6,7 +6,7 @@ import { mapValueOrError, ValueOrError } from "./ValueOrError";
 import { getConfiguration } from "./config";
 
 export interface Information {
-    types: string[];
+    types: { group: string, type: string }[];
     details: Record<string, string>;
 }
 
@@ -28,13 +28,13 @@ class InformationResolver {
             ? "True"
             : "False";
         const code = `${this.findObjectTypesPythonFunction}(${expression}, restrict_types=${restrictImageTypes})`;
-        const result = await evaluatePython(code);
+        const result = await evaluatePython<[[string, string][], Record<string, string>]>(code);
         return mapValueOrError(
             result,
             (res) => {
-                const [types, details] = res as [string[], Record<string, string>];
+                const [types, details] = res;
                 return {
-                    types,
+                    types: types.map(([group, type]) => ({ group, type })),
                     details,
                 }
             }

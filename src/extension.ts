@@ -364,8 +364,9 @@ export function activate(context: vscode.ExtensionContext): void {
           ignoreFocusOut: true,
         });
         if (maybeExpression !== undefined) {
-          expressionsWatcherSrv.addExpression(maybeExpression);
+          const p = expressionsWatcherSrv.addExpression(maybeExpression);
           watchTreeProvider.refresh();
+          return p;
         }
       }
     )

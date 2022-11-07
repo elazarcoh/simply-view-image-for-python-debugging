@@ -1,18 +1,20 @@
 import * as vscode from 'vscode';
 import { VariableWatcher, VariableWatchTreeItem } from './WatchVariable';
 import { InfoTreeItem, WatchTreeItem } from './WatchTreeItem';
-import { ExpressionsWatcher, ExpressionWatchTreeItem } from './WatchExpression';
+import { AddExpressionWatchTreeItem, ExpressionsWatcher, ExpressionWatchTreeItem } from './WatchExpression';
 import { logDebug, logTrace } from './logging';
 
+type WatchTreeRootItem = VariableWatchTreeItem | ExpressionWatchTreeItem | AddExpressionWatchTreeItem ;
+
 export class WatchTreeProvider
-    implements vscode.TreeDataProvider<WatchTreeItem>
+    implements vscode.TreeDataProvider<WatchTreeRootItem | InfoTreeItem>
 {
     constructor(
         private readonly variableWatcherService: VariableWatcher,
         private readonly expressionsWatcherService: ExpressionsWatcher,
     ) { }
 
-    private _onDidChangeTreeData = new vscode.EventEmitter<WatchTreeItem | undefined>();
+    private _onDidChangeTreeData = new vscode.EventEmitter<WatchTreeRootItem | InfoTreeItem | undefined>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     refresh(): void {
@@ -20,14 +22,14 @@ export class WatchTreeProvider
     }
 
     getTreeItem(
-        element: WatchTreeItem
+        element: WatchTreeRootItem | InfoTreeItem
     ): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;
     }
 
     async getChildren(
-        element?: WatchTreeItem
-    ): Promise<WatchTreeItem[] | null | undefined> {
+        element?: WatchTreeRootItem | InfoTreeItem
+    ): Promise<(WatchTreeRootItem | InfoTreeItem)[] | null | undefined> {
         if (!element) {
             return [
                 ...this.variableWatcherService.variables(),

@@ -9,6 +9,7 @@ import ViewPlotService from "./ViewPlotService";
 import ViewTensorService from "./ViewTensorService";
 import type { SupportedServicesNames } from "./supported-services";
 import { VariableTrackingState, WatchTreeItem } from "./WatchTreeItem";
+import { runInThisContext } from "vm";
 
 
 export class VariableWatcher {
@@ -141,7 +142,6 @@ export class VariableWatcher {
 export class VariableWatchTreeItem extends WatchTreeItem {
   public path: string;
   iconPath: vscode.ThemeIcon | undefined = undefined;
-  tracking: VariableTrackingState = VariableTrackingState.nonTracked;
   types: SupportedServicesNames[] = [];
 
   constructor(
@@ -152,7 +152,7 @@ export class VariableWatchTreeItem extends WatchTreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
       .TreeItemCollapsibleState.Collapsed
   ) {
-    super(label, collapsibleState);
+    super("variable", label, collapsibleState);
     this.path = viewServices[0].pathForSelection({ variable: evaluateName });
     for (const service of viewServices) {
       if (service instanceof ViewImageService) {
@@ -165,27 +165,12 @@ export class VariableWatchTreeItem extends WatchTreeItem {
         this.types.push("tensor");
       }
     }
+    this.info = {
+      types: this.types.map(t => ({group: t, type: t})),
+      details: {}
+    }
     this.updateContext();
   }
-
-  get trackingState(): VariableTrackingState {
-    return this.tracking;
-  }
-
-  updateContext(): void {
-    this.contextValue = this.tracking + "-" + this.types.join("_");
-  }
-  setTracked(): void {
-    this.tracking = VariableTrackingState.tracked;
-    this.iconPath = new vscode.ThemeIcon("eye");
-    this.updateContext();
-  }
-  setNonTracked(): void {
-    this.tracking = VariableTrackingState.nonTracked;
-    this.iconPath = undefined;
-    this.updateContext();
-  }
-
   viewerServiceByType(type: SupportedServicesNames): ViewerService | undefined {
     const cls = type === "image" ? ViewImageService : type === "plot" ? ViewPlotService : ViewTensorService;
     return this.viewServices.find((s) => s instanceof cls);

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { Information } from './InformationResolver';
-import { ObjectTypeGroup } from './supported-services';
 
 export enum VariableTrackingState {
   tracked = "trackedVariable",
@@ -9,14 +8,60 @@ export enum VariableTrackingState {
 
 export function buildWatchTreeItemContext(
   obj: {
-    info: Information
-    trackingState: VariableTrackingState
+    info?: Information,
+    trackingState: VariableTrackingState,
+    itemType: "variable" | "expression",
   }
 ): string {
-  return obj.trackingState + "-" + obj.info.types.join("_");
+  let context = obj.trackingState.toString();
+  if (obj.info !== undefined) {
+    context += "-" + obj.info.types.map(t => t.group).join("_")
+  }
+  if (obj.itemType === "expression") {
+    context += "-expressionItem";
+  }
+  return context;
 }
 
-export class WatchTreeItem extends vscode.TreeItem { }
+export abstract class WatchTreeItem extends vscode.TreeItem {
+
+  tracking: VariableTrackingState = VariableTrackingState.nonTracked;
+  info?: Information;
+
+  constructor(
+    readonly itemType: "variable" | "expression",
+    label: string,
+    collapsibleState: vscode.TreeItemCollapsibleState
+  ) {
+    super(label, collapsibleState);
+  }
+
+  get trackingState(): VariableTrackingState {
+    return this.tracking;
+  }
+
+  public updateContext(): void {
+    const context = buildWatchTreeItemContext({
+      trackingState: this.tracking,
+      itemType: this.itemType,
+      info: this.info,
+    });
+    this.contextValue = context;
+  }
+
+  setTracked(): void {
+    this.tracking = VariableTrackingState.tracked;
+    this.iconPath = new vscode.ThemeIcon("eye");
+    this.updateContext();
+  }
+
+  setNonTracked(): void {
+    this.tracking = VariableTrackingState.nonTracked;
+    this.iconPath = undefined;
+    this.updateContext();
+  }
+
+}
 
 export class InfoTreeItem extends vscode.TreeItem {
   constructor(

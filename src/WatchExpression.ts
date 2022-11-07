@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import {pythonInformationResolver } from "./InformationResolver";
-import { mapValueOrError } from "./ValueOrError";
-import { WatchTreeItem } from "./WatchTreeItem";
+import { Information, pythonInformationResolver } from "./InformationResolver";
+import { mapValueOrError, ValueOrError } from "./ValueOrError";
+import { buildWatchTreeItemContext, VariableTrackingState, WatchTreeItem } from "./WatchTreeItem";
 
 export class ExpressionsWatcher {
     private _expressions: ExpressionWatchTreeItem[] = [];
@@ -17,15 +17,18 @@ export class ExpressionsWatcher {
         ];
     }
 
-    addExpression(expression: string): void {
+    async addExpression(expression: string): Promise<void> {
         const item = new ExpressionWatchTreeItem(
             expression,
         );
         this._expressions.push(item);
+        await item.resolveInformation();
+        return;
     }
 }
 
-class AddExpressionWatchTreeItem extends WatchTreeItem {
+// TODO: do not export
+export class AddExpressionWatchTreeItem extends vscode.TreeItem {
 
     constructor(
         public readonly label: string = "Add Expression",
@@ -51,11 +54,16 @@ export class ExpressionWatchTreeItem extends WatchTreeItem {
         public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
             .TreeItemCollapsibleState.Collapsed
     ) {
-        super(expression, collapsibleState);
+        super("expression", expression, collapsibleState);
     }
 
-    async resolveInformation() {
+    async resolveInformation(): Promise<ValueOrError<Information>> {
         const info = await this._informationResolver.resolveExpression(this.expression);
+        mapValueOrError(info, (i) => this.contextValue = buildWatchTreeItemContext({
+            info: i,
+            trackingState: this.tracking,
+            itemType: "expression",
+        }));
         return info;
     }
 }

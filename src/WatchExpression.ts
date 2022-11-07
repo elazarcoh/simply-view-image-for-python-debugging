@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
-import { InformationResolver } from "./InformationResolver";
+import {pythonInformationResolver } from "./InformationResolver";
+import { mapValueOrError } from "./ValueOrError";
 import { WatchTreeItem } from "./WatchTreeItem";
 
 export class ExpressionsWatcher {
     private _expressions: ExpressionWatchTreeItem[] = [];
 
     constructor(
-        private readonly _informationResolver: InformationResolver
+        private readonly _informationResolver = pythonInformationResolver()
     ) { }
 
     expressions(): (ExpressionWatchTreeItem | AddExpressionWatchTreeItem)[] {
@@ -19,7 +20,6 @@ export class ExpressionsWatcher {
     addExpression(expression: string): void {
         const item = new ExpressionWatchTreeItem(
             expression,
-            this._informationResolver
         );
         this._expressions.push(item);
     }
@@ -47,15 +47,14 @@ export class ExpressionWatchTreeItem extends WatchTreeItem {
 
     constructor(
         public readonly expression: string,
-        private readonly _informationResolver: InformationResolver,
+        private readonly _informationResolver = pythonInformationResolver(),
         public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
             .TreeItemCollapsibleState.Collapsed
     ) {
         super(expression, collapsibleState);
     }
 
-    async resolveInformation(): Promise<Record<string, string>> {
-        const info = await this._informationResolver.resolveExpression(this.expression);
-        return info.details;
+    async resolveInformation() {
+        return await this._informationResolver.resolveExpression(this.expression);
     }
 }

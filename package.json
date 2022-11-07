@@ -293,6 +293,7 @@
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
+    "@types/parsimmon": "^1.10.6",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.13.52",
     "@types/tmp": "^0.2.1",
@@ -311,6 +312,7 @@
     "webpack-cli": "^4.8.0"
   },
   "dependencies": {
+    "parsimmon": "^1.18.1",
     "tmp": "^0.2.1",
     "vscode-extensions-json-generator": "^0.1.5"
   }

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { VariableWatcher, VariableWatchTreeItem } from './WatchVariable';
 import { InfoTreeItem, WatchTreeItem } from './WatchTreeItem';
 import { ExpressionsWatcher, ExpressionWatchTreeItem } from './WatchExpression';
+import { logDebug, logTrace } from './logging';
 
 export class WatchTreeProvider
     implements vscode.TreeDataProvider<WatchTreeItem>
@@ -40,10 +41,14 @@ export class WatchTreeProvider
             );
         } else if (element instanceof ExpressionWatchTreeItem) {
             const expressionInfo = await element.resolveInformation();
-            const keys = Object.keys(expressionInfo);
+            if(expressionInfo.isError) {
+                logDebug(`Error resolving expression ${element.expression}: ${expressionInfo.error}`);
+                return [];
+            }
+            const keys = Object.keys(expressionInfo.result.details);
             keys.sort();
             return keys.map(
-                (k) => new InfoTreeItem(k, expressionInfo[k])
+                (k) => new InfoTreeItem(k, expressionInfo.result.details[k])
             );
         } else {
             return [];

@@ -20,13 +20,10 @@ import SUPPORTED_SERVICES from "./supported-services";
 import { openImageToTheSide } from "./open-image";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 import { ExpressionsWatcher } from "./WatchExpression";
-import { InformationResolver } from "./InformationResolver";
 
 let viewImageSrv: ViewImageService;
 let viewPlotSrv: ViewPlotService;
 let viewTensorSrv: ViewTensorService;
-
-let informationResolver: InformationResolver;
 
 let variableWatcherSrv: VariableWatcher;
 let expressionsWatcherSrv: ExpressionsWatcher;
@@ -96,12 +93,8 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   }
 
-  informationResolver = new InformationResolver(
-    [viewImageSrv, viewPlotSrv, viewTensorSrv],
-  );
-
   variableWatcherSrv = new VariableWatcher(viewServices);
-  expressionsWatcherSrv = new ExpressionsWatcher(informationResolver);
+  expressionsWatcherSrv = new ExpressionsWatcher();
   watchTreeProvider = new WatchTreeProvider(variableWatcherSrv, expressionsWatcherSrv);
 
   // register watcher for the debugging session. used to identify the running-frame,

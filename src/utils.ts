@@ -21,7 +21,7 @@ export function allFulfilled<T>(ps: Promise<T>[]): Promise<T[]> {
   };
   const resolvedPromises: Promise<T[]> = Promise.all(
     ps.map((p) => p.catch((_) => FAIL_TOKEN))
-  ).then((values) => values.filter(fulfilled));
+  ).then((values) => values.filter(fulfilled) as T[]);
   return resolvedPromises;
 }
 

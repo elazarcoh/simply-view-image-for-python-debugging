@@ -10,6 +10,12 @@
     "files.associations": {
         "vscode-ext-config.json": "jsonc"
     },
+    "cSpell.enabled": true,
+    "prettier.enable": true,
+    "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+    "python.analysis.exclude": [
+        "src/**/*.py"
+    ],
     "python.analysis.ignore": [
         "src/**/*.py"
     ]

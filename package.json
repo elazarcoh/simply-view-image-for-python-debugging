@@ -101,12 +101,12 @@
       {
         "command": "svifpd.add-expression",
         "title": "Add Expression",
-        "enablement": "inDebugMode"
+        "enablement": "config.svifpd.imageWatch.enable"
       },
       {
         "command": "svifpd.edit-expression",
         "title": "Edit Expression",
-        "enablement": "inDebugMode",
+        "enablement": "config.svifpd.imageWatch.enable",
         "icon": "$(edit)"
       }
     ],

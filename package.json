@@ -171,32 +171,32 @@
       "view/item/context": [
         {
           "command": "svifpd.watch-view-image",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*?image.*/ || view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*?image.*/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?image.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?image.*/",
           "group": "inline@11"
         },
         {
           "command": "svifpd.watch-view-plot",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*?plot.*/ || view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*?plot.*/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?plot.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?plot.*/",
           "group": "inline@12"
         },
         {
           "command": "svifpd.watch-view-tensor",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*?tensor.*/ || view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*?tensor.*/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?tensor.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?tensor.*/",
           "group": "inline@13"
         },
         {
           "command": "svifpd.watch-track-enable",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*/",
           "group": "inline@20"
         },
         {
           "command": "svifpd.watch-track-disable",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*/",
           "group": "inline@21"
         },
         {
           "command": "svifpd.edit-expression",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /.*rackedVariable.*-expressionItem/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*rackedVariable.*-expressionItem/",
           "group": "inline@1"
         }
       ]
@@ -313,9 +313,9 @@
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
-    "@types/parsimmon": "^1.10.6",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.13.52",
+    "@types/parsimmon": "^1.10.6",
     "@types/tmp": "^0.2.1",
     "@types/vscode": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
@@ -333,7 +333,9 @@
   },
   "dependencies": {
     "parsimmon": "^1.18.1",
+    "reflect-metadata": "^0.1.13",
     "tmp": "^0.2.1",
+    "typedi": "^0.10.0",
     "vscode-extensions-json-generator": "^0.1.5"
   }
 }

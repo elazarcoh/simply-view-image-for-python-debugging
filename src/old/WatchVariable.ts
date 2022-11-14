@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import { Variable } from "./PythonSelection";
-import { VariableInformation, ViewerService } from "./ViewerService";
+import { VariableInformation, ViewerService } from "./old/ViewerService";
 import { allFulfilled, notEmpty } from "./utils";
 import { getConfiguration, WatchServices } from "./config";
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
-import ViewImageService from "./ViewImageService";
-import ViewPlotService from "./ViewPlotService";
-import ViewTensorService from "./ViewTensorService";
-import type { SupportedServicesNames } from "./supported-services";
+import ViewImageService from "./old/ViewImageService";
+import ViewPlotService from "./old/ViewPlotService";
+import ViewTensorService from "./old/ViewTensorService";
+import type { SupportedServicesNames } from "./old/supported-services";
 import { VariableTrackingState, WatchTreeItem } from "./WatchTreeItem";
 import { runInThisContext } from "vm";
 

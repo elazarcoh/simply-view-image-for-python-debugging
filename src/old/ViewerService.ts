@@ -3,8 +3,8 @@ import {
   isVariableSelection,
   UserSelection,
   VariableSelection,
-} from "./PythonSelection";
-import { pythonInContextExecutor } from "./PythonInContextExecutor";
+} from "../PythonSelection";
+import { pythonInContextExecutor } from "../PythonInContextExecutor";
 import * as tmp from "tmp";
 
 export type VariableInformation = {

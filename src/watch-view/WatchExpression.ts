@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
-import { Information, pythonInformationResolver } from "./InformationResolver";
-import { mapValueOrError, ValueOrError } from "./ValueOrError";
-import { buildWatchTreeItemContext, VariableTrackingState, WatchTreeItem } from "./WatchTreeItem";
+import { Container, Service } from 'typedi';
+import { Information, pythonInformationResolver } from "../InformationResolver";
+import { mapValueOrError, ValueOrError } from "../utils/ValueOrError";
+import { buildWatchTreeItemContext, WatchTreeItem } from "./WatchTreeItem";
 
-export class ExpressionsWatcher {
+@Service()
+export class ExpressionsList {
     private _expressions: ExpressionWatchTreeItem[] = [];
 
     constructor(
@@ -22,12 +24,11 @@ export class ExpressionsWatcher {
             expression,
         );
         this._expressions.push(item);
-        await item.resolveInformation();
+        await item.resolveInformation().then(item.updateContext);
         return;
     }
 }
 
-// TODO: do not export
 export class AddExpressionWatchTreeItem extends vscode.TreeItem {
 
     constructor(
@@ -55,6 +56,7 @@ export class ExpressionWatchTreeItem extends WatchTreeItem {
             .TreeItemCollapsibleState.Collapsed
     ) {
         super("expression", expression, collapsibleState);
+        this.updateContext();
     }
 
     async resolveInformation(): Promise<ValueOrError<Information>> {
@@ -67,3 +69,4 @@ export class ExpressionWatchTreeItem extends WatchTreeItem {
         return info;
     }
 }
+

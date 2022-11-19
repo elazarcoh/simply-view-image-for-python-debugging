@@ -3,7 +3,7 @@ import COMMON from "./python/common.py?raw";
 import BOOKKEEPING from "./python/bookkeeping.py?raw";
 import { pythonInContextExecutor } from "./PythonInContextExecutor";
 import * as P from 'parsimmon';
-import { ValueOrError } from "./ValueOrError";
+import { ValueOrError } from "./utils/ValueOrError";
 
 const PythonConstructs = P.createLanguage({
     Quote: _ => P.oneOf("'\""),

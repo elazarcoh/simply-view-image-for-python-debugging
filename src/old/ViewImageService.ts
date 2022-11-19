@@ -4,13 +4,13 @@ import {
   getConfiguration,
   ImageViewConfig,
   NormalizationMethods,
-} from "./config";
-import { logTrace } from "./logging";
+} from "../config";
+import { logTrace } from "../logging";
 import {
   isVariableSelection,
   UserSelection,
   VariableSelection,
-} from "./PythonSelection";
+} from "../PythonSelection";
 import { VariableInformation, ViewerService } from "./ViewerService";
 
 type ImageInformation = {

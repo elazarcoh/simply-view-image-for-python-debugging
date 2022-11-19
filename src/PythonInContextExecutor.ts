@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { debugVariablesTrackerService } from "./DebugVariablesTracker";
-import { Body } from "./utils";
+import { Body } from "./utils/utils";
 
 class PythonInContextExecutor {
   public evaluate(

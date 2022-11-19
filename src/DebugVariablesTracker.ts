@@ -1,4 +1,5 @@
 import { DebugProtocol } from "vscode-debugprotocol";
+import { Service } from "typedi";
 
 type TrackedVariable = {
     name: string;
@@ -7,6 +8,7 @@ type TrackedVariable = {
     type: string;
 };
 
+@Service()
 export class DebugVariablesTracker {
     readonly localVariables: TrackedVariable[] = [];
     readonly globalVariables: TrackedVariable[] = [];
@@ -98,10 +100,4 @@ export class DebugVariablesTracker {
             globals: this.globalVariables.filter((v) => v.frameId === this._currentFrameId)
         }
     }
-}
-
-let _debugVariablesTracker: DebugVariablesTracker;
-export function debugVariablesTrackerService(): DebugVariablesTracker {
-    _debugVariablesTracker ?? (_debugVariablesTracker = new DebugVariablesTracker());
-    return _debugVariablesTracker;
 }

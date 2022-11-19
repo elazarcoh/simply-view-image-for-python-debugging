@@ -1,4 +1,4 @@
-import { pythonInformationResolver } from "./InformationResolver";
+import { pythonInformationResolver } from "../InformationResolver";
 import IMAGE_SAVE from "./python/image_save.py?raw";
 
 const informationResolver = pythonInformationResolver();

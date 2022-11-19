@@ -1,15 +1,6 @@
-import { DebugProtocol } from "vscode-debugprotocol";
-
-export type Variable = Required<Pick<DebugProtocol.Variable, 'name' | 'evaluateName' | 'type'>>;
-
-export type ScopeVariables = {
-  locals: Variable[];
-  globals: Variable[];
-};
-
 export type VariableSelection = { variable: string };
-export type RangeSelection = { range: string };
-export type UserSelection = VariableSelection | RangeSelection;
+export type ExpressionSelection = { expression: string };
+export type UserSelection = VariableSelection | ExpressionSelection;
 
 export function isVariableSelection(
   selection: UserSelection

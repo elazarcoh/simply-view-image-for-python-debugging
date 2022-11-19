@@ -1,18 +1,19 @@
 import * as vscode from 'vscode';
-import { VariableWatcher, VariableWatchTreeItem } from './WatchVariable';
-import { InfoTreeItem, WatchTreeItem } from './WatchTreeItem';
-import { AddExpressionWatchTreeItem, ExpressionsWatcher, ExpressionWatchTreeItem } from './WatchExpression';
-import { logDebug, logTrace } from './logging';
+import { VariableWatchTreeItem } from '../old/WatchVariable';
+import { InfoTreeItem } from './WatchTreeItem';
+import { logDebug } from '../logging';
+import { VariablesList } from './WatchVariable';
+import { AddExpressionWatchTreeItem, ExpressionsList, ExpressionWatchTreeItem } from './WatchExpression';
 
-type WatchTreeRootItem = VariableWatchTreeItem | ExpressionWatchTreeItem | AddExpressionWatchTreeItem ;
+type WatchTreeRootItem =  ExpressionWatchTreeItem | AddExpressionWatchTreeItem | VariableWatchTreeItem ;
 
+@Service()
 export class WatchTreeProvider
     implements vscode.TreeDataProvider<WatchTreeRootItem | InfoTreeItem>
 {
-    constructor(
-        private readonly variableWatcherService: VariableWatcher,
-        private readonly expressionsWatcherService: ExpressionsWatcher,
-    ) { }
+
+    private readonly variablesList = new VariablesList();
+    private readonly expressionsList = new ExpressionsList();
 
     private _onDidChangeTreeData = new vscode.EventEmitter<WatchTreeRootItem | InfoTreeItem | undefined>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -29,12 +30,13 @@ export class WatchTreeProvider
 
     async getChildren(
         element?: WatchTreeRootItem | InfoTreeItem
-    ): Promise<(WatchTreeRootItem | InfoTreeItem)[] | null | undefined> {
+    ): Promise<WatchTreeRootItem[] | InfoTreeItem[] | null | undefined> {
         if (!element) {
-            return [
-                ...this.variableWatcherService.variables(),
-                ...this.expressionsWatcherService.expressions()
+            const cs: WatchTreeRootItem[] = [
+                ...this.variablesList.variables(),
+                ...this.expressionsList.expressions(),
             ];
+            return cs;
         } else if (element instanceof VariableWatchTreeItem) {
             const keys = Object.keys(element.variableInformation);
             keys.sort();
@@ -43,7 +45,7 @@ export class WatchTreeProvider
             );
         } else if (element instanceof ExpressionWatchTreeItem) {
             const expressionInfo = await element.resolveInformation();
-            if(expressionInfo.isError) {
+            if (expressionInfo.isError) {
                 logDebug(`Error resolving expression ${element.expression}: ${expressionInfo.error}`);
                 return [];
             }

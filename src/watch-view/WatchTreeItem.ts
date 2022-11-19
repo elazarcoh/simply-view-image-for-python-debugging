@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Information } from './InformationResolver';
+import { Information } from '../InformationResolver';
 
 export enum VariableTrackingState {
   tracked = "trackedVariable",
@@ -13,7 +13,8 @@ export function buildWatchTreeItemContext(
     itemType: "variable" | "expression",
   }
 ): string {
-  let context = obj.trackingState.toString();
+  let context = "svifpd:"
+  context += obj.trackingState.toString();
   if (obj.info !== undefined) {
     context += "-" + obj.info.types.map(t => t.group).join("_")
   }

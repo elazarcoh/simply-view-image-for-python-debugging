@@ -7,26 +7,35 @@ def catch_exception_to_object(func):
 
     return warper
 
+
 def pack_info_to_object(info):
     return info
 
-Image = "image"
-Plot = "plot"
-Tensor = "tensor"
 
-NumpyImage = "numpy_image"
-PillowImage = "pillow_image"
+def safe_isinstance(obj, type_):
+    try:
+        return isinstance(obj, type_)
+    except TypeError:
+        return False
 
-PyPlotFigure = "pyplot_figure"
-PyPlotAxes = "pyplot_axes"
-PlotlyFigure = "plotly_figure"
 
-TorchTensor = "torch_tensor"
-NumpyTensor = "numpy_tensor"
+handlers = {
+    # Image: {PillowImage: {}, NumpyImage: {}},
+    # Plot: {PyPlotFigure: {}, PyPlotAxes: {}, PlotlyFigure: {}},
+    # Tensor: {TorchTensor: {}, NumpyTensor: {}},
+}
 
-Unknown = "unknown"
+def register(group, type, is_func, info_func, save_func):
+    if group not in handlers:
+        handlers[group] = {}
+    if type not in handlers[group]:
+        handlers[group][type] = {}
+    handlers[group][type]["is"] = is_func
+    handlers[group][type]["info"] = info_func
+    handlers[group][type]["save"] = save_func
 
 savers = {}
+
 
 def save(expr, associated_type, *args, **kwargs):
     if associated_type in savers:

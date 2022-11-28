@@ -4,8 +4,9 @@ import { InfoTreeItem } from './WatchTreeItem';
 import { logDebug } from '../logging';
 import { VariablesList } from './WatchVariable';
 import { AddExpressionWatchTreeItem, ExpressionsList, ExpressionWatchTreeItem } from './WatchExpression';
+import { Service } from 'typedi';
 
-type WatchTreeRootItem =  ExpressionWatchTreeItem | AddExpressionWatchTreeItem | VariableWatchTreeItem ;
+type WatchTreeRootItem = ExpressionWatchTreeItem | AddExpressionWatchTreeItem | VariableWatchTreeItem;
 
 @Service()
 export class WatchTreeProvider

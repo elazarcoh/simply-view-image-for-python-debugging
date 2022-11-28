@@ -1,16 +1,10 @@
 import * as vscode from "vscode";
 import { Service } from "typedi";
-import { Information, pythonInformationResolver } from "../InformationResolver";
-import { mapValueOrError, ValueOrError } from "../utils/ValueOrError";
-import { buildWatchTreeItemContext, WatchTreeItem } from "./WatchTreeItem";
+import { WatchTreeItem } from "./WatchTreeItem";
 
 @Service()
 export class VariablesList {
     private _variables: VariableWatchTreeItem[] = [];
-
-    constructor(
-        private readonly _informationResolver = pythonInformationResolver()
-    ) { }
 
     variables(): VariableWatchTreeItem[] {
         return this._variables;
@@ -20,8 +14,7 @@ export class VariablesList {
         this._variables = [];
     }
 
-    async updateVariables(): Promise<void> {}
-
+    updateVariables() : Promise<void> {}
 }
 
 export class VariableWatchTreeItem extends WatchTreeItem {

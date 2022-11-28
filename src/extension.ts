@@ -1,23 +1,27 @@
-import 'reflect-metadata';
-import * as vscode from "vscode";
-import { Container, Service } from 'typedi';
+import { chmodSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "fs";
 import { tmpdir } from "os";
-import { mkdirSync, existsSync, readdirSync, unlinkSync, chmodSync } from "fs";
 import { join } from "path";
-import { UserSelection, VariableSelection } from "./PythonSelection";
-import { pythonVariablesService } from "./PythonVariablesService";
-import { extensionConfigSection, getConfiguration, WatchServices } from "./config";
-import { DebugVariablesTracker } from "./DebugVariablesTracker";
+import 'reflect-metadata';
+import { Container } from 'typedi';
+import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { initLog, logDebug, logTrace } from "./logging";
-import { openImageToTheSide } from "./open-image";
+import { extensionConfigSection, getConfiguration } from "./config";
+// import { UserSelection, VariableSelection } from "./PythonSelection";
+// import { pythonVariablesService } from "./PythonVariablesService";
+// import { DebugVariablesTracker } from "./DebugVariablesTracker";
+// import { openImageToTheSide } from "./open-image";
+// import { WatchTreeProvider } from "./watch-view/WatchTreeProvider";
+// import { ExpressionsList } from "./watch-view/WatchExpression";
+// import { VariablesList } from './watch-view/WatchVariable';
+// import { save } from './save-object';
+// import { PythonObjectRepresentation, PYTHON_OBJECTS } from './python-object';
+// import { WatchTreeItem } from './watch-view/WatchTreeItem';
+
+// import viewables to register them
+import './viewable/Image';
+import { createDebugAdapterTracker } from "./DebugVariablesTracker";
 import { WatchTreeProvider } from "./watch-view/WatchTreeProvider";
-import { ExpressionsList } from "./watch-view/WatchExpression";
-import { VariablesList } from './watch-view/WatchVariable';
-import { saveTracked } from './watch-view/tracked';
-import { save } from './save-object';
-import { PythonObjectRepresentation, PYTHON_OBJECTS } from './python-object';
-import { WatchTreeItem } from './watch-view/WatchTreeItem';
 
 
 const WORKING_DIR = "svifpd";
@@ -26,18 +30,6 @@ function onConfigChange(): void {
   initLog();
 }
 
-function patchDebugVariableContext(variablesResponse: DebugProtocol.VariablesResponse) {
-  const viewableTypes = [
-    "AxesSubplot",
-    "Figure",
-  ]
-  variablesResponse.body.variables.forEach((v) => {
-    if (v.type && viewableTypes.includes(v.type)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (v as any).__vscodeVariableMenuContext = 'viewableInGraphicViewer';
-    }
-  });
-}
 
 export function activate(context: vscode.ExtensionContext): void {
 
@@ -72,72 +64,6 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   }
 
-  const variablesList = Container.get(VariablesList);
-  const watchTreeProvider = Container.get(WatchTreeProvider);
-
-  const debugVariablesTrackerService = Container.get(DebugVariablesTracker);
-  // register watcher for the debugging session. used to identify the running-frame,
-  // so multi-thread will work
-  // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
-  const createDebugAdapterTracker = () => {
-    type Request<T> = T & { type: 'request' };
-    type Response<T> = T & { type: 'response' };
-    type WithEvent<T, Event> = T & { type: 'event', event: Event }
-    type WithCommand<T, Command> = T & { command: Command }
-    type RecvMsg =
-      WithCommand<Request<DebugProtocol.ScopesRequest>, "scopes">
-      | WithCommand<Request<DebugProtocol.VariablesRequest>, 'variables'>
-      | WithCommand<Request<DebugProtocol.EvaluateRequest>, 'evaluate'>
-
-    type SendMsg =
-      WithEvent<DebugProtocol.StoppedEvent, "stopped">
-      | WithEvent<DebugProtocol.ContinuedEvent, "continued">
-      | WithCommand<Response<DebugProtocol.VariablesResponse>, "variables">
-      | WithCommand<Response<DebugProtocol.ScopesResponse>, "scopes">
-
-    return {
-      onWillStartSession: () => { },
-
-      onWillStopSession: () => {
-        variablesList.clear();
-        watchTreeProvider.refresh();
-      },
-
-      onWillReceiveMessage: async (msg: RecvMsg) => {
-        if (msg.type === "request" && msg.command === "scopes") {
-          return debugVariablesTrackerService.onScopesRequest(msg);
-        } else if (msg.type === "request" && msg.command === "variables") {
-          return debugVariablesTrackerService.onVariablesRequest(msg);
-        } else if (msg.type === "request" && msg.command === "evaluate" && /^\s*$/.test(msg.arguments.expression)) {
-          // this is our call, in "update-frame-id" command.
-          return debugVariablesTrackerService.setFrameId(msg.arguments.frameId);
-        }
-      },
-
-      onDidSendMessage: async (msg: SendMsg) => {
-
-        if (msg.type === "event" && msg.event === "stopped" && msg.body.threadId !== undefined) {
-          const updateWatchView = () => {
-            return variablesList
-              .updateVariables()
-              .then(() => watchTreeProvider.refresh())
-              .then(saveTracked)
-              .catch((e) => logTrace(e));
-          };
-          return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
-
-        } else if (msg.type === 'response' && msg.command === 'variables') {
-          if (msg.body && getConfiguration('addViewContextEntryToVSCodeDebugVariables')) patchDebugVariableContext(msg);
-          return debugVariablesTrackerService.onVariablesResponse(msg);
-        } else if (msg.type === "event" && msg.event === "continued") {
-          return debugVariablesTrackerService.onContinued();
-        } else if (msg.type === "response" && msg.command === "scopes") {
-          return debugVariablesTrackerService.onScopesResponse(msg);
-        }
-      },
-    };
-  };
-
   // register the debug adapter tracker
   logDebug("Registering debug adapter tracker for python");
   vscode.debug.registerDebugAdapterTrackerFactory("python", {
@@ -161,7 +87,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
       "pythonDebugImageWatch",
-      watchTreeProvider
+      Container.get(WatchTreeProvider)
     )
   );
 
@@ -366,11 +292,12 @@ export class PythonViewImageProvider implements vscode.CodeActionProvider {
       return;
     }
 
-    const command = await inspectToGetCommand(userSelection);
-    if (command !== undefined) {
-      return [command];
-    } else {
-      return undefined;
-    }
+    return undefined;
+    //   const command = await inspectToGetCommand(userSelection);
+    //   if (command !== undefined) {
+    //     return [command];
+    //   } else {
+    //     return undefined;
+    //   }
   }
 }

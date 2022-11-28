@@ -5,6 +5,9 @@ enum LogLevel {
     None = 0,
     Trace = 1,
     Debug = 2,
+    Info = 3,
+    Warn = 4,
+    Error = 5,
 }
 let logLevel: LogLevel = LogLevel.Trace;
 let outputChannel: vscode.OutputChannel | undefined;
@@ -47,4 +50,19 @@ export function logDebug(...obj: any[]): void {
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function logTrace(...obj: any[]): void {
     if (logLevel >= LogLevel.Trace) log(...obj);
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+export function logInfo(...obj: any[]): void {
+    if (logLevel >= LogLevel.Info) log(...obj);
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+export function logWarn(...obj: any[]): void {
+    if (logLevel >= LogLevel.Warn) log(...obj);
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+export function logError(...obj: any[]): void {
+    if (logLevel >= LogLevel.Error) log(...obj);
 }

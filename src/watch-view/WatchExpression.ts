@@ -1,16 +1,12 @@
 import * as vscode from "vscode";
-import { Container, Service } from 'typedi';
-import { Information, pythonInformationResolver } from "../InformationResolver";
-import { mapValueOrError, ValueOrError } from "../utils/ValueOrError";
+import {Service } from 'typedi';
+import { Information } from "../InformationResolver";
+import { mapValueOrError, ValueOrError } from "../utils/Except";
 import { buildWatchTreeItemContext, WatchTreeItem } from "./WatchTreeItem";
 
 @Service()
 export class ExpressionsList {
     private _expressions: ExpressionWatchTreeItem[] = [];
-
-    constructor(
-        private readonly _informationResolver = pythonInformationResolver()
-    ) { }
 
     expressions(): (ExpressionWatchTreeItem | AddExpressionWatchTreeItem)[] {
         return [
@@ -51,7 +47,6 @@ export class ExpressionWatchTreeItem extends WatchTreeItem {
 
     constructor(
         public readonly expression: string,
-        private readonly _informationResolver = pythonInformationResolver(),
         public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
             .TreeItemCollapsibleState.Collapsed
     ) {

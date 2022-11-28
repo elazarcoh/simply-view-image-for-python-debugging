@@ -1,4 +1,4 @@
-import { Viewable } from "./Viewable";
+import { Viewable } from "./viewable/Viewable";
 
 const _registry = new Map<string, Map<string, Viewable>>();
 

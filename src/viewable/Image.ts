@@ -1,7 +1,7 @@
 import PILLOW_CODE from "../python/image_pillow.py?raw";
 import NUMPY_CODE from "../python/image_numpy.py?raw";
 import { Viewable } from "./Viewable";
-import { registerViewable } from "./Registry";
+import { registerViewable } from "../ViewableRegistry";
 
 const NumpyImage: Viewable = {
     group: "image",

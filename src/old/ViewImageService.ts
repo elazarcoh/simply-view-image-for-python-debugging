@@ -5,7 +5,7 @@ import {
   ImageViewConfig,
   NormalizationMethods,
 } from "../config";
-import { logTrace } from "../logging";
+import { logTrace } from "../utils/Logging";
 import {
   isVariableSelection,
   UserSelection,

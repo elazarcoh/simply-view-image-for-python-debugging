@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VariableInformation, ViewerService } from './ViewerService';
 import { isVariableSelection, UserSelection, VariableSelection } from '../PythonSelection';
-import { logTrace } from '../logging';
+import { logTrace } from '../utils/Logging';
 
 type TensorInformation = {
     shape: string,

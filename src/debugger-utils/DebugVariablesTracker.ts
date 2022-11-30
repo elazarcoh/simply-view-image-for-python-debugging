@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import { DebugProtocol } from "vscode-debugprotocol";
 import { Service, Container } from "typedi";
-import { VariablesList } from "./watch-view/WatchVariable";
-import { WatchTreeProvider } from "./watch-view/WatchTreeProvider";
-import { saveTracked } from './watch-view/tracked';
-import { logTrace } from "./logging";
-import { getConfiguration } from "./config";
+import { VariablesList } from "../watch-view/WatchVariable";
+import { WatchTreeProvider } from "../watch-view/WatchTreeProvider";
+import { saveTracked } from '../watch-view/tracked';
+import { logTrace } from "../utils/Logging";
+import { getConfiguration } from "../config";
 
 type TrackedVariable = {
     name: string;

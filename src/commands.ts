@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import { Container } from 'typedi';
 import { WatchTreeProvider } from "./watch-view/WatchTreeProvider";
-import { currentUserSelection } from './VSCodeEditorUtils';
+import { currentUserSelection } from './utils/VSCodeUtils';
 import { save } from './SavePythonObject';
 import { openImageToTheSide } from './OpenImage';
 import { handleError } from './ErrorHandling';
-import { PythonObjectRepresentation } from './python-object';
+import { PythonObjectRepresentation } from './types';
 
 async function viewObject(obj: PythonObjectRepresentation): Promise<void> {
     const path = await save(obj);
@@ -23,6 +23,7 @@ async function viewFromEditor(editor: vscode.TextEditor): Promise<void> {
     return viewObject(userSelection);
 }
 
+// command to get the current frame, using a hacky way.
 async function updateDebugFrameId(): Promise<void> {
     const activeTextEditor = vscode.window.activeTextEditor;
     if (activeTextEditor) {

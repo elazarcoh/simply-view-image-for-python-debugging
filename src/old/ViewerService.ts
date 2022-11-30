@@ -4,7 +4,7 @@ import {
   UserSelection,
   VariableSelection,
 } from "../PythonSelection";
-import { pythonInContextExecutor } from "../PythonInContextExecutor";
+import { pythonInContextExecutor } from "../python-communication/PythonInContextExecutor";
 import * as tmp from "tmp";
 
 export type VariableInformation = {

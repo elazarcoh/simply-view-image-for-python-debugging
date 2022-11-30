@@ -1,4 +1,4 @@
-import type { PythonObjectRepresentation } from "./python-object";
+import type { PythonObjectRepresentation } from "./types";
 import { ExpressionSelection, isVariableSelection, VariableSelection } from "./PythonSelection";
 import { Except } from "./utils/Except";
 import { ExpressionWatchTreeItem } from "./watch-view/WatchExpression";

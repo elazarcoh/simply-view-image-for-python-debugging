@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ExpressionSelection, VariableSelection } from './PythonSelection';
+import { ExpressionSelection, VariableSelection } from '../PythonSelection';
 
 export type EditorSelection = ExpressionSelection | VariableSelection;
 
@@ -19,4 +19,17 @@ export function currentUserSelection(
     return {
         variable: selectedVariable
     }
+}
+
+export function openImageToTheSide(path: string, preview: boolean): Thenable<unknown> {
+    const options = {
+        viewColumn: vscode.ViewColumn.Beside,
+        preview: preview,
+        preserveFocus: true,
+    };
+    return vscode.commands.executeCommand(
+        "vscode.open",
+        vscode.Uri.file(path),
+        options
+    );
 }

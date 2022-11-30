@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { evaluatePython, execInModuleCode, execPython, pyModuleName } from "./PythonCodeHelper";
+import { evaluatePython, execInModuleCode, execPython, pyModuleName } from "./python-communication/ExecInPython";
 import RESOLVE_INFORMATION_CODE from "./python/resolve_information.py?raw";
-import { pythonInContextExecutor } from "./PythonInContextExecutor";
+import { pythonInContextExecutor } from "./python-communication/PythonInContextExecutor";
 import { mapValueOrError, ValueOrError } from "./utils/Except";
 import { getConfiguration } from "./config";
 

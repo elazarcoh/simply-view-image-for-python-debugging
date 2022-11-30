@@ -6,7 +6,7 @@ import {
   VariableSelection,
 } from "../PythonSelection";
 import { getConfiguration } from "../config";
-import { logTrace } from "../logging";
+import { logTrace } from "../utils/Logging";
 
 export default class ViewPlotService extends ViewerService {
   // define all the needed stuff in python.

@@ -5,7 +5,7 @@ import 'reflect-metadata';
 import { Container } from 'typedi';
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { initLog, logDebug, logTrace } from "./logging";
+import { initLog, logDebug, logTrace } from "./utils/Logging";
 import { extensionConfigSection, getConfiguration } from "./config";
 // import { UserSelection, VariableSelection } from "./PythonSelection";
 // import { pythonVariablesService } from "./PythonVariablesService";
@@ -20,7 +20,7 @@ import { extensionConfigSection, getConfiguration } from "./config";
 
 // import viewables to register them
 import './viewable/Image';
-import { createDebugAdapterTracker } from "./DebugVariablesTracker";
+import { createDebugAdapterTracker } from "./debugger-utils/DebugVariablesTracker";
 import { WatchTreeProvider } from "./watch-view/WatchTreeProvider";
 
 
@@ -93,110 +93,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // add commands
   logDebug("Registering commands");
-  context.subscriptions.push(
-    vscode.commands.registerTextEditorCommand(
-      "svifpd.view-image",
-      async (editor, _, userSelection?: UserSelection) => {
-        userSelection ??
-          (userSelection = await pythonVariablesService().userSelection(
-            editor.document,
-            editor.selection
-          ));
-        if (userSelection === undefined) {
-          return;
-        }
-
-        const path = await save(userSelection);
-        if (path === undefined) {
-          return;
-        }
-        await openImageToTheSide(path, true);
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerTextEditorCommand(
-      "svifpd.view-plot",
-      async (editor, _, userSelection?: UserSelection) => {
-        userSelection ??
-          (userSelection = await pythonVariablesService().userSelection(
-            editor.document,
-            editor.selection
-          ));
-        if (userSelection === undefined) {
-          return;
-        }
-
-        const path = await save(userSelection);
-        if (path === undefined) {
-          return;
-        }
-        await openImageToTheSide(path, true);
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerTextEditorCommand(
-      "svifpd.view-tensor",
-      async (editor, _, userSelection?: UserSelection) => {
-        userSelection ??
-          (userSelection = await pythonVariablesService().userSelection(
-            editor.document,
-            editor.selection
-          ));
-        if (userSelection === undefined) {
-          return;
-        }
-
-        const path = await save(userSelection);
-        if (path === undefined) {
-          return;
-        }
-        await openImageToTheSide(path, true);
-      }
-    )
-  );
-
-  // command to get the current frame, using a hacky way.
-  context.subscriptions.push(
-    vscode.commands.registerCommand("svifpd.update-frame-id", async () => {
-      const activeTextEditor = vscode.window.activeTextEditor;
-      if (activeTextEditor) {
-        const prevSelection = activeTextEditor.selection;
-        let whitespaceLocation = null;
-        for (let i = 0; i < activeTextEditor.document.lineCount && whitespaceLocation === null; i++) {
-          const line = activeTextEditor.document.lineAt(i);
-          const whitespaceIndex = line.text.search(/\s/);
-          if (whitespaceIndex !== -1) {
-            whitespaceLocation = new vscode.Position(i, whitespaceIndex);
-          }
-        }
-        if (whitespaceLocation === null) return;
-        activeTextEditor.selection = new vscode.Selection(whitespaceLocation, whitespaceLocation.translate({ characterDelta: 1 }));
-        await vscode.commands.executeCommand('editor.debug.action.selectionToRepl', {}).then(() => {
-          activeTextEditor.selection = prevSelection;
-        });
-      }
-    })
-  );
-
-  // image watch command
-  for (const [type, _] of PYTHON_OBJECTS) {
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        `svifpd.watch-view-${type}`,
-        async (obj: PythonObjectRepresentation) => {
-          const path = await save(obj);
-          if (path === undefined) {
-            return;
-          }
-          await openImageToTheSide(path, false);
-        }
-      )
-    );
-  }
 
   // image watch track commands
   context.subscriptions.push(

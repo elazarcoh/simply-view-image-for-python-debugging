@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VariableWatchTreeItem } from '../old/WatchVariable';
 import { InfoTreeItem } from './WatchTreeItem';
-import { logDebug } from '../logging';
+import { logDebug } from '../utils/Logging';
 import { VariablesList } from './WatchVariable';
 import { AddExpressionWatchTreeItem, ExpressionsList, ExpressionWatchTreeItem } from './WatchExpression';
 import { Service } from 'typedi';

@@ -91,12 +91,17 @@ def prepare_image(img, preprocess_method='normalize'):
         except:
             return prepare_image(img)
     elif preprocess_method == 'normalize':
-        img = img - img.min()
-        img = img / img.max()
-        img = img * 255
-        img = img.astype(np.uint8)
+        if img.dtype in (bool, np.bool_):
+            img = img.astype(np.uint8)
+        else:
+            img = img - img.min()
+            img = img / img.max()
+            img = img * 255
+            img = img.astype(np.uint8)
         return img
     else:
+        if img.dtype in (bool, np.bool_):
+            img = img.astype(np.uint8)
         return img
 
 def opencv_imsave(path, img):

@@ -3,7 +3,7 @@ import { evaluatePython, execInModuleCode, execPython, pyModuleName } from "./py
 import RESOLVE_INFORMATION_CODE from "./python/resolve_information.py?raw";
 import { pythonInContextExecutor } from "./python-communication/PythonInContextExecutor";
 import { mapValueOrError, ValueOrError } from "./utils/Except";
-import { getConfiguration } from "./config";
+import { getConfiguration } from "../config";
 
 export interface Information {
     types: { group: string, type: string }[];

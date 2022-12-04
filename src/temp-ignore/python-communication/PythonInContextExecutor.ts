@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { Service } from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
-import { Body } from "../utils/Utils";
 
 @Service()
 export class PythonInContextExecutor {

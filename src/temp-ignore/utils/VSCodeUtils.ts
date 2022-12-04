@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { ExpressionSelection, VariableSelection } from '../PythonSelection';
+import { ExpressionSelection, VariableSelection } from '../types';
 
 export type EditorSelection = ExpressionSelection | VariableSelection;
 
 export function currentUserSelection(
     document: vscode.TextDocument,
     range: vscode.Range
-): EditorSelection {
+): EditorSelection | undefined {
     const selected = document.getText(range);
     if (selected !== "") {
         return { expression: selected }; // the user selection
@@ -16,8 +16,10 @@ export function currentUserSelection(
     const selectedVariable = document.getText(
         document.getWordRangeAtPosition(range.start)
     );
-    return {
-        variable: selectedVariable
+    if (selectedVariable !== "") {
+        return { variable: selectedVariable };
+    } else {
+        return undefined;
     }
 }
 

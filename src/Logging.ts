@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getConfiguration } from '../config';
+import { getConfiguration } from './config';
 
 enum LogLevel {
     None = 0,

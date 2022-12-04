@@ -5,7 +5,8 @@ import { VariablesList } from "../watch-view/WatchVariable";
 import { WatchTreeProvider } from "../watch-view/WatchTreeProvider";
 import { saveTracked } from '../watch-view/tracked';
 import { logTrace } from "../utils/Logging";
-import { getConfiguration } from "../config";
+import { getConfiguration } from "../../config";
+import { patchDebugVariableContext } from './ViewVSCodeDebugVariable';
 
 type TrackedVariable = {
     name: string;
@@ -108,19 +109,6 @@ export class DebugVariablesTracker {
     }
 }
 
-function patchDebugVariableContext(variablesResponse: DebugProtocol.VariablesResponse) {
-    const viewableTypes = [
-        "AxesSubplot",
-        "Figure",
-    ]
-    variablesResponse.body.variables.forEach((v) => {
-        if (v.type && viewableTypes.includes(v.type)) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (v as any).__vscodeVariableMenuContext = 'viewableInGraphicViewer';
-        }
-    });
-}
-
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
 // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
@@ -176,6 +164,7 @@ export const createDebugAdapterTracker = (): vscode.DebugAdapterTracker => {
                 return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
 
             } else if (msg.type === 'response' && msg.command === 'variables') {
+                // Add context to debug variable. This is a workaround.
                 if (msg.body && getConfiguration('addViewContextEntryToVSCodeDebugVariables')) patchDebugVariableContext(msg);
                 return debugVariablesTrackerService.onVariablesResponse(msg);
             } else if (msg.type === "event" && msg.event === "continued") {

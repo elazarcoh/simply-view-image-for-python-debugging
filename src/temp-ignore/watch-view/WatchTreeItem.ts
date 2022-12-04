@@ -1,5 +1,9 @@
+import Container from 'typedi';
 import * as vscode from 'vscode';
 import { Information } from '../InformationResolver';
+import { track, untrack } from './tracked';
+import { WatchTreeProvider } from './WatchTreeProvider';
+import { VariablesList } from './WatchVariable';
 
 export enum VariableTrackingState {
   tracked = "trackedVariable",
@@ -28,6 +32,7 @@ export abstract class WatchTreeItem extends vscode.TreeItem {
 
   tracking: VariableTrackingState = VariableTrackingState.nonTracked;
   info?: Information;
+  trackingId?: string;
 
   constructor(
     readonly itemType: "variable" | "expression",
@@ -50,13 +55,15 @@ export abstract class WatchTreeItem extends vscode.TreeItem {
     this.contextValue = context;
   }
 
-  setTracked(): void {
+  setTracked(trackingId: string): void {
+    this.trackingId = trackingId;
     this.tracking = VariableTrackingState.tracked;
     this.iconPath = new vscode.ThemeIcon("eye");
     this.updateContext();
   }
 
   setNonTracked(): void {
+    this.trackingId = undefined;
     this.tracking = VariableTrackingState.nonTracked;
     this.iconPath = undefined;
     this.updateContext();
@@ -74,3 +81,39 @@ export class InfoTreeItem extends vscode.TreeItem {
   static readonly contextValue = "infoItem";
   readonly contextValue = InfoTreeItem.contextValue;
 }
+
+// Image Watch view buttons commands
+const watchTree = Container.get(WatchTreeProvider);
+const variablesList = Container.get(VariablesList);
+export const commands = [
+  // track/untrack tree item
+  [
+    "svifpd.watch-track-enable", (watchVariable: WatchTreeItem): void => {
+      const trackingId = track(watchVariable);
+      watchVariable.setTracked(trackingId);
+      watchTree.refresh();
+    },
+  ],
+  [
+    "svifpd.watch-track-disable", (watchVariable: WatchTreeItem): void => {
+      if (watchVariable.trackingId !== undefined) {
+        untrack(watchVariable.trackingId);
+      }
+      watchVariable.setNonTracked();
+      watchTree.refresh();
+    },
+  ],
+  // refresh tree
+  [
+    "svifpd.watch-refresh", async (): Promise<void> => {
+      await variablesList.updateVariables();
+      watchTree.refresh();
+    },
+  ],
+  // Open Image Watch settings
+  [
+    "svifpd.open-watch-settings", async () => vscode.commands.executeCommand(
+      "workbench.action.openSettings", { query: "svifpd.imageWatch.objects" }
+    )
+  ],
+]

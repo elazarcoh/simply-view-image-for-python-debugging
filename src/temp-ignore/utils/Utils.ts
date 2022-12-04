@@ -37,5 +37,6 @@ export function notEmpty<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
 }
 
-export type Body<T extends { body: unknown }> = T["body"];
-
+export function indent(content: string, n: number): string {
+  return content.split("\n").map(line => " ".repeat(n) + line).join("\n");
+}

@@ -21,5 +21,6 @@ try:
 
         return is_pillow_image, info, save
 
+    is_pillow_image, pillow_image_info, pillow_image_save = pillow()
 except:
     pass

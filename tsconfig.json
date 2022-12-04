@@ -21,5 +21,6 @@
 		"node_modules",
 		".vscode-test",
 		"python_test",
+		"src/temp-ignore"
 	]
 }

@@ -306,8 +306,8 @@
   "scripts": {
     "update-package-json": "update-package-json",
     "vscode:prepublish": "yarn run clean && webpack --config webpack.config.prod.js",
-    "build": "yarn run clean && webpack --mode development",
-    "watch": "yarn run clean && webpack --mode development --watch",
+    "build": " webpack --mode development",
+    "watch": "webpack --mode development --watch",
     "lint": "eslint src --ext ts",
     "clean": "rimraf dist"
   },

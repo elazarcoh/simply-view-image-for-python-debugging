@@ -9,3 +9,10 @@ type SetupCode = {
      */
     testSetupCode: string;
 }
+
+type EvalCode = {
+    /**
+     * Function that generates a python expression to evaluate.
+     */
+    evalCode: (expression: string) => string;
+}

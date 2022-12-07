@@ -6,6 +6,9 @@ import { join } from "path";
 // import { Container } from 'typedi';
 // import { DebugProtocol } from "vscode-debugprotocol";
 import { initLog, logDebug, logTrace } from "./Logging";
+import { combineSetupCodes, evaluateExpressionPythonCode } from "./python-communication/BuildPythonCode";
+import { NumpyImage, PillowImage } from "./viewable/Image";
+import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -62,15 +65,11 @@ export function activate(context: vscode.ExtensionContext): void {
   logTrace("Activating extension");
 
 
-  // // register the debug adapter tracker
-  // logDebug("Registering debug adapter tracker for python");
-  // vscode.debug.registerDebugAdapterTrackerFactory("python", {
-  //   createDebugAdapterTracker
-  // });
-  // logDebug("Registering debug adapter tracker for python-Jupyter");
-  // vscode.debug.registerDebugAdapterTrackerFactory("Python Kernel Debug Adapter", {
-  //   createDebugAdapterTracker
-  // });
+  // register the debug adapter tracker
+  logDebug("Registering debug adapter tracker for python");
+  vscode.debug.registerDebugAdapterTrackerFactory("python", { createDebugAdapterTracker });
+  logDebug("Registering debug adapter tracker for python-Jupyter");
+  vscode.debug.registerDebugAdapterTrackerFactory("Python Kernel Debug Adapter", { createDebugAdapterTracker });
 
   // logDebug("Registering code actions provider (the lightbulb)");
   // context.subscriptions.push(

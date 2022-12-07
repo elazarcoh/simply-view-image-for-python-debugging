@@ -4,7 +4,10 @@ try:
     def numpy():
         def is_numpy_image(img, restrict_types):
             if restrict_types:
-                return safe_isinstance(img, np.ndarray)
+                try:
+                    return isinstance(img, np.ndarray)
+                except TypeError:
+                    return False
             else:
                 try:
                     img = np.asarray(img)
@@ -17,12 +20,14 @@ try:
 
         def info(img):
             obj_type = type(img).__name__
-            img = np.asarray(img)
-            shape = str(img.shape)
-            dtype = str(img.dtype)
-            return pack_info_to_object(
-                {"type": obj_type, "shape": shape, "dtype": dtype}
-            )
+            try:
+                img = np.asarray(img)
+                shape = str(img.shape)
+                dtype = str(img.dtype)
+                return {"type": obj_type, "shape": shape, "dtype": dtype}
+            except:
+                return {"type": obj_type}
+
 
         def save(path, img, *args, **kwargs):
             ...

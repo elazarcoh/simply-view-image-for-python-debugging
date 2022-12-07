@@ -8,4 +8,7 @@ export class AllViewables {
     public get allViewables(): Viewable[] {
         return this._allViewables;
     }
+    public addViewable(viewable: Viewable): void {
+        this._allViewables.push(viewable);
+    }
 }

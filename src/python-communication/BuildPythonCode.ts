@@ -66,6 +66,8 @@ export function atModule(name: string): string {
     return `${PYTHON_MODULE_NAME}.${name}`;
 }
 
-export function sameValueMultipleCallables(expression: string, callables: ((_:string) => string)): string {
-    return `[${expressions.join(", ")}]`;
+export function sameValueMultipleEvalsPythonCode(expression: string, multiEvals: EvalCode[]): string {
+    const lazyEvalExpression = `lambda: ${expression}`;
+    const lambdas = multiEvals.map(({ evalCode }) => `lambda x: ${evalCode("x")}`).join(", ");
+    return `${SAME_VALUE_MULTIPLE_CALLABLES}(${lazyEvalExpression}, [${lambdas}])`;
 }

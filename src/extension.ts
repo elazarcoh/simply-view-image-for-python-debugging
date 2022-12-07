@@ -9,6 +9,9 @@ import { initLog, logDebug, logTrace } from "./Logging";
 import { combineSetupCodes, evaluateExpressionPythonCode } from "./python-communication/BuildPythonCode";
 import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
+import Container from "typedi";
+import { AllViewables } from "./AllViewables";
+import { pythonObjectTypeCode, viewablesSetupCode } from "./python-communication/FindPythonObjectType";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -70,6 +73,10 @@ export function activate(context: vscode.ExtensionContext): void {
   vscode.debug.registerDebugAdapterTrackerFactory("python", { createDebugAdapterTracker });
   logDebug("Registering debug adapter tracker for python-Jupyter");
   vscode.debug.registerDebugAdapterTrackerFactory("Python Kernel Debug Adapter", { createDebugAdapterTracker });
+
+  const allViewables = Container.get(AllViewables);
+  allViewables.addViewable(NumpyImage);
+  allViewables.addViewable(PillowImage);
 
   // logDebug("Registering code actions provider (the lightbulb)");
   // context.subscriptions.push(

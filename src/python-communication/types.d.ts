@@ -16,3 +16,8 @@ type EvalCode = {
      */
     evalCode: (expression: string) => string;
 }
+
+type RunInPythonOptions = {
+    context: "watch" | "repl" | "hover";
+    frameId?: number;
+}

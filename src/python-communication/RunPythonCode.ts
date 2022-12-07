@@ -1,34 +1,40 @@
 import Container from "typedi";
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
+import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
 import { Except } from "../utils/Except";
 import { parsePythonValue } from "./PythonValueParser";
-
-const debugVariablesTracker = Container.get(DebugVariablesTracker);
 
 function runThroughDebugger(
     session: vscode.DebugSession,
     expression: string,
-    frameId?: number
+    { context, frameId }: RunInPythonOptions
 ): Thenable<Body<DebugProtocol.EvaluateResponse>> {
-    return (frameId === undefined ? debugVariablesTracker.currentFrameId() : Promise.resolve(frameId))
-        .then((frameId) => {
-            return session.customRequest("evaluate", {
-                expression: expression,
-                frameId,
-                context: "hover",
-            });
-        });
+    const debugVariablesTracker =
+        Container.get(DebugSessionsHolder).debugSessionData(
+            session
+        ).debugVariablesTracker;
+
+    frameId = frameId ?? debugVariablesTracker.currentFrameId();
+
+    return session.customRequest("evaluate", {
+        expression: expression,
+        frameId,
+        context,
+    });
 }
 
-async function runPython<T = unknown>(code: string, session?: vscode.DebugSession): Promise<Except<T>> {
+async function runPython<T = unknown>(
+    code: string,
+    session?: vscode.DebugSession,
+    options: RunInPythonOptions = { context: "repl" }
+): Promise<Except<T>> {
     session = session ?? vscode.debug.activeDebugSession;
     if (session === undefined) {
         return Except.error("no active debug session");
     }
     try {
-        const res = await runThroughDebugger(session, code);
+        const res = await runThroughDebugger(session, code, options);
         return parsePythonValue<T>(res.result);
     } catch (error) {
         if (error instanceof Error) {
@@ -39,8 +45,10 @@ async function runPython<T = unknown>(code: string, session?: vscode.DebugSessio
     }
 }
 
-
-export async function execInPython(code: string, session?: vscode.DebugSession): Promise<Except<null>> {
+export async function execInPython(
+    code: string,
+    session?: vscode.DebugSession
+): Promise<Except<null>> {
     code = `
 exec(\"\"\"
 ${code}
@@ -50,6 +58,9 @@ ${code}
     return runPython<null>(code, session);
 }
 
-export async function evaluateInPython<T = unknown>(expression: string, session?: vscode.DebugSession): Promise<Except<T>> {
+export async function evaluateInPython<T = unknown>(
+    expression: string,
+    session?: vscode.DebugSession
+): Promise<Except<T>> {
     return runPython<T>(expression, session);
 }

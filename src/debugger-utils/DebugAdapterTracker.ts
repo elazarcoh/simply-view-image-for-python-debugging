@@ -3,7 +3,7 @@ import Container from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { logTrace } from "../Logging";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
-import { DebugSessionsHolderSingleton } from "./DebugSessionsHolderSingleton";
+import { DebugSessionsHolder } from "./DebugSessionsHolder";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -27,7 +27,7 @@ export const createDebugAdapterTracker = (session: vscode.DebugSession): vscode.
     // const variablesList = Container.get(VariablesList);
     // const watchTreeProvider = Container.get(WatchTreeProvider);
 
-    const debugSessionData = Container.get(DebugSessionsHolderSingleton).debugSessionData(session);
+    const debugSessionData = Container.get(DebugSessionsHolder).debugSessionData(session);
     const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
     return {

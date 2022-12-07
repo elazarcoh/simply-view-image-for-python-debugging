@@ -5,13 +5,17 @@ import { join } from "path";
 // import 'reflect-metadata';
 // import { Container } from 'typedi';
 // import { DebugProtocol } from "vscode-debugprotocol";
-import { initLog, logDebug, logTrace } from "./Logging";
-import { combineSetupCodes, evaluateExpressionPythonCode } from "./python-communication/BuildPythonCode";
+import { initLog, logDebug, logInfo, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
-import { pythonObjectTypeCode, viewablesSetupCode } from "./python-communication/FindPythonObjectType";
+import {
+    pythonObjectInfoCode,
+    viewablesSetupCode,
+} from "./python-communication/BuildPythonCode";
+import { findExpressionTypes } from "./PythonObjectInfo";
+import { execInPython } from "./python-communication/RunPythonCode";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -20,11 +24,10 @@ import { pythonObjectTypeCode, viewablesSetupCode } from "./python-communication
 // import { CodeActionProvider } from "./CodeActionProvider";
 // import { commands } from "./commands";
 
-
 const WORKING_DIR = "svifpd";
 
 function onConfigChange(): void {
-  initLog();
+    initLog();
 }
 
 // function initWorkingDir(context: vscode.ExtensionContext): void {
@@ -57,72 +60,84 @@ function onConfigChange(): void {
 // }
 
 export function activate(context: vscode.ExtensionContext): void {
+    onConfigChange();
+    // vscode.workspace.onDidChangeConfiguration(config => {
+    //   if (config.affectsConfiguration(extensionConfigSection)) {
+    //     onConfigChange();
+    //   }
+    // });
 
-  onConfigChange();
-  // vscode.workspace.onDidChangeConfiguration(config => {
-  //   if (config.affectsConfiguration(extensionConfigSection)) {
-  //     onConfigChange();
-  //   }
-  // });
+    logTrace("Activating extension");
 
-  logTrace("Activating extension");
+    // register the debug adapter tracker
+    logDebug("Registering debug adapter tracker for python");
+    vscode.debug.registerDebugAdapterTrackerFactory("python", {
+        createDebugAdapterTracker,
+    });
+    logDebug("Registering debug adapter tracker for python-Jupyter");
+    vscode.debug.registerDebugAdapterTrackerFactory(
+        "Python Kernel Debug Adapter",
+        { createDebugAdapterTracker }
+    );
+
+    const allViewables = Container.get(AllViewables);
+    allViewables.addViewable(NumpyImage);
+    allViewables.addViewable(PillowImage);
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand("svifpd.open-watch-settings", async () => {
+        await execInPython(viewablesSetupCode(), vscode.debug.activeDebugSession!);
+        const ts = await findExpressionTypes('x', vscode.debug.activeDebugSession!);
+        logInfo(ts);
+      }
+      )
+    )
+
+    // logDebug("Registering code actions provider (the lightbulb)");
+    // context.subscriptions.push(
+    //   vscode.languages.registerCodeActionsProvider(
+    //     "python",
+    //     new CodeActionProvider(),
+    //     { providedCodeActionKinds: [vscode.CodeActionKind.Empty] }
+    //   )
+    // );
+
+    // logDebug("Registering image watch tree view provider");
+    // context.subscriptions.push(
+    //   vscode.window.registerTreeDataProvider(
+    //     "pythonDebugImageWatch",
+    //     Container.get(WatchTreeProvider)
+    //   )
+    // );
+
+    // // add commands
+    // logDebug("Registering commands");
+    // for (const [id, action] of commands) {
+    //   logDebug(`Registering command "${id}"`);
+    //   context.subscriptions.push(
+    //     vscode.commands.registerCommand(id, action)
+    //   );
+    // }
 
 
-  // register the debug adapter tracker
-  logDebug("Registering debug adapter tracker for python");
-  vscode.debug.registerDebugAdapterTrackerFactory("python", { createDebugAdapterTracker });
-  logDebug("Registering debug adapter tracker for python-Jupyter");
-  vscode.debug.registerDebugAdapterTrackerFactory("Python Kernel Debug Adapter", { createDebugAdapterTracker });
-
-  const allViewables = Container.get(AllViewables);
-  allViewables.addViewable(NumpyImage);
-  allViewables.addViewable(PillowImage);
-
-  // logDebug("Registering code actions provider (the lightbulb)");
-  // context.subscriptions.push(
-  //   vscode.languages.registerCodeActionsProvider(
-  //     "python",
-  //     new CodeActionProvider(),
-  //     { providedCodeActionKinds: [vscode.CodeActionKind.Empty] }
-  //   )
-  // );
-
-  // logDebug("Registering image watch tree view provider");
-  // context.subscriptions.push(
-  //   vscode.window.registerTreeDataProvider(
-  //     "pythonDebugImageWatch",
-  //     Container.get(WatchTreeProvider)
-  //   )
-  // );
-
-  // // add commands
-  // logDebug("Registering commands");
-  // for (const [id, action] of commands) {
-  //   logDebug(`Registering command "${id}"`);
-  //   context.subscriptions.push(
-  //     vscode.commands.registerCommand(id, action)
-  //   );
-  // }
-
-  // // // Add expression command
-  // // const expressionsList = Container.get(ExpressionsList);
-  // // context.subscriptions.push(
-  // //   vscode.commands.registerCommand(
-  // //     `svifpd.add-expression`,
-  // //     async () => {
-  // //       // const maybeExpression = await vscode.window.showInputBox({
-  // //       //   prompt: "Enter expression to watch",
-  // //       //   placeHolder: "e.g. images[0]",
-  // //       //   ignoreFocusOut: true,
-  // //       // });
-  // //       const maybeExpression = "images[0]";
-  // //       if (maybeExpression !== undefined) {
-  // //         const p = expressionsList.addExpression(maybeExpression);
-  // //         watchTreeProvider.refresh();
-  // //         return p;
-  // //       }
-  // //     }
-  // //   )
-  // // );
+    // // // Add expression command
+    // // const expressionsList = Container.get(ExpressionsList);
+    // // context.subscriptions.push(
+    // //   vscode.commands.registerCommand(
+    // //     `svifpd.add-expression`,
+    // //     async () => {
+    // //       // const maybeExpression = await vscode.window.showInputBox({
+    // //       //   prompt: "Enter expression to watch",
+    // //       //   placeHolder: "e.g. images[0]",
+    // //       //   ignoreFocusOut: true,
+    // //       // });
+    // //       const maybeExpression = "images[0]";
+    // //       if (maybeExpression !== undefined) {
+    // //         const p = expressionsList.addExpression(maybeExpression);
+    // //         watchTreeProvider.refresh();
+    // //         return p;
+    // //       }
+    // //     }
+    // //   )
+    // // );
 }
-

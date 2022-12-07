@@ -5,7 +5,7 @@ import { getConfiguration } from "../config";
 import {
     atModule as m,
     convertBoolToPython,
-} from "../python-communication/BuildPythonCode";
+} from "../python-communication/PythonCodeUtils";
 
 export const NumpyImage: Viewable = {
     group: "image",

@@ -1,9 +1,11 @@
+import Container from "typedi";
+import { AllViewables } from "../AllViewables";
+import {
+    execInModuleCode,
+    PYTHON_MODULE_NAME,
+    sameValueMultipleEvalsPythonCode,
+} from "./PythonCodeUtils";
 import COMMON from "../python/common.py?raw";
-import { indent } from "../utils/Utils";
-
-const PYTHON_MODULE_NAME = "_python_view_image_mod";
-const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
-const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -15,23 +17,10 @@ except:
     exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
 `;
 
-function execInModuleCode(content: string, tryExpression: string): string {
-    const code: string = `
-exec('''
-try:
-${indent(tryExpression, 4)}
-except:
-${indent(content, 4)}
-''', ${PYTHON_MODULE_NAME}.__dict__
-)
-`;
-    return code;
-}
-
-export function combineSetupCodes(setupCodes: SetupCode[]): string {
+function combineSetupCodes(setupCodes: SetupCode[]): string {
     const setupCode = setupCodes
         .map(({ setupCode, testSetupCode }) =>
-            execInModuleCode(setupCode, testSetupCode)
+            execInModuleCode(PYTHON_MODULE_NAME, setupCode, testSetupCode)
         )
         .join("\n\n");
 
@@ -44,30 +33,26 @@ ${setupCode}
     return code;
 }
 
-export function evaluateExpressionPythonCode(
-    evalCode: EvalCode,
-    expression: string
-): string {
-    const expressionToEval = evalCode.evalCode(expression);
-    // verify it's a single-line expression
-    if (expressionToEval.includes("\n")) {
-        throw new Error("Expression must be a single line");
-    }
-    const asLambda = `lambda: ${expressionToEval}`;
-    const code = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
+export function viewablesSetupCode(): string {
+    const viewables = Container.get(AllViewables).allViewables;
+    const code = combineSetupCodes(viewables.map((v) => v.setupPythonCode));
     return code;
 }
 
-export function convertBoolToPython(bool: boolean): string {
-    return bool ? "True" : "False";
+export function pythonObjectTypeCode(expression: string): string {
+    const viewables = Container.get(AllViewables).allViewables;
+    const code = sameValueMultipleEvalsPythonCode(
+        expression,
+        viewables.map((v) => v.testTypePythonCode)
+    );
+    return code;
 }
 
-export function atModule(name: string): string {
-    return `${PYTHON_MODULE_NAME}.${name}`;
-}
-
-export function sameValueMultipleEvalsPythonCode(expression: string, multiEvals: EvalCode[]): string {
-    const lazyEvalExpression = `lambda: ${expression}`;
-    const lambdas = multiEvals.map(({ evalCode }) => `lambda x: ${evalCode("x")}`).join(", ");
-    return `${SAME_VALUE_MULTIPLE_CALLABLES}(${lazyEvalExpression}, [${lambdas}])`;
+export function pythonObjectInfoCode(expression: string): string {
+    const viewables = Container.get(AllViewables).allViewables;
+    const code = sameValueMultipleEvalsPythonCode(
+        expression,
+        viewables.map((v) => v.infoPythonCode)
+    );
+    return code;
 }

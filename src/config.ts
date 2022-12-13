@@ -1,7 +1,6 @@
 import { configUtils } from "vscode-extensions-json-generator/utils";
 
 export enum Backends {
-  skimage = "skimage",
   opencv = "opencv",
   imageio = "imageio",
   Pillow = "Pillow",
@@ -28,8 +27,23 @@ export interface Config {
   /**
    * @default true
    * @description Use the system tmp path to save image otherwise use the storage path.
+   * @deprecated true
+   * @deprecationMessage Use `svifpd.saveLocation` instead.
    */
   useTmpPathToSave: boolean;
+
+  /**
+   * @default "tmp"
+   * @description Location to save images.
+   */
+  saveLocation: 'tmp' | 'extensionStorage' | 'custom';
+
+  /**
+   * @default undefined
+   * @description Custom path to save images. Only used if `svifpd.saveLocation` is set to `custom`.
+   * @requires svifpd.saveLocation = "custom"
+   */
+  customSavePath: string | undefined;
 
   /**
    * @default "Standalone"

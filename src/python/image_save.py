@@ -74,8 +74,8 @@ def standalone_imsave(path, img):
     with open(path, 'wb')as fp:
         fp.write(make_png(preprocess_for_png(img)))
 
-import importlib
 def try_import(package):
+    import importlib
     try:
         return importlib.import_module(package)
     except ImportError:

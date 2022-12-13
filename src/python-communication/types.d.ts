@@ -10,11 +10,11 @@ type SetupCode = {
     testSetupCode: string;
 }
 
-type EvalCode = {
+type EvalCode<T extends Array<unknown> = []> = {
     /**
      * Function that generates a python expression to evaluate.
      */
-    evalCode: (expression: string) => string;
+    evalCode: (expression: string, ...args: T) => string;
 }
 
 type RunInPythonOptions = {

@@ -9,4 +9,5 @@ export interface Viewable {
     setupPythonCode: SetupCode;
     testTypePythonCode: EvalCode;
     infoPythonCode: EvalCode;
+    serializeObjectPythonCode: EvalCode<[string]>;
 }

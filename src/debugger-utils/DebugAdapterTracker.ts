@@ -1,14 +1,18 @@
 import * as vscode from "vscode";
 import Container from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { logTrace } from "../Logging";
+import { logDebug, logTrace } from "../Logging";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
 import { DebugSessionsHolder } from "./DebugSessionsHolder";
+import { execInPython } from "../python-communication/RunPythonCode";
+import { viewablesSetupCode } from "../python-communication/BuildPythonCode";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
 // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
-export const createDebugAdapterTracker = (session: vscode.DebugSession): vscode.DebugAdapterTracker => {
+export const createDebugAdapterTracker = (
+    session: vscode.DebugSession
+): vscode.DebugAdapterTracker => {
     type Request<T> = T & { type: "request" };
     type Response<T> = T & { type: "response" };
     type WithEvent<T, Event> = T & { type: "event"; event: Event };
@@ -27,7 +31,8 @@ export const createDebugAdapterTracker = (session: vscode.DebugSession): vscode.
     // const variablesList = Container.get(VariablesList);
     // const watchTreeProvider = Container.get(WatchTreeProvider);
 
-    const debugSessionData = Container.get(DebugSessionsHolder).debugSessionData(session);
+    const debugSessionData =
+        Container.get(DebugSessionsHolder).debugSessionData(session);
     const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
     return {
@@ -66,6 +71,10 @@ export const createDebugAdapterTracker = (session: vscode.DebugSession): vscode.
                 msg.event === "stopped" &&
                 msg.body.threadId !== undefined
             ) {
+                logDebug("Breakpoint hit");
+                logDebug("Executing Extension Setup Code");
+                await execInPython(viewablesSetupCode(), session);
+                logDebug("Extension Setup Code Execution Complete");
                 //     const updateWatchView = () => {
                 //         return variablesList
                 //             .updateVariables()

@@ -1,7 +1,7 @@
 import PILLOW_CODE from "../python/image_pillow.py?raw";
 import NUMPY_CODE from "../python/image_numpy.py?raw";
 import { Viewable } from "./Viewable";
-import { getConfiguration } from "../config";
+import { Backends, getConfiguration, NormalizationMethods } from "../config";
 import {
     atModule as m,
     convertBoolToPython,
@@ -24,6 +24,11 @@ export const NumpyImage: Viewable = {
         evalCode: (expression: string) =>
             `${m("numpy_image_info")}(${expression})`,
     },
+    serializeObjectPythonCode: {
+        evalCode: (expression: string, savePath: string) =>
+            // prettier-ignore
+            `${m("numpy_image_save")}(${savePath}, ${expression}, backend=${getConfiguration('preferredBackend', undefined, Backends.Standalone)}, preprocess=${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))})`,
+    },
 };
 
 export const PillowImage: Viewable = {
@@ -41,5 +46,9 @@ export const PillowImage: Viewable = {
     infoPythonCode: {
         evalCode: (expression: string) =>
             `${m("pillow_image_info")}(${expression})`,
+    },
+    serializeObjectPythonCode: {
+        evalCode: (expression: string) =>
+            `${m("pillow_image_save")}(${expression})`,
     },
 };

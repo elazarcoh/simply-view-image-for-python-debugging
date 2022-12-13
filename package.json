@@ -228,6 +228,10 @@
           "default": true,
           "description": "Whether to show a context menu entry in VSCode debug variables view for custom objects (currently only plots)."
         },
+        "svifpd.customSavePath": {
+          "type": "string",
+          "description": "Custom path to save images. Only used if `svifpd.saveLocation` is set to `custom`."
+        },
         "svifpd.debug": {
           "type": "string",
           "enum": [
@@ -281,7 +285,6 @@
         "svifpd.preferredBackend": {
           "type": "string",
           "enum": [
-            "skimage",
             "opencv",
             "imageio",
             "Pillow",
@@ -295,10 +298,22 @@
           "default": true,
           "description": "Restrict image types to numpy.ndarray/PIL.Image only"
         },
+        "svifpd.saveLocation": {
+          "type": "string",
+          "enum": [
+            "tmp",
+            "extensionStorage",
+            "custom"
+          ],
+          "default": "tmp",
+          "description": "Location to save images."
+        },
         "svifpd.useTmpPathToSave": {
           "type": "boolean",
           "default": true,
-          "description": "Use the system tmp path to save image otherwise use the storage path."
+          "description": "Use the system tmp path to save image otherwise use the storage path.",
+          "deprecated": true,
+          "deprecationMessage": "Use `svifpd.saveLocation` instead."
         }
       }
     }

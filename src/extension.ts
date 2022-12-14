@@ -11,7 +11,7 @@ import {
     pythonObjectInfoCode,
     viewablesSetupCode,
 } from "./python-communication/BuildPythonCode";
-import { findExpressionTypes } from "./PythonObjectInfo";
+import { findExpressionViewables } from "./PythonObjectInfo";
 import { execInPython } from "./python-communication/RunPythonCode";
 import { CodeActionProvider } from "./CodeActionProvider";
 import { getConfiguration } from "./config";

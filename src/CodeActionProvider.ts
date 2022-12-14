@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { TypedCommand } from "./commands";
-import { findExpressionTypes } from "./PythonObjectInfo";
+import { findExpressionViewables } from "./PythonObjectInfo";
+import { arrayUniqueByKey } from "./utils/Utils";
 import { currentUserSelection, selectionString } from "./utils/VSCodeUtils";
 
 export class CodeActionProvider implements vscode.CodeActionProvider {
@@ -18,16 +19,16 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
             return;
         }
 
-        const objectTypes = await findExpressionTypes(
+        const objectViewables = await findExpressionViewables(
             selectionString(userSelection),
             debugSession
         );
-        if (objectTypes === undefined) {
+        if (objectViewables === undefined) {
             return undefined;
         }
 
-        return objectTypes.map((t) => ({
-            title: `View ${t.group} (${t.type})`,
+        return arrayUniqueByKey(objectViewables, (t) => t.title).map((t) => ({
+            title: `View ${t.title}`,
             command: "svifpd._internal_view-object",
             arguments: [userSelection, t, debugSession],
         }));

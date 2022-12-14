@@ -21,7 +21,8 @@ try:
                 return {"type": obj_type}
 
         def save(path, img, *args, **kwargs):
-            ...
+            from PIL import Image
+            img.save(path)
 
         return is_pillow_image, info, save
 

@@ -10,6 +10,7 @@ import {
 export const NumpyImage: Viewable = {
     group: "image",
     type: "numpy_image",
+    title: "Image",
     setupPythonCode: {
         setupCode: NUMPY_CODE,
         testSetupCode: "(is_numpy_image, numpy_image_info, numpy_image_save)", // require all three functions to be defined
@@ -34,6 +35,7 @@ export const NumpyImage: Viewable = {
 export const PillowImage: Viewable = {
     group: "image",
     type: "pillow_image",
+    title: "Image",
     setupPythonCode: {
         setupCode: PILLOW_CODE,
         testSetupCode:
@@ -48,7 +50,7 @@ export const PillowImage: Viewable = {
             `${m("pillow_image_info")}(${expression})`,
     },
     serializeObjectPythonCode: {
-        evalCode: (expression: string) =>
-            `${m("pillow_image_save")}(${expression})`,
+        evalCode: (expression: string, savePath: string) =>
+            `${m("pillow_image_save")}('${savePath}', ${expression})`,
     },
 };

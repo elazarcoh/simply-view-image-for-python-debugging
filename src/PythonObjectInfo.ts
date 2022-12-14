@@ -3,23 +3,22 @@ import * as vscode from "vscode";
 import { AllViewables } from "./AllViewables";
 import { pythonObjectTypeCode } from "./python-communication/BuildPythonCode";
 import { evaluateInPythonMulti } from "./python-communication/RunPythonCode";
-import { ObjectType } from "./viewable/Viewable";
+import {Viewable } from "./viewable/Viewable";
 
-export async function findExpressionTypes(
+export async function findExpressionViewables(
     expression: string,
     session: vscode.DebugSession
-): Promise<ObjectType[]> {
-    const viewables = Container.get(AllViewables).allViewables.map(
-        ({ group, type }) => ({ group, type })
-    );
+): Promise<Viewable[]> {
     const code = pythonObjectTypeCode(expression);
     const isOfType = await evaluateInPythonMulti<boolean>(code, session, {
         context: "repl",
     });
-    const types = isOfType
+
+    const viewables = Container.get(AllViewables).allViewables;
+    const objectViewables = isOfType
         .map((isOfType, i) => ({ isOfType, i }))
         .filter(({ isOfType }) => !isOfType.isError && isOfType.result)
         .map(({ i }) => viewables[i]);
 
-    return types;
+    return objectViewables;
 }

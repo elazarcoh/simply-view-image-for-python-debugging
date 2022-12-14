@@ -40,10 +40,11 @@ export const createDebugAdapterTracker = (
             logTrace("onWillStartSession");
         },
 
-        onWillStopSession: () => {
+        onWillStopSession: async () => {
             logTrace("onWillStopSession");
             // variablesList.clear();
             // watchTreeProvider.refresh();
+            await debugSessionData.savePathHelper.deleteSaveDir();
         },
 
         onWillReceiveMessage: async (msg: RecvMsg) => {

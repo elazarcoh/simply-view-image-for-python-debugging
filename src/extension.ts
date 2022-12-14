@@ -1,11 +1,8 @@
 import * as vscode from "vscode";
-import { chmodSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "fs";
-import { tmpdir } from "os";
-import * as fsp from "path";
 // import 'reflect-metadata';
 // import { Container } from 'typedi';
 // import { DebugProtocol } from "vscode-debugprotocol";
-import { initLog, logDebug, logInfo, logTrace } from "./Logging";
+import { initLog, logDebug, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 import Container from "typedi";
@@ -19,7 +16,10 @@ import { execInPython } from "./python-communication/RunPythonCode";
 import { CodeActionProvider } from "./CodeActionProvider";
 import { getConfiguration } from "./config";
 import { EXTENSION_NAME } from "./globals";
-import { defaultSaveDir } from "./SerializationHelper";
+import { ObjectType } from "./viewable/Viewable";
+import { viewObject } from "./ViewPythonObject";
+import { registerCommand, registerCommands } from "./commands";
+import { setSaveLocation } from "./SerializationHelper";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -30,43 +30,6 @@ import { defaultSaveDir } from "./SerializationHelper";
 
 function onConfigChange(): void {
     initLog();
-}
-
-function setSaveLocation(context: vscode.ExtensionContext): void {
-    const saveLocation = getConfiguration("saveLocation") ?? "tmp";
-    let saveDir: string;
-    if (saveLocation === "custom") {
-        logDebug("Using custom save location for saving files");
-        saveDir = getConfiguration("customSavePath") ?? defaultSaveDir();
-    } else if (saveLocation === "extensionStorage") {
-        logDebug("Using extension storage for saving files");
-        saveDir = fsp.join(
-            context.globalStorageUri.fsPath,
-            EXTENSION_NAME,
-            "images"
-        );
-    } else {
-        logDebug("Using tmp folder for saving files");
-        saveDir = fsp.join(tmpdir(), EXTENSION_NAME, "images");
-    }
-
-    logDebug("saveDir: " + saveDir);
-
-    // create output directory if it doesn't exist
-    if (existsSync(saveDir)) {
-        logDebug("cleaning save directory");
-        readdirSync(saveDir)
-            .map((filename) => fsp.join(saveDir, filename))
-            .forEach(unlinkSync);
-    } else {
-        logDebug("create save directory");
-        mkdirSync(saveDir, { recursive: true });
-        if (saveLocation === "tmp" || saveLocation === undefined) {
-            chmodSync(saveDir, 0o777); // make the folder world writable for other users uses the extension
-        }
-    }
-
-    Container.set("saveDir", saveDir);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -122,6 +85,8 @@ export function activate(context: vscode.ExtensionContext): void {
             { providedCodeActionKinds: [vscode.CodeActionKind.Empty] }
         )
     );
+
+    context.subscriptions.push(...registerCommands(context));
 
     // logDebug("Registering image watch tree view provider");
     // context.subscriptions.push(

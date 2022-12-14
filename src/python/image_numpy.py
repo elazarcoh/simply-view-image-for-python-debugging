@@ -147,6 +147,13 @@ try:
             "Standalone": ("numpy", standalone_imsave),
         }
 
+        def try_import(package):
+            import importlib
+            try:
+                return importlib.import_module(package)
+            except ImportError:
+                return None
+
         def get_function(preferred=None):
             save_function = None
 

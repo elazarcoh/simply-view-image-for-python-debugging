@@ -329,7 +329,7 @@
   "devDependencies": {
     "@types/glob": "^7.1.4",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^13.13.52",
+    "@types/node": "^18.11.15",
     "@types/parsimmon": "^1.10.6",
     "@types/tmp": "^0.2.1",
     "@types/vscode": "^1.60.0",

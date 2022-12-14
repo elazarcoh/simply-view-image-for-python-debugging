@@ -18,10 +18,10 @@ function runThroughDebugger(
     frameId = frameId ?? debugVariablesTracker.currentFrameId();
 
     return session.customRequest("evaluate", {
-        expression: expression,
+        expression,
         frameId,
         context,
-    });
+    } as DebugProtocol.EvaluateArguments);
 }
 
 async function runPython<T>(

@@ -20,17 +20,18 @@ export async function viewObject(
         // TODO: Handle this error
         return;
     }
-    const debugSessionData = Container.get(DebugSessionsHolder).debugSessionData(session);
+    const debugSessionData =
+        Container.get(DebugSessionsHolder).debugSessionData(session);
     const path = debugSessionData.savePathHelper.savePathFor(obj);
-    const objectAsString = 'expression' in obj ? obj.expression : obj.variable;  // TODO: fix
-    const code = viewable.serializeObjectPythonCode.evalCode(objectAsString, path);
+    const objectAsString = "expression" in obj ? obj.expression : obj.variable; // TODO: fix
+    const code = evaluateExpressionPythonCode(
+        viewable.serializeObjectPythonCode,
+        objectAsString,
+        path
+    );
     const result = await evaluateInPython<null>(code, session);
     // TODO: Handle error
     if (!result.isError) {
         await openImageToTheSide(path, true);
     }
 }
-
-export const commands: [string, (...args: any[]) => Promise<unknown>][] = [
-    ["svifpd._internal_view-object", viewObject],
-];

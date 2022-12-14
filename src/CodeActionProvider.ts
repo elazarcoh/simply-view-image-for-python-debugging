@@ -1,16 +1,15 @@
 import * as vscode from "vscode";
+import { TypedCommand } from "./commands";
 import { findExpressionTypes } from "./PythonObjectInfo";
 import { currentUserSelection, selectionString } from "./utils/VSCodeUtils";
-import { ObjectType } from "./viewable/Viewable";
 
 export class CodeActionProvider implements vscode.CodeActionProvider {
     public async provideCodeActions(
         document: vscode.TextDocument,
         range: vscode.Range
-    ): Promise<
-        vscode.Command<[PythonObjectRepresentation, ObjectType]>[] | undefined
-    > {
-        if (vscode.debug.activeDebugSession === undefined) {
+    ): Promise<TypedCommand<"svifpd._internal_view-object">[] | undefined> {
+        const debugSession = vscode.debug.activeDebugSession;
+        if (debugSession === undefined) {
             return undefined;
         }
 
@@ -21,21 +20,16 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
 
         const objectTypes = await findExpressionTypes(
             selectionString(userSelection),
-            vscode.debug.activeDebugSession
+            debugSession
         );
         if (objectTypes === undefined) {
             return undefined;
         }
 
-        const actions = objectTypes.map((t) => ({
+        return objectTypes.map((t) => ({
             title: `View ${t.group} (${t.type})`,
             command: "svifpd._internal_view-object",
-            arguments: [userSelection, t] as [
-                PythonObjectRepresentation,
-                ObjectType
-            ],
+            arguments: [userSelection, t, debugSession],
         }));
-
-        return actions;
     }
 }

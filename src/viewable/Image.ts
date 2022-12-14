@@ -27,7 +27,7 @@ export const NumpyImage: Viewable = {
     serializeObjectPythonCode: {
         evalCode: (expression: string, savePath: string) =>
             // prettier-ignore
-            `${m("numpy_image_save")}(${savePath}, ${expression}, backend=${getConfiguration('preferredBackend', undefined, Backends.Standalone)}, preprocess=${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))})`,
+            `${m("numpy_image_save")}('${savePath}', ${expression}, backend='${getConfiguration('preferredBackend', undefined, Backends.Standalone)}', preprocess='${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))}')`,
     },
 };
 

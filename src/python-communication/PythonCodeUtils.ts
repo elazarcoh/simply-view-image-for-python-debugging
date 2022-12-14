@@ -18,11 +18,12 @@ ${indent(content, 4)}
 }
 
 
-export function evaluateExpressionPythonCode(
-    evalCode: EvalCode,
-    expression: string
+export function evaluateExpressionPythonCode<P extends Array<unknown>>(
+    evalCode: EvalCode<P>,
+    expression: string,
+    ...args: P
 ): string {
-    const expressionToEval = evalCode.evalCode(expression);
+    const expressionToEval = evalCode.evalCode(expression, ...args);
     // verify it's a single-line expression
     if (expressionToEval.includes("\n")) {
         throw new Error("Expression must be a single line");

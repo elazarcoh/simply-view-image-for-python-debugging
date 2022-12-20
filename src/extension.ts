@@ -21,6 +21,7 @@ import { viewObject } from "./ViewPythonObject";
 import { registerCommand, registerCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
+import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -38,10 +39,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
     setSaveLocation(context);
 
-    vscode.workspace.onDidChangeConfiguration(config => {
-      if (config.affectsConfiguration(EXTENSION_CONFIG_SECTION)) {
-        onConfigChange();
-      }
+    vscode.workspace.onDidChangeConfiguration((config) => {
+        if (config.affectsConfiguration(EXTENSION_CONFIG_SECTION)) {
+            onConfigChange();
+        }
     });
 
     logTrace("Activating extension");
@@ -90,15 +91,15 @@ export function activate(context: vscode.ExtensionContext): void {
         )
     );
 
-    context.subscriptions.push(...registerCommands(context));
+    logDebug("Registering image watch tree view provider");
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider(
+            "pythonDebugImageWatch",
+            Container.get(WatchTreeProvider)
+        )
+    );
 
-    // logDebug("Registering image watch tree view provider");
-    // context.subscriptions.push(
-    //   vscode.window.registerTreeDataProvider(
-    //     "pythonDebugImageWatch",
-    //     Container.get(WatchTreeProvider)
-    //   )
-    // );
+    context.subscriptions.push(...registerCommands(context));
 
     // // add commands
     // logDebug("Registering commands");

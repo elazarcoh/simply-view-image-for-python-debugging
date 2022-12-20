@@ -44,6 +44,10 @@ export function indent(content: string, n: number): string {
         .join("\n");
 }
 
+export function arrayUnique<T>(array: T[]): T[] {
+    return [...new Set(array)];
+}
+
 export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
     return [...new Map(array.map(item => [key(item), item])).values()];
 }

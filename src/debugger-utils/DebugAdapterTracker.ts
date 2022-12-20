@@ -17,6 +17,7 @@ import {
     BuildEvalCodeWithExpressionPythonCode,
     safeEvaluateExpressionPythonCode,
 } from "../python-communication/PythonCodeUtils";
+import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -45,6 +46,27 @@ export const createDebugAdapterTracker = (
     const debugSessionData =
         Container.get(DebugSessionsHolder).debugSessionData(session);
     const debugVariablesTracker = debugSessionData.debugVariablesTracker;
+
+    const watchTreeProvider = Container.get(WatchTreeProvider);
+    const variablesList = debugSessionData.variablesList;
+    const expressionsList = debugSessionData.expressionsList;
+
+    const checkSetupOkay = async () => {
+        return evaluateInPython<boolean>(
+            safeEvaluateExpressionPythonCode(verifyModuleExistsCode())
+        );
+    };
+
+    const updateWatchTree = async () => {
+        return Promise.all([
+            variablesList.update(),
+            expressionsList.update(),
+        ]).then(() => watchTreeProvider.refresh());
+    };
+
+    const saveTracked = async () => {
+        return;
+    };
 
     return {
         onWillStartSession: () => {
@@ -85,33 +107,30 @@ export const createDebugAdapterTracker = (
             ) {
                 logDebug("Breakpoint hit");
 
-                const runUntilSuccess = async (): Promise<void> => {
-                    logDebug("Run setup code")
-                    await execInPython(viewablesSetupCode(), session);
+                const trySetupExtensionAndRunAgainIfFailed =
+                    async (): Promise<void> => {
+                        logDebug("Checks setup is okay or not");
+                        const isSetupOkay = await checkSetupOkay();
 
-                    logDebug("Check is setup success")
-                    const isSuccess = await evaluateInPython<boolean>(
-                        safeEvaluateExpressionPythonCode(
-                            verifyModuleExistsCode()
-                        )
-                    );
-                    if (isSuccess.isError || !isSuccess.result) {
-                        logDebug("Setup failed. Running again")
-                        return runUntilSuccessDebounced();
-                    }
-                    logDebug("Setup success")
-                };
-                const runUntilSuccessDebounced = debounce(runUntilSuccess, 250);
-                runUntilSuccessDebounced();
+                        if (isSetupOkay.isError || !isSetupOkay.result) {
+                            logDebug("No setup. Run setup code");
+                            await execInPython(viewablesSetupCode(), session);
+                            // run again to make sure setup is okay
+                            return trySetupExtensionAndRunAgainIfFailedDebounced();
+                        } else {
+                            logDebug("Setup is okay");
 
-                //     const updateWatchView = () => {
-                //         return variablesList
-                //             .updateVariables()
-                //             .then(() => watchTreeProvider.refresh())
-                //             .then(saveTracked)
-                //             .catch((e) => logTrace(e));
-                //     };
-                // return setTimeout(updateWatchView, 100); // wait a bit for the variables to be updated
+                            // Do stuff after setup is okay
+
+                            await updateWatchTree();
+                            await saveTracked();
+                        }
+                    };
+                const trySetupExtensionAndRunAgainIfFailedDebounced = debounce(
+                    trySetupExtensionAndRunAgainIfFailed,
+                    250
+                );
+                trySetupExtensionAndRunAgainIfFailedDebounced();
             } else if (msg.type === "response" && msg.command === "variables") {
                 //     // Add context to debug variable. This is a workaround.
                 //     if (msg.body && getConfiguration('addViewContextEntryToVSCodeDebugVariables')) patchDebugVariableContext(msg);

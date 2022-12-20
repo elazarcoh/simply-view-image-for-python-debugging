@@ -5,8 +5,12 @@ import {
 } from "./WatchExpression";
 import Container, { Service } from "typedi";
 import { VariableWatchTreeItem } from "./WatchVariable";
-import { PythonObjectInfoLineTreeItem } from "./WatchTreeItem";
+import {
+    PythonObjectInfoLineTreeItem,
+    PythonObjectTreeItem,
+} from "./WatchTreeItem";
 import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
+import { Viewable } from "../viewable/Viewable";
 
 type TreeItem =
     | VariableWatchTreeItem
@@ -14,7 +18,7 @@ type TreeItem =
     | typeof AddExpressionWatchTreeItem
     | PythonObjectInfoLineTreeItem;
 
-@Service()  // This is a service, the actual items are retrieved using the DebugSessionData
+@Service() // This is a service, the actual items are retrieved using the DebugSessionData
 export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<
         TreeItem | undefined
@@ -39,10 +43,16 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         }
         if (element === undefined) {
             // root
-            const debugSessionData = Container.get(DebugSessionsHolder).debugSessionData(debugSession);
+            const debugSessionData =
+                Container.get(DebugSessionsHolder).debugSessionData(
+                    debugSession
+                );
+            // debugSessionData.currentPythonObjectsList.variablesList.map(
+            //                     (e) => toTreeItem(e, VariableWatchTreeItem)
+            //                 )
             return [
-                // ...debugSessionData.variablesList.map(toTreeItem),
-                // ...debugSessionData.expressionsList.map(toTreeItem),
+                // ...,
+                // ...debugSessionData.currentPythonObjectsList.expressionsList.map(toTreeItem),
                 AddExpressionWatchTreeItem,
             ];
         } else if (element instanceof VariableWatchTreeItem) {

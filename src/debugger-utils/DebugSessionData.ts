@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { CurrentPythonObjectsList } from "../image-watch-tree/PythonObjectsLists";
+import { CurrentPythonObjectsList } from "../image-watch-tree/PythonObjectsList";
 import { TrackedPythonObjects } from "../image-watch-tree/TrackedPythonObjects";
 import { SavePathHelper } from "../SerializationHelper";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";

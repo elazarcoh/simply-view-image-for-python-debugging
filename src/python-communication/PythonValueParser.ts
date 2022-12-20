@@ -53,22 +53,18 @@ const PythonConstructs = P.createLanguage({
     // The python code we run is wrapped in a function which either returns a value or an error.
     // The error is a string with the format: Error("error message").
     Error: (r) =>
-        r.Quote.chain((q) =>
-            P.seqObj<{ error: string }>(
-                P.string("Error"),
-                P.string("(").trim(P.optWhitespace),
-                ["error", r.String],
-                P.string(")").trim(P.optWhitespace)
-            ).skip(P.string(q))
+        P.seqObj<{ error: string }>(
+            P.string("Error"),
+            P.string("(").trim(P.optWhitespace),
+            ["error", r.String],
+            P.string(")").trim(P.optWhitespace)
         ),
     Value: (r) =>
-        r.Quote.chain((q) =>
-            P.seqObj<{ result: unknown }>(
-                P.string("Value"),
-                P.string("(").trim(P.optWhitespace),
-                ["result", r.PythonValue],
-                P.string(")").trim(P.optWhitespace)
-            ).skip(P.string(q))
+        P.seqObj<{ result: unknown }>(
+            P.string("Value"),
+            P.string("(").trim(P.optWhitespace),
+            ["result", r.PythonValue],
+            P.string(")").trim(P.optWhitespace)
         ),
     ValidPythonResult: (r) =>
         P.alt(
@@ -77,10 +73,12 @@ const PythonConstructs = P.createLanguage({
             r.None.map(() => Except.result(null)),
             ListOf(r.ValidPythonResult)
         ),
+    ValidPythonResultStringified: (r) =>
+        r.Quote.chain((quote) => r.ValidPythonResult.skip(P.string(quote))),
 });
 
 export function parsePythonResult<T = unknown>(value: string): Except<T> {
-    const res = PythonConstructs.ValidPythonResult.parse(value);
+    const res = PythonConstructs.ValidPythonResultStringified.parse(value);
 
     if (res.status) {
         return {

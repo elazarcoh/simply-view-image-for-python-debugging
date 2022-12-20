@@ -62,3 +62,18 @@ export function debounce<
         timeout = setTimeout(() => func(...args), waitFor);
     };
 }
+
+export function zip<Arrays extends unknown[][]>(
+    ...arrays: Arrays
+): {
+    [K in keyof Arrays]: Arrays[K] extends Array<infer R> ? R : never;
+}[] {
+    const minLength = Math.min(...arrays.map((a) => a.length));
+    const res = [];
+    for (let i = 0; i < minLength; i++) {
+        res.push(arrays.map((a) => a[i]));
+    }
+    return res as {
+        [K in keyof Arrays]: Arrays[K] extends Array<infer R> ? R : never;
+    }[];
+}

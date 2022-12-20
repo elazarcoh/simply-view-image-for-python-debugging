@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { AllViewables } from "./AllViewables";
 import {
     combineMultiEvalCodePython,
-    constructCodeRunsSameExpressionWithMultipleEvaluators,
+    constructRunSameExpressionWithMultipleEvaluatorsCode,
 } from "./python-communication/BuildPythonCode";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { Viewable } from "./viewable/Viewable";
@@ -23,7 +23,7 @@ export async function findExpressionViewables(
     session: vscode.DebugSession
 ): Promise<Viewable[]> {
     const viewables = Container.get(AllViewables).allViewables;
-    const code = constructCodeRunsSameExpressionWithMultipleEvaluators(
+    const code = constructRunSameExpressionWithMultipleEvaluatorsCode(
         expression,
         viewables.map((v) => v.testTypePythonCode)
     );
@@ -48,7 +48,7 @@ export async function findExpressionsViewables(
 ): Promise<Viewable[][]> {
     const viewables = Container.get(AllViewables).allViewables;
     const codes = expressions.map((expression) =>
-        constructCodeRunsSameExpressionWithMultipleEvaluators(
+        constructRunSameExpressionWithMultipleEvaluatorsCode(
             expression,
             viewables.map((v) => v.testTypePythonCode)
         )

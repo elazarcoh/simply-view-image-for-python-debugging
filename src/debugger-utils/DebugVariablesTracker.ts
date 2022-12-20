@@ -1,4 +1,5 @@
 import { DebugProtocol } from "vscode-debugprotocol";
+import { PYTHON_MODULE_NAME } from "../python-communication/BuildPythonCode";
 
 type TrackedVariable = {
     name: string;
@@ -6,6 +7,25 @@ type TrackedVariable = {
     frameId: number;
     type: string;
 };
+
+const VARIABLES_TO_FILTER = new Set([
+    PYTHON_MODULE_NAME,
+    "special variables",
+    "class variables",
+    "function variables",
+]);
+
+const TYPES_TO_FILTER = new Set(["module", "function"]);
+
+function filterVariables(
+    variables: DebugProtocol.Variable[]
+): DebugProtocol.Variable[] {
+    return variables.filter(
+        (variable) =>
+            !VARIABLES_TO_FILTER.has(variable.name) &&
+            (variable.type === undefined || !TYPES_TO_FILTER.has(variable.type))
+    );
+}
 
 export class DebugVariablesTracker {
     readonly localVariables: TrackedVariable[] = [];
@@ -92,7 +112,7 @@ export class DebugVariablesTracker {
                     ? this.localVariables
                     : this.globalVariables;
             this._currentFrameId = frameId;
-            for (const variable of response.body.variables) {
+            for (const variable of filterVariables(response.body.variables)) {
                 variablesForScope.push({
                     name: variable.name,
                     evaluateName: variable.evaluateName ?? variable.name,

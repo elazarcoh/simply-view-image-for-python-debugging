@@ -6,6 +6,7 @@ import { indent } from "../utils/Utils";
 export const PYTHON_MODULE_NAME = "_python_view_image_mod";
 const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
+const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -32,6 +33,14 @@ ${indent(content, 4)}
 )
 `;
     return code;
+}
+
+export function stringifyPython<R>(
+    evalCodePython: EvalCodePython<R>
+): EvalCodePython<R> {
+    return {
+        pythonCode: `${STRINGIFY}(${evalCodePython.pythonCode})`,
+    };
 }
 
 export function convertBoolToPython(bool: boolean): string {
@@ -63,9 +72,9 @@ ${setupCode}
 }
 
 export function verifyModuleExistsCode(): EvalCodePython<boolean> {
-    return {
-        pythonCode: `'${PYTHON_MODULE_NAME}' in globals()`,
-    };
+    return convertExpressionIntoValueWrappedExpression(
+        `'${PYTHON_MODULE_NAME}' in globals()`
+    );
 }
 
 export function viewablesSetupCode(): EvalCodePython<null> {
@@ -84,10 +93,8 @@ function convertExpressionIntoValueWrappedExpression<R>(
         throw new Error("Expression must be a single line");
     }
     const asLambda = `lambda: ${expression}`;
-    const code = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
-    return {
-        pythonCode: code,
-    };
+    const pythonCode = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
+    return { pythonCode };
 }
 
 export function constructValueWrappedExpressionFromEvalCode<
@@ -98,7 +105,7 @@ export function constructValueWrappedExpressionFromEvalCode<
     return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
 }
 
-export function constructCodeRunsSameExpressionWithMultipleEvaluators<
+export function constructRunSameExpressionWithMultipleEvaluatorsCode<
     EvalCodes extends EvalCode<unknown>[]
 >(
     expression: string,

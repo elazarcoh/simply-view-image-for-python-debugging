@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
 import { Except } from "../utils/Except";
+import { stringifyPython } from "./BuildPythonCode";
 import { parsePythonResult } from "./PythonValueParser";
 
 function runThroughDebugger(
@@ -80,5 +81,5 @@ export function evaluateInPython<R = unknown>(
     session: vscode.DebugSession,
     options: RunInPythonOptions = { context: "repl" }
 ): Promise<Except<R>> {
-    return runPython(evalCodePython, true, session, options);
+    return runPython(stringifyPython(evalCodePython), true, session, options);
 }

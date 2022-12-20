@@ -1,6 +1,11 @@
 import * as P from "parsimmon";
 import { Except } from "../utils/Except";
 
+const ListOf = <T>(parser: P.Parser<T>) =>
+    parser
+        .sepBy(P.string(",").trim(P.optWhitespace))
+        .wrap(P.string("["), P.string("]")) as P.Parser<T[]>;
+
 const PythonConstructs = P.createLanguage({
     Quote: (_) => P.oneOf("'\""),
     Tuple: (r) =>
@@ -8,11 +13,7 @@ const PythonConstructs = P.createLanguage({
             P.string("("),
             P.string(")")
         ) as P.Parser<unknown[]>,
-    List: (r) =>
-        r.PythonValue.sepBy(P.string(",").trim(P.optWhitespace)).wrap(
-            P.string("["),
-            P.string("]")
-        ) as P.Parser<unknown[]>,
+    List: (r) => ListOf(r.PythonValue),
     String: (r) =>
         r.Quote.chain((quote) =>
             P.takeWhile((c) => c !== quote).skip(P.string(quote))
@@ -69,37 +70,23 @@ const PythonConstructs = P.createLanguage({
                 P.string(")").trim(P.optWhitespace)
             ).skip(P.string(q))
         ),
-    ResultOrError: (r): P.Parser<Except<unknown>> =>
+    ValidPythonResult: (r) =>
         P.alt(
             r.Error.map(({ error }) => Except.error(error)),
+            r.Value.map(({ result }) => Except.result<unknown>(result)),
             r.None.map(() => Except.result(null)),
-            r.Value.map(({ result }) => Except.result<unknown>(result))
-        ),
-    ListOfResultsOrErrors: (r): P.Parser<Except<unknown>[]> =>
-        r.ResultOrError.sepBy(P.string(",").trim(P.optWhitespace)).wrap(
-            P.string("["),
-            P.string("]")
+            ListOf(r.ValidPythonResult)
         ),
 });
 
-export function parsePythonValue<T = unknown>(
-    value: string,
-    isMultiResult: false
-): Except<T>;
-export function parsePythonValue<T = unknown>(
-    value: string,
-    isMultiResult: true
-): Except<T>[];
-export function parsePythonValue<T = unknown>(
-    value: string,
-    isMultiResult: boolean
-): Except<T> | Except<T>[] {
-    const res = isMultiResult
-        ? PythonConstructs.ListOfResultsOrErrors.parse(value)
-        : PythonConstructs.ResultOrError.parse(value);
+export function parsePythonResult<T = unknown>(value: string): Except<T> {
+    const res = PythonConstructs.ValidPythonResult.parse(value);
 
     if (res.status) {
-        return res.value;
+        return {
+            isError: false,
+            result: res.value,
+        };
     } else {
         return Except.error(res.expected[0]);
     }

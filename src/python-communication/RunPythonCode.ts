@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
 import { Except } from "../utils/Except";
-import { parsePythonValue } from "./PythonValueParser";
+import { parsePythonResult } from "./PythonValueParser";
 
 function runThroughDebugger(
     session: vscode.DebugSession,
@@ -24,44 +24,29 @@ function runThroughDebugger(
     } as DebugProtocol.EvaluateArguments);
 }
 
-async function runPython<T>(
-    code: string,
+async function runPython<R>(
+    code: EvalCodePython<R>,
+    parse: true,
+    session: vscode.DebugSession,
+    options: RunInPythonOptions
+): Promise<Except<R>>;
+async function runPython<R>(
+    code: EvalCodePython<R>,
     parse: false,
-    isMultiResults: boolean,
-    session?: vscode.DebugSession,
-    options?: RunInPythonOptions
+    session: vscode.DebugSession,
+    options: RunInPythonOptions
 ): Promise<Except<null>>;
-async function runPython<T>(
-    code: string,
-    parse: true,
-    isMultiResults: false,
-    session?: vscode.DebugSession,
-    options?: RunInPythonOptions
-): Promise<Except<T>>;
-async function runPython<T>(
-    code: string,
-    parse: true,
-    isMultiResults: true,
-    session?: vscode.DebugSession,
-    options?: RunInPythonOptions
-): Promise<Except<T>[]>;
-async function runPython<T>(
-    code: string,
+async function runPython<R>(
+    code: EvalCodePython<R>,
     parse: boolean,
-    isMultiResults: boolean,
-    session?: vscode.DebugSession,
-    options: RunInPythonOptions = { context: "repl" }
-): Promise<Except<T | null> | Except<T>[]> {
-    session = session ?? vscode.debug.activeDebugSession;
-    if (session === undefined) {
-        return Except.error("no active debug session");
-    }
+    session: vscode.DebugSession,
+    options: RunInPythonOptions
+): Promise<Except<R | null>> {
     try {
-        const res = await runThroughDebugger(session, code, options);
+        const res = await runThroughDebugger(session, code.pythonCode, options);
         if (parse) {
-            return isMultiResults
-                ? parsePythonValue<T>(res.result, true)
-                : parsePythonValue<T>(res.result, false);
+            const parsed = parsePythonResult<R>(res.result);
+            return parsed;
         } else {
             return Except.result(null);
         }
@@ -74,32 +59,26 @@ async function runPython<T>(
     }
 }
 
-export async function execInPython(
-    code: string,
-    session?: vscode.DebugSession,
+export function execInPython(
+    evalCodePython: EvalCodePython<unknown>,
+    session: vscode.DebugSession,
     options: RunInPythonOptions = { context: "repl" }
 ): Promise<Except<null>> {
-    code = `
+    const code = {
+        pythonCode: `
 exec(\"\"\"
-${code}
+${evalCodePython.pythonCode}
 \"\"\"
 )
-`;
-    return runPython<null>(code, false, false, session, options);
+`,
+    };
+    return runPython(code, false, session, options);
 }
 
-export async function evaluateInPython<T = unknown>(
-    expression: string,
-    session?: vscode.DebugSession,
+export function evaluateInPython<R = unknown>(
+    evalCodePython: EvalCodePython<R>,
+    session: vscode.DebugSession,
     options: RunInPythonOptions = { context: "repl" }
-): Promise<Except<T>> {
-    return runPython<T>(expression, true, false, session, options);
-}
-
-export async function evaluateInPythonMulti<T = unknown>(
-    expression: string,
-    session?: vscode.DebugSession,
-    options: RunInPythonOptions = { context: "repl" }
-): Promise<Except<T>[]> {
-    return runPython<T>(expression, true, true, session, options);
+): Promise<Except<R>> {
+    return runPython(evalCodePython, true, session, options);
 }

@@ -13,10 +13,6 @@ import {
     viewablesSetupCode,
 } from "../python-communication/BuildPythonCode";
 import { debounce } from "../utils/Utils";
-import {
-    BuildEvalCodeWithExpressionPythonCode,
-    safeEvaluateExpressionPythonCode,
-} from "../python-communication/PythonCodeUtils";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 
 // register watcher for the debugging session. used to identify the running-frame,
@@ -48,20 +44,16 @@ export const createDebugAdapterTracker = (
     const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
     const watchTreeProvider = Container.get(WatchTreeProvider);
-    const variablesList = debugSessionData.variablesList;
-    const expressionsList = debugSessionData.expressionsList;
+    const currentPythonObjectsList = debugSessionData.currentPythonObjectsList;
 
-    const checkSetupOkay = async () => {
-        return evaluateInPython<boolean>(
-            safeEvaluateExpressionPythonCode(verifyModuleExistsCode())
-        );
+    const checkSetupOkay = () => {
+        return evaluateInPython(verifyModuleExistsCode(), session);
     };
 
-    const updateWatchTree = async () => {
-        return Promise.all([
-            variablesList.update(),
-            expressionsList.update(),
-        ]).then(() => watchTreeProvider.refresh());
+    const updateWatchTree = () => {
+        return currentPythonObjectsList
+            .update()
+            .then(() => watchTreeProvider.refresh());
     };
 
     const saveTracked = async () => {

@@ -1,7 +1,7 @@
 import PYPLOT_CODE from "../python/plot_pyplot.py?raw";
 import PLOTLY_CODE from "../python/plot_plotly.py?raw";
 import { Viewable } from "./Viewable";
-import { atModule as m } from "../python-communication/PythonCodeUtils";
+import { atModule as m } from "../python-communication/BuildPythonCode";
 
 export const PlotlyFigure: Viewable = {
     group: "plot",

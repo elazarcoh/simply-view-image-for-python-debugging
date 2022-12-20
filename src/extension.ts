@@ -7,10 +7,7 @@ import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
-import {
-    pythonObjectInfoCode,
-    viewablesSetupCode,
-} from "./python-communication/BuildPythonCode";
+import { viewablesSetupCode } from "./python-communication/BuildPythonCode";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { execInPython } from "./python-communication/RunPythonCode";
 import { CodeActionProvider } from "./CodeActionProvider";

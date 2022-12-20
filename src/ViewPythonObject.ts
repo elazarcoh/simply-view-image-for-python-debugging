@@ -4,9 +4,8 @@ import { AllViewables } from "./AllViewables";
 import { DebugSessionsHolder } from "./debugger-utils/DebugSessionsHolder";
 import { openImageToTheSide } from "./utils/VSCodeUtils";
 import { ObjectType } from "./viewable/Viewable";
-import { BuildEvalCodeWithExpressionPythonCode } from "./python-communication/PythonCodeUtils";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { logError } from "./Logging";
+import { constructValueWrappedExpressionFromEvalCode } from "./python-communication/BuildPythonCode";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
@@ -24,7 +23,7 @@ export async function viewObject(
         Container.get(DebugSessionsHolder).debugSessionData(session);
     const path = debugSessionData.savePathHelper.savePathFor(obj);
     const objectAsString = "expression" in obj ? obj.expression : obj.variable; // TODO: fix
-    const code = BuildEvalCodeWithExpressionPythonCode(
+    const code = constructValueWrappedExpressionFromEvalCode(
         viewable.serializeObjectPythonCode,
         objectAsString,
         path

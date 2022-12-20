@@ -8,7 +8,7 @@ export interface Viewable {
     type: string;
     title: string;
     setupPythonCode: SetupCode;
-    testTypePythonCode: EvalCode;
-    infoPythonCode: EvalCode;
-    serializeObjectPythonCode: EvalCode<[string]>;
+    testTypePythonCode: EvalCode<boolean>;
+    infoPythonCode: EvalCode<Record<string, string>>;
+    serializeObjectPythonCode: EvalCode<null, [string]>;
 }

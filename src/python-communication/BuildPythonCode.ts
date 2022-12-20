@@ -1,11 +1,11 @@
+import COMMON from "../python/common.py?raw";
 import Container from "typedi";
 import { AllViewables } from "../AllViewables";
-import {
-    execInModuleCode,
-    PYTHON_MODULE_NAME,
-    sameValueMultipleEvalsPythonCode,
-} from "./PythonCodeUtils";
-import COMMON from "../python/common.py?raw";
+import { indent } from "../utils/Utils";
+
+export const PYTHON_MODULE_NAME = "_python_view_image_mod";
+const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
+const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -16,6 +16,35 @@ except:
     ${PYTHON_MODULE_NAME} = ModuleType('python_view_image_mod', '')
     exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
 `;
+
+export function execInModuleCode(
+    moduleName: string,
+    content: string,
+    tryExpression: string
+): string {
+    const code: string = `
+exec('''
+try:
+${indent(tryExpression, 4)}
+except:
+${indent(content, 4)}
+''', ${moduleName}.__dict__
+)
+`;
+    return code;
+}
+
+export function convertBoolToPython(bool: boolean): string {
+    return bool ? "True" : "False";
+}
+
+export function atModule(name: string): string {
+    return `${PYTHON_MODULE_NAME}.${name}`;
+}
+
+function concatExpressionsToPythonList(expressions: string[]): string {
+    return `[${expressions.join(", ")}]`;
+}
 
 function combineSetupCodes(setupCodes: SetupCode[]): string {
     const setupCode = setupCodes
@@ -33,30 +62,75 @@ ${setupCode}
     return code;
 }
 
-export function verifyModuleExistsCode(): string {
-    return `'${PYTHON_MODULE_NAME}' in globals()`;
+export function verifyModuleExistsCode(): EvalCodePython<boolean> {
+    return {
+        pythonCode: `'${PYTHON_MODULE_NAME}' in globals()`,
+    };
 }
 
-export function viewablesSetupCode(): string {
+export function viewablesSetupCode(): EvalCodePython<null> {
     const viewables = Container.get(AllViewables).allViewables;
-    const code = combineSetupCodes(viewables.map((v) => v.setupPythonCode));
-    return code;
-}
-
-export function pythonObjectTypeCode(expression: string): string {
-    const viewables = Container.get(AllViewables).allViewables;
-    const code = sameValueMultipleEvalsPythonCode(
-        expression,
-        viewables.map((v) => v.testTypePythonCode)
+    const pythonCode = combineSetupCodes(
+        viewables.map((v) => v.setupPythonCode)
     );
-    return code;
+    return { pythonCode };
 }
 
-export function pythonObjectInfoCode(expression: string): string {
-    const viewables = Container.get(AllViewables).allViewables;
-    const code = sameValueMultipleEvalsPythonCode(
-        expression,
-        viewables.map((v) => v.infoPythonCode)
+function convertExpressionIntoValueWrappedExpression<R>(
+    expression: string
+): EvalCodePython<R> {
+    // verify it's a single-line expression
+    if (expression.includes("\n")) {
+        throw new Error("Expression must be a single line");
+    }
+    const asLambda = `lambda: ${expression}`;
+    const code = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
+    return {
+        pythonCode: code,
+    };
+}
+
+export function constructValueWrappedExpressionFromEvalCode<
+    R,
+    P extends Array<unknown>
+>(evalCode: EvalCode<R, P>, expression: string, ...args: P): EvalCodePython<R> {
+    const expressionToEval = evalCode.evalCode(expression, ...args);
+    return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
+}
+
+export function constructCodeRunsSameExpressionWithMultipleEvaluators<
+    EvalCodes extends EvalCode<unknown>[]
+>(
+    expression: string,
+    evals: EvalCodes
+): EvalCodePython<{
+    [K in keyof EvalCodes]: EvalCodes[K] extends EvalCode<infer R>
+        ? Except<R>
+        : never;
+}> {
+    const lazyEvalExpression = `lambda: ${expression}`;
+    const lambdas = evals.map(({ evalCode }) => `lambda x: ${evalCode("x")}`);
+    const asList = concatExpressionsToPythonList(lambdas);
+    return {
+        pythonCode: `${SAME_VALUE_MULTIPLE_CALLABLES}(${lazyEvalExpression}, ${asList})`,
+    };
+}
+
+export function combineMultiEvalCodePython<
+    EvalCodesPython extends EvalCodePython<unknown>[]
+>(
+    multiEvalCodePython: EvalCodesPython
+): EvalCodePython<{
+    [K in keyof EvalCodesPython]: EvalCodesPython[K] extends EvalCodePython<
+        infer R
+    >
+        ? R
+        : never;
+}> {
+    const code = concatExpressionsToPythonList(
+        multiEvalCodePython.map(({ pythonCode }) => pythonCode)
     );
-    return code;
+    return {
+        pythonCode: code,
+    };
 }

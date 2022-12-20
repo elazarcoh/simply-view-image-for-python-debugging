@@ -49,15 +49,15 @@ export function arrayUnique<T>(array: T[]): T[] {
 }
 
 export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
-    return [...new Map(array.map(item => [key(item), item])).values()];
+    return [...new Map(array.map((item) => [key(item), item])).values()];
 }
 
-export function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
-    func: F,
-    waitFor: number
-): (...args: Parameters<F>) => void {
+export function debounce<
+    F extends (...args: Args) => ReturnType<F>,
+    Args extends unknown[] = Parameters<F>
+>(func: F, waitFor: number): (...args: Args) => void {
     let timeout: NodeJS.Timeout;
-    return (...args: Parameters<F>): void => {
+    return (...args: Args): void => {
         clearTimeout(timeout);
         timeout = setTimeout(() => func(...args), waitFor);
     };

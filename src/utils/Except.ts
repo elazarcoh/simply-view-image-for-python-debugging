@@ -21,4 +21,3 @@ export namespace Except {
         return result(f(value.result));
     }
 }
-export type Except<T> = { result: T, isError: false } | { error: Error | string, isError: true };

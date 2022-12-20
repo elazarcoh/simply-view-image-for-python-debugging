@@ -47,3 +47,14 @@ export function indent(content: string, n: number): string {
 export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
     return [...new Map(array.map(item => [key(item), item])).values()];
 }
+
+export function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
+    func: F,
+    waitFor: number
+): (...args: Parameters<F>) => void {
+    let timeout: NodeJS.Timeout;
+    return (...args: Parameters<F>): void => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), waitFor);
+    };
+}

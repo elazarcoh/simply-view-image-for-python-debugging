@@ -33,6 +33,10 @@ ${setupCode}
     return code;
 }
 
+export function verifyModuleExistsCode(): string {
+    return `'${PYTHON_MODULE_NAME}' in globals()`;
+}
+
 export function viewablesSetupCode(): string {
     const viewables = Container.get(AllViewables).allViewables;
     const code = combineSetupCodes(viewables.map((v) => v.setupPythonCode));

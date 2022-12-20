@@ -4,8 +4,19 @@ import { DebugProtocol } from "vscode-debugprotocol";
 import { logDebug, logTrace } from "../Logging";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
 import { DebugSessionsHolder } from "./DebugSessionsHolder";
-import { execInPython } from "../python-communication/RunPythonCode";
-import { viewablesSetupCode } from "../python-communication/BuildPythonCode";
+import {
+    evaluateInPython,
+    execInPython,
+} from "../python-communication/RunPythonCode";
+import {
+    verifyModuleExistsCode,
+    viewablesSetupCode,
+} from "../python-communication/BuildPythonCode";
+import { debounce } from "../utils/Utils";
+import {
+    BuildEvalCodeWithExpressionPythonCode,
+    safeEvaluateExpressionPythonCode,
+} from "../python-communication/PythonCodeUtils";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -73,9 +84,26 @@ export const createDebugAdapterTracker = (
                 msg.body.threadId !== undefined
             ) {
                 logDebug("Breakpoint hit");
-                logDebug("Executing Extension Setup Code");
-                await execInPython(viewablesSetupCode(), session);
-                logDebug("Extension Setup Code Execution Complete");
+
+                const runUntilSuccess = async (): Promise<void> => {
+                    logDebug("Run setup code")
+                    await execInPython(viewablesSetupCode(), session);
+
+                    logDebug("Check is setup success")
+                    const isSuccess = await evaluateInPython<boolean>(
+                        safeEvaluateExpressionPythonCode(
+                            verifyModuleExistsCode()
+                        )
+                    );
+                    if (isSuccess.isError || !isSuccess.result) {
+                        logDebug("Setup failed. Running again")
+                        return runUntilSuccessDebounced();
+                    }
+                    logDebug("Setup success")
+                };
+                const runUntilSuccessDebounced = debounce(runUntilSuccess, 250);
+                runUntilSuccessDebounced();
+
                 //     const updateWatchView = () => {
                 //         return variablesList
                 //             .updateVariables()

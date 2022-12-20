@@ -2,7 +2,7 @@ def eval_into_value(func):
     try:
         return f"Value({func()})"
     except Exception as e:
-        return f"Error({type(e).__name__},'{e}')"
+        return f'Error("{type(e).__name__}")'
 
 
 def same_value_multiple_callables(get_value, funcs):

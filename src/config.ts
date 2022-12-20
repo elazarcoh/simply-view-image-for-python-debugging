@@ -98,5 +98,5 @@ export interface Config {
   addViewContextEntryToVSCodeDebugVariables: boolean;
 }
 
-export const extensionConfigSection = "svifpd";
-export const getConfiguration = configUtils.ConfigurationGetter<Config>(extensionConfigSection);
+export const EXTENSION_CONFIG_SECTION = "svifpd";
+export const getConfiguration = configUtils.ConfigurationGetter<Config>(EXTENSION_CONFIG_SECTION);

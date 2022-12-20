@@ -4,7 +4,7 @@ import { AllViewables } from "./AllViewables";
 import { DebugSessionsHolder } from "./debugger-utils/DebugSessionsHolder";
 import { openImageToTheSide } from "./utils/VSCodeUtils";
 import { ObjectType } from "./viewable/Viewable";
-import { evaluateExpressionPythonCode } from "./python-communication/PythonCodeUtils";
+import { BuildEvalCodeWithExpressionPythonCode } from "./python-communication/PythonCodeUtils";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { logError } from "./Logging";
 
@@ -24,7 +24,7 @@ export async function viewObject(
         Container.get(DebugSessionsHolder).debugSessionData(session);
     const path = debugSessionData.savePathHelper.savePathFor(obj);
     const objectAsString = "expression" in obj ? obj.expression : obj.variable; // TODO: fix
-    const code = evaluateExpressionPythonCode(
+    const code = BuildEvalCodeWithExpressionPythonCode(
         viewable.serializeObjectPythonCode,
         objectAsString,
         path

@@ -2,7 +2,7 @@ try:
     import matplotlib.pyplot as plt
 
     def pyplot_figure():
-        def is_pyplot_figure(obj, restrict_types):
+        def is_pyplot_figure(obj):
             try:
                 return isinstance(obj, plt.Figure)
             except TypeError:
@@ -24,7 +24,7 @@ try:
     is_pyplot_figure, pyplot_figure_info, pyplot_figure_save = pyplot_figure()
 
     def pyplot_axes():
-        def is_pyplot_ax(obj, restrict_types):
+        def is_pyplot_ax(obj):
             try:
                 return isinstance(obj, plt.Axes)
             except TypeError:

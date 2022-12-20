@@ -14,12 +14,13 @@ import {
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { execInPython } from "./python-communication/RunPythonCode";
 import { CodeActionProvider } from "./CodeActionProvider";
-import { getConfiguration } from "./config";
+import { EXTENSION_CONFIG_SECTION, getConfiguration } from "./config";
 import { EXTENSION_NAME } from "./globals";
 import { ObjectType } from "./viewable/Viewable";
 import { viewObject } from "./ViewPythonObject";
 import { registerCommand, registerCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
+import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -37,11 +38,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
     setSaveLocation(context);
 
-    // vscode.workspace.onDidChangeConfiguration(config => {
-    //   if (config.affectsConfiguration(extensionConfigSection)) {
-    //     onConfigChange();
-    //   }
-    // });
+    vscode.workspace.onDidChangeConfiguration(config => {
+      if (config.affectsConfiguration(EXTENSION_CONFIG_SECTION)) {
+        onConfigChange();
+      }
+    });
 
     logTrace("Activating extension");
 
@@ -59,6 +60,9 @@ export function activate(context: vscode.ExtensionContext): void {
     const allViewables = Container.get(AllViewables);
     allViewables.addViewable(NumpyImage);
     allViewables.addViewable(PillowImage);
+    allViewables.addViewable(PlotlyFigure);
+    allViewables.addViewable(PyplotFigure);
+    allViewables.addViewable(PyplotAxes);
 
     // context.subscriptions.push(
     //     vscode.commands.registerCommand(

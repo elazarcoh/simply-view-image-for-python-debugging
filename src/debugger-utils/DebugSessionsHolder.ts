@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Service } from "typedi";
+import Container, { Service } from "typedi";
 import { DebugSessionData } from "./DebugSessionData";
 
 @Service()
@@ -16,4 +16,20 @@ export class DebugSessionsHolder {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this._debugSessions.get(id)!;
     }
+}
+
+export function activeDebugSessionData(
+    session: vscode.DebugSession
+): DebugSessionData;
+export function activeDebugSessionData(
+    session: undefined
+): DebugSessionData | undefined;
+export function activeDebugSessionData(): DebugSessionData | undefined;
+export function activeDebugSessionData(
+    session?: vscode.DebugSession | undefined
+): DebugSessionData | undefined {
+    session ?? (session = vscode.debug.activeDebugSession);
+    return session
+        ? Container.get(DebugSessionsHolder).debugSessionData(session)
+        : undefined;
 }

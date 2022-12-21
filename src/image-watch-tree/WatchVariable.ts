@@ -13,6 +13,7 @@ export class VariableWatchTreeItem extends PythonObjectTreeItem {
         super(
             "variable",
             variableName,
+            variableName,
             viewables,
             info,
             false,

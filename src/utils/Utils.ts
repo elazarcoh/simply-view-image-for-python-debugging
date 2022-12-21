@@ -63,7 +63,7 @@ export function debounce<
     };
 }
 
-export function zip<Arrays extends unknown[][]>(
+export function zip<Arrays extends ReadonlyArray<unknown>[]>(
     ...arrays: Arrays
 ): {
     [K in keyof Arrays]: Arrays[K] extends Array<infer R> ? R : never;

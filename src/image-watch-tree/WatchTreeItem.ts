@@ -1,3 +1,4 @@
+import Container from "typedi";
 import * as vscode from "vscode";
 import { arrayUnique } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
@@ -34,11 +35,12 @@ export function buildWatchTreeItemContext({
 
 export abstract class PythonObjectTreeItem extends vscode.TreeItem {
     tracking: PythonObjectTrackingState = PythonObjectTrackingState.NotTracked;
-    trackingId?: string;
+    trackingId?: TrackingId;
 
     constructor(
         readonly itemType: "variable" | "expression",
         label: string,
+        public readonly expression: string,
         public readonly viewables: ReadonlyArray<Viewable>,
         public readonly info: Readonly<PythonObjectInformation>,
         public readonly isError: true | false = false,
@@ -60,7 +62,7 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
         this.contextValue = context;
     }
 
-    setTracked(trackingId: string): void {
+    setTracked(trackingId: TrackingId): void {
         this.trackingId = trackingId;
         this.tracking = PythonObjectTrackingState.Tracked;
         this.iconPath = new vscode.ThemeIcon("eye");
@@ -76,10 +78,11 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
 }
 
 export class ErrorWatchTreeItem extends PythonObjectTreeItem {
-    constructor(public readonly variableName: string, error: string | Error) {
+    constructor(public readonly expression: string, error: string | Error) {
         super(
             "variable",
-            variableName,
+            expression,
+            expression,
             [] as Viewable[],
             {} as PythonObjectInformation,
             true,
@@ -105,36 +108,9 @@ export class PythonObjectInfoLineTreeItem extends vscode.TreeItem {
 // const watchTree = Container.get(WatchTreeProvider);
 // const variablesList = Container.get(VariablesList);
 // export const commands = [
-//     // track/untrack tree item
-//     [
-//         "svifpd.watch-track-enable",
-//         (watchVariable: PythonObjectTreeItem): void => {
-//             const trackingId = track(watchVariable);
-//             watchVariable.setTracked(trackingId);
-//             watchTree.refresh();
-//         },
-//     ],
-//     [
-//         "svifpd.watch-track-disable",
-//         (watchVariable: PythonObjectTreeItem): void => {
-//             if (watchVariable.trackingId !== undefined) {
-//                 untrack(watchVariable.trackingId);
-//             }
-//             watchVariable.setNonTracked();
-//             watchTree.refresh();
-//         },
-//     ],
-//     // refresh tree
-//     [
-//         "svifpd.watch-refresh",
-//         async (): Promise<void> => {
-//             await variablesList.updateVariables();
-//             watchTree.refresh();
-//         },
-//     ],
 //     // Open Image Watch settings
 //     [
-//         "svifpd.open-watch-settings",
+//         ,
 //         async () =>
 //             vscode.commands.executeCommand("workbench.action.openSettings", {
 //                 query: "svifpd.imageWatch.objects",

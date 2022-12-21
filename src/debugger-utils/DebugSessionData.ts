@@ -8,7 +8,7 @@ export class DebugSessionData {
     public readonly savePathHelper: SavePathHelper;
     public readonly debugVariablesTracker: DebugVariablesTracker =
         new DebugVariablesTracker();
-    public readonly trackedVariables: TrackedPythonObjects =
+    public readonly trackedPythonObjects: TrackedPythonObjects =
         new TrackedPythonObjects();
     public readonly currentPythonObjectsList: CurrentPythonObjectsList;
 

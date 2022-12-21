@@ -2,8 +2,7 @@ import * as vscode from "vscode";
 import Container from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { logDebug, logTrace } from "../Logging";
-import { DebugVariablesTracker } from "./DebugVariablesTracker";
-import { DebugSessionsHolder } from "./DebugSessionsHolder";
+import { activeDebugSessionData } from "./DebugSessionsHolder";
 import {
     evaluateInPython,
     execInPython,
@@ -36,15 +35,12 @@ export const createDebugAdapterTracker = (
         | WithCommand<Response<DebugProtocol.VariablesResponse>, "variables">
         | WithCommand<Response<DebugProtocol.ScopesResponse>, "scopes">;
 
-    // const variablesList = Container.get(VariablesList);
-    // const watchTreeProvider = Container.get(WatchTreeProvider);
-
-    const debugSessionData =
-        Container.get(DebugSessionsHolder).debugSessionData(session);
+    const debugSessionData = activeDebugSessionData(session);
     const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
     const watchTreeProvider = Container.get(WatchTreeProvider);
     const currentPythonObjectsList = debugSessionData.currentPythonObjectsList;
+    const trackedPythonObjects = debugSessionData.trackedPythonObjects;
 
     const checkSetupOkay = () => {
         return evaluateInPython(verifyModuleExistsCode(), session);
@@ -67,8 +63,9 @@ export const createDebugAdapterTracker = (
 
         onWillStopSession: async () => {
             logTrace("onWillStopSession");
-            // variablesList.clear();
-            // watchTreeProvider.refresh();
+            currentPythonObjectsList.clear();
+            trackedPythonObjects.clear();
+            watchTreeProvider.refresh();
             await debugSessionData.savePathHelper.deleteSaveDir();
         },
 
@@ -112,10 +109,11 @@ export const createDebugAdapterTracker = (
                         } else {
                             logDebug("Setup is okay");
 
-                            // Do stuff after setup is okay
-
-                            await updateWatchTree();
-                            await saveTracked();
+                            debounce(async () => {
+                                // TODO: Consider moving to VariableResponse event
+                                await updateWatchTree();
+                                await saveTracked();
+                            }, 500)(); // it take short time for everything to get in sync
                         }
                     };
                 const trySetupExtensionAndRunAgainIfFailedDebounced = debounce(

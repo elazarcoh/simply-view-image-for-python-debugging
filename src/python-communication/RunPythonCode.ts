@@ -1,7 +1,10 @@
 import Container from "typedi";
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
+import {
+    activeDebugSessionData,
+    DebugSessionsHolder,
+} from "../debugger-utils/DebugSessionsHolder";
 import { Except } from "../utils/Except";
 import { stringifyPython } from "./BuildPythonCode";
 import { parsePythonResult } from "./PythonValueParser";
@@ -12,9 +15,7 @@ function runThroughDebugger(
     { context, frameId }: RunInPythonOptions
 ): Thenable<Body<DebugProtocol.EvaluateResponse>> {
     const debugVariablesTracker =
-        Container.get(DebugSessionsHolder).debugSessionData(
-            session
-        ).debugVariablesTracker;
+        activeDebugSessionData(session).debugVariablesTracker;
 
     frameId = frameId ?? debugVariablesTracker.currentFrameId();
 

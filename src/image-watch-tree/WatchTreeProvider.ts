@@ -10,8 +10,13 @@ import {
     PythonObjectInfoLineTreeItem,
     PythonObjectTreeItem,
 } from "./WatchTreeItem";
-import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
-import { expressionsList } from "./PythonObjectsList";
+import {
+    activeDebugSessionData,
+    DebugSessionsHolder,
+} from "../debugger-utils/DebugSessionsHolder";
+import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
+import { Except } from "../utils/Except";
+import { zip } from "../utils/Utils";
 
 type TreeItem =
     | VariableWatchTreeItem
@@ -27,8 +32,8 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+    refresh(item?: TreeItem): void {
+        this._onDidChangeTreeData.fire(item);
     }
 
     getTreeItem(
@@ -38,18 +43,11 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     async getChildren(element?: TreeItem): Promise<TreeItem[]> {
-        const debugSession = vscode.debug.activeDebugSession;
-        if (debugSession === undefined) {
-            return [];
-        }
         if (element === undefined) {
             // root
-            const debugSessionData =
-                Container.get(DebugSessionsHolder).debugSessionData(
-                    debugSession
-                );
+            const debugSessionData = activeDebugSessionData();
             const variableItems =
-                debugSessionData.currentPythonObjectsList.variablesList.map(
+                debugSessionData?.currentPythonObjectsList.variablesList.map(
                     ([exp, info]) =>
                         info.isError
                             ? new ErrorWatchTreeItem(exp, info.error)
@@ -58,8 +56,17 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                                   info.result[0],
                                   info.result[1]
                               )
+                ) ?? [];
+            const expressionsInfoOrNotReady: InfoOrError[] =
+                debugSessionData?.currentPythonObjectsList.expressionsInfo ??
+                Array(globalExpressionsList.length).fill(
+                    Except.error("Not ready") as InfoOrError
                 );
-            const expressionsItems = expressionsList.map(([exp, info]) =>
+
+            const expressionsItems = zip(
+                globalExpressionsList,
+                expressionsInfoOrNotReady
+            ).map(([exp, info]) =>
                 info.isError
                     ? new ErrorWatchTreeItem(exp, info.error)
                     : new ExpressionWatchTreeItem(
@@ -68,6 +75,21 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                           info.result[1]
                       )
             );
+
+            // Set the tracking state if was tracked before
+            const trackedPythonObjects =
+                activeDebugSessionData()?.trackedPythonObjects;
+            if (trackedPythonObjects !== undefined) {
+                for (const item of variableItems.concat(expressionsItems)) {
+                    const maybeTrackingId =
+                        trackedPythonObjects.trackingIdIfTracked({
+                            expression: item.expression,
+                        });
+                    if (maybeTrackingId !== undefined) {
+                        item.setTracked(maybeTrackingId);
+                    }
+                }
+            }
 
             return [
                 ...variableItems,

@@ -1,6 +1,6 @@
 import Container, { Service } from "typedi";
 import * as vscode from "vscode";
-import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
 import {
     combineMultiEvalCodePython,
@@ -16,21 +16,18 @@ import { WatchTreeProvider } from "./WatchTreeProvider";
 // ExpressionsList is global to all debug sessions
 @Service()
 class ExpressionsList {
-    readonly expressions: [
-        string,
-        Except<[Viewable[], PythonObjectInformation]>
-    ][] = [];
+    readonly expressions: string[] = [];
 }
 
-export const expressionsList: ReadonlyArray<
-    [string, Except<[Viewable[], PythonObjectInformation]>]
-> = Container.get(ExpressionsList).expressions;
+export const globalExpressionsList: ReadonlyArray<string> =
+    Container.get(ExpressionsList).expressions;
+
+export type InfoOrError = Except<[Viewable[], PythonObjectInformation]>;
+type ExpressingWithInfo = [string, InfoOrError];
 
 export class CurrentPythonObjectsList {
-    readonly variablesList: [
-        string,
-        Except<[Viewable[], PythonObjectInformation]>
-    ][] = [];
+    private readonly _variablesList: ExpressingWithInfo[] = [];
+    private _expressionsInfo: InfoOrError[] = [];
 
     constructor(
         private readonly debugVariablesTracker: DebugVariablesTracker,
@@ -40,7 +37,7 @@ export class CurrentPythonObjectsList {
     private async retrieveVariables(): Promise<string[]> {
         const { locals, globals } =
             await this.debugVariablesTracker.currentFrameVariables();
-        if (!globals) {
+        if (globals.length === 0) {
             return [];
         }
         const allUniqueVariables = arrayUniqueByKey(
@@ -52,12 +49,12 @@ export class CurrentPythonObjectsList {
     }
 
     private async retrieveInformation(): Promise<{
-        variables: Except<[Viewable[], PythonObjectInformation]>[];
-        expressions: Except<[Viewable[], PythonObjectInformation]>[];
+        variables: InfoOrError[];
+        expressions: InfoOrError[];
     }> {
         const allExpressions = [
-            ...this.variablesList.map((v) => v[0]),
-            ...expressionsList.map((e) => e[0]),
+            ...this._variablesList.map((v) => v[0]),
+            ...globalExpressionsList,
         ];
 
         const allViewables = await findExpressionsViewables(
@@ -104,11 +101,11 @@ export class CurrentPythonObjectsList {
             const variablesInformation =
                 allExpressionsViewablesAndInformation.slice(
                     0,
-                    this.variablesList.length
+                    this._variablesList.length
                 );
             const expressionsInformation =
                 allExpressionsViewablesAndInformation.slice(
-                    this.variablesList.length
+                    this._variablesList.length
                 );
 
             return {
@@ -119,32 +116,41 @@ export class CurrentPythonObjectsList {
     }
 
     public async update(): Promise<void> {
-        this.variablesList.length = 0;
+        this._variablesList.length = 0;
         const variables = await this.retrieveVariables();
-        this.variablesList.push(
+        this._variablesList.push(
             ...variables.map(
-                (v) =>
-                    [v, Except.error("No info yet")] as [
-                        string,
-                        Except<[Viewable[], PythonObjectInformation]>
-                    ]
+                (v) => [v, Except.error("Not ready")] as ExpressingWithInfo
             )
         );
 
         const information = await this.retrieveInformation();
-        if (information.variables.length !== this.variablesList.length) {
+        if (information.variables.length !== this._variablesList.length) {
             throw new Error("Unexpected number of variables");
         }
-        if (information.expressions.length !== expressionsList.length) {
+        if (information.expressions.length !== globalExpressionsList.length) {
             throw new Error("Unexpected number of expressions");
         }
-        for (let i = 0; i < this.variablesList.length; i++) {
-            this.variablesList[i][1] = information.variables[i];
+        for (let i = 0; i < this._variablesList.length; i++) {
+            this._variablesList[i][1] = information.variables[i];
         }
-        for (let i = 0; i < expressionsList.length; i++) {
-            expressionsList[i][1] = information.expressions[i];
-        }
+        this._expressionsInfo = information.expressions;
         return;
+    }
+
+    public clear(): void {
+        this._variablesList.length = 0;
+        this._expressionsInfo.length = 0;
+    }
+
+    public get variablesList(): ExpressingWithInfo[] {
+        return this._variablesList;
+    }
+
+    public get expressionsInfo(): InfoOrError[] | undefined {
+        return this._expressionsInfo.length === 0
+            ? undefined // return undefined, so in case the debugger is stopping it won't use the empty array here
+            : this._expressionsInfo;
     }
 }
 
@@ -172,16 +178,8 @@ export async function addExpression(): Promise<void> {
     // });
     const maybeExpression = "x[::2, ::2]";
     if (maybeExpression !== undefined) {
-        Container.get(ExpressionsList).expressions.push([
-            maybeExpression,
-            Except.error("Not ready"),
-        ]);
-        const session = vscode.debug.activeDebugSession;
-        if (session !== undefined) {
-            await Container.get(DebugSessionsHolder)
-                .debugSessionData(session)
-                .currentPythonObjectsList.update();
-        }
+        Container.get(ExpressionsList).expressions.push(maybeExpression);
+        await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
     }
 }

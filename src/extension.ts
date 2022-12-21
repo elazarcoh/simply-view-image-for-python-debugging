@@ -19,6 +19,7 @@ import { registerCommand, registerExtensionCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
+import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 // import { extensionConfigSection, getConfiguration } from "./config";
 // // import viewables to register them
 // import './viewable/Image';
@@ -94,6 +95,18 @@ export function activate(context: vscode.ExtensionContext): void {
             "pythonDebugImageWatch",
             Container.get(WatchTreeProvider)
         )
+    );
+
+    const watchTreeProvider = Container.get(WatchTreeProvider);
+    context.subscriptions.push(
+        vscode.debug.onDidChangeActiveDebugSession((session) => {
+            if (session !== undefined) {
+                const debugSessionData = activeDebugSessionData(session);
+                return debugSessionData.currentPythonObjectsList
+                    .update()
+                    .then(() => watchTreeProvider.refresh());
+            }
+        })
     );
 
     context.subscriptions.push(...registerExtensionCommands(context));

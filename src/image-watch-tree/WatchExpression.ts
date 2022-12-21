@@ -28,7 +28,15 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
         collapsibleState: vscode.TreeItemCollapsibleState = vscode
             .TreeItemCollapsibleState.Collapsed
     ) {
-        super("expression", expression, viewables, info, false, collapsibleState);
+        super(
+            "expression",
+            expression,
+            expression,
+            viewables,
+            info,
+            false,
+            collapsibleState
+        );
         this.updateContext();
     }
 }

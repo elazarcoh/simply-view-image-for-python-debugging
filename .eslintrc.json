@@ -3,7 +3,10 @@
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": 6,
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": [
+            "./tsconfig.json"
+        ]
     },
     "plugins": [
         "@typescript-eslint"
@@ -28,6 +31,6 @@
                 "ignoreRestArgs": true
             }
         ],
-        "@typescript-eslint/strict-boolean-expressions": true
+        "@typescript-eslint/strict-boolean-expressions": "error"
     }
 }

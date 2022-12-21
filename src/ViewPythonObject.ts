@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
-import { DebugSessionsHolder } from "./debugger-utils/DebugSessionsHolder";
+import {
+    activeDebugSessionData,
+    DebugSessionsHolder,
+} from "./debugger-utils/DebugSessionsHolder";
 import { openImageToTheSide } from "./utils/VSCodeUtils";
 import { ObjectType } from "./viewable/Viewable";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
@@ -19,8 +22,7 @@ export async function viewObject(
         // TODO: Handle this error
         return;
     }
-    const debugSessionData =
-        Container.get(DebugSessionsHolder).debugSessionData(session);
+    const debugSessionData = activeDebugSessionData(session);
     const path = debugSessionData.savePathHelper.savePathFor(obj);
     const objectAsString = "expression" in obj ? obj.expression : obj.variable; // TODO: fix
     const code = constructValueWrappedExpressionFromEvalCode(

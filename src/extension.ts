@@ -20,13 +20,6 @@ import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
-// import { extensionConfigSection, getConfiguration } from "./config";
-// // import viewables to register them
-// import './viewable/Image';
-// import { createDebugAdapterTracker } from "./temp-ignore/debugger-utils/DebugVariablesTracker";
-// import { WatchTreeProvider } from "./watch-view/WatchTreeProvider";
-// import { CodeActionProvider } from "./CodeActionProvider";
-// import { commands } from "./commands";
 
 function onConfigChange(): void {
     initLog();
@@ -62,23 +55,6 @@ export function activate(context: vscode.ExtensionContext): void {
     allViewables.addViewable(PlotlyFigure);
     allViewables.addViewable(PyplotFigure);
     allViewables.addViewable(PyplotAxes);
-
-    // context.subscriptions.push(
-    //     vscode.commands.registerCommand(
-    //         "svifpd.open-watch-settings",
-    //         async () => {
-    //             await execInPython(
-    //                 viewablesSetupCode(),
-    //                 vscode.debug.activeDebugSession!
-    //             );
-    //             const ts = await findExpressionTypes(
-    //                 "x",
-    //                 vscode.debug.activeDebugSession!
-    //             );
-    //             logInfo(ts);
-    //         }
-    //     )
-    // );
 
     logDebug("Registering code actions provider (the lightbulb)");
     context.subscriptions.push(

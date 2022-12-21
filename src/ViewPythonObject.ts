@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
-import {
-    activeDebugSessionData,
-    DebugSessionsHolder,
-} from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { openImageToTheSide } from "./utils/VSCodeUtils";
 import { ObjectType } from "./viewable/Viewable";
 import { evaluateInPython } from "./python-communication/RunPythonCode";

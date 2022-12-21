@@ -1,4 +1,4 @@
-import Container from "typedi";
+import { string } from "parsimmon";
 import * as vscode from "vscode";
 import { arrayUnique } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
@@ -37,6 +37,7 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
     tracking: PythonObjectTrackingState = PythonObjectTrackingState.NotTracked;
     trackingId?: TrackingId;
     lastUsedViewable: Viewable;
+    savePath?: string;
 
     constructor(
         readonly itemType: "variable" | "expression",
@@ -96,17 +97,3 @@ export class PythonObjectInfoLineTreeItem extends vscode.TreeItem {
     static readonly contextValue = "infoItem";
     readonly contextValue = PythonObjectInfoLineTreeItem.contextValue;
 }
-
-// // Image Watch view buttons commands
-// const watchTree = Container.get(WatchTreeProvider);
-// const variablesList = Container.get(VariablesList);
-// export const commands = [
-//     // Open Image Watch settings
-//     [
-//         ,
-//         async () =>
-//             vscode.commands.executeCommand("workbench.action.openSettings", {
-//                 query: "svifpd.imageWatch.objects",
-//             }),
-//     ],
-// ];

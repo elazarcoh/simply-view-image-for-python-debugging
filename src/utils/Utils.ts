@@ -33,10 +33,6 @@ export async function resolveSequentially<T>(ps: Promise<T>[]): Promise<T[]> {
     return resolved;
 }
 
-export function notEmpty<T>(value: T | null | undefined): value is T {
-    return value !== null && value !== undefined;
-}
-
 export function indent(content: string, n: number): string {
     return content
         .split("\n")
@@ -76,4 +72,24 @@ export function zip<Arrays extends ReadonlyArray<unknown>[]>(
     return res as {
         [K in keyof Arrays]: Arrays[K] extends Array<infer R> ? R : never;
     }[];
+}
+
+export function isOf<Constructors extends Constructor<unknown>[]>(
+    ...types: Constructors
+): (
+    value: unknown
+) => value is TupleToUnion<ExtractConstructorClass<Constructors>> {
+    return (
+        value: unknown
+    ): value is TupleToUnion<ExtractConstructorClass<Constructors>> => {
+        return types.some((type) => value instanceof type);
+    };
+}
+
+export function hasValue<T>(value: T | null | undefined): value is T {
+    return value !== null && value !== undefined;
+}
+
+export function notEmptyArray<T>(array: T[]): array is NonEmptyArray<T> {
+    return array.length !== 0;
 }

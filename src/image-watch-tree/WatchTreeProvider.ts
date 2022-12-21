@@ -3,24 +3,22 @@ import {
     AddExpressionWatchTreeItem,
     ExpressionWatchTreeItem,
 } from "./WatchExpression";
-import Container, { Service } from "typedi";
+import { Service } from "typedi";
 import { VariableWatchTreeItem } from "./WatchVariable";
 import {
     ErrorWatchTreeItem,
     PythonObjectInfoLineTreeItem,
     PythonObjectTreeItem,
 } from "./WatchTreeItem";
-import {
-    activeDebugSessionData,
-    DebugSessionsHolder,
-} from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
 import { Except } from "../utils/Except";
-import { zip } from "../utils/Utils";
+import { isOf, zip } from "../utils/Utils";
 
 type TreeItem =
     | VariableWatchTreeItem
     | ExpressionWatchTreeItem
+    | ErrorWatchTreeItem
     | typeof AddExpressionWatchTreeItem
     | PythonObjectInfoLineTreeItem;
 
@@ -80,7 +78,11 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             const trackedPythonObjects =
                 activeDebugSessionData()?.trackedPythonObjects;
             if (trackedPythonObjects !== undefined) {
-                for (const item of variableItems.concat(expressionsItems)) {
+                const nonErrorItems = [
+                    ...variableItems,
+                    ...expressionsItems,
+                ].filter(isOf(VariableWatchTreeItem, ExpressionWatchTreeItem));
+                for (const item of nonErrorItems) {
                     const maybeTrackingId =
                         trackedPythonObjects.trackingIdIfTracked({
                             expression: item.expression,

@@ -1,7 +1,8 @@
 import * as crypto from "node:crypto";
+import { Viewable } from "../viewable/Viewable";
 
 export class TrackedPythonObjects {
-    private readonly tracked = new Map<string, PythonExpression>();
+    private readonly tracked = new Map<string, [PythonExpression, Viewable]>();
 
     private genTrackingId(o: PythonExpression): TrackingId {
         return {
@@ -13,11 +14,15 @@ export class TrackedPythonObjects {
         };
     }
 
-    public track(o: PythonExpression, id?: TrackingId): TrackingId {
+    public track(
+        expression: PythonExpression,
+        viewable: Viewable,
+        id?: TrackingId
+    ): TrackingId {
         if (id === undefined) {
-            id = this.genTrackingId(o);
+            id = this.genTrackingId(expression);
         }
-        this.tracked.set(id.id, o);
+        this.tracked.set(id.id, [expression, viewable]);
         return id;
     }
 

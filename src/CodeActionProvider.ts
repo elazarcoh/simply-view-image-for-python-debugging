@@ -27,10 +27,12 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
             return undefined;
         }
 
-        return arrayUniqueByKey(objectViewables, (t) => t.title).map((t) => ({
-            title: `View ${t.title}`,
-            command: "svifpd._internal_view-object",
-            arguments: [userSelection, t, debugSession],
-        }));
+        return arrayUniqueByKey(objectViewables, (t) => t.title).map(
+            (viewable) => ({
+                title: `View ${viewable.title}`,
+                command: "svifpd._internal_view-object",
+                arguments: [userSelection, viewable, debugSession],
+            })
+        );
     }
 }

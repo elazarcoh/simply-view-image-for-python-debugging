@@ -36,17 +36,19 @@ export function buildWatchTreeItemContext({
 export abstract class PythonObjectTreeItem extends vscode.TreeItem {
     tracking: PythonObjectTrackingState = PythonObjectTrackingState.NotTracked;
     trackingId?: TrackingId;
+    lastUsedViewable: Viewable;
 
     constructor(
         readonly itemType: "variable" | "expression",
         label: string,
         public readonly expression: string,
-        public readonly viewables: ReadonlyArray<Viewable>,
+        public readonly viewables: Readonly<NonEmptyArray<Viewable>>,
         public readonly info: Readonly<PythonObjectInformation>,
         public readonly isError: true | false = false,
         collapsibleState: vscode.TreeItemCollapsibleState
     ) {
         super(label, collapsibleState);
+        this.lastUsedViewable = viewables[0];
     }
 
     get trackingState(): PythonObjectTrackingState {
@@ -77,18 +79,9 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
     }
 }
 
-export class ErrorWatchTreeItem extends PythonObjectTreeItem {
+export class ErrorWatchTreeItem extends vscode.TreeItem {
     constructor(public readonly expression: string, error: string | Error) {
-        super(
-            "variable",
-            expression,
-            expression,
-            [] as Viewable[],
-            {} as PythonObjectInformation,
-            true,
-            vscode.TreeItemCollapsibleState.None
-        );
-        this.updateContext();
+        super(expression, vscode.TreeItemCollapsibleState.None);
         this.description = typeof error === "string" ? error : error.message;
     }
 }

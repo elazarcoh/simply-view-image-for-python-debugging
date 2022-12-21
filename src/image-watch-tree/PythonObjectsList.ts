@@ -9,7 +9,7 @@ import {
 import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { findExpressionsViewables } from "../PythonObjectInfo";
 import { Except } from "../utils/Except";
-import { arrayUniqueByKey, zip } from "../utils/Utils";
+import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 
@@ -22,7 +22,9 @@ class ExpressionsList {
 export const globalExpressionsList: ReadonlyArray<string> =
     Container.get(ExpressionsList).expressions;
 
-export type InfoOrError = Except<[Viewable[], PythonObjectInformation]>;
+export type InfoOrError = Except<
+    [NonEmptyArray<Viewable>, PythonObjectInformation]
+>;
 type ExpressingWithInfo = [string, InfoOrError];
 
 export class CurrentPythonObjectsList {
@@ -88,15 +90,25 @@ export class CurrentPythonObjectsList {
                 combineValidInfoErrorIfNone
             );
 
+            const sanitize = ([viewables, info]: [
+                Viewable[],
+                Except<PythonObjectInformation>
+            ]): InfoOrError => {
+                if (notEmptyArray(viewables)) {
+                    if (info.isError) {
+                        return info;
+                    } else {
+                        return Except.result([viewables, info.result]);
+                    }
+                } else {
+                    return Except.error("Not viewable");
+                }
+            };
+
             const allExpressionsViewablesAndInformation = zip(
                 allViewables,
                 allExpressionsInformation
-            ).map(([vs, vi]) =>
-                Except.map(
-                    vi,
-                    (vi) => [vs, vi] as [Viewable[], PythonObjectInformation]
-                )
-            );
+            ).map(sanitize);
 
             const variablesInformation =
                 allExpressionsViewablesAndInformation.slice(

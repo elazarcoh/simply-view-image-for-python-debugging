@@ -8,6 +8,7 @@ export function trackPythonObjectTreeItem(
 ): void {
     const trackingId = activeDebugSessionData()?.trackedPythonObjects.track(
         { expression: pythonObjectTreeItem.expression },
+        pythonObjectTreeItem.lastUsedViewable,
         pythonObjectTreeItem.trackingId
     );
     if (trackingId) {

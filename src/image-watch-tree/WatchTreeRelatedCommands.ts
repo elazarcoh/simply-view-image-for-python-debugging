@@ -104,9 +104,9 @@ async function viewWatchTreeItem(
     }
 }
 
-export async function makeViewWatchTreeItemCommand(
+export function makeViewWatchTreeItemCommand(
     group: string
-): Promise<(item: PythonObjectTreeItem) => Promise<void>> {
+): (item: PythonObjectTreeItem) => Promise<void> {
     return async (item: PythonObjectTreeItem): Promise<void> => {
         const debugSession = vscode.debug.activeDebugSession;
         if (debugSession !== undefined) {

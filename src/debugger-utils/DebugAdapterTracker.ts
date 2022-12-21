@@ -13,6 +13,7 @@ import {
 } from "../python-communication/BuildPythonCode";
 import { debounce } from "../utils/Utils";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
+import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -52,8 +53,8 @@ export const createDebugAdapterTracker = (
             .then(() => watchTreeProvider.refresh());
     };
 
-    const saveTracked = async () => {
-        return;
+    const saveTracked = () => {
+        return saveAllTrackedObjects(trackedPythonObjects.allTracked, session);
     };
 
     return {

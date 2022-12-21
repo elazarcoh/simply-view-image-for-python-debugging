@@ -36,10 +36,10 @@ export function currentUserSelection(
     }
 }
 
-export function openImageToTheSide(
+export async function openImageToTheSide(
     path: string,
     preview: boolean
-): Thenable<unknown> {
+): Promise<unknown> {
     const options = {
         viewColumn: vscode.ViewColumn.Beside,
         preview: preview,

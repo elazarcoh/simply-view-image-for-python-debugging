@@ -9,7 +9,7 @@ import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { Viewable } from "./viewable/Viewable";
 
 function listOfValidViewables(
-    viewables: Viewable[],
+    viewables: ReadonlyArray<Viewable>,
     isOfType: Except<boolean>[]
 ) {
     return isOfType

@@ -40,3 +40,7 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
         this.updateContext();
     }
 }
+
+export async function editExpression(item: ExpressionWatchTreeItem) {
+    return;
+}

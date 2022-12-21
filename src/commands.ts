@@ -1,11 +1,16 @@
 import * as vscode from "vscode";
+import {
+    updateDebugFrameId,
+    viewVariableFromVSCodeDebugViewAsImage,
+} from "./debugger-utils/DebugRelatedCommands";
 import { addExpression } from "./image-watch-tree/PythonObjectsList";
+import { editExpression } from "./image-watch-tree/WatchExpression";
 import {
     refreshWatchTree,
     trackPythonObjectTreeItem,
     untrackPythonObjectTreeItem,
 } from "./image-watch-tree/WatchTreeRelatedCommands";
-import { viewObject } from "./ViewPythonObject";
+import { viewObject, viewObjectUnderCursor } from "./ViewPythonObject";
 
 // *********************
 // Some general commands
@@ -26,12 +31,16 @@ export interface TypedCommand<C extends AvailableCommands>
 }
 
 const Commands = {
-    "svifpd.open-watch-settings": openExtensionSettings,
+    "svifpd.open-settings": openExtensionSettings,
     "svifpd.watch-refresh": refreshWatchTree,
     "svifpd._internal_view-object": viewObject,
     "svifpd.add-expression": addExpression,
+    "svifpd.edit-expression": editExpression,
     "svifpd.watch-track-enable": trackPythonObjectTreeItem,
     "svifpd.watch-track-disable": untrackPythonObjectTreeItem,
+    "svifpd.update-frame-id": updateDebugFrameId,
+    "svifpd.view-image": viewObjectUnderCursor,
+    "svifpd.view-debug-variable": viewVariableFromVSCodeDebugViewAsImage,
 };
 type Commands = typeof Commands;
 type AvailableCommands = keyof Commands;
@@ -69,11 +78,15 @@ export function registerExtensionCommands(
     context: vscode.ExtensionContext
 ): vscode.Disposable[] {
     return [
+        _registerCommandByName("svifpd.view-image"),
         _registerCommandByName("svifpd._internal_view-object"),
         _registerCommandByName("svifpd.add-expression"),
+        _registerCommandByName("svifpd.edit-expression"),
         _registerCommandByName("svifpd.watch-track-enable"),
         _registerCommandByName("svifpd.watch-track-disable"),
         _registerCommandByName("svifpd.watch-refresh"),
-        _registerCommandByName("svifpd.open-watch-settings"),
+        _registerCommandByName("svifpd.open-settings"),
+        _registerCommandByName("svifpd.update-frame-id"),
+        _registerCommandByName("svifpd.view-debug-variable"),
     ];
 }

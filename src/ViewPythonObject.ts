@@ -1,24 +1,20 @@
 import * as vscode from "vscode";
-import Container from "typedi";
-import { AllViewables } from "./AllViewables";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
-import { openImageToTheSide } from "./utils/VSCodeUtils";
-import { ObjectType } from "./viewable/Viewable";
+import {
+    currentUserSelection,
+    selectionString,
+    openImageToTheSide,
+} from "./utils/VSCodeUtils";
+import { Viewable } from "./viewable/Viewable";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { constructValueWrappedExpressionFromEvalCode } from "./python-communication/BuildPythonCode";
+import { findExpressionViewables } from "./PythonObjectInfo";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
-    asType: ObjectType,
+    viewable: Viewable,
     session: vscode.DebugSession
 ): Promise<void> {
-    const viewable = Container.get(AllViewables).allViewables.find(
-        (v) => v.group === asType.group && v.type === asType.type
-    );
-    if (viewable === undefined) {
-        // TODO: Handle this error
-        return;
-    }
     const debugSessionData = activeDebugSessionData(session);
     const path = debugSessionData.savePathHelper.savePathFor(obj);
     const objectAsString = "expression" in obj ? obj.expression : obj.variable; // TODO: fix
@@ -32,4 +28,32 @@ export async function viewObject(
     if (!result.isError) {
         await openImageToTheSide(path, true);
     }
+}
+
+export async function viewObjectUnderCursor(): Promise<unknown> {
+    const debugSession = vscode.debug.activeDebugSession;
+    const document = vscode.window.activeTextEditor?.document;
+    const range = vscode.window.activeTextEditor?.selection;
+    if (
+        debugSession === undefined ||
+        document === undefined ||
+        range === undefined
+    ) {
+        return undefined;
+    }
+
+    const userSelection = currentUserSelection(document, range);
+    if (userSelection === undefined) {
+        return;
+    }
+
+    const objectViewables = await findExpressionViewables(
+        selectionString(userSelection),
+        debugSession
+    );
+    if (objectViewables === undefined || objectViewables.length === 0) {
+        return undefined;
+    }
+
+    return viewObject(userSelection, objectViewables[0], debugSession);
 }

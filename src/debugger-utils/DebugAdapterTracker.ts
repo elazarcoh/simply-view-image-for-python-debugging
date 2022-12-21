@@ -14,6 +14,8 @@ import {
 import { debounce } from "../utils/Utils";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";
+import { getConfiguration } from "../config";
+import { patchDebugVariableContext } from "./DebugRelatedCommands";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -67,7 +69,6 @@ export const createDebugAdapterTracker = (
             currentPythonObjectsList.clear();
             trackedPythonObjects.clear();
             watchTreeProvider.refresh();
-            await debugSessionData.savePathHelper.deleteSaveDir();
         },
 
         onWillReceiveMessage: async (msg: RecvMsg) => {
@@ -123,8 +124,14 @@ export const createDebugAdapterTracker = (
                 );
                 trySetupExtensionAndRunAgainIfFailedDebounced();
             } else if (msg.type === "response" && msg.command === "variables") {
-                //     // Add context to debug variable. This is a workaround.
-                //     if (msg.body && getConfiguration('addViewContextEntryToVSCodeDebugVariables')) patchDebugVariableContext(msg);
+                // Add context to debug variable. This is a workaround.
+                if (
+                    getConfiguration(
+                        "addViewContextEntryToVSCodeDebugVariables"
+                    ) === true
+                ) {
+                    patchDebugVariableContext(msg);
+                }
                 return debugVariablesTracker.onVariablesResponse(msg);
             } else if (msg.type === "event" && msg.event === "continued") {
                 return debugVariablesTracker.onContinued();

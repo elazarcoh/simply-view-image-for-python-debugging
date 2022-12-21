@@ -85,6 +85,14 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
+    context.subscriptions.push(
+        vscode.debug.onDidTerminateDebugSession((session) => {
+            return activeDebugSessionData(
+                session
+            ).savePathHelper.deleteSaveDir();
+        })
+    );
+
     context.subscriptions.push(...registerExtensionCommands(context));
 
     // // add commands

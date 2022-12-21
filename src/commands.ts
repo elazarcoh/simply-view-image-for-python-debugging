@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { addExpression } from "./image-watch-tree/PythonObjectsList";
 import { viewObject } from "./ViewPythonObject";
 
 export interface TypedCommand<C extends AvailableCommands>
@@ -14,6 +15,7 @@ type CommandWithAction<Fn extends (...args: any[]) => R, R = unknown> = {
 
 type Commands = {
     "svifpd._internal_view-object": CommandWithAction<typeof viewObject>;
+    "svifpd.add-expression": CommandWithAction<typeof addExpression>;
 };
 type AvailableCommands = keyof Commands;
 
@@ -41,8 +43,11 @@ export function registerCommand<C extends AvailableCommands>(
     return vscode.commands.registerCommand(command, action);
 }
 
-export function registerCommands(
+export function registerExtensionCommands(
     context: vscode.ExtensionContext
 ): vscode.Disposable[] {
-    return [registerCommand("svifpd._internal_view-object", viewObject)];
+    return [
+        registerCommand("svifpd._internal_view-object", viewObject),
+        registerCommand("svifpd.add-expression", addExpression),
+    ];
 }

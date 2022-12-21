@@ -15,7 +15,7 @@ import { EXTENSION_CONFIG_SECTION, getConfiguration } from "./config";
 import { EXTENSION_NAME } from "./globals";
 import { ObjectType } from "./viewable/Viewable";
 import { viewObject } from "./ViewPythonObject";
-import { registerCommand, registerCommands } from "./commands";
+import { registerCommand, registerExtensionCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
@@ -96,7 +96,7 @@ export function activate(context: vscode.ExtensionContext): void {
         )
     );
 
-    context.subscriptions.push(...registerCommands(context));
+    context.subscriptions.push(...registerExtensionCommands(context));
 
     // // add commands
     // logDebug("Registering commands");

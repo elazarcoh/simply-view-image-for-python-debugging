@@ -1,4 +1,6 @@
+import Container, { Service } from "typedi";
 import * as vscode from "vscode";
+import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
 import {
     combineMultiEvalCodePython,
@@ -9,12 +11,22 @@ import { findExpressionsViewables } from "../PythonObjectInfo";
 import { Except } from "../utils/Except";
 import { arrayUniqueByKey, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
+import { WatchTreeProvider } from "./WatchTreeProvider";
 
-export class CurrentPythonObjectsList {
-    readonly expressionsList: [
+// ExpressionsList is global to all debug sessions
+@Service()
+class ExpressionsList {
+    readonly expressions: [
         string,
         Except<[Viewable[], PythonObjectInformation]>
     ][] = [];
+}
+
+export const expressionsList: ReadonlyArray<
+    [string, Except<[Viewable[], PythonObjectInformation]>]
+> = Container.get(ExpressionsList).expressions;
+
+export class CurrentPythonObjectsList {
     readonly variablesList: [
         string,
         Except<[Viewable[], PythonObjectInformation]>
@@ -45,7 +57,7 @@ export class CurrentPythonObjectsList {
     }> {
         const allExpressions = [
             ...this.variablesList.map((v) => v[0]),
-            ...this.expressionsList.map((e) => e[0]),
+            ...expressionsList.map((e) => e[0]),
         ];
 
         const allViewables = await findExpressionsViewables(
@@ -123,14 +135,14 @@ export class CurrentPythonObjectsList {
         if (information.variables.length !== this.variablesList.length) {
             throw new Error("Unexpected number of variables");
         }
-        if (information.expressions.length !== this.expressionsList.length) {
+        if (information.expressions.length !== expressionsList.length) {
             throw new Error("Unexpected number of expressions");
         }
         for (let i = 0; i < this.variablesList.length; i++) {
             this.variablesList[i][1] = information.variables[i];
         }
-        for (let i = 0; i < this.expressionsList.length; i++) {
-            this.expressionsList[i][1] = information.expressions[i];
+        for (let i = 0; i < expressionsList.length; i++) {
+            expressionsList[i][1] = information.expressions[i];
         }
         return;
     }
@@ -149,5 +161,27 @@ function combineValidInfoErrorIfNone(
         const allEntries = validRecords.flatMap((o) => Object.entries(o));
         const merged = Object.fromEntries(allEntries);
         return Except.result(merged);
+    }
+}
+
+export async function addExpression(): Promise<void> {
+    // const maybeExpression = await vscode.window.showInputBox({
+    //   prompt: "Enter expression to watch",
+    //   placeHolder: "e.g. images[0]",
+    //   ignoreFocusOut: true,
+    // });
+    const maybeExpression = "x[::2, ::2]";
+    if (maybeExpression !== undefined) {
+        Container.get(ExpressionsList).expressions.push([
+            maybeExpression,
+            Except.error("Not ready"),
+        ]);
+        const session = vscode.debug.activeDebugSession;
+        if (session !== undefined) {
+            await Container.get(DebugSessionsHolder)
+                .debugSessionData(session)
+                .currentPythonObjectsList.update();
+        }
+        Container.get(WatchTreeProvider).refresh();
     }
 }

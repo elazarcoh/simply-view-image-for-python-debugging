@@ -23,11 +23,12 @@ export const AddExpressionWatchTreeItem = new _AddExpressionWatchTreeItem();
 export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
     constructor(
         public readonly expression: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
-            .TreeItemCollapsibleState.Collapsed,
-        viewables: Viewable[]
+        viewables: ReadonlyArray<Viewable>,
+        info: Readonly<PythonObjectInformation>,
+        collapsibleState: vscode.TreeItemCollapsibleState = vscode
+            .TreeItemCollapsibleState.Collapsed
     ) {
-        super("expression", expression, collapsibleState, viewables);
+        super("expression", expression, viewables, info, false, collapsibleState);
         this.updateContext();
     }
 }

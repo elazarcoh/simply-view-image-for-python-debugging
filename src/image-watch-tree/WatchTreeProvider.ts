@@ -6,11 +6,12 @@ import {
 import Container, { Service } from "typedi";
 import { VariableWatchTreeItem } from "./WatchVariable";
 import {
+    ErrorWatchTreeItem,
     PythonObjectInfoLineTreeItem,
     PythonObjectTreeItem,
 } from "./WatchTreeItem";
 import { DebugSessionsHolder } from "../debugger-utils/DebugSessionsHolder";
-import { Viewable } from "../viewable/Viewable";
+import { expressionsList } from "./PythonObjectsList";
 
 type TreeItem =
     | VariableWatchTreeItem
@@ -47,18 +48,37 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 Container.get(DebugSessionsHolder).debugSessionData(
                     debugSession
                 );
-            // debugSessionData.currentPythonObjectsList.variablesList.map(
-            //                     (e) => toTreeItem(e, VariableWatchTreeItem)
-            //                 )
+            const variableItems =
+                debugSessionData.currentPythonObjectsList.variablesList.map(
+                    ([exp, info]) =>
+                        info.isError
+                            ? new ErrorWatchTreeItem(exp, info.error)
+                            : new VariableWatchTreeItem(
+                                  exp,
+                                  info.result[0],
+                                  info.result[1]
+                              )
+                );
+            const expressionsItems = expressionsList.map(([exp, info]) =>
+                info.isError
+                    ? new ErrorWatchTreeItem(exp, info.error)
+                    : new ExpressionWatchTreeItem(
+                          exp,
+                          info.result[0],
+                          info.result[1]
+                      )
+            );
+
             return [
-                // ...,
-                // ...debugSessionData.currentPythonObjectsList.expressionsList.map(toTreeItem),
+                ...variableItems,
+                ...expressionsItems,
                 AddExpressionWatchTreeItem,
             ];
-        } else if (element instanceof VariableWatchTreeItem) {
-            return [] as PythonObjectInfoLineTreeItem[];
-        } else if (element instanceof ExpressionWatchTreeItem) {
-            return [] as PythonObjectInfoLineTreeItem[];
+        } else if (element instanceof PythonObjectTreeItem) {
+            const infoItems = Object.entries(element.info).map(
+                ([name, value]) => new PythonObjectInfoLineTreeItem(name, value)
+            );
+            return infoItems;
         } else if (element === AddExpressionWatchTreeItem) {
             return [];
         } else {

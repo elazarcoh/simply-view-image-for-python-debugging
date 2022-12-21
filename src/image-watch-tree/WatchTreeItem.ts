@@ -1,4 +1,3 @@
-import Container from "typedi";
 import * as vscode from "vscode";
 import { arrayUnique } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
@@ -8,19 +7,27 @@ export enum PythonObjectTrackingState {
     NotTracked = "nonTrackedVariable",
 }
 
-export function buildWatchTreeItemContext(obj: {
-    viewables: Viewable[];
+export function buildWatchTreeItemContext({
+    viewables,
+    trackingState,
+    itemType,
+}: {
+    viewables: ReadonlyArray<Viewable>;
     trackingState: PythonObjectTrackingState;
-    itemType: "variable" | "expression";
+    itemType: "variable" | "expression" | "error";
 }): string {
     let context = "svifpd:";
-    context += obj.trackingState.toString();
-    if (obj.viewables.length > 0) {
-        context +=
-            "-" + arrayUnique(obj.viewables.map((v) => v.group)).join("_");
-    }
-    if (obj.itemType === "expression") {
-        context += "-expressionItem";
+    context += trackingState.toString();
+    if (itemType === "error") {
+        context += "-errorItem";
+    } else {
+        if (viewables.length > 0) {
+            context +=
+                "-" + arrayUnique(viewables.map((v) => v.group)).join("_");
+        }
+        if (itemType === "expression") {
+            context += "-expressionItem";
+        }
     }
     return context;
 }
@@ -32,8 +39,10 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
     constructor(
         readonly itemType: "variable" | "expression",
         label: string,
-        collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly viewables: Viewable[]
+        public readonly viewables: ReadonlyArray<Viewable>,
+        public readonly info: Readonly<PythonObjectInformation>,
+        public readonly isError: true | false = false,
+        collapsibleState: vscode.TreeItemCollapsibleState
     ) {
         super(label, collapsibleState);
     }
@@ -63,6 +72,21 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
         this.tracking = PythonObjectTrackingState.NotTracked;
         this.iconPath = undefined;
         this.updateContext();
+    }
+}
+
+export class ErrorWatchTreeItem extends PythonObjectTreeItem {
+    constructor(public readonly variableName: string, error: string | Error) {
+        super(
+            "variable",
+            variableName,
+            [] as Viewable[],
+            {} as PythonObjectInformation,
+            true,
+            vscode.TreeItemCollapsibleState.None
+        );
+        this.updateContext();
+        this.description = typeof error === "string" ? error : error.message;
     }
 }
 

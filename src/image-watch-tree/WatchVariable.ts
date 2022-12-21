@@ -5,11 +5,19 @@ import { PythonObjectTreeItem } from "./WatchTreeItem";
 export class VariableWatchTreeItem extends PythonObjectTreeItem {
     constructor(
         public readonly variableName: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
-            .TreeItemCollapsibleState.Collapsed,
-        viewables: Viewable[]
+        viewables: ReadonlyArray<Viewable>,
+        info: Readonly<PythonObjectInformation>,
+        collapsibleState: vscode.TreeItemCollapsibleState = vscode
+            .TreeItemCollapsibleState.Collapsed
     ) {
-        super("variable", variableName, collapsibleState, viewables);
+        super(
+            "variable",
+            variableName,
+            viewables,
+            info,
+            false,
+            collapsibleState
+        );
         this.updateContext();
     }
 }

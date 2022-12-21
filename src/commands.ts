@@ -3,8 +3,12 @@ import {
     updateDebugFrameId,
     viewVariableFromVSCodeDebugViewAsImage,
 } from "./debugger-utils/DebugRelatedCommands";
-import { addExpression } from "./image-watch-tree/PythonObjectsList";
-import { editExpression } from "./image-watch-tree/WatchExpression";
+import {
+    addExpressionTreeItem,
+    editExpressionTreeItem,
+    removeAllExpressionsTree,
+    removeExpressionTreeItem,
+} from "./image-watch-tree/WatchExpression";
 import {
     refreshWatchTree,
     trackPythonObjectTreeItem,
@@ -34,8 +38,10 @@ const Commands = {
     "svifpd.open-settings": openExtensionSettings,
     "svifpd.watch-refresh": refreshWatchTree,
     "svifpd._internal_view-object": viewObject,
-    "svifpd.add-expression": addExpression,
-    "svifpd.edit-expression": editExpression,
+    "svifpd.add-expression": addExpressionTreeItem,
+    "svifpd.edit-expression": editExpressionTreeItem,
+    "svifpd.remove-expression": removeExpressionTreeItem,
+    "svifpd.remove-all-expressions": removeAllExpressionsTree,
     "svifpd.watch-track-enable": trackPythonObjectTreeItem,
     "svifpd.watch-track-disable": untrackPythonObjectTreeItem,
     "svifpd.update-frame-id": updateDebugFrameId,
@@ -77,11 +83,14 @@ export function registerCommand<C extends AvailableCommands>(
 export function registerExtensionCommands(
     context: vscode.ExtensionContext
 ): vscode.Disposable[] {
+    // TODO: automate registering
     return [
         _registerCommandByName("svifpd.view-image"),
         _registerCommandByName("svifpd._internal_view-object"),
         _registerCommandByName("svifpd.add-expression"),
         _registerCommandByName("svifpd.edit-expression"),
+        _registerCommandByName("svifpd.remove-expression"),
+        _registerCommandByName("svifpd.remove-all-expressions"),
         _registerCommandByName("svifpd.watch-track-enable"),
         _registerCommandByName("svifpd.watch-track-disable"),
         _registerCommandByName("svifpd.watch-refresh"),

@@ -138,9 +138,11 @@ export class CurrentPythonObjectsList {
 
         const information = await this.retrieveInformation();
         if (information.variables.length !== this._variablesList.length) {
+            // TODO: handle error
             throw new Error("Unexpected number of variables");
         }
         if (information.expressions.length !== globalExpressionsList.length) {
+            // TODO: handle error
             throw new Error("Unexpected number of expressions");
         }
         for (let i = 0; i < this._variablesList.length; i++) {
@@ -182,7 +184,7 @@ function combineValidInfoErrorIfNone(
     }
 }
 
-export async function addExpression(): Promise<void> {
+export async function addExpression(): Promise<boolean> {
     // const maybeExpression = await vscode.window.showInputBox({
     //   prompt: "Enter expression to watch",
     //   placeHolder: "e.g. images[0]",
@@ -191,7 +193,45 @@ export async function addExpression(): Promise<void> {
     const maybeExpression = "x[::2, ::2]";
     if (maybeExpression !== undefined) {
         Container.get(ExpressionsList).expressions.push(maybeExpression);
-        await activeDebugSessionData()?.currentPythonObjectsList.update();
-        Container.get(WatchTreeProvider).refresh();
+        return true;
     }
+    return false;
+}
+
+export async function editExpression(expression: string): Promise<boolean> {
+    const expressions = Container.get(ExpressionsList).expressions;
+    const idx = expressions.indexOf(expression);
+    if (idx > -1) {
+        const maybeExpression = await vscode.window.showInputBox({
+            prompt: "Enter expression to watch",
+            value: expression,
+            placeHolder: "e.g. images[0]",
+            ignoreFocusOut: true,
+        });
+        if (maybeExpression !== undefined) {
+            expressions[idx] = maybeExpression;
+            return true;
+        }
+    }
+    return false;
+}
+
+export function removeExpression(expression: string): boolean {
+    const expressions = Container.get(ExpressionsList).expressions;
+    const idx = expressions.indexOf(expression);
+    if (idx > -1) {
+        expressions.splice(idx, 1);
+        return true;
+    }
+    return false;
+}
+
+export function removeAllExpressions(): string[] {
+    const expressions = Container.get(ExpressionsList).expressions;
+    if (expressions.length > 0) {
+        const removedExpressions = expressions.slice(0);
+        expressions.length = 0;
+        return removedExpressions;
+    }
+    return [];
 }

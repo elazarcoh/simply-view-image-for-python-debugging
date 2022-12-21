@@ -49,10 +49,9 @@ export const createDebugAdapterTracker = (
         return evaluateInPython(verifyModuleExistsCode(), session);
     };
 
-    const updateWatchTree = () => {
-        return currentPythonObjectsList
-            .update()
-            .then(() => watchTreeProvider.refresh());
+    const updateWatchTree = async () => {
+        await currentPythonObjectsList.update();
+        watchTreeProvider.refresh();
     };
 
     const saveTracked = () => {
@@ -98,12 +97,17 @@ export const createDebugAdapterTracker = (
             ) {
                 logDebug("Breakpoint hit");
 
+                let maxTries = 5;
                 const trySetupExtensionAndRunAgainIfFailed =
                     async (): Promise<void> => {
                         logDebug("Checks setup is okay or not");
                         const isSetupOkay = await checkSetupOkay();
 
-                        if (isSetupOkay.isError || !isSetupOkay.result) {
+                        if (
+                            (isSetupOkay.isError || !isSetupOkay.result) &&
+                            maxTries > 0
+                        ) {
+                            maxTries -= 1;
                             logDebug("No setup. Run setup code");
                             await execInPython(viewablesSetupCode(), session);
                             // run again to make sure setup is okay

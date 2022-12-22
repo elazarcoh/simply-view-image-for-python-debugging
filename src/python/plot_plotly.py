@@ -2,7 +2,7 @@ try:
     from plotly.basedatatypes import BaseFigure
 
     def plotly_figure():
-        def is_plotly_figure(obj, restrict_types):
+        def is_plotly_figure(obj):
             try:
                 return isinstance(obj, BaseFigure)
             except TypeError:

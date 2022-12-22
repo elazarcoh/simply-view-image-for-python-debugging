@@ -1,4 +1,5 @@
 import { DebugProtocol } from "vscode-debugprotocol";
+import { logDebug } from "../Logging";
 import { PYTHON_MODULE_NAME } from "../python-communication/BuildPythonCode";
 
 type TrackedVariable = {
@@ -15,7 +16,23 @@ const VARIABLES_TO_FILTER = new Set([
     "function variables",
 ]);
 
-const TYPES_TO_FILTER = new Set(["module", "function"]);
+const REGEX_TO_FILTER = [/__pydevd_ret_val_dict.*/];
+
+const TYPES_TO_FILTER = new Set([
+    "",
+    "module",
+    "function",
+    "dict",
+    "tuple",
+    "set",
+    "str",
+    "bytes",
+    "NoneType",
+    "int",
+    "float",
+    "bool",
+    "ZMQExitAutocall",
+]);
 
 function filterVariables(
     variables: DebugProtocol.Variable[]
@@ -23,7 +40,8 @@ function filterVariables(
     return variables.filter(
         (variable) =>
             !VARIABLES_TO_FILTER.has(variable.name) &&
-            (variable.type === undefined || !TYPES_TO_FILTER.has(variable.type))
+            (variable.type === undefined || !TYPES_TO_FILTER.has(variable.type)) &&
+            !REGEX_TO_FILTER.some((regex) => regex.test(variable.name))
     );
 }
 
@@ -58,6 +76,7 @@ export class DebugVariablesTracker {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this._currentFrameId!;
     }
+
     setFrameId(frameId: number | undefined): void {
         this._currentFrameId = frameId;
     }
@@ -65,19 +84,28 @@ export class DebugVariablesTracker {
     onScopesRequest(request: DebugProtocol.ScopesRequest): void {
         const requestId = request.seq;
         const frameId = request.arguments.frameId;
+        logDebug(
+            `Captures scopes request ${requestId} with frameId ${frameId}`
+        );
         this.scopesRequests.set(requestId, { frameId });
     }
 
     onScopesResponse(response: DebugProtocol.ScopesResponse): void {
         const request = this.scopesRequests.get(response.request_seq);
         if (request !== undefined) {
+            logDebug(
+                `Captured scopes response ${response.request_seq} for frameId ${request.frameId}`
+            );
             const frameId = request.frameId;
+            this._currentFrameId = frameId;
             this.scopesRequests.delete(response.request_seq);
             const [global, local] = response.body.scopes;
+            logDebug(`Local scope reference ${local.variablesReference}`);
             this.frameForVariableReference.set(local.variablesReference, {
                 frameId,
                 scope: "local",
             });
+            logDebug(`Global scope reference ${global.variablesReference}`);
             this.frameForVariableReference.set(global.variablesReference, {
                 frameId,
                 scope: "global",
@@ -90,6 +118,9 @@ export class DebugVariablesTracker {
             request.arguments.variablesReference
         );
         if (frame !== undefined) {
+            logDebug(
+                `Captured variables request ${request.seq}, for variablesReference ${request.arguments.variablesReference}`
+            );
             this.variablesRequests.set(request.seq, {
                 variablesReference: request.arguments.variablesReference,
                 ...frame,
@@ -100,6 +131,9 @@ export class DebugVariablesTracker {
     onVariablesResponse(response: DebugProtocol.VariablesResponse): void {
         const request = this.variablesRequests.get(response.request_seq);
         if (request !== undefined) {
+            logDebug(
+                `Captured variable response ${response.request_seq} For ${request.scope}, with ${response.body.variables.length} variables`
+            );
             const frameId = request.frameId;
             this.variablesRequests.delete(response.request_seq);
             if (request.scope === "local") {
@@ -113,9 +147,13 @@ export class DebugVariablesTracker {
                     : this.globalVariables;
             this._currentFrameId = frameId;
             for (const variable of filterVariables(response.body.variables)) {
+                const evaluateName = variable.evaluateName ?? variable.name;
+                logDebug(
+                    `Got variable ${evaluateName} for frame ${frameId}, of type ${variable.type}.`
+                );
                 variablesForScope.push({
                     name: variable.name,
-                    evaluateName: variable.evaluateName ?? variable.name,
+                    evaluateName,
                     frameId,
                     type: variable.type ?? "unknown",
                 });

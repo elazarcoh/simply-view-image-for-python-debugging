@@ -11,6 +11,7 @@ export class DebugSessionData {
     public readonly trackedPythonObjects: TrackedPythonObjects =
         new TrackedPythonObjects();
     public readonly currentPythonObjectsList: CurrentPythonObjectsList;
+    public setupOkay: boolean = false;
 
     constructor(session: vscode.DebugSession) {
         this.savePathHelper = new SavePathHelper(session.id);

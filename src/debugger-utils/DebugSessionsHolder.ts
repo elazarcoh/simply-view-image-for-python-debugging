@@ -22,7 +22,7 @@ export function activeDebugSessionData(
     session: vscode.DebugSession
 ): DebugSessionData;
 export function activeDebugSessionData(
-    session: undefined
+    session: undefined | vscode.DebugSession
 ): DebugSessionData | undefined;
 export function activeDebugSessionData(): DebugSessionData | undefined;
 export function activeDebugSessionData(
@@ -32,4 +32,10 @@ export function activeDebugSessionData(
     return session
         ? Container.get(DebugSessionsHolder).debugSessionData(session)
         : undefined;
+}
+
+export function isPythonModeleSetupOkay(
+    session?: vscode.DebugSession
+): boolean {
+    return activeDebugSessionData(session)?.setupOkay === true;
 }

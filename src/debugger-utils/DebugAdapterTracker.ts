@@ -16,6 +16,7 @@ import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";
 import { getConfiguration } from "../config";
 import { patchDebugVariableContext } from "./DebugRelatedCommands";
+import { runSetup } from "../python-communication/Setup";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -45,10 +46,6 @@ export const createDebugAdapterTracker = (
     const currentPythonObjectsList = debugSessionData.currentPythonObjectsList;
     const trackedPythonObjects = debugSessionData.trackedPythonObjects;
 
-    const checkSetupOkay = () => {
-        return evaluateInPython(verifyModuleExistsCode(), session);
-    };
-
     const updateWatchTree = async () => {
         await currentPythonObjectsList.update();
         watchTreeProvider.refresh();
@@ -57,6 +54,11 @@ export const createDebugAdapterTracker = (
     const saveTracked = () => {
         return saveAllTrackedObjects(trackedPythonObjects.allTracked, session);
     };
+
+    const onScopeChange = debounce(async () => {
+        await updateWatchTree();
+        await saveTracked();
+    }, 500);
 
     return {
         onWillStartSession: () => {
@@ -73,7 +75,7 @@ export const createDebugAdapterTracker = (
         onWillReceiveMessage: async (msg: RecvMsg) => {
             logTrace("onWillReceiveMessage", msg);
             if (msg.type === "request" && msg.command === "scopes") {
-                return debugVariablesTracker.onScopesRequest(msg);
+                debugVariablesTracker.onScopesRequest(msg);
             } else if (msg.type === "request" && msg.command === "variables") {
                 return debugVariablesTracker.onVariablesRequest(msg);
             } else if (
@@ -97,36 +99,7 @@ export const createDebugAdapterTracker = (
             ) {
                 logDebug("Breakpoint hit");
 
-                let maxTries = 5;
-                const trySetupExtensionAndRunAgainIfFailed =
-                    async (): Promise<void> => {
-                        logDebug("Checks setup is okay or not");
-                        const isSetupOkay = await checkSetupOkay();
-
-                        if (
-                            (isSetupOkay.isError || !isSetupOkay.result) &&
-                            maxTries > 0
-                        ) {
-                            maxTries -= 1;
-                            logDebug("No setup. Run setup code");
-                            await execInPython(viewablesSetupCode(), session);
-                            // run again to make sure setup is okay
-                            return trySetupExtensionAndRunAgainIfFailedDebounced();
-                        } else {
-                            logDebug("Setup is okay");
-
-                            debounce(async () => {
-                                // TODO: Consider moving to VariableResponse event
-                                await updateWatchTree();
-                                await saveTracked();
-                            }, 500)(); // it take short time for everything to get in sync
-                        }
-                    };
-                const trySetupExtensionAndRunAgainIfFailedDebounced = debounce(
-                    trySetupExtensionAndRunAgainIfFailed,
-                    250
-                );
-                trySetupExtensionAndRunAgainIfFailedDebounced();
+                await debounce(runSetup, 250)(session);
             } else if (msg.type === "response" && msg.command === "variables") {
                 // Add context to debug variable. This is a workaround.
                 if (
@@ -136,11 +109,15 @@ export const createDebugAdapterTracker = (
                 ) {
                     patchDebugVariableContext(msg);
                 }
-                return debugVariablesTracker.onVariablesResponse(msg);
+                debugVariablesTracker.onVariablesResponse(msg);
+                return updateWatchTree();
             } else if (msg.type === "event" && msg.event === "continued") {
                 return debugVariablesTracker.onContinued();
             } else if (msg.type === "response" && msg.command === "scopes") {
-                return debugVariablesTracker.onScopesResponse(msg);
+                debugVariablesTracker.onScopesResponse(msg);
+                // scope has changed. Make setup is okay
+                await runSetup(session);
+                await onScopeChange();
             }
         },
 

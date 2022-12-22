@@ -7,6 +7,7 @@ import { VariableWatchTreeItem } from "./WatchVariable";
 import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { openImageToTheSide } from "../utils/VSCodeUtils";
+import { DebugProtocol } from "vscode-debugprotocol";
 
 export function pythonObjectTreeItemSavePath(
     pythonObjectTreeItem: PythonObjectTreeItem,
@@ -67,6 +68,11 @@ export function untrackPythonObjectTreeItem(
 }
 
 export async function refreshWatchTree(): Promise<void> {
+    // make variables request
+    // await activeDebugSessionData()?.debugVariablesTracker.frameForVariableReference
+    // await vscode.debug.activeDebugSession?.customRequest('variables', {
+    //     variablesReference: 0,
+    // } as DebugProtocol.VariablesArguments)
     await activeDebugSessionData()?.currentPythonObjectsList.update();
     Container.get(WatchTreeProvider).refresh();
 }

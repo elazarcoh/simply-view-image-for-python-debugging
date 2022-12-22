@@ -39,7 +39,7 @@ export class CurrentPythonObjectsList {
     private async retrieveVariables(): Promise<string[]> {
         const { locals, globals } =
             await this.debugVariablesTracker.currentFrameVariables();
-        if (globals.length === 0) {
+        if (globals.length === 0 && locals.length === 0) {
             return [];
         }
         const allUniqueVariables = arrayUniqueByKey(
@@ -185,12 +185,11 @@ function combineValidInfoErrorIfNone(
 }
 
 export async function addExpression(): Promise<boolean> {
-    // const maybeExpression = await vscode.window.showInputBox({
-    //   prompt: "Enter expression to watch",
-    //   placeHolder: "e.g. images[0]",
-    //   ignoreFocusOut: true,
-    // });
-    const maybeExpression = "x[::2, ::2]";
+    const maybeExpression = await vscode.window.showInputBox({
+        prompt: "Enter expression to watch",
+        placeHolder: "e.g. images[0]",
+        ignoreFocusOut: true,
+    });
     if (maybeExpression !== undefined) {
         Container.get(ExpressionsList).expressions.push(maybeExpression);
         return true;

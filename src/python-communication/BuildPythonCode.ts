@@ -87,7 +87,7 @@ export function viewablesSetupCode(): EvalCodePython<null> {
 
 function convertExpressionIntoValueWrappedExpression<R>(
     expression: string
-): EvalCodePython<R> {
+): EvalCodePython<Except<R>> {
     // verify it's a single-line expression
     if (expression.includes("\n")) {
         throw new Error("Expression must be a single line");
@@ -100,7 +100,7 @@ function convertExpressionIntoValueWrappedExpression<R>(
 export function constructValueWrappedExpressionFromEvalCode<
     R,
     P extends Array<unknown>
->(evalCode: EvalCode<R, P>, expression: string, ...args: P): EvalCodePython<R> {
+>(evalCode: EvalCode<R, P>, expression: string, ...args: P): EvalCodePython<Except<R>> {
     const expressionToEval = evalCode.evalCode(expression, ...args);
     return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
 }

@@ -1,10 +1,6 @@
-import Container from "typedi";
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import {
-    activeDebugSessionData,
-    DebugSessionsHolder,
-} from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { Except } from "../utils/Except";
 import { stringifyPython } from "./BuildPythonCode";
 import { parsePythonResult } from "./PythonValueParser";

@@ -23,9 +23,9 @@ export async function viewObject(
         objectAsString,
         path
     );
-    const result = await evaluateInPython<null>(code, session);
+    const result = await evaluateInPython(code, session);
     // TODO: Handle error
-    if (!result.isError) {
+    if (!result.isError && !result.result.isError) {
         await openImageToTheSide(path, true);
     }
 }

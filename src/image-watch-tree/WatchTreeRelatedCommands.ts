@@ -7,7 +7,6 @@ import { VariableWatchTreeItem } from "./WatchVariable";
 import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { openImageToTheSide } from "../utils/VSCodeUtils";
-import { DebugProtocol } from "vscode-debugprotocol";
 
 export function pythonObjectTreeItemSavePath(
     pythonObjectTreeItem: PythonObjectTreeItem,
@@ -103,9 +102,9 @@ async function viewWatchTreeItem(
         item.expression,
         savePath
     );
-    const result = await evaluateInPython<null>(code, session);
+    const result = await evaluateInPython(code, session);
     // TODO: Handle error
-    if (!result.isError) {
+    if (!result.isError && !result.result.isError) {
         await openImageToTheSide(savePath, true);
     }
 }

@@ -40,7 +40,10 @@
         "command": "svifpd.watch-view-image",
         "title": "View Image",
         "enablement": "inDebugMode",
-        "icon": "$(link-external)"
+        "icon": {
+          "light": "resources/light/image.svg",
+          "dark": "resources/dark/image.svg"
+        }
       },
       {
         "command": "svifpd.watch-view-plot",

@@ -2,7 +2,7 @@ try:
     import torch
 
     def torch_tensor():
-        def is_torch_tensor(obj, restrict_types):
+        def is_torch_tensor(obj):
             valid_channels = (1, 2, 3, 4)
             try:
                 is_valid = isinstance(obj, torch.Tensor)
@@ -18,15 +18,15 @@ try:
                 return False
 
         def info(obj):
-            obj_type = type(img).__name__
+            obj_type = type(obj).__name__
             try:
-                shape = str(tuple(tensor.shape))
-                dtype = str(tensor.dtype)
+                shape = str(tuple(obj.shape))
+                dtype = str(obj.dtype)
                 return {"type": obj_type, "shape": shape, "dtype": dtype}
             except:
                 return {"type": obj_type}
 
-        def save(obj, path, normalize=True, pad=10, *args, **kwargs):
+        def save(path, obj, normalize=True, pad=10, *args, **kwargs):
             import torchvision
 
             pad_value = 255

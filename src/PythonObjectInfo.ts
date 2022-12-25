@@ -1,6 +1,7 @@
 import Container from "typedi";
 import * as vscode from "vscode";
 import { AllViewables } from "./AllViewables";
+import { logError } from "./Logging";
 import {
     combineMultiEvalCodePython,
     constructRunSameExpressionWithMultipleEvaluatorsCode,
@@ -30,7 +31,9 @@ export async function findExpressionViewables(
     const isOfType = await evaluateInPython(code, session);
 
     if (isOfType.isError) {
-        // TODO: handle error
+        logError(
+            `Error finding viewables for expression \`${expression}\`. Error: ${isOfType.errorMessage}`
+        );
         return [];
     } else {
         const objectViewables = listOfValidViewables(
@@ -57,7 +60,10 @@ export async function findExpressionsViewables(
     const isOfType = await evaluateInPython(code, session);
 
     if (isOfType.isError) {
-        //  TODO: handle error
+        const message = `Error finding viewables for expressions \`${expressions.join(
+            ", "
+        )}\`. Error: ${isOfType.errorMessage}`;
+        logError(message);
         return [];
     } else {
         const objectsViewables = isOfType.result.map(

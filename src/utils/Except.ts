@@ -9,6 +9,7 @@ export namespace Except {
         return {
             error: error,
             isError: true,
+            errorMessage: typeof error === "string" ? error : error.message,
         };
     }
 
@@ -25,9 +26,7 @@ export namespace Except {
         return !except.isError;
     }
 
-    export function isError<T>(
-        except: Except<T>
-    ): except is { error: Error | string; isError: true } {
+    export function isError<T>(except: Except<T>): except is ExceptError {
         return except.isError;
     }
 }

@@ -58,13 +58,7 @@ export function executeCommand<C extends AvailableCommands>(
     command: C,
     ...args: CommandArguments<C>
 ): Thenable<CommandReturn<C>> {
-    // TODO: check what happens if the command fails
-    // @ts-expect-error  // This is expected:
-    // For some reason, the vscode.commands.executeCommand can return undefined,
-    // but per the documentation, it returns undefined only if the
-    // command action returns undefined, which should be handled
-    // by the CommandReturn<...> type helper.
-    return vscode.commands.executeCommand(command, ...args);
+    return vscode.commands.executeCommand<CommandReturn<C>>(command, ...args);
 }
 
 export function _registerCommandByName<C extends AvailableCommands>(

@@ -1,7 +1,11 @@
 type Body<T extends { body: unknown }> = T["body"];
-type Except<T> =
-    | { result: T; isError: false }
-    | { error: Error | string; isError: true };
+type ExceptError = {
+    error: Error | string;
+    errorMessage: string;
+    isError: true;
+};
+type ExceptResult<T> = { result: T; isError: false };
+type Except<T> = ExceptResult<T> | ExceptError;
 
 type Constructor<T> = new (...args: any[]) => T;
 type ExtractConstructorClass<Constructors extends unknown[]> = {

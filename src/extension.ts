@@ -1,25 +1,19 @@
+import 'reflect-metadata';
 import * as vscode from "vscode";
-// import 'reflect-metadata';
-// import { Container } from 'typedi';
-// import { DebugProtocol } from "vscode-debugprotocol";
 import { initLog, logDebug, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
-import { viewablesSetupCode } from "./python-communication/BuildPythonCode";
-import { findExpressionViewables } from "./PythonObjectInfo";
-import { execInPython } from "./python-communication/RunPythonCode";
 import { CodeActionProvider } from "./CodeActionProvider";
 import { EXTENSION_CONFIG_SECTION, getConfiguration } from "./config";
-import { EXTENSION_NAME } from "./globals";
-import { ObjectType } from "./viewable/Viewable";
-import { viewObject } from "./ViewPythonObject";
-import { registerCommand, registerExtensionCommands } from "./commands";
+import { registerExtensionCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
+import { hasValue } from "./utils/Utils";
 
 function onConfigChange(): void {
     initLog();
@@ -50,11 +44,17 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     const allViewables = Container.get(AllViewables);
-    allViewables.addViewable(NumpyImage);
-    allViewables.addViewable(PillowImage);
-    allViewables.addViewable(PlotlyFigure);
-    allViewables.addViewable(PyplotFigure);
-    allViewables.addViewable(PyplotAxes);
+    context.subscriptions.push(
+        ...[
+            allViewables.addViewable(NumpyImage),
+            allViewables.addViewable(PillowImage),
+            allViewables.addViewable(PlotlyFigure),
+            allViewables.addViewable(PyplotFigure),
+            allViewables.addViewable(PyplotAxes),
+            allViewables.addViewable(NumpyTensor),
+            allViewables.addViewable(TorchTensor),
+        ].filter(hasValue)
+    );
 
     logDebug("Registering code actions provider (the lightbulb)");
     context.subscriptions.push(

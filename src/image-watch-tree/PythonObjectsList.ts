@@ -2,6 +2,7 @@ import Container, { Service } from "typedi";
 import * as vscode from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
+import { logError } from "../Logging";
 import {
     combineMultiEvalCodePython,
     constructRunSameExpressionWithMultipleEvaluatorsCode,
@@ -79,8 +80,9 @@ export class CurrentPythonObjectsList {
         const res = await evaluateInPython(code, this.debugSession);
 
         if (res.isError) {
-            // TODO: handle error
-
+            logError(
+                `Error while retrieving information for variables and expressions: ${res.errorMessage}`
+            );
             return {
                 variables: [],
                 expressions: [],
@@ -138,12 +140,16 @@ export class CurrentPythonObjectsList {
 
         const information = await this.retrieveInformation();
         if (information.variables.length !== this._variablesList.length) {
-            // TODO: handle error
-            throw new Error("Unexpected number of variables");
+            logError(
+                `Unexpected number of variables: ${information.variables.length} vs ${this._variablesList.length}`
+            );
+            return;
         }
         if (information.expressions.length !== globalExpressionsList.length) {
-            // TODO: handle error
-            throw new Error("Unexpected number of expressions");
+            logError(
+                `Unexpected number of expressions: ${information.expressions.length} vs ${globalExpressionsList.length}`
+            );
+            return;
         }
         for (let i = 0; i < this._variablesList.length; i++) {
             this._variablesList[i][1] = information.variables[i];

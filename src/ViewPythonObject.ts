@@ -4,28 +4,46 @@ import {
     currentUserSelection,
     selectionString,
     openImageToTheSide,
+    isExpressionSelection,
 } from "./utils/VSCodeUtils";
 import { Viewable } from "./viewable/Viewable";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { constructValueWrappedExpressionFromEvalCode } from "./python-communication/BuildPythonCode";
 import { findExpressionViewables } from "./PythonObjectInfo";
+import { logDebug, logError } from "./Logging";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
-    session: vscode.DebugSession
+    session: vscode.DebugSession,
+    path?: string
 ): Promise<void> {
     const debugSessionData = activeDebugSessionData(session);
-    const path = debugSessionData.savePathHelper.savePathFor(obj);
-    const objectAsString = "expression" in obj ? obj.expression : obj.variable; // TODO: fix
+    path = path ?? debugSessionData.savePathHelper.savePathFor(obj);
+    logDebug(`Saving viewable of type ${viewable.type} to ${path}`);
+    const objectAsString = isExpressionSelection(obj)
+        ? obj.expression
+        : obj.variable;
     const code = constructValueWrappedExpressionFromEvalCode(
         viewable.serializeObjectPythonCode,
         objectAsString,
         path
     );
     const result = await evaluateInPython(code, session);
-    // TODO: Handle error
-    if (!result.isError && !result.result.isError) {
+    const errorMessage = result.isError
+        ? result.errorMessage
+        : result.result.isError
+        ? result.result.errorMessage
+        : undefined;
+    if (errorMessage !== undefined) {
+        const message =
+            `Error saving viewable of type ${viewable.type}: ${errorMessage}`.replaceAll(
+                "\\n",
+                "\n"
+            );
+        logError(message);
+        vscode.window.showErrorMessage(message);
+    } else {
         await openImageToTheSide(path, true);
     }
 }

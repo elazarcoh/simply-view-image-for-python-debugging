@@ -65,11 +65,6 @@ export function untrackPythonObjectTreeItem(
 }
 
 export async function refreshWatchTree(): Promise<void> {
-    // make variables request
-    // await activeDebugSessionData()?.debugVariablesTracker.frameForVariableReference
-    // await vscode.debug.activeDebugSession?.customRequest('variables', {
-    //     variablesReference: 0,
-    // } as DebugProtocol.VariablesArguments)
     await activeDebugSessionData()?.currentPythonObjectsList.update();
     Container.get(WatchTreeProvider).refresh();
 }

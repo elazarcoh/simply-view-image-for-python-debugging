@@ -15,12 +15,24 @@ import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
 import { Except } from "../utils/Except";
 import { isOf, zip } from "../utils/Utils";
 
+class ItemsRootTreeItem extends vscode.TreeItem {
+    constructor(
+        public readonly label: string,
+        public readonly items: TreeItem[],
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
+            .TreeItemCollapsibleState.Expanded
+    ) {
+        super(label, collapsibleState);
+    }
+}
+
 type TreeItem =
     | VariableWatchTreeItem
     | ExpressionWatchTreeItem
     | ErrorWatchTreeItem
     | typeof AddExpressionWatchTreeItem
-    | PythonObjectInfoLineTreeItem;
+    | PythonObjectInfoLineTreeItem
+    | ItemsRootTreeItem;
 
 @Service() // This is a service, the actual items are retrieved using the DebugSessionData
 export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
@@ -48,7 +60,11 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 debugSessionData?.currentPythonObjectsList.variablesList.map(
                     ([exp, info]) =>
                         info.isError
-                            ? new ErrorWatchTreeItem(exp, info.error, "variable")
+                            ? new ErrorWatchTreeItem(
+                                  exp,
+                                  info.error,
+                                  "variable"
+                              )
                             : new VariableWatchTreeItem(
                                   exp,
                                   info.result[0],
@@ -57,9 +73,9 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 ) ?? [];
             const expressionsInfoOrNotReady =
                 debugSessionData?.currentPythonObjectsList.expressionsInfo ??
-                Array(globalExpressionsList.length).fill(
+                (Array(globalExpressionsList.length).fill(
                     Except.error("Not ready") as InfoOrError
-                ) as InfoOrError[];
+                ) as InfoOrError[]);
 
             const expressionsItems = zip(
                 globalExpressionsList,
@@ -94,10 +110,14 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             }
 
             return [
-                ...variableItems,
-                ...expressionsItems,
-                AddExpressionWatchTreeItem,
+                new ItemsRootTreeItem("Variables", variableItems),
+                new ItemsRootTreeItem("Expressions", [
+                    ...expressionsItems,
+                    AddExpressionWatchTreeItem,
+                ]),
             ];
+        } else if (element instanceof ItemsRootTreeItem) {
+            return element.items;
         } else if (element instanceof PythonObjectTreeItem) {
             const infoItems = Object.entries(element.info).map(
                 ([name, value]) => new PythonObjectInfoLineTreeItem(name, value)

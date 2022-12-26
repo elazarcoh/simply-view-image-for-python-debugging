@@ -14,7 +14,7 @@ import {
     trackPythonObjectTreeItem,
     untrackPythonObjectTreeItem,
 } from "./image-watch-tree/WatchTreeRelatedCommands";
-import { viewObject, viewObjectUnderCursor } from "./ViewPythonObject";
+import { trackObjectUnderCursor, viewObject, viewObjectUnderCursor } from "./ViewPythonObject";
 
 // *********************
 // Some general commands
@@ -46,6 +46,7 @@ const Commands = {
     "svifpd.watch-track-disable": untrackPythonObjectTreeItem,
     "svifpd.update-frame-id": updateDebugFrameId,
     "svifpd.view-image": viewObjectUnderCursor,
+    "svifpd.view-image-track": trackObjectUnderCursor,
     "svifpd.view-debug-variable": viewVariableFromVSCodeDebugViewAsImage,
 };
 type Commands = typeof Commands;
@@ -80,6 +81,7 @@ export function registerExtensionCommands(
     // TODO: automate registering
     return [
         _registerCommandByName("svifpd.view-image"),
+        _registerCommandByName("svifpd.view-image-track"),
         _registerCommandByName("svifpd._internal_view-object"),
         _registerCommandByName("svifpd.add-expression"),
         _registerCommandByName("svifpd.edit-expression"),

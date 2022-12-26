@@ -11,6 +11,9 @@ import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { constructValueWrappedExpressionFromEvalCode } from "./python-communication/BuildPythonCode";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { logDebug, logError } from "./Logging";
+import { addExpression } from "./image-watch-tree/PythonObjectsList";
+import Container from "typedi";
+import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
@@ -81,4 +84,73 @@ export async function viewObjectUnderCursor(): Promise<unknown> {
     }
 
     return viewObject(userSelection, objectViewables[0], debugSession);
+}
+
+export async function trackObjectUnderCursor(): Promise<unknown> {
+    const debugSession = vscode.debug.activeDebugSession;
+    const document = vscode.window.activeTextEditor?.document;
+    const range = vscode.window.activeTextEditor?.selection;
+    if (
+        debugSession === undefined ||
+        document === undefined ||
+        range === undefined
+    ) {
+        return undefined;
+    }
+
+    const userSelection = currentUserSelection(document, range);
+    if (userSelection === undefined) {
+        return;
+    }
+    const userSelectionAsString = selectionString(userSelection);
+
+    // find if it is an existing expression in the list
+    const debugSessionData = activeDebugSessionData(debugSession);
+    const objectInList = debugSessionData.currentPythonObjectsList.find(
+        userSelectionAsString
+    );
+
+    const objectViewables = await findExpressionViewables(
+        userSelectionAsString,
+        debugSession
+    );
+
+    // add as expression if not found
+    if (objectInList === undefined) {
+        await debugSessionData.currentPythonObjectsList.addExpression(
+            userSelectionAsString
+        );
+    }
+    let savePath: string | undefined = undefined;
+    if (objectViewables !== undefined && objectViewables.length > 0) {
+        const trackedPythonObjects = debugSessionData.trackedPythonObjects;
+        const trackingId = trackedPythonObjects.trackingIdIfTracked({
+            expression: userSelectionAsString,
+        });
+        const savePathIfSet = trackingId
+            ? trackedPythonObjects.savePath(trackingId)
+            : undefined;
+        savePath =
+            savePathIfSet ??
+            debugSessionData.savePathHelper.savePathFor(userSelection);
+        trackedPythonObjects.track(
+            { expression: userSelectionAsString },
+            objectViewables[0],
+            savePath,
+            trackingId
+        );
+    }
+
+    Container.get(WatchTreeProvider).refresh();
+
+    if (objectViewables === undefined || objectViewables.length === 0) {
+        return undefined;
+    }
+
+    return viewObject(
+        userSelection,
+        objectViewables[0],
+        debugSession,
+        savePath
+    );
 }

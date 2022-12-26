@@ -32,6 +32,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "svifpd.view-image-track",
+        "title": "Track Image",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
+      },
+      {
         "command": "svifpd.view-image",
         "title": "View Image",
         "enablement": "inDebugMode",

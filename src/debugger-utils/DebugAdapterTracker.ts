@@ -3,14 +3,6 @@ import Container from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { logDebug, logTrace } from "../Logging";
 import { activeDebugSessionData } from "./DebugSessionsHolder";
-import {
-    evaluateInPython,
-    execInPython,
-} from "../python-communication/RunPythonCode";
-import {
-    verifyModuleExistsCode,
-    viewablesSetupCode,
-} from "../python-communication/BuildPythonCode";
 import { debounce } from "../utils/Utils";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";

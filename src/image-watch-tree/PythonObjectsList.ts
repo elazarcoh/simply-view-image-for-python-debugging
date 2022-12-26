@@ -180,6 +180,38 @@ export class CurrentPythonObjectsList {
             ? undefined // return undefined, so in case the debugger is stopping it won't use the empty array here
             : this._expressionsInfo;
     }
+
+    public find(expression: string):
+        | {
+              type: "variable" | "expression";
+              InfoOrError: InfoOrError;
+          }
+        | undefined {
+        const variable = this._variablesList.find((v) => v[0] === expression);
+        if (variable !== undefined) {
+            return {
+                type: "variable",
+                InfoOrError: variable[1],
+            };
+        } else {
+            const index = globalExpressionsList.findIndex(
+                (e) => e === expression
+            );
+            if (index >= 0) {
+                return {
+                    type: "expression",
+                    InfoOrError: this._expressionsInfo[index],
+                };
+            } else {
+                return undefined;
+            }
+        }
+    }
+
+    public addExpression(expression: string): Promise<void> {
+        Container.get(ExpressionsList).expressions.push(expression);
+        return this.update();
+    }
 }
 
 function combineValidInfoErrorIfNone(
@@ -204,7 +236,7 @@ export async function addExpression(): Promise<boolean> {
         placeHolder: "e.g. images[0]",
         ignoreFocusOut: true,
     });
-    if (maybeExpression !== undefined) {
+    if (maybeExpression !== undefined && maybeExpression !== "") {
         Container.get(ExpressionsList).expressions.push(maybeExpression);
         return true;
     }

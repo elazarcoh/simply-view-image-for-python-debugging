@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 import * as vscode from "vscode";
 import { initLog, logDebug, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
@@ -6,7 +6,7 @@ import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker"
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
 import { CodeActionProvider } from "./CodeActionProvider";
-import { EXTENSION_CONFIG_SECTION, getConfiguration } from "./config";
+import { EXTENSION_CONFIG_SECTION } from "./config";
 import { registerExtensionCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";

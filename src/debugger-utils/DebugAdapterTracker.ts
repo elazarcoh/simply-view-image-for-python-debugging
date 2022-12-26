@@ -114,11 +114,15 @@ export const createDebugAdapterTracker = (
         },
 
         onError: (error: Error) => {
-            logTrace("onError");
+            logTrace("onError", error);
         },
 
-        onExit: (code: number, signal: string) => {
+        onExit: () => {
+            // same as onWillStopSession
             logTrace("onExit");
+            currentPythonObjectsList.clear();
+            trackedPythonObjects.clear();
+            watchTreeProvider.refresh();
         },
     };
 };

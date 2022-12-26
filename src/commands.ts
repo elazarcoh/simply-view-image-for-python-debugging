@@ -76,6 +76,7 @@ export function registerCommand<C extends AvailableCommands>(
 }
 
 export function registerExtensionCommands(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     context: vscode.ExtensionContext
 ): vscode.Disposable[] {
     // TODO: automate registering

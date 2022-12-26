@@ -36,7 +36,6 @@ export function initLog(): void {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 function log(...obj: any[]): void {
     if (outputChannel === undefined) {
         return;
@@ -46,27 +45,22 @@ function log(...obj: any[]): void {
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function logTrace(...obj: any[]): void {
     if (logLevel <= LogLevel.Trace) log(...obj);
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function logDebug(...obj: any[]): void {
     if (logLevel <= LogLevel.Debug) log(...obj);
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function logInfo(...obj: any[]): void {
     if (logLevel <= LogLevel.Info) log(...obj);
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function logWarn(...obj: any[]): void {
     if (logLevel <= LogLevel.Warn) log(...obj);
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function logError(...obj: any[]): void {
     if (logLevel <= LogLevel.Error) log(...obj);
 }

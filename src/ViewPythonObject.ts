@@ -11,7 +11,6 @@ import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { constructValueWrappedExpressionFromEvalCode } from "./python-communication/BuildPythonCode";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { logDebug, logError } from "./Logging";
-import { addExpression } from "./image-watch-tree/PythonObjectsList";
 import Container from "typedi";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 

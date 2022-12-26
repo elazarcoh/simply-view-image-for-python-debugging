@@ -18,7 +18,8 @@ export async function viewObject(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
     session: vscode.DebugSession,
-    path?: string
+    path?: string,
+    openInPreview?: boolean,
 ): Promise<void> {
     const debugSessionData = activeDebugSessionData(session);
     path = path ?? debugSessionData.savePathHelper.savePathFor(obj);
@@ -53,7 +54,7 @@ export async function viewObject(
         logError(message);
         vscode.window.showErrorMessage(message);
     } else {
-        await openImageToTheSide(path, true);
+        await openImageToTheSide(path, openInPreview ?? true);
     }
 }
 
@@ -150,6 +151,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
         userSelection,
         objectViewables[0],
         debugSession,
-        savePath
+        savePath,
+        false
     );
 }

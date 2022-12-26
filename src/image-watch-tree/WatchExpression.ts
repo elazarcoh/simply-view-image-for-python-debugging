@@ -43,7 +43,6 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
             expression,
             viewables,
             info,
-            false,
             collapsibleState
         );
         this.updateContext();

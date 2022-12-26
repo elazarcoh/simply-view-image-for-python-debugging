@@ -1,4 +1,3 @@
-import { string } from "parsimmon";
 import * as vscode from "vscode";
 import { arrayUnique } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
@@ -8,27 +7,27 @@ export enum PythonObjectTrackingState {
     NotTracked = "nonTrackedVariable",
 }
 
-export function buildWatchTreeItemContext({
+function buildWatchTreeItemContext({
     viewables,
     trackingState,
     itemType,
+    isError,
 }: {
     viewables: ReadonlyArray<Viewable>;
     trackingState: PythonObjectTrackingState;
-    itemType: "variable" | "expression" | "error";
+    itemType: "variable" | "expression";
+    isError: true | false;
 }): string {
     let context = "svifpd:";
     context += trackingState.toString();
-    if (itemType === "error") {
+    if (isError) {
         context += "-errorItem";
-    } else {
-        if (viewables.length > 0) {
-            context +=
-                "-" + arrayUnique(viewables.map((v) => v.group)).join("_");
-        }
-        if (itemType === "expression") {
-            context += "-expressionItem";
-        }
+    }
+    if (viewables.length > 0) {
+        context += "-" + arrayUnique(viewables.map((v) => v.group)).join("_");
+    }
+    if (itemType === "expression") {
+        context += "-expressionItem";
     }
     return context;
 }
@@ -45,7 +44,6 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
         public readonly expression: string,
         public readonly viewables: Readonly<NonEmptyArray<Viewable>>,
         public readonly info: Readonly<PythonObjectInformation>,
-        public readonly isError: true | false = false,
         collapsibleState: vscode.TreeItemCollapsibleState
     ) {
         super(label, collapsibleState);
@@ -61,6 +59,7 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
             trackingState: this.tracking,
             itemType: this.itemType,
             viewables: this.viewables,
+            isError: false,
         });
         this.contextValue = context;
     }
@@ -81,9 +80,24 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
 }
 
 export class ErrorWatchTreeItem extends vscode.TreeItem {
-    constructor(public readonly expression: string, error: string | Error) {
+    constructor(
+        public readonly expression: string,
+        error: string | Error,
+        private readonly itemType: "variable" | "expression"
+    ) {
         super(expression, vscode.TreeItemCollapsibleState.None);
         this.description = typeof error === "string" ? error : error.message;
+        this.updateContext();
+    }
+
+    public updateContext(): void {
+        const context = buildWatchTreeItemContext({
+            trackingState: PythonObjectTrackingState.NotTracked,
+            itemType: this.itemType,
+            viewables: [],
+            isError: true,
+        });
+        this.contextValue = context;
     }
 }
 

@@ -24,12 +24,19 @@ export async function viewObject(
     const objectAsString = isExpressionSelection(obj)
         ? obj.expression
         : obj.variable;
-    const code = constructValueWrappedExpressionFromEvalCode(
+    const saveObjectCode = constructValueWrappedExpressionFromEvalCode(
         viewable.serializeObjectPythonCode,
         objectAsString,
         path
     );
-    const result = await evaluateInPython(code, session);
+    const mkdirRes = debugSessionData.savePathHelper.mkdir();
+    if (mkdirRes.isError) {
+        const message = `Failed to create directory for saving object: ${mkdirRes.errorMessage}`;
+        logError(message);
+        vscode.window.showErrorMessage(message);
+        return;
+    }
+    const result = await evaluateInPython(saveObjectCode, session);
     const errorMessage = result.isError
         ? result.errorMessage
         : result.result.isError

@@ -7,6 +7,7 @@ import { EXTENSION_NAME } from "./globals";
 import { getConfiguration } from "./config";
 import { chmodSync, existsSync, mkdirSync } from "fs";
 import { logDebug } from "./Logging";
+import { Except } from "./utils/Except";
 
 export function defaultSaveDir(): string {
     return (
@@ -56,7 +57,20 @@ export class SavePathHelper {
 
     constructor(sessionId: string) {
         this.saveDir = path.join(defaultSaveDir(), sessionId);
-        mkdirSync(this.saveDir, { recursive: true });
+        this.mkdir();
+    }
+
+    public mkdir(): Except<void> {
+        try {
+            mkdirSync(this.saveDir, { recursive: true });
+            return Except.result(undefined);
+        } catch (error) {
+            if (error instanceof Error) {
+                return Except.error(error);
+            } else {
+                return Except.error(JSON.stringify(error));
+            }
+        }
     }
 
     public deleteSaveDir(): Promise<void> {

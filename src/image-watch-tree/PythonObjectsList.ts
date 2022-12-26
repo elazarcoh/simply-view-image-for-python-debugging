@@ -1,6 +1,5 @@
 import Container, { Service } from "typedi";
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
 import { logError } from "../Logging";
 import {
@@ -12,7 +11,6 @@ import { findExpressionsViewables } from "../PythonObjectInfo";
 import { Except } from "../utils/Except";
 import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
-import { WatchTreeProvider } from "./WatchTreeProvider";
 
 // ExpressionsList is global to all debug sessions
 @Service()
@@ -52,8 +50,12 @@ export class CurrentPythonObjectsList {
     }
 
     private async retrieveInformation(): Promise<{
-        variables: InfoOrError[];
-        expressions: InfoOrError[];
+        variables: {
+            [index: number]: InfoOrError;
+        };
+        expressions: {
+            [index: number]: InfoOrError;
+        };
     }> {
         const allExpressions = [
             ...this._variablesList.map((v) => v[0]),
@@ -139,23 +141,29 @@ export class CurrentPythonObjectsList {
         );
 
         const information = await this.retrieveInformation();
-        if (information.variables.length !== this._variablesList.length) {
-            logError(
-                `Unexpected number of variables: ${information.variables.length} vs ${this._variablesList.length}`
-            );
-            return;
-        }
-        if (information.expressions.length !== globalExpressionsList.length) {
-            logError(
-                `Unexpected number of expressions: ${information.expressions.length} vs ${globalExpressionsList.length}`
-            );
-            return;
-        }
+        const validVariables: { [index: number]: [string, InfoOrError] } = {};
         for (let i = 0; i < this._variablesList.length; i++) {
-            this._variablesList[i][1] = information.variables[i];
+            const info = information.variables[i];
+            if (!info.isError) {
+                validVariables[i] = this._variablesList[i];
+                validVariables[i][1] = info;
+            }
         }
-        this._expressionsInfo = information.expressions;
-        return;
+        // filter variables that are not viewable
+        this._variablesList.length = 0;
+        this._variablesList.push(...Object.values(validVariables));
+
+        // we do not filter expressions, length should be the same
+        const numExpressionsReturned = Object.keys(
+            information.expressions
+        ).length;
+        if (numExpressionsReturned !== globalExpressionsList.length) {
+            logError(
+                `Unexpected number of expressions: ${numExpressionsReturned} (expected ${globalExpressionsList.length})`
+            );
+            return;
+        }
+        this._expressionsInfo = Object.values(information.expressions);
     }
 
     public clear(): void {
@@ -163,11 +171,11 @@ export class CurrentPythonObjectsList {
         this._expressionsInfo.length = 0;
     }
 
-    public get variablesList(): ExpressingWithInfo[] {
+    public get variablesList(): ReadonlyArray<ExpressingWithInfo> {
         return this._variablesList;
     }
 
-    public get expressionsInfo(): InfoOrError[] | undefined {
+    public get expressionsInfo(): ReadonlyArray<InfoOrError> | undefined {
         return this._expressionsInfo.length === 0
             ? undefined // return undefined, so in case the debugger is stopping it won't use the empty array here
             : this._expressionsInfo;

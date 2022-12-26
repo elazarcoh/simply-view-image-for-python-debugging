@@ -59,10 +59,12 @@ export function debounce<
     };
 }
 
+type AnyArray<T> = T[] | readonly T[];
+
 export function zip<Arrays extends ReadonlyArray<unknown>[]>(
     ...arrays: Arrays
 ): {
-    [K in keyof Arrays]: Arrays[K] extends Array<infer R> ? R : never;
+    [K in keyof Arrays]: Arrays[K] extends AnyArray<infer R> ? R : never;
 }[] {
     const minLength = Math.min(...arrays.map((a) => a.length));
     const res = [];
@@ -70,7 +72,7 @@ export function zip<Arrays extends ReadonlyArray<unknown>[]>(
         res.push(arrays.map((a) => a[i]));
     }
     return res as {
-        [K in keyof Arrays]: Arrays[K] extends Array<infer R> ? R : never;
+        [K in keyof Arrays]: Arrays[K] extends AnyArray<infer R> ? R : never;
     }[];
 }
 

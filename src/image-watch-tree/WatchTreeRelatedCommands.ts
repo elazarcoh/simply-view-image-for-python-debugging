@@ -4,9 +4,6 @@ import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { PythonObjectTreeItem } from "./WatchTreeItem";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 import { VariableWatchTreeItem } from "./WatchVariable";
-import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";
-import { evaluateInPython } from "../python-communication/RunPythonCode";
-import { openImageToTheSide } from "../utils/VSCodeUtils";
 import { viewObject } from "../ViewPythonObject";
 
 export function pythonObjectTreeItemSavePath(

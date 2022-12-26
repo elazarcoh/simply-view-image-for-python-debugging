@@ -8,6 +8,8 @@ import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { Viewable } from "../viewable/Viewable";
 import { openImageToTheSide } from "../utils/VSCodeUtils";
 import { allFulfilled } from "../utils/Utils";
+import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { logError } from "../Logging";
 
 type TrackedObject = {
     expression: PythonExpression;
@@ -89,10 +91,22 @@ export async function saveAllTrackedObjects(
             savePath
         );
     });
-    const code = combineMultiEvalCodePython(codes);
+    const saveObjectsCode = combineMultiEvalCodePython(codes);
 
-    const saveResult = await evaluateInPython(code, session);
-    if (!saveResult.isError) {
+    const debugSessionData = activeDebugSessionData(session);
+    const mkdirRes = debugSessionData.savePathHelper.mkdir();
+    if (mkdirRes.isError) {
+        logError(
+            `Failed to create directory for saving tracked objects: ${mkdirRes.errorMessage}`
+        );
+        return;
+    }
+
+    const saveResult = await evaluateInPython(saveObjectsCode, session);
+    if (saveResult.isError) {
+        logError(`Failed to save tracked objects: ${saveResult.errorMessage}`);
+        return;
+    } else {
         await allFulfilled(
             trackedObjects
                 .map((v) => v.savePath)

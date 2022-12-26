@@ -48,25 +48,25 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 debugSessionData?.currentPythonObjectsList.variablesList.map(
                     ([exp, info]) =>
                         info.isError
-                            ? new ErrorWatchTreeItem(exp, info.error)
+                            ? new ErrorWatchTreeItem(exp, info.error, "variable")
                             : new VariableWatchTreeItem(
                                   exp,
                                   info.result[0],
                                   info.result[1]
                               )
                 ) ?? [];
-            const expressionsInfoOrNotReady: InfoOrError[] =
+            const expressionsInfoOrNotReady =
                 debugSessionData?.currentPythonObjectsList.expressionsInfo ??
                 Array(globalExpressionsList.length).fill(
                     Except.error("Not ready") as InfoOrError
-                );
+                ) as InfoOrError[];
 
             const expressionsItems = zip(
                 globalExpressionsList,
                 expressionsInfoOrNotReady
             ).map(([exp, info]) =>
                 info.isError
-                    ? new ErrorWatchTreeItem(exp, info.error)
+                    ? new ErrorWatchTreeItem(exp, info.error, "expression")
                     : new ExpressionWatchTreeItem(
                           exp,
                           info.result[0],

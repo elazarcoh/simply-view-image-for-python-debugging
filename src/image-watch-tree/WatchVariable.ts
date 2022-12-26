@@ -16,7 +16,6 @@ export class VariableWatchTreeItem extends PythonObjectTreeItem {
             variableName,
             viewables,
             info,
-            false,
             collapsibleState
         );
         this.updateContext();

@@ -34,7 +34,8 @@
       {
         "command": "svifpd.view-image",
         "title": "View Image",
-        "enablement": "inDebugMode"
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
       },
       {
         "command": "svifpd.watch-view-image",
@@ -97,7 +98,8 @@
       {
         "command": "svifpd.add-expression",
         "title": "Add Expression",
-        "enablement": "config.svifpd.imageWatch.enable"
+        "enablement": "config.svifpd.imageWatch.enable",
+        "category": "Debug View Python"
       },
       {
         "command": "svifpd.edit-expression",
@@ -109,7 +111,7 @@
         "command": "svifpd.remove-expression",
         "title": "Remove Expression",
         "enablement": "config.svifpd.imageWatch.enable",
-        "icon": "$(remove)"
+        "icon": "$(close)"
       },
       {
         "command": "svifpd.remove-all-expressions",
@@ -217,13 +219,13 @@
         },
         {
           "command": "svifpd.edit-expression",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*rackedVariable.*-expressionItem/",
-          "group": "inline@1"
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
+          "group": "inline@30"
         },
         {
           "command": "svifpd.remove-expression",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*rackedVariable.*-expressionItem/",
-          "group": "1_view"
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
+          "group": "inline@31"
         }
       ]
     },

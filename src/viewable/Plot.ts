@@ -8,7 +8,7 @@ export const PlotlyFigure: Viewable = {
     type: "plotly_figure",
     title: "Figure (plotly)",
     setupPythonCode: {
-        setupCode: PLOTLY_CODE,
+        setupCode: () => PLOTLY_CODE,
         testSetupCode:
             "is_plotly_figure, plotly_figure_info, plotly_figure_save", // require all three functions to be defined
     },
@@ -31,7 +31,7 @@ export const PyplotFigure: Viewable = {
     type: "pyplot_figure",
     title: "Figure (pyplot)",
     setupPythonCode: {
-        setupCode: PYPLOT_CODE,
+        setupCode: () => PYPLOT_CODE,
         testSetupCode:
             "is_pyplot_figure, pyplot_figure_info, pyplot_figure_save", // require all three functions to be defined
     },
@@ -54,7 +54,7 @@ export const PyplotAxes: Viewable = {
     type: "pyplot_axes",
     title: "Axes (pyplot)",
     setupPythonCode: {
-        setupCode: PYPLOT_CODE,
+        setupCode: () => PYPLOT_CODE,
         testSetupCode: "is_pyplot_ax, pyplot_ax_info, pyplot_ax_save", // require all three functions to be defined
     },
     testTypePythonCode: {

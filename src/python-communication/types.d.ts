@@ -2,14 +2,14 @@ type SetupCode = {
     /**
      * Code that is run once, to set up the environment
      */
-    setupCode: string;
+    setupCode: () => string;
     /**
      * Code that is run before the setup code, to avoid re-running the setup code
      */
     testSetupCode: string;
 };
 
-type EvalCode<ResultType, Args extends Array<unknown> = []> = {
+type EvalCode<_ResultType, Args extends Array<unknown> = []> = {
     /**
      * Function that generates a python expression to evaluate.
      *
@@ -17,7 +17,7 @@ type EvalCode<ResultType, Args extends Array<unknown> = []> = {
      * @param args The arguments to be passed to the expression.
      * @returns A string representing the Python expression to be evaluated.
      *
-     * @note The ResultType type parameter is not used for any validation in this type.
+     * @note The _ResultType type parameter is not used for any validation in this type.
      *  It is only used for TypeScript type inference, to indicate the expected type of
      *  the result of evaluating the expression passed to this method.
      */
@@ -29,6 +29,6 @@ type RunInPythonOptions = {
     frameId?: number;
 };
 
-type EvalCodePython<ResultType> = {
+type EvalCodePython<_ResultType> = {
     pythonCode: string;
 };

@@ -58,7 +58,7 @@ function concatExpressionsToPythonList(expressions: string[]): string {
 function combineSetupCodes(setupCodes: SetupCode[]): string {
     const setupCode = setupCodes
         .map(({ setupCode, testSetupCode }) =>
-            execInModuleCode(PYTHON_MODULE_NAME, setupCode, testSetupCode)
+            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode)
         )
         .join("\n\n");
 

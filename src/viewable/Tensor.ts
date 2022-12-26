@@ -8,7 +8,7 @@ export const NumpyTensor: Viewable = {
     type: "numpy_tensor",
     title: "Tensor (numpy)",
     setupPythonCode: {
-        setupCode: NUMPY_TENSOR_CODE,
+        setupCode: () => NUMPY_TENSOR_CODE,
         testSetupCode: "is_numpy_tensor, numpy_tensor_info, numpy_tensor_save", // require all three functions to be defined
     },
     testTypePythonCode: {
@@ -30,7 +30,7 @@ export const TorchTensor: Viewable = {
     type: "torch_tensor",
     title: "Tensor (torch)",
     setupPythonCode: {
-        setupCode: TORCH_TENSOR_CODE,
+        setupCode: () => TORCH_TENSOR_CODE,
         testSetupCode: "is_torch_tensor, torch_tensor_info, torch_tensor_save", // require all three functions to be defined
     },
     testTypePythonCode: {

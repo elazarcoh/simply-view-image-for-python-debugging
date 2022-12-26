@@ -12,7 +12,7 @@ export const NumpyImage: Viewable = {
     type: "numpy_image",
     title: "Image",
     setupPythonCode: {
-        setupCode: NUMPY_CODE,
+        setupCode: () => NUMPY_CODE,
         testSetupCode: "(is_numpy_image, numpy_image_info, numpy_image_save)", // require all three functions to be defined
     },
     testTypePythonCode: {
@@ -37,7 +37,7 @@ export const PillowImage: Viewable = {
     type: "pillow_image",
     title: "Image",
     setupPythonCode: {
-        setupCode: PILLOW_CODE,
+        setupCode: () => PILLOW_CODE,
         testSetupCode:
             "(is_pillow_image, pillow_image_info, pillow_image_save)", // require all three functions to be defined
     },

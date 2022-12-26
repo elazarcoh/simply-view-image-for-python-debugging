@@ -55,7 +55,10 @@
         "command": "svifpd.watch-view-tensor",
         "title": "View Tensor",
         "enablement": "inDebugMode",
-        "icon": "$(layers)"
+        "icon": {
+          "light": "resources/light/tensor.svg",
+          "dark": "resources/dark/tensor.svg"
+        }
       },
       {
         "command": "svifpd.watch-track-enable",

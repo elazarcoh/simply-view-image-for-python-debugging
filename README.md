@@ -22,7 +22,7 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
 
 Added a watch view, for watching image/plot/tensor variables, while refreshing the image-view at each breakpoint.
 
-* By default, it'll show only image variables. To show plot/tensor, edit the configuration at: "svifpd.imageWatch.objects".
+* Support custom python expressions (again, beware of side-effects)
 
 ![Watch View](watch-view.png)
 
@@ -41,8 +41,3 @@ Added a watch view, for watching image/plot/tensor variables, while refreshing t
   > I couldn't find a way to get the current frame, if it was changed by the user (again and again).
   > So, I've added a command to force VSCode "tell" me the current frame.
   > It's a bit hacky, but it works, I think.
-
-
-## Feature-Requests
-
-If you want me to add other debug-viewers for your objects, please open an issue for it, and provide simple example (in python, of course) of how to save an image from your object.

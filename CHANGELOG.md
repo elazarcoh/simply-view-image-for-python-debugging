@@ -1,5 +1,22 @@
 # Change Log
 
+## [2.99.1] - Pre-release
+- Complete rewrite of the extension:
+  - More methodical (and faster) way to communicate with the debugger.
+  - Sets the grounds to allow other extensions to integrate with it.
+
+### Added
+- Support expressions in watch view
+- Command palette commands for tracking variables and expressions
+
+### Removed
+- Some configurations I deemed unnecessary (If you think they're needed, please open an issue describing your need for them):
+  - `imageWatch.enable`
+  - `imageWatch.objects`
+
+  The reason for the removal is, that the Image Watch view became a major part of the extension.
+  I don't see much reason to disable it.
+
 ## [2.3.1] - Release
 
 ### Added

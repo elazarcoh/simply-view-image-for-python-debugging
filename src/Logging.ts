@@ -45,22 +45,27 @@ function log(...obj: any[]): void {
     );
 }
 
+// ts-unused-exports:disable-next-line
 export function logTrace(...obj: any[]): void {
     if (logLevel <= LogLevel.Trace) log(...obj);
 }
 
+// ts-unused-exports:disable-next-line
 export function logDebug(...obj: any[]): void {
     if (logLevel <= LogLevel.Debug) log(...obj);
 }
 
+// ts-unused-exports:disable-next-line
 export function logInfo(...obj: any[]): void {
     if (logLevel <= LogLevel.Info) log(...obj);
 }
 
+// ts-unused-exports:disable-next-line
 export function logWarn(...obj: any[]): void {
     if (logLevel <= LogLevel.Warn) log(...obj);
 }
 
+// ts-unused-exports:disable-next-line
 export function logError(...obj: any[]): void {
     if (logLevel <= LogLevel.Error) log(...obj);
 }

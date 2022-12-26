@@ -13,16 +13,8 @@ export enum NormalizationMethods {
     None = "None",
 }
 
-export enum WatchServices {
-    Images = "images",
-    Plots = "plots",
-    ImageTensors = "image-tensors",
-}
-export interface ImageViewConfig {
-    preferredBackend: Backends;
-    normalizationMethod: NormalizationMethods;
-}
-
+// need to export Config for the package.json to automatically update
+// ts-unused-exports:disable-next-line
 export interface Config {
     /**
      * @default true
@@ -72,18 +64,6 @@ export interface Config {
      * @description Whether to run matplotlib.use('agg') to avoid display error. Can be useful for working remotely over ssh etc.
      */
     matplotlibUseAgg: boolean;
-
-    /**
-     * @default true
-     * @description Use the extension to track images (reshow the image at each debugger step)
-     */
-    "imageWatch.enable": boolean;
-
-    /**
-     * @default ["images"]
-     * @uniqueItems true
-     */
-    "imageWatch.objects": WatchServices[];
 
     /**
      * @default "none"

@@ -19,6 +19,7 @@ function onConfigChange(): void {
     initLog();
 }
 
+// ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext): void {
     onConfigChange();
 

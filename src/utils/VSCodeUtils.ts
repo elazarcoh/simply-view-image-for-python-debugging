@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-export type EditorSelection = ExpressionSelection | VariableSelection;
+type EditorSelection = ExpressionSelection | VariableSelection;
 
 export function isExpressionSelection(
     selection: EditorSelection

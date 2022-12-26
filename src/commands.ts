@@ -55,6 +55,7 @@ type AvailableCommands = keyof Commands;
 type CommandArguments<C extends AvailableCommands> = Parameters<Commands[C]>;
 type CommandReturn<C extends AvailableCommands> = ReturnType<Commands[C]>;
 
+// ts-unused-exports:disable-next-line
 export function executeCommand<C extends AvailableCommands>(
     command: C,
     ...args: CommandArguments<C>
@@ -62,13 +63,13 @@ export function executeCommand<C extends AvailableCommands>(
     return vscode.commands.executeCommand<CommandReturn<C>>(command, ...args);
 }
 
-export function _registerCommandByName<C extends AvailableCommands>(
+function _registerCommandByName<C extends AvailableCommands>(
     command: C
 ): vscode.Disposable {
     return registerCommand(command, Commands[command]);
 }
 
-export function registerCommand<C extends AvailableCommands>(
+function registerCommand<C extends AvailableCommands>(
     command: C,
     action: Commands[C]
 ): vscode.Disposable {

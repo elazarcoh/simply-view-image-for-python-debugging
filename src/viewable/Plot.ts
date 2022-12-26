@@ -1,7 +1,11 @@
 import PYPLOT_CODE from "../python/plot_pyplot.py?raw";
 import PLOTLY_CODE from "../python/plot_plotly.py?raw";
 import { Viewable } from "./Viewable";
-import { atModule as m } from "../python-communication/BuildPythonCode";
+import {
+    atModule as m,
+    convertBoolToPython,
+} from "../python-communication/BuildPythonCode";
+import { getConfiguration } from "../config";
 
 export const PlotlyFigure: Viewable = {
     group: "plot",
@@ -31,7 +35,13 @@ export const PyplotFigure: Viewable = {
     type: "pyplot_figure",
     title: "Figure (pyplot)",
     setupPythonCode: {
-        setupCode: () => PYPLOT_CODE,
+        setupCode: () => {
+            return (
+                PYPLOT_CODE +
+                // prettier-ignore
+                `\nset_matplotlib_agg(${convertBoolToPython(getConfiguration("matplotlibUseAgg") ?? false)})`
+            );
+        },
         testSetupCode:
             "is_pyplot_figure, pyplot_figure_info, pyplot_figure_save", // require all three functions to be defined
     },
@@ -54,7 +64,13 @@ export const PyplotAxes: Viewable = {
     type: "pyplot_axes",
     title: "Axes (pyplot)",
     setupPythonCode: {
-        setupCode: () => PYPLOT_CODE,
+        setupCode: () => {
+            return (
+                PYPLOT_CODE +
+                // prettier-ignore
+                `\nset_matplotlib_agg(${convertBoolToPython(getConfiguration("matplotlibUseAgg") ?? false)})`
+            );
+        },
         testSetupCode: "is_pyplot_ax, pyplot_ax_info, pyplot_ax_save", // require all three functions to be defined
     },
     testTypePythonCode: {

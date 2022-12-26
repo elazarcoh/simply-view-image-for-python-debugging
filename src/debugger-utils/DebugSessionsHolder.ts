@@ -3,7 +3,7 @@ import Container, { Service } from "typedi";
 import { DebugSessionData } from "./DebugSessionData";
 
 @Service()
-export class DebugSessionsHolder {
+class DebugSessionsHolder {
     private _debugSessions: Map<vscode.DebugSession["id"], DebugSessionData> =
         new Map();
 
@@ -32,10 +32,4 @@ export function activeDebugSessionData(
     return session
         ? Container.get(DebugSessionsHolder).debugSessionData(session)
         : undefined;
-}
-
-export function isPythonModeleSetupOkay(
-    session?: vscode.DebugSession
-): boolean {
-    return activeDebugSessionData(session)?.setupOkay === true;
 }

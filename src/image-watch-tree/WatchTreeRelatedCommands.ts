@@ -6,7 +6,7 @@ import { WatchTreeProvider } from "./WatchTreeProvider";
 import { VariableWatchTreeItem } from "./WatchVariable";
 import { viewObject } from "../ViewPythonObject";
 
-export function pythonObjectTreeItemSavePath(
+function pythonObjectTreeItemSavePath(
     pythonObjectTreeItem: PythonObjectTreeItem,
     session: vscode.DebugSession
 ): string {

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { arrayUnique } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
 
-export enum PythonObjectTrackingState {
+enum PythonObjectTrackingState {
     Tracked = "trackedVariable",
     NotTracked = "nonTrackedVariable",
 }

@@ -104,25 +104,21 @@
       {
         "command": "svifpd.add-expression",
         "title": "Add Expression",
-        "enablement": "config.svifpd.imageWatch.enable",
         "category": "Debug View Python"
       },
       {
         "command": "svifpd.edit-expression",
         "title": "Edit Expression",
-        "enablement": "config.svifpd.imageWatch.enable",
         "icon": "$(edit)"
       },
       {
         "command": "svifpd.remove-expression",
         "title": "Remove Expression",
-        "enablement": "config.svifpd.imageWatch.enable",
         "icon": "$(close)"
       },
       {
         "command": "svifpd.remove-all-expressions",
         "title": "Remove All Expression",
-        "enablement": "config.svifpd.imageWatch.enable",
         "icon": "$(close-all)"
       }
     ],
@@ -216,22 +212,22 @@
         {
           "command": "svifpd.watch-track-enable",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*/",
-          "group": "inline@20"
+          "group": "inline@30"
         },
         {
           "command": "svifpd.watch-track-disable",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*/",
-          "group": "inline@21"
+          "group": "inline@31"
         },
         {
           "command": "svifpd.edit-expression",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
-          "group": "inline@30"
+          "group": "inline@20"
         },
         {
           "command": "svifpd.remove-expression",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
-          "group": "inline@31"
+          "group": "inline@21"
         }
       ]
     },
@@ -242,8 +238,7 @@
           "name": "Image Watch",
           "icon": "eye",
           "visibility": "visible",
-          "type": "tree",
-          "when": "config.svifpd.imageWatch.enable"
+          "type": "tree"
         }
       ]
     },
@@ -275,26 +270,6 @@
           ],
           "default": "none",
           "description": "Enable debug mode (show debug info in `View Image for Python` output)"
-        },
-        "svifpd.imageWatch.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Use the extension to track images (reshow the image at each debugger step)"
-        },
-        "svifpd.imageWatch.objects": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "images",
-              "plots",
-              "image-tensors"
-            ]
-          },
-          "default": [
-            "images"
-          ],
-          "uniqueItems": true
         },
         "svifpd.matplotlibUseAgg": {
           "type": "boolean",

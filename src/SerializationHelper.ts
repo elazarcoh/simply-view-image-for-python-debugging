@@ -9,7 +9,7 @@ import { chmodSync, existsSync, mkdirSync } from "fs";
 import { logDebug } from "./Logging";
 import { Except } from "./utils/Except";
 
-export function defaultSaveDir(): string {
+function defaultSaveDir(): string {
     return (
         Container.get("saveDir") ??
         path.join(tmpdir(), EXTENSION_NAME, "images")

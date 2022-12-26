@@ -1,6 +1,11 @@
 try:
     import matplotlib.pyplot as plt
 
+    def set_matplotlib_agg(to_set):
+        if to_set:
+            import matplotlib
+            matplotlib.use('agg')
+
     def pyplot_figure():
         def is_pyplot_figure(obj):
             try:

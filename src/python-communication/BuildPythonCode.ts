@@ -18,7 +18,7 @@ except:
     exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
 `;
 
-export function execInModuleCode(
+function execInModuleCode(
     moduleName: string,
     content: string,
     tryExpression: string

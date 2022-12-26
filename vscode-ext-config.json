@@ -7,5 +7,12 @@
         }
     ],
     "targetFile": "package.json",
-    "tsconfig": "tsconfig.json"
+    "tsconfig": "tsconfig.json",
+    "tags": [
+        "markdownDescription",
+        "scope",
+        "patternErrorMessage",
+        "deprecationMessage",
+        "enumDescriptions"
+    ]
 }

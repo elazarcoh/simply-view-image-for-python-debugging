@@ -2,7 +2,7 @@
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
   "description": "simply view the image of the image variables when debugging python",
-  "version": "2.3.1",
+  "version": "2.99.1",
   "publisher": "elazarcoh",
   "icon": "icon.png",
   "preview": false,
@@ -26,31 +26,31 @@
   "activationEvents": [
     "onDebugResolve:python",
     "onDebugResolve:Python Kernel Debug Adapter",
-    "onCommand:svifpd.open-watch-settings"
+    "onCommand:svifpd.open-settings"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
+        "command": "svifpd.view-image-track",
+        "title": "Track Image",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
+      },
+      {
         "command": "svifpd.view-image",
-        "title": "View Image (Python Debug)",
-        "enablement": "inDebugMode"
-      },
-      {
-        "command": "svifpd.view-plot",
-        "title": "View Plot (Python Debug)",
-        "enablement": "inDebugMode"
-      },
-      {
-        "command": "svifpd.view-tensor",
-        "title": "View Tensor (Python Debug)",
-        "enablement": "inDebugMode"
+        "title": "View Image",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
       },
       {
         "command": "svifpd.watch-view-image",
         "title": "View Image",
         "enablement": "inDebugMode",
-        "icon": "$(link-external)"
+        "icon": {
+          "light": "resources/light/image.svg",
+          "dark": "resources/dark/image.svg"
+        }
       },
       {
         "command": "svifpd.watch-view-plot",
@@ -62,7 +62,10 @@
         "command": "svifpd.watch-view-tensor",
         "title": "View Tensor",
         "enablement": "inDebugMode",
-        "icon": "$(layers)"
+        "icon": {
+          "light": "resources/light/tensor.svg",
+          "dark": "resources/dark/tensor.svg"
+        }
       },
       {
         "command": "svifpd.watch-track-enable",
@@ -83,7 +86,7 @@
         "icon": "$(timeline-refresh)"
       },
       {
-        "command": "svifpd.open-watch-settings",
+        "command": "svifpd.open-settings",
         "title": "Configure...",
         "icon": "$(settings-gear)"
       },
@@ -97,6 +100,26 @@
         "command": "svifpd.view-debug-variable",
         "title": "View as Image",
         "enablement": "inDebugMode"
+      },
+      {
+        "command": "svifpd.add-expression",
+        "title": "Add Expression",
+        "category": "Debug View Python"
+      },
+      {
+        "command": "svifpd.edit-expression",
+        "title": "Edit Expression",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "svifpd.remove-expression",
+        "title": "Remove Expression",
+        "icon": "$(close)"
+      },
+      {
+        "command": "svifpd.remove-all-expressions",
+        "title": "Remove All Expression",
+        "icon": "$(close-all)"
       }
     ],
     "menus": {
@@ -126,11 +149,23 @@
           "when": "false"
         },
         {
-          "command": "svifpd.open-watch-settings",
+          "command": "svifpd.open-settings",
           "when": "false"
         },
         {
           "command": "svifpd.view-debug-variable",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.edit-expression",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.remove-expression",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.remove-all-expressions",
           "when": "false"
         }
       ],
@@ -138,12 +173,17 @@
         {
           "command": "svifpd.watch-refresh",
           "when": "view == pythonDebugImageWatch",
-          "group": "navigation@1"
+          "group": "navigation@10"
         },
         {
-          "command": "svifpd.open-watch-settings",
+          "command": "svifpd.remove-all-expressions",
           "when": "view == pythonDebugImageWatch",
-          "group": "navigation@2"
+          "group": "navigation@20"
+        },
+        {
+          "command": "svifpd.open-settings",
+          "when": "view == pythonDebugImageWatch",
+          "group": "navigation@30"
         }
       ],
       "debug/variables/context": [
@@ -156,27 +196,37 @@
       "view/item/context": [
         {
           "command": "svifpd.watch-view-image",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*?image.*/ || view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*?image.*/",
-          "group": "inline@1"
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?image.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?image.*/",
+          "group": "inline@11"
         },
         {
           "command": "svifpd.watch-view-plot",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*?plot*/ || view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*?plot.*/",
-          "group": "inline@2"
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?plot.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?plot.*/",
+          "group": "inline@12"
         },
         {
           "command": "svifpd.watch-view-tensor",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-.*?tensor*/ || view == pythonDebugImageWatch && viewItem =~ /trackedVariable-.*?tensor.*/",
-          "group": "inline@3"
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?tensor.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?tensor.*/",
+          "group": "inline@13"
         },
         {
           "command": "svifpd.watch-track-enable",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /nonTrackedVariable-*/",
-          "group": "inline@20"
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*/",
+          "group": "inline@30"
         },
         {
           "command": "svifpd.watch-track-disable",
-          "when": "view == pythonDebugImageWatch && viewItem =~ /trackedVariable-*/",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*/",
+          "group": "inline@31"
+        },
+        {
+          "command": "svifpd.edit-expression",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
+          "group": "inline@20"
+        },
+        {
+          "command": "svifpd.remove-expression",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
           "group": "inline@21"
         }
       ]
@@ -188,8 +238,7 @@
           "name": "Image Watch",
           "icon": "eye",
           "visibility": "visible",
-          "type": "tree",
-          "when": "config.svifpd.imageWatch.enable"
+          "type": "tree"
         }
       ]
     },
@@ -208,6 +257,10 @@
           "default": true,
           "description": "Whether to show a context menu entry in VSCode debug variables view for custom objects (currently only plots)."
         },
+        "svifpd.customSavePath": {
+          "type": "string",
+          "description": "Custom path to save images. Only used if `svifpd.saveLocation` is set to `custom`."
+        },
         "svifpd.debug": {
           "type": "string",
           "enum": [
@@ -217,26 +270,6 @@
           ],
           "default": "none",
           "description": "Enable debug mode (show debug info in `View Image for Python` output)"
-        },
-        "svifpd.imageWatch.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Use the extension to track images (reshow the image at each debugger step)"
-        },
-        "svifpd.imageWatch.objects": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "images",
-              "plots",
-              "image-tensors"
-            ]
-          },
-          "default": [
-            "images"
-          ],
-          "uniqueItems": true
         },
         "svifpd.matplotlibUseAgg": {
           "type": "boolean",
@@ -261,7 +294,6 @@
         "svifpd.preferredBackend": {
           "type": "string",
           "enum": [
-            "skimage",
             "opencv",
             "imageio",
             "Pillow",
@@ -275,10 +307,22 @@
           "default": true,
           "description": "Restrict image types to numpy.ndarray/PIL.Image only"
         },
+        "svifpd.saveLocation": {
+          "type": "string",
+          "enum": [
+            "tmp",
+            "extensionStorage",
+            "custom"
+          ],
+          "default": "tmp",
+          "description": "Location to save images."
+        },
         "svifpd.useTmpPathToSave": {
           "type": "boolean",
           "default": true,
-          "description": "Use the system tmp path to save image otherwise use the storage path."
+          "description": "Use the system tmp path to save image otherwise use the storage path.",
+          "deprecated": true,
+          "deprecationMessage": "Use `svifpd.saveLocation` instead."
         }
       }
     }
@@ -286,32 +330,38 @@
   "scripts": {
     "update-package-json": "update-package-json",
     "vscode:prepublish": "yarn run clean && webpack --config webpack.config.prod.js",
-    "build": "yarn run clean && webpack --mode development",
-    "watch": "yarn run clean && webpack --mode development --watch",
+    "build": " webpack --mode development",
+    "watch": "webpack --mode development --watch",
     "lint": "eslint src --ext ts",
     "clean": "rimraf dist"
   },
   "devDependencies": {
-    "@types/glob": "^7.1.4",
-    "@types/mocha": "^7.0.2",
-    "@types/node": "^13.13.52",
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.11.15",
+    "@types/parsimmon": "^1.10.6",
     "@types/tmp": "^0.2.1",
     "@types/vscode": "^1.60.0",
-    "@typescript-eslint/eslint-plugin": "^4.31.0",
-    "@typescript-eslint/parser": "^4.31.0",
-    "eslint": "^7.32.0",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "@typescript-eslint/parser": "^5.47.0",
+    "@typescript-eslint/typescript-estree": "^5.47.0",
+    "@vscode/debugprotocol": "^1.49.0",
+    "eslint": "^8.30.0",
     "eslint-webpack-plugin": "^3.0.1",
-    "glob": "^7.1.7",
+    "glob": "^8.0.3",
     "rimraf": "^3.0.2",
-    "ts-loader": "^7.0.5",
-    "typescript": "^3.9.10",
-    "vscode-debugprotocol": "^1.49.0",
-    "vscode-test": "^1.6.1",
+    "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4",
     "webpack": "^5.50.0",
-    "webpack-cli": "^4.8.0"
+    "webpack-cli": "^5.0.1"
   },
   "dependencies": {
+    "parsimmon": "^1.18.1",
+    "reflect-metadata": "^0.1.13",
     "tmp": "^0.2.1",
+    "typedi": "^0.10.0",
+    "vscode-debugprotocol": "^1.49.0",
     "vscode-extensions-json-generator": "^0.1.5"
   }
 }

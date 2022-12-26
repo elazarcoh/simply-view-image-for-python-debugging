@@ -9,7 +9,8 @@
 			"script": "watch",
 			"isBackground": true,
 			"problemMatcher": [
-				"$ts-webpack-watch"
+				"$ts-webpack-watch",
+				"$tslint-webpack-watch"
 			],
 			"group": {
 				"kind": "build",
@@ -22,7 +23,10 @@
 			"group": {
 				"kind": "build",
 			},
-			"problemMatcher": [],
+			"problemMatcher": [
+				"$ts-webpack",
+				"$tslint-webpack"
+			],
 			"label": "npm: build",
 			"detail": "webpack --mode development"
 		}

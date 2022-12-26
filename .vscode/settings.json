@@ -9,5 +9,20 @@
     "npm.packageManager": "yarn",
     "files.associations": {
         "vscode-ext-config.json": "jsonc"
-    }
+    },
+    "cSpell.enabled": true,
+    "prettier.enable": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    // "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+    "python.analysis.exclude": [
+        "src/**/*.py"
+    ],
+    "python.analysis.ignore": [
+        "src/**/*.py"
+    ],
+    "cSpell.words": [
+        "numpy"
+    ]
 }

@@ -136,7 +136,7 @@
 
 ### Added
 
-- Display image with no need fot `import cv2`
+- Display image with no need for `import cv2`
 - Saving backends: skimage, cv2
 - Preprocess image before viewing
 

@@ -1,5 +1,10 @@
 # Change Log
 
+## [3.0.0] - Release
+
+### Added 
+- Expressions in watch view
+
 ## [2.99.1] - Pre-release
 - Complete rewrite of the extension:
   - More methodical (and faster) way to communicate with the debugger.

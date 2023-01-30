@@ -1,6 +1,7 @@
 import { DebugSession } from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
-import { logDebug } from "../Logging";
+import { logDebug, logTrace } from "../Logging";
+import { Except } from "../utils/Except";
 import { debounce } from "../utils/Utils";
 import { verifyModuleExistsCode, viewablesSetupCode } from "./BuildPythonCode";
 import { evaluateInPython, execInPython } from "./RunPythonCode";
@@ -17,7 +18,11 @@ export async function runSetup(session: DebugSession): Promise<void> {
         logDebug("Checks setup is okay or not");
         const isSetupOkay = await checkSetupOkay(session);
 
-        if (isSetupOkay.isError || !isSetupOkay.result) {
+        if (
+            Except.isError(isSetupOkay) ||
+            !isSetupOkay.result ||
+            !debugSessionData.setupOkay
+        ) {
             if (maxTries <= 0) {
                 throw new Error("Setup failed");
             }

@@ -10,6 +10,7 @@ import { openImageToTheSide } from "../utils/VSCodeUtils";
 import { allFulfilled } from "../utils/Utils";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logError } from "../Logging";
+import { Except } from "../utils/Except";
 
 type TrackedObject = {
     expression: PythonExpression;
@@ -103,7 +104,7 @@ export async function saveAllTrackedObjects(
     }
 
     const saveResult = await evaluateInPython(saveObjectsCode, session);
-    if (saveResult.isError) {
+    if (Except.isError(saveResult)) {
         logError(`Failed to save tracked objects: ${saveResult.errorMessage}`);
         return;
     } else {

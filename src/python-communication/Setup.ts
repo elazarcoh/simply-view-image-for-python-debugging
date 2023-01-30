@@ -1,6 +1,6 @@
 import { DebugSession } from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
-import { logDebug, logTrace } from "../Logging";
+import { logDebug } from "../Logging";
 import { Except } from "../utils/Except";
 import { debounce } from "../utils/Utils";
 import { verifyModuleExistsCode, viewablesSetupCode } from "./BuildPythonCode";

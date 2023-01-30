@@ -7,7 +7,10 @@ import {
     constructRunSameExpressionWithMultipleEvaluatorsCode,
 } from "../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../python-communication/RunPythonCode";
-import { findExpressionsViewables } from "../PythonObjectInfo";
+import {
+    findExpressionsViewables,
+    findExpressionViewables,
+} from "../PythonObjectInfo";
 import { Except } from "../utils/Except";
 import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
@@ -57,31 +60,64 @@ export class CurrentPythonObjectsList {
             [index: number]: InfoOrError;
         };
     }> {
-        const allExpressions = [
-            ...this._variablesList.map((v) => v[0]),
-            ...globalExpressionsList,
-        ];
-
-        const allViewables = await findExpressionsViewables(
-            allExpressions,
+        const variables = this._variablesList.map((v) => v[0]);
+        const variablesViewables = await findExpressionsViewables(
+            variables,
             this.debugSession
+        ).then((r) =>
+            r.isError
+                ? Array<typeof r>(variables.length).fill(r)
+                : r.result.map((v) => Except.result(v))
         );
 
-        const informationEvalCode = allViewables.map((vs) =>
-            vs.map((v) => v.infoPythonCode)
+        // expressions are evaluated separately, to avoid case of syntax error in one expression
+        const expressionsViewables = await Promise.allSettled(
+            globalExpressionsList.map((exp) =>
+                findExpressionViewables(exp, this.debugSession)
+            )
+        ).then((r) =>
+            r.map((v) =>
+                v.status === "fulfilled"
+                    ? v.value
+                    : Except.error<Viewable[]>(v.reason)
+            )
         );
 
-        const codes = zip(allExpressions, informationEvalCode).map(
+        const allViewables = [
+            ...variablesViewables,
+            ...expressionsViewables,
+        ].map((evs) =>
+            Except.isOkay(evs)
+                ? evs.result.length > 0
+                    ? evs
+                    : Except.error<typeof evs.result>("Not viewable")
+                : evs
+        );
+
+        const informationEvalCode = allViewables.map((evs) =>
+            Except.map(evs, (vs) => vs.map((v) => v.infoPythonCode))
+        );
+
+        const allExpressions = [...variables, ...globalExpressionsList];
+
+        const codeOrErrors = zip(allExpressions, informationEvalCode).map(
             ([exp, infoEvalCodes]) =>
-                constructRunSameExpressionWithMultipleEvaluatorsCode(
-                    exp,
-                    infoEvalCodes
+                Except.map(infoEvalCodes, (codes) =>
+                    constructRunSameExpressionWithMultipleEvaluatorsCode(
+                        exp,
+                        codes
+                    )
                 )
         );
+        const codesWithIndices = codeOrErrors.map((c, i) => [i, c] as const);
+        const codes = codesWithIndices
+            .map(([, c]) => c)
+            .filter(Except.isOkay)
+            .map((e) => e.result);
         const code = combineMultiEvalCodePython(codes);
         const res = await evaluateInPython(code, this.debugSession);
 
-        if (res.isError) {
+        if (Except.isError(res)) {
             logError(
                 `Error while retrieving information for variables and expressions: ${res.errorMessage}`
             );
@@ -90,20 +126,25 @@ export class CurrentPythonObjectsList {
                 expressions: [],
             };
         } else {
-            const allExpressionsInformation = res.result.map(
+            const validExpressionsInformation = res.result.map(
                 combineValidInfoErrorIfNone
+            );
+            const allExpressionsInformation = codesWithIndices.map(([i]) =>
+                Except.isOkay(codeOrErrors[i])
+                    ? validExpressionsInformation[i]
+                    : codeOrErrors[i]
             );
 
             const sanitize = ([viewables, info]: [
-                Viewable[],
+                Except<Viewable[]>,
                 Except<PythonObjectInformation>
             ]): InfoOrError => {
-                if (notEmptyArray(viewables)) {
-                    if (info.isError) {
-                        return info;
-                    } else {
-                        return Except.result([viewables, info.result]);
-                    }
+                if (Except.isError(viewables)) {
+                    return viewables;
+                } else if (Except.isError(info)) {
+                    return info;
+                } else if (notEmptyArray(viewables.result)) {
+                    return Except.result([viewables.result, info.result]);
                 } else {
                     return Except.error("Not viewable");
                 }

@@ -13,6 +13,7 @@ import { findExpressionViewables } from "./PythonObjectInfo";
 import { logDebug, logError } from "./Logging";
 import Container from "typedi";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
+import { Except } from "./utils/Except";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
@@ -40,9 +41,9 @@ export async function viewObject(
         return;
     }
     const result = await evaluateInPython(saveObjectCode, session);
-    const errorMessage = result.isError
+    const errorMessage = Except.isError(result)
         ? result.errorMessage
-        : result.result.isError
+        : Except.isError(result.result)
         ? result.result.errorMessage
         : undefined;
     if (errorMessage !== undefined) {
@@ -79,11 +80,14 @@ export async function viewObjectUnderCursor(): Promise<unknown> {
         selectionString(userSelection),
         debugSession
     );
-    if (objectViewables === undefined || objectViewables.length === 0) {
+    if (
+        Except.isError(objectViewables) ||
+        objectViewables.result.length === 0
+    ) {
         return undefined;
     }
 
-    return viewObject(userSelection, objectViewables[0], debugSession);
+    return viewObject(userSelection, objectViewables.result[0], debugSession);
 }
 
 export async function trackObjectUnderCursor(): Promise<unknown> {
@@ -122,7 +126,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
         );
     }
     let savePath: string | undefined = undefined;
-    if (objectViewables !== undefined && objectViewables.length > 0) {
+    if (Except.isOkay(objectViewables) && objectViewables.result.length > 0) {
         const trackedPythonObjects = debugSessionData.trackedPythonObjects;
         const trackingId = trackedPythonObjects.trackingIdIfTracked({
             expression: userSelectionAsString,
@@ -135,7 +139,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
             debugSessionData.savePathHelper.savePathFor(userSelection);
         trackedPythonObjects.track(
             { expression: userSelectionAsString },
-            objectViewables[0],
+            objectViewables.result[0],
             savePath,
             trackingId
         );
@@ -143,13 +147,16 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
 
     Container.get(WatchTreeProvider).refresh();
 
-    if (objectViewables === undefined || objectViewables.length === 0) {
+    if (
+        Except.isError(objectViewables) ||
+        objectViewables.result.length === 0
+    ) {
         return undefined;
     }
 
     return viewObject(
         userSelection,
-        objectViewables[0],
+        objectViewables.result[0],
         debugSession,
         savePath,
         false

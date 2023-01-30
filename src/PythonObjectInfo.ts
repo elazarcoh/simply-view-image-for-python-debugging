@@ -7,6 +7,7 @@ import {
     constructRunSameExpressionWithMultipleEvaluatorsCode,
 } from "./python-communication/BuildPythonCode";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
+import { Except } from "./utils/Except";
 import { Viewable } from "./viewable/Viewable";
 
 function listOfValidViewables(
@@ -22,7 +23,7 @@ function listOfValidViewables(
 export async function findExpressionViewables(
     expression: string,
     session: vscode.DebugSession
-): Promise<Viewable[]> {
+): Promise<Except<Viewable[]>> {
     const viewables = Container.get(AllViewables).allViewables;
     const code = constructRunSameExpressionWithMultipleEvaluatorsCode(
         expression,
@@ -30,25 +31,25 @@ export async function findExpressionViewables(
     );
     const isOfType = await evaluateInPython(code, session);
 
-    if (isOfType.isError) {
+    if (Except.isError(isOfType)) {
         logError(
             `Error finding viewables for expression \`${expression}\`. Error: ${isOfType.errorMessage}`
         );
-        return [];
+        return Except.error(isOfType.errorMessage);
     } else {
         const objectViewables = listOfValidViewables(
             viewables,
             isOfType.result
         );
 
-        return objectViewables;
+        return Except.result(objectViewables);
     }
 }
 
 export async function findExpressionsViewables(
     expressions: string[],
     session: vscode.DebugSession
-): Promise<Viewable[][]> {
+): Promise<Except<Viewable[][]>> {
     const viewables = Container.get(AllViewables).allViewables;
     const codes = expressions.map((expression) =>
         constructRunSameExpressionWithMultipleEvaluatorsCode(
@@ -64,12 +65,12 @@ export async function findExpressionsViewables(
             ", "
         )}\`. Error: ${isOfType.errorMessage}`;
         logError(message);
-        return [];
+        return Except.error(isOfType.errorMessage);
     } else {
         const objectsViewables = isOfType.result.map(
             (isOfType: Except<boolean>[]) =>
                 listOfValidViewables(viewables, isOfType)
         );
-        return objectsViewables;
+        return Except.result(objectsViewables);
     }
 }

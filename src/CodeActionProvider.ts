@@ -23,11 +23,11 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
             selectionString(userSelection),
             debugSession
         );
-        if (objectViewables === undefined) {
+        if (objectViewables.isError) {
             return undefined;
         }
 
-        return arrayUniqueByKey(objectViewables, (t) => t.title).map(
+        return arrayUniqueByKey(objectViewables.result, (t) => t.title).map(
             (viewable) => ({
                 title: `View ${viewable.title}`,
                 command: "svifpd._internal_view-object",

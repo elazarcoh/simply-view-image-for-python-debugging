@@ -50,7 +50,11 @@ async function runPython<R>(
         }
     } catch (error) {
         if (error instanceof Error) {
-            return Except.error(error.message);
+            if (error.message.includes("SyntaxError")) {
+                return Except.error("Syntax error");
+            } else {
+                return Except.error(error.message);
+            }
         } else {
             return Except.error(JSON.stringify(error));
         }

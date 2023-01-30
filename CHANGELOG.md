@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.0.1] - Patch
+
+- Bug fix in expressions (syntax error)
+
 ## [3.0.0] - Release
 
 ### Added 

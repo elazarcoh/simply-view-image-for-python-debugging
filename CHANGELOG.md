@@ -1,8 +1,13 @@
 # Change Log
 
+## [3.0.2] - Patch
+
+- Bug fix in tree-view refresh.
+
+
 ## [3.0.1] - Patch
 
-- Bug fix in expressions (syntax error)
+- Bug fix in expressions (syntax error).
 
 ## [3.0.0] - Release
 

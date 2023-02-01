@@ -114,6 +114,9 @@ export class CurrentPythonObjectsList {
             .map(([, c]) => c)
             .filter(Except.isOkay)
             .map((e) => e.result);
+        const validIndices = codesWithIndices
+            .filter(([, c]) => Except.isOkay(c))
+            .map(([i]) => i);
         const code = combineMultiEvalCodePython(codes);
         const res = await evaluateInPython(code, this.debugSession);
 
@@ -126,8 +129,8 @@ export class CurrentPythonObjectsList {
                 expressions: [],
             };
         } else {
-            const validExpressionsInformation = res.result.map(
-                combineValidInfoErrorIfNone
+            const validExpressionsInformation = Object.fromEntries(
+                zip(validIndices, res.result.map(combineValidInfoErrorIfNone))
             );
             const allExpressionsInformation = codesWithIndices.map(([i]) =>
                 Except.isOkay(codeOrErrors[i])

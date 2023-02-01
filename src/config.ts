@@ -76,6 +76,12 @@ export interface Config {
      * @description Whether to show a context menu entry in VSCode debug variables view for custom objects (currently only plots).
      */
     addViewContextEntryToVSCodeDebugVariables: boolean;
+
+    /**
+     * @default false
+     * @description Whether to allow plugins to register their own viewables.
+     */
+    allowPlugins: boolean;
 }
 
 export const EXTENSION_CONFIG_SECTION = "svifpd";

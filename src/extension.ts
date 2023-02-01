@@ -13,15 +13,44 @@ import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
-import { hasValue } from "./utils/Utils";
+import { arrayUnique, hasValue } from "./utils/Utils";
+import { api, PluginManager } from "./api";
 
 function onConfigChange(): void {
     initLog();
 }
 
+function setupPluginManager(context: vscode.ExtensionContext) {
+    const ALLOWED_PLUGINS_KEY = "allowedPlugins";
+    const allowPluginPermanently = async (id: string) => {
+        logDebug("Allowing plugin permanently", id);
+        const allowedPlugins = context.globalState.get<string[]>(
+            ALLOWED_PLUGINS_KEY,
+            []
+        );
+        return context.globalState.update(
+            ALLOWED_PLUGINS_KEY,
+            arrayUnique([...allowedPlugins, id])
+        );
+    };
+    const allowedPlugins = context.globalState.get<string[]>(
+        ALLOWED_PLUGINS_KEY,
+        []
+    );
+    logDebug("Allowed plugins", allowedPlugins);
+    Container.set(
+        PluginManager,
+        new PluginManager(allowPluginPermanently, allowedPlugins)
+    );
+}
+
 // ts-unused-exports:disable-next-line
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext) {
     onConfigChange();
+
+    logTrace("Activating extension");
+
+    setupPluginManager(context);
 
     setSaveLocation(context);
 
@@ -30,8 +59,6 @@ export function activate(context: vscode.ExtensionContext): void {
             onConfigChange();
         }
     });
-
-    logTrace("Activating extension");
 
     // register the debug adapter tracker
     logDebug("Registering debug adapter tracker for python");
@@ -96,33 +123,5 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(...registerExtensionCommands(context));
 
-    // // add commands
-    // logDebug("Registering commands");
-    // for (const [id, action] of commands) {
-    //   logDebug(`Registering command "${id}"`);
-    //   context.subscriptions.push(
-    //     vscode.commands.registerCommand(id, action)
-    //   );
-    // }
-
-    // // // Add expression command
-    // // const expressionsList = Container.get(ExpressionsList);
-    // // context.subscriptions.push(
-    // //   vscode.commands.registerCommand(
-    // //     `svifpd.add-expression`,
-    // //     async () => {
-    // //       // const maybeExpression = await vscode.window.showInputBox({
-    // //       //   prompt: "Enter expression to watch",
-    // //       //   placeHolder: "e.g. images[0]",
-    // //       //   ignoreFocusOut: true,
-    // //       // });
-    // //       const maybeExpression = "images[0]";
-    // //       if (maybeExpression !== undefined) {
-    // //         const p = expressionsList.addExpression(maybeExpression);
-    // //         watchTreeProvider.refresh();
-    // //         return p;
-    // //       }
-    // //     }
-    // //   )
-    // // );
+    return { ...api };
 }

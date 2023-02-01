@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "example-plugin"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"vscode-ext-config.json": "jsonc"
+		}
+	}
+}

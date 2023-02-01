@@ -7,12 +7,12 @@ function atModule(name: string) {
 
 function catchErrorsIntoPromise<T, Args extends unknown[]>(
     func: (...args: Args) => T
-): (...args: Args) => Promise<T> {
-    return async (...args: Args) => {
+): (...args: Args) => Promise<Awaited<T>> {
+    return async (...args: Args): Promise<Awaited<T>> => {
         try {
             return Promise.resolve(await func(...args));
         } catch (err) {
-            return Promise.reject(err);
+            return Promise.reject(err) as Promise<Awaited<T>>;
         }
     };
 }

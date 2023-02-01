@@ -16,10 +16,27 @@
   "contributes": {
     "commands": [
       {
-        "command": "example-plugin.helloWorld",
-        "title": "Hello World"
+        "command": "svifpd.watch-view-table",
+        "title": "View Image",
+        "enablement": "inDebugMode",
+        "icon": "$(table)"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "svifpd.watch-view-table",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "svifpd.watch-view-table",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:nonTrackedVariable-.*?table.*/ || view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?table.*/",
+          "group": "inline@11"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",

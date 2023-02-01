@@ -42,6 +42,7 @@ function setupPluginManager(context: vscode.ExtensionContext) {
         PluginManager,
         new PluginManager(allowPluginPermanently, allowedPlugins)
     );
+    context.subscriptions.push(Container.get(PluginManager));
 }
 
 // ts-unused-exports:disable-next-line

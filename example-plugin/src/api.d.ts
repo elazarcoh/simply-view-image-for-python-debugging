@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 type SetupCode = {
     /**
      * Code that is run once, to set up the environment
@@ -34,9 +35,18 @@ interface PluginViewable {
     testTypePythonCode: EvalCode<boolean>;
     infoPythonCode: EvalCode<Record<string, string>>;
     serializeObjectPythonCode: EvalCode<null, [string]>;
+    suffix: string;
+    onShow?: (path: string) => void | Promise<void>;
 }
-
-declare function registerView(plug: PluginViewable): Promise<boolean>;
+type RegisterResult =
+    | {
+          success: true;
+          disposable: vscode.Disposable;
+      }
+    | {
+          success: false;
+      };
+declare function registerView(plug: PluginViewable): Promise<RegisterResult>;
 
 declare function atModule(name: string): string;
 

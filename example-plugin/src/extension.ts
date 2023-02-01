@@ -12,7 +12,7 @@ def pandas_dataframe_info(obj):
 	return {
 		'num_rows': str(len(obj)),
 		'num_columns': str(len(obj.columns)),
-		'columns': str(list(obj.columns)),
+		'columns': ", ".join(map(str, obj.columns)),
 	}
 def pandas_dataframe_save(path, obj):
 	obj.to_csv(path, index=False)
@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		const result = await api.registerView({
 			extensionId: 'example-plugin',
-			group: 'CSV',
+			group: 'table',
 			type: 'pandas.DataFrame',
 			title: 'CSV',
 			setupPythonCode: {
@@ -52,11 +52,14 @@ export async function activate(context: vscode.ExtensionContext) {
 			serializeObjectPythonCode: {
 				evalCode: (expression: string, savePath: string) => `${m("pandas_dataframe_save")}('${savePath}', ${expression})`,
 			},
+			suffix: '.csv',
 		});
 
-		if (!result) {
+		if (result.success === false) {
 			vscode.window.showErrorMessage('Failed to register view.');
 			return;
+		} else {
+			context.subscriptions.push(result.disposable);
 		}
 	}
 	catch (err) {

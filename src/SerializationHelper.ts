@@ -84,11 +84,11 @@ export class SavePathHelper {
     public savePathFor(object: PythonObjectRepresentation): string {
         if ("expression" in object) {
             return SavePathHelper.normalizePath(
-                path.join(this.saveDir, shortId() + ".png")
+                path.join(this.saveDir, shortId())
             );
         } else {
             return SavePathHelper.normalizePath(
-                path.join(this.saveDir, `${object.variable}.png`)
+                path.join(this.saveDir, `${object.variable}`)
             );
         }
     }

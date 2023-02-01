@@ -30,6 +30,7 @@ export const NumpyImage: Viewable = {
             // prettier-ignore
             `${m("numpy_image_save")}('${savePath}', ${expression}, backend='${getConfiguration('preferredBackend', undefined, Backends.Standalone)}', preprocess='${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))}')`,
     },
+    suffix: ".png",
 };
 
 export const PillowImage: Viewable = {
@@ -53,4 +54,5 @@ export const PillowImage: Viewable = {
         evalCode: (expression: string, savePath: string) =>
             `${m("pillow_image_save")}('${savePath}', ${expression})`,
     },
+    suffix: ".png",
 };

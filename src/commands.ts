@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { disablePluginCommand } from "./api";
 import {
     updateDebugFrameId,
     viewVariableFromVSCodeDebugViewAsImage,
@@ -48,6 +49,7 @@ const Commands = {
     "svifpd.view-image": viewObjectUnderCursor,
     "svifpd.view-image-track": trackObjectUnderCursor,
     "svifpd.view-debug-variable": viewVariableFromVSCodeDebugViewAsImage,
+    "svifpd.disable-plugin": disablePluginCommand,
 };
 type Commands = typeof Commands;
 type AvailableCommands = keyof Commands;
@@ -95,5 +97,6 @@ export function registerExtensionCommands(
         _registerCommandByName("svifpd.open-settings"),
         _registerCommandByName("svifpd.update-frame-id"),
         _registerCommandByName("svifpd.view-debug-variable"),
+        _registerCommandByName("svifpd.disable-plugin"),
     ];
 }

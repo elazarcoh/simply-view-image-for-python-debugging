@@ -120,6 +120,11 @@
         "command": "svifpd.remove-all-expressions",
         "title": "Remove All Expression",
         "icon": "$(close-all)"
+      },
+      {
+        "command": "svifpd.disable-plugin",
+        "title": "Disable Plugin",
+        "category": "Debug View Python"
       }
     ],
     "menus": {

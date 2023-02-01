@@ -23,6 +23,7 @@ export const NumpyTensor: Viewable = {
         evalCode: (expression: string, savePath: string) =>
             `${m("numpy_tensor_save")}('${savePath}', ${expression})`,
     },
+    suffix: ".png",
 };
 
 export const TorchTensor: Viewable = {
@@ -45,4 +46,5 @@ export const TorchTensor: Viewable = {
         evalCode: (expression: string, savePath: string) =>
             `${m("torch_tensor_save")}('${savePath}', ${expression})`,
     },
+    suffix: ".png",
 };

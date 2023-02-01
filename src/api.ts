@@ -4,10 +4,17 @@ import { logDebug, logInfo } from "./Logging";
 import Container, { Service } from "typedi";
 import { atModule as atModule_ } from "./python-communication/BuildPythonCode";
 import { getConfiguration } from "./config";
+import { AllViewables } from "./AllViewables";
+import { setSetupIsNotOkay } from "./python-communication/Setup";
 
+interface PluginViewable extends Viewable {
+    extensionId: string;
+}
 @Service()
-export class PluginManager {
+export class PluginManager implements vscode.Disposable {
     private readonly _allowedPlugins: string[] = [];
+    private readonly _plugins: PluginViewable[] = [];
+    private readonly _disposables: vscode.Disposable[] = [];
 
     constructor(
         private readonly _allowPluginPermanently: (
@@ -33,10 +40,58 @@ export class PluginManager {
     public isPluginAllowed(id: string): boolean {
         return this._allowedPlugins.includes(id);
     }
+
+    public addPlugin(
+        plug: PluginViewable,
+        pluginDisposable: vscode.Disposable
+    ): void {
+        if (this.isPluginAllowed(plug.extensionId)) {
+            this._plugins.push(plug);
+            this._disposables.push(pluginDisposable);
+        }
+    }
+
+    public disablePlugin(plug: PluginViewable): void {
+        const index = this._plugins.indexOf(plug);
+        if (index > -1) {
+            this._plugins.splice(index, 1);
+        }
+        const disposable = this._disposables[index];
+        if (disposable !== undefined) {
+            disposable.dispose();
+            this._disposables.splice(index, 1);
+        }
+    }
+
+    get plugins(): readonly PluginViewable[] {
+        return this._plugins;
+    }
+
+    public dispose(): void {
+        this._disposables.forEach((d) => d.dispose());
+    }
 }
 
-interface PluginViewable extends Viewable {
-    extensionId: string;
+export async function disablePluginCommand() {
+    const pluginManager = Container.get(PluginManager);
+    const pick = await vscode.window.showQuickPick(
+        pluginManager.plugins.map((p) => ({
+            label: p.title,
+            detail: `(by ${p.extensionId})`,
+            plugin: p,
+        })),
+        {
+            canPickMany: true,
+            title: "Select plugins to disable",
+        }
+    );
+    if (pick === undefined || pick.length === 0) {
+        return;
+    }
+    for (const p of pick) {
+        pluginManager.disablePlugin(p.plugin);
+    }
+    setSetupIsNotOkay();
 }
 
 async function askUserToAllowPlugin<T extends string>(
@@ -58,15 +113,36 @@ enum EnablePluginResponse {
     DisablePlugin = "Disable Plugin",
 }
 
-async function registerView(plug: PluginViewable): Promise<boolean> {
+type RegisterResult =
+    | {
+          success: true;
+          disposable: vscode.Disposable;
+      }
+    | {
+          success: false;
+      };
+
+function addPluginToViewables(plug: PluginViewable) {
+    const viewable = Container.get(AllViewables).addViewable(plug);
+    if (viewable === undefined) {
+        return;
+    }
+    Container.get(PluginManager).addPlugin(plug, viewable);
+    return {
+        success: true,
+        disposable: viewable,
+    };
+}
+
+async function registerView(plug: PluginViewable): Promise<RegisterResult> {
     if (getConfiguration("allowPlugins", undefined, true) === false) {
-        return false;
+        return { success: false };
     }
     const pluginManager = Container.get(PluginManager);
 
     if (pluginManager.isPluginAllowed(plug.extensionId)) {
         logDebug("Plugin is allowed", plug);
-        return true;
+        return addPluginToViewables(plug) ?? { success: false };
     }
 
     logInfo("Registering view", plug);
@@ -83,7 +159,7 @@ async function registerView(plug: PluginViewable): Promise<boolean> {
         response === undefined ||
         response === EnablePluginResponse.DisablePlugin
     ) {
-        return false;
+        return { success: false };
     }
     if (response === EnablePluginResponse.ViewCode) {
         response = await showPluginCode(plug);
@@ -93,9 +169,11 @@ async function registerView(plug: PluginViewable): Promise<boolean> {
     } else if (response === EnablePluginResponse.OkayUntilRestart) {
         pluginManager.allowPlugin(plug.extensionId);
     } else {
-        return false;
+        return { success: false };
     }
-    return true;
+
+    logDebug("Registering view", plug);
+    return addPluginToViewables(plug) ?? { success: false };
 }
 
 async function showPluginCode(

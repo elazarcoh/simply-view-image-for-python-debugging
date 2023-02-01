@@ -20,7 +20,7 @@ export async function viewObject(
     viewable: Viewable,
     session: vscode.DebugSession,
     path?: string,
-    openInPreview?: boolean,
+    openInPreview?: boolean
 ): Promise<void> {
     const debugSessionData = activeDebugSessionData(session);
     path = path ?? debugSessionData.savePathHelper.savePathFor(obj);
@@ -28,10 +28,11 @@ export async function viewObject(
     const objectAsString = isExpressionSelection(obj)
         ? obj.expression
         : obj.variable;
+    const pathWithSuffix = `${path}${viewable.suffix}`;
     const saveObjectCode = constructValueWrappedExpressionFromEvalCode(
         viewable.serializeObjectPythonCode,
         objectAsString,
-        path
+        pathWithSuffix
     );
     const mkdirRes = debugSessionData.savePathHelper.mkdir();
     if (mkdirRes.isError) {
@@ -55,7 +56,11 @@ export async function viewObject(
         logError(message);
         vscode.window.showErrorMessage(message);
     } else {
-        await openImageToTheSide(path, openInPreview ?? true);
+        if (viewable.onShow !== undefined) {
+            await viewable.onShow(pathWithSuffix);
+        } else {
+            await openImageToTheSide(pathWithSuffix, openInPreview ?? true);
+        }
     }
 }
 

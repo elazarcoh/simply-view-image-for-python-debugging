@@ -6,4 +6,6 @@ export interface Viewable {
     testTypePythonCode: EvalCode<boolean>;
     infoPythonCode: EvalCode<Record<string, string>>;
     serializeObjectPythonCode: EvalCode<null, [string]>;
+    suffix: string;
+    onShow?: (path: string) => void | Promise<void>;
 }

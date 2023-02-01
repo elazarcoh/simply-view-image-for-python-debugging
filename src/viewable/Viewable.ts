@@ -9,3 +9,7 @@ export interface Viewable {
     suffix: string;
     onShow?: (path: string) => void | Promise<void>;
 }
+
+export interface PluginViewable extends Viewable {
+    extensionId: string;
+}

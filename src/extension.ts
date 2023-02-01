@@ -13,36 +13,12 @@ import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
-import { arrayUnique, hasValue } from "./utils/Utils";
-import { api, PluginManager } from "./api";
+import { hasValue } from "./utils/Utils";
+import { api } from "./api";
+import { setupPluginManager } from "./plugins";
 
 function onConfigChange(): void {
     initLog();
-}
-
-function setupPluginManager(context: vscode.ExtensionContext) {
-    const ALLOWED_PLUGINS_KEY = "allowedPlugins";
-    const allowPluginPermanently = async (id: string) => {
-        logDebug("Allowing plugin permanently", id);
-        const allowedPlugins = context.globalState.get<string[]>(
-            ALLOWED_PLUGINS_KEY,
-            []
-        );
-        return context.globalState.update(
-            ALLOWED_PLUGINS_KEY,
-            arrayUnique([...allowedPlugins, id])
-        );
-    };
-    const allowedPlugins = context.globalState.get<string[]>(
-        ALLOWED_PLUGINS_KEY,
-        []
-    );
-    logDebug("Allowed plugins", allowedPlugins);
-    Container.set(
-        PluginManager,
-        new PluginManager(allowPluginPermanently, allowedPlugins)
-    );
-    context.subscriptions.push(Container.get(PluginManager));
 }
 
 // ts-unused-exports:disable-next-line

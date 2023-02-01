@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { disablePluginCommand } from "./api";
 import {
     updateDebugFrameId,
     viewVariableFromVSCodeDebugViewAsImage,
@@ -15,7 +14,12 @@ import {
     trackPythonObjectTreeItem,
     untrackPythonObjectTreeItem,
 } from "./image-watch-tree/WatchTreeRelatedCommands";
-import { trackObjectUnderCursor, viewObject, viewObjectUnderCursor } from "./ViewPythonObject";
+import { disablePluginCommand } from "./plugins";
+import {
+    trackObjectUnderCursor,
+    viewObject,
+    viewObjectUnderCursor,
+} from "./ViewPythonObject";
 
 // *********************
 // Some general commands

@@ -18,6 +18,7 @@ def pandas_dataframe_save(path, obj):
 	obj.to_csv(path, index=False)
 `;
 export async function activate(context: vscode.ExtensionContext) {
+    // Get the extension and it's API
     const dep = vscode.extensions.getExtension(
         "elazarcoh.simply-view-image-for-python-debugging"
     );
@@ -27,7 +28,6 @@ export async function activate(context: vscode.ExtensionContext) {
         );
         return;
     }
-
     const api = (await dep.activate()) as Api;
     if (api === undefined) {
         vscode.window.showErrorMessage(
@@ -36,8 +36,16 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
+    // Convenience function to get the module name which all the functions are defined in.
+    // Alias it to `m` for convenience.
     const m = api.atModule;
     try {
+        // Register the view.
+        // Possible outcomes are:
+        // 1. The view was registered successfully: { success: true, disposable: vscode.Disposable }
+        //    The disposable can be used to unregister the view.
+        // 2. The view was not registered successfully: { success: false }
+        //    (Either due to an error, or user cancellation)
         const result = await api.registerView({
             // Extension id to be presented to the user
             extensionId: "example-plugin",
@@ -118,6 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage("Failed to register view.");
             return;
         } else {
+            // Register successful, save the disposable to be able to unregister the view.
             context.subscriptions.push(result.disposable);
         }
     } catch (err) {

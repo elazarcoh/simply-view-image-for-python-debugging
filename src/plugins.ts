@@ -132,9 +132,9 @@ async function askUserToAllowPlugin<T extends string>(
     ...options: T[]
 ): Promise<T | undefined> {
     return vscode.window.showInformationMessage(
-        `A plugin has asked to register a view: ${plug.extensionId}.` +
-            `It allows you to view ${plug.title} objects.` +
-            `Ignore this message would not activate this plugin.`,
+        `A plugin has asked to register a view: ${plug.extensionId}. ` +
+            `It add the feature to view and track ${plug.title} objects. ` +
+            `Ignoring this message would not activate this plugin.`,
         ...options
     );
 }

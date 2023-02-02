@@ -89,7 +89,7 @@ export async function saveAllTrackedObjects(
         return constructValueWrappedExpressionFromEvalCode(
             viewable.serializeObjectPythonCode,
             expression.expression,
-            savePath
+            `${savePath}${viewable.suffix}`
         );
     });
     const saveObjectsCode = combineMultiEvalCodePython(codes);
@@ -109,9 +109,14 @@ export async function saveAllTrackedObjects(
         return;
     } else {
         await allFulfilled(
-            trackedObjects
-                .map((v) => v.savePath)
-                .map((p) => openImageToTheSide(p, false))
+            trackedObjects.map(async (v) => {
+                const pathWithSuffix = `${v.savePath}${v.viewable.suffix}`;
+                if (v.viewable.onShow !== undefined) {
+                    await v.viewable.onShow(pathWithSuffix);
+                } else {
+                    await openImageToTheSide(pathWithSuffix, false);
+                }
+            })
         );
     }
 }

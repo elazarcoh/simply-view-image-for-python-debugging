@@ -28,6 +28,7 @@ export const PlotlyFigure: Viewable = {
         evalCode: (expression: string, savePath: string) =>
             `${m("plotly_figure_save")}('${savePath}', ${expression})`,
     },
+    suffix: ".png",
 };
 
 export const PyplotFigure: Viewable = {
@@ -57,6 +58,7 @@ export const PyplotFigure: Viewable = {
         evalCode: (expression: string, savePath: string) =>
             `${m("pyplot_figure_save")}('${savePath}', ${expression})`,
     },
+    suffix: ".png",
 };
 
 export const PyplotAxes: Viewable = {
@@ -84,4 +86,5 @@ export const PyplotAxes: Viewable = {
         evalCode: (expression: string, savePath: string) =>
             `${m("pyplot_ax_save")}('${savePath}', ${expression})`,
     },
+    suffix: ".png",
 };

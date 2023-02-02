@@ -107,7 +107,7 @@ export const createDebugAdapterTracker = (
                 return debugVariablesTracker.onContinued();
             } else if (msg.type === "response" && msg.command === "scopes") {
                 debugVariablesTracker.onScopesResponse(msg);
-                // scope has changed. Make setup is okay
+                // scope has changed. Make sure setup is okay
                 await runSetup(session);
                 await onScopeChange();
             }

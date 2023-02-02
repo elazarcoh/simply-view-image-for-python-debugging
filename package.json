@@ -120,6 +120,11 @@
         "command": "svifpd.remove-all-expressions",
         "title": "Remove All Expression",
         "icon": "$(close-all)"
+      },
+      {
+        "command": "svifpd.disable-plugin",
+        "title": "Disable Plugin",
+        "category": "Debug View Python"
       }
     ],
     "menus": {
@@ -257,6 +262,11 @@
           "default": true,
           "description": "Whether to show a context menu entry in VSCode debug variables view for custom objects (currently only plots)."
         },
+        "svifpd.allowPlugins": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to allow plugins to register their own viewables."
+        },
         "svifpd.customSavePath": {
           "type": "string",
           "description": "Custom path to save images. Only used if `svifpd.saveLocation` is set to `custom`."
@@ -329,9 +339,10 @@
   },
   "scripts": {
     "update-package-json": "update-package-json",
-    "vscode:prepublish": "yarn run clean && webpack --config webpack.config.prod.js",
-    "build": " webpack --mode development",
+    "vscode:prepublish": "webpack --mode development",
+    "build": "webpack --mode development",
     "watch": "webpack --mode development --watch",
+    "install-extension": "vsce package -o svifpd.vsix && code --install-extension svifpd.vsix",
     "lint": "eslint src --ext ts",
     "clean": "rimraf dist"
   },

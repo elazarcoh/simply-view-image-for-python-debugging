@@ -1,10 +1,18 @@
 import { DebugSession } from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
-import { logDebug } from "../Logging";
+import { logDebug, logTrace } from "../Logging";
 import { Except } from "../utils/Except";
 import { debounce } from "../utils/Utils";
 import { verifyModuleExistsCode, viewablesSetupCode } from "./BuildPythonCode";
 import { evaluateInPython, execInPython } from "./RunPythonCode";
+
+export function setSetupIsNotOkay(): void {
+    logTrace("Manual set 'setup is not okay'");
+    const debugSessionData = activeDebugSessionData();
+    if (debugSessionData !== undefined) {
+        debugSessionData.setupOkay = false;
+    }
+}
 
 function checkSetupOkay(session: DebugSession) {
     return evaluateInPython(verifyModuleExistsCode(), session);

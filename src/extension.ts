@@ -14,14 +14,20 @@ import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
+// import { api } from "./api";
+import { setupPluginManager } from "./plugins";
 
 function onConfigChange(): void {
     initLog();
 }
 
 // ts-unused-exports:disable-next-line
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext) {
     onConfigChange();
+
+    logTrace("Activating extension");
+
+    setupPluginManager(context);
 
     setSaveLocation(context);
 
@@ -30,8 +36,6 @@ export function activate(context: vscode.ExtensionContext): void {
             onConfigChange();
         }
     });
-
-    logTrace("Activating extension");
 
     // register the debug adapter tracker
     logDebug("Registering debug adapter tracker for python");
@@ -96,33 +100,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(...registerExtensionCommands(context));
 
-    // // add commands
-    // logDebug("Registering commands");
-    // for (const [id, action] of commands) {
-    //   logDebug(`Registering command "${id}"`);
-    //   context.subscriptions.push(
-    //     vscode.commands.registerCommand(id, action)
-    //   );
-    // }
-
-    // // // Add expression command
-    // // const expressionsList = Container.get(ExpressionsList);
-    // // context.subscriptions.push(
-    // //   vscode.commands.registerCommand(
-    // //     `svifpd.add-expression`,
-    // //     async () => {
-    // //       // const maybeExpression = await vscode.window.showInputBox({
-    // //       //   prompt: "Enter expression to watch",
-    // //       //   placeHolder: "e.g. images[0]",
-    // //       //   ignoreFocusOut: true,
-    // //       // });
-    // //       const maybeExpression = "images[0]";
-    // //       if (maybeExpression !== undefined) {
-    // //         const p = expressionsList.addExpression(maybeExpression);
-    // //         watchTreeProvider.refresh();
-    // //         return p;
-    // //       }
-    // //     }
-    // //   )
-    // // );
+    // TODO: Disabled for now, until I decide it's ready to be used.
+    // return { ...api };
 }

@@ -14,7 +14,7 @@ import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
-import { api } from "./api";
+// import { api } from "./api";
 import { setupPluginManager } from "./plugins";
 
 function onConfigChange(): void {
@@ -100,5 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...registerExtensionCommands(context));
 
-    return { ...api };
+    // TODO: Disabled for now, until I decide it's ready to be used.
+    // return { ...api };
 }

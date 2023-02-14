@@ -17,6 +17,7 @@ Based on the great work of [john-guo](https://github.com/john-guo/simply-view-im
   ![Plotting View](pyplot-example.gif)
 * Support Tensor view: pytorch and numpy
   * `numpy.ndarray` is considered a tensor if it has 4 channels, or 3 channels but it does not pass as an single image. `scikit-image` is required for this.
+* Hover over image variable to see the image shape (sometime it's not visible/easy to find in the general debug hover).
 
 ### Watch view
 

@@ -7,6 +7,7 @@ export const PYTHON_MODULE_NAME = "_python_view_image_mod";
 const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
 const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
+const OBJECT_SHAPE_IF_IT_HAS_ONE = `${PYTHON_MODULE_NAME}.object_shape_if_it_has_one`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -85,6 +86,9 @@ export function viewablesSetupCode(): EvalCodePython<null> {
     return { pythonCode };
 }
 
+/**
+ * wrap expression in a safe way so that it can be evaluated into a value
+ */
 function convertExpressionIntoValueWrappedExpression<R>(
     expression: string
 ): EvalCodePython<Except<R>> {
@@ -100,7 +104,11 @@ function convertExpressionIntoValueWrappedExpression<R>(
 export function constructValueWrappedExpressionFromEvalCode<
     R,
     P extends Array<unknown>
->(evalCode: EvalCode<R, P>, expression: string, ...args: P): EvalCodePython<Except<R>> {
+>(
+    evalCode: EvalCode<R, P>,
+    expression: string,
+    ...args: P
+): EvalCodePython<Except<R>> {
     const expressionToEval = evalCode.evalCode(expression, ...args);
     return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
 }
@@ -140,4 +148,12 @@ export function combineMultiEvalCodePython<
     return {
         pythonCode: code,
     };
+}
+
+export function constructObjectShapeCode(
+    expression: string
+): EvalCodePython<Except<PythonObjectShape>> {
+    return convertExpressionIntoValueWrappedExpression(
+        `${OBJECT_SHAPE_IF_IT_HAS_ONE}(${expression})`
+    );
 }

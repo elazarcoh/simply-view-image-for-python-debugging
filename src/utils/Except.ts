@@ -29,4 +29,11 @@ export namespace Except {
     export function isError<T>(except: Except<T>): except is ExceptError {
         return except.isError;
     }
+
+    export function join<T>(except: Except<Except<T>>): Except<T> {
+        if (except.isError) {
+            return except;
+        }
+        return except.result;
+    }
 }

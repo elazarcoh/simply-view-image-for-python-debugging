@@ -39,3 +39,14 @@ def same_value_multiple_callables(get_value, funcs):
         return [eval_into_value(lambda: f(val)) for f in funcs]
     except Exception as e:
         return [f"Error({stringify(e)})"] * len(funcs)
+
+
+def object_shape_if_it_has_one(obj):
+    if hasattr(obj, "shape"):
+        shape = obj.shape
+        return tuple(shape)
+    elif hasattr(obj, "width") and hasattr(obj, "height") and hasattr(obj, "getbands"):
+        bands = "".join(map(str, obj.getbands()))
+        return {"width": obj.width, "height": obj.height, "channels": bands}
+    else:
+        return None

@@ -1,14 +1,16 @@
 .vscode/**
 .vscode-test/**
+.github/**
 node_modules/**
 out/**
 src/**
+webview-ui/**
 .gitignore
 vsc-exdtension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
 **/*.ts
-webpack.config.js
+webpack.config*.js
 python_test
 example-plugin

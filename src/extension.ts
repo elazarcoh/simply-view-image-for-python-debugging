@@ -16,6 +16,7 @@ import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
+import { HoverProvider } from "./HoverProvider";
 
 function onConfigChange(): void {
     initLog();
@@ -68,6 +69,11 @@ export function activate(context: vscode.ExtensionContext) {
             new CodeActionProvider(),
             { providedCodeActionKinds: [vscode.CodeActionKind.Empty] }
         )
+    );
+
+    logDebug("Registering hover provider (for shape info)");
+    context.subscriptions.push(
+        vscode.languages.registerHoverProvider("python", new HoverProvider())
     );
 
     logDebug("Registering image watch tree view provider");

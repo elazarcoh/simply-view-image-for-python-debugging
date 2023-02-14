@@ -104,7 +104,13 @@ export function makeViewWatchTreeItemCommand(
     return async (item: PythonObjectTreeItem): Promise<void> => {
         const debugSession = vscode.debug.activeDebugSession;
         if (debugSession !== undefined) {
-            await viewWatchTreeItem(group, item, debugSession);
+            if (activeDebugSessionData(debugSession).isStopped) {
+                await viewWatchTreeItem(group, item, debugSession);
+            } else {
+                vscode.window.showWarningMessage(
+                    "Cannot view object while debugging is not paused."
+                );
+            }
         }
     };
 }

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { TypedCommand } from "./commands";
+import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { arrayUniqueByKey } from "./utils/Utils";
 import { currentUserSelection, selectionString } from "./utils/VSCodeUtils";
@@ -10,7 +11,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         range: vscode.Range
     ): Promise<TypedCommand<"svifpd._internal_view-object">[] | undefined> {
         const debugSession = vscode.debug.activeDebugSession;
-        if (debugSession === undefined) {
+        if (debugSession === undefined || activeDebugSessionData(debugSession).isStopped === false) {
             return undefined;
         }
 

@@ -1,5 +1,6 @@
 import Container, { Service } from "typedi";
 import * as vscode from "vscode";
+import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
 import { logError } from "../Logging";
 import {
@@ -176,6 +177,9 @@ export class CurrentPythonObjectsList {
     }
 
     public async update(): Promise<void> {
+        if (activeDebugSessionData(this.debugSession).isStopped === false) {
+            return;
+        }
         this._variablesList.length = 0;
         const variables = await this.retrieveVariables();
         this._variablesList.push(

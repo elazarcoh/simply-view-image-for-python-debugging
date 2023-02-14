@@ -55,10 +55,12 @@ export const createDebugAdapterTracker = (
     return {
         onWillStartSession: () => {
             logTrace("onWillStartSession");
+            debugSessionData.isStopped = false;
         },
 
         onWillStopSession: async () => {
             logTrace("onWillStopSession");
+            debugSessionData.isStopped = false;
             currentPythonObjectsList.clear();
             trackedPythonObjects.clear();
             watchTreeProvider.refresh();
@@ -90,6 +92,7 @@ export const createDebugAdapterTracker = (
                 msg.body.threadId !== undefined
             ) {
                 logDebug("Breakpoint hit");
+                debugSessionData.isStopped = true;
 
                 await debounce(runSetup, 250)(session);
             } else if (msg.type === "response" && msg.command === "variables") {
@@ -104,6 +107,7 @@ export const createDebugAdapterTracker = (
                 debugVariablesTracker.onVariablesResponse(msg);
                 return updateWatchTree();
             } else if (msg.type === "event" && msg.event === "continued") {
+                debugSessionData.isStopped = false;
                 return debugVariablesTracker.onContinued();
             } else if (msg.type === "response" && msg.command === "scopes") {
                 debugVariablesTracker.onScopesResponse(msg);
@@ -120,6 +124,7 @@ export const createDebugAdapterTracker = (
         onExit: () => {
             // same as onWillStopSession
             logTrace("onExit");
+            debugSessionData.isStopped = false;
             currentPythonObjectsList.clear();
             trackedPythonObjects.clear();
             watchTreeProvider.refresh();

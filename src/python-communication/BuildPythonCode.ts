@@ -29,7 +29,10 @@ exec('''
 try:
 ${indent(tryExpression, 4)}
 except:
-${indent(content, 4)}
+    try:
+${indent(content, 8)}
+    except:
+        pass
 ''', ${moduleName}.__dict__
 )
 `;

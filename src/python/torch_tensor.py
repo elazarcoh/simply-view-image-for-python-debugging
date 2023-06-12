@@ -31,7 +31,7 @@ try:
 
             pad_value = 255
             torchvision.utils.save_image(
-                obj,
+                obj.float(),
                 path,
                 normalize=normalize,
                 pad_value=pad_value,

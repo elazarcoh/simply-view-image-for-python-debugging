@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.0.12] - Patch
+
+### Added
+
+-   Convert to `float` when saving torch tensor.
+
 ## [3.0.9] - Pre-release
 
 ### Added

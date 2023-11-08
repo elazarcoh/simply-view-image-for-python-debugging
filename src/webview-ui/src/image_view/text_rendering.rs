@@ -1,6 +1,6 @@
 use std::{collections::HashMap, iter::FromIterator, ops::Deref, rc::Rc};
 
-use ab_glyph::{Font, FontArc, Glyph, Point, PxScale, Rect};
+use ab_glyph::{Font, FontArc, Glyph, Point, PxScale, Rect, GlyphId};
 use glam::{Mat3, Vec4};
 use glyph_brush::{GlyphBrush, GlyphBrushBuilder};
 use glyph_brush_draw_cache::{DrawCache, Rectangle};
@@ -225,7 +225,7 @@ impl PixelTextData {
 struct GlyphTexture {
     gl: WebGl2RenderingContext,
     texture: GLGuard<WebGlTexture>,
-    glyphs: HashMap<char, Glyph>,
+    glyphs: HashMap<GlyphId, (char, Glyph)>,
     draw_cache: DrawCache,
 }
 
@@ -312,7 +312,7 @@ impl GlyphTexture {
             .chars()
             .zip(glyphs.iter())
             .for_each(|(c, glyph)| {
-                self.glyphs.insert(c, glyph.glyph.clone());
+                self.glyphs.insert(glyph.glyph.id, (c, glyph.glyph.clone()));
             });
 
         for glyph in glyphs {
@@ -346,12 +346,11 @@ impl GlyphTexture {
 
     fn glyph_uv(
         &self,
-        char: char,
         section_glyph: &glyph_brush_layout::SectionGlyph,
     ) -> Option<(Rect, Rect)> {
         self.glyphs
-            .get(&char)
-            .map(|glyph| {
+            .get(&section_glyph.glyph.id)
+            .map(|(_, glyph)| {
                 let diff = section_glyph.glyph.position - glyph.position;
                 self.draw_cache
                     .rect_for(
@@ -404,7 +403,7 @@ impl PixelTextCache {
         // buffers: &mut Buffers1,
         pixel_data: &mut PixelTextData,
     ) {
-        let pixel_text = "2";
+        let pixel_text = "454\n123";
         // let pixel_text = pixel_value.format_value();
         log::debug!("Pixel text: {}", pixel_text);
         let glyphs = Layout::default()
@@ -423,17 +422,18 @@ impl PixelTextCache {
                 }],
             );
         log::debug!("Glyphs: {:?}", glyphs);
-        let uvs = glyphs
+        let (uvs, bboxes): (Vec<_>, Vec<_>) = glyphs
             .iter()
-            .zip(pixel_text.chars())
-            .filter_map(|(glyph, char)| glyph_texture.glyph_uv(char, glyph))
-            .flat_map(|rect| rect_to_positions(rect.0))
+            .filter_map(|glyph| glyph_texture.glyph_uv(glyph))
+            .unzip();
+        let num_rendered_glyphs = uvs.len();
+        let uvs = uvs
+            .iter()
+            .flat_map(|rect| rect_to_positions(*rect))
             .collect::<Vec<_>>();
-        let bbox = glyphs
+        let bbox = bboxes
             .iter()
-            .zip(pixel_text.chars())
-            .filter_map(|(glyph, char)| glyph_texture.glyph_uv(char, glyph))
-            .flat_map(|rect| rect_to_positions(rect.1))
+            .flat_map(|rect| rect_to_positions(*rect))
             .collect::<Vec<_>>();
 
         log::debug!("UVs: {:?}", uvs);
@@ -469,7 +469,7 @@ impl PixelTextCache {
                 0,
             )
             .unwrap();
-        pixel_data.buffer_info.num_elements = 6 * pixel_text.len() as usize;
+        pixel_data.buffer_info.num_elements = 6 * num_rendered_glyphs;
         log::debug!("pixel_value_into_buffers");
     }
 

@@ -24,6 +24,7 @@ use stylist::yew::use_style;
 use web_sys::window;
 use web_sys::AddEventListenerOptions;
 use web_sys::HtmlCanvasElement;
+use web_sys::HtmlElement;
 use web_sys::Node;
 use web_sys::WebGl2RenderingContext;
 
@@ -158,6 +159,7 @@ fn App() -> Html {
     use_effect({
         let window = window().unwrap();
         let coordinator = coordinator.clone();
+        let canvas_ref = canvas_ref.clone();
 
         move || {
             let onmessage = Callback::from(move |event: Event| {
@@ -174,7 +176,10 @@ fn App() -> Html {
                 let event = event
                     .dyn_ref::<web_sys::WheelEvent>()
                     .expect("Unable to cast event to WheelEvent");
-                on_wheel(event)
+                let canvas_element = canvas_ref
+                    .cast::<HtmlCanvasElement>()
+                    .expect("canvas_ref not attached to a canvas element");
+                on_wheel(event, &canvas_element)
             });
             let options = EventListenerOptions::enable_prevent_default();
             let wheel_listener =

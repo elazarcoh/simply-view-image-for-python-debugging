@@ -6,15 +6,21 @@
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
 
+const webpack = require('webpack');
 const ESLintPlugin = require("eslint-webpack-plugin");
-
 const {
     VSCodeExtensionsPackageJsonGenerator,
 } = require("vscode-extensions-json-generator/webpack");
-
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-
 const path = require("path");
+const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+
+const dist = path.resolve(__dirname, "dist");
+
+const webviewPath = path.resolve(__dirname, "src/webview-ui");
+
 
 /** @type WebpackConfig */
 const baseConfig = {
@@ -56,7 +62,7 @@ const extensionConfig = {
         ],
     },
     output: {
-        path: path.resolve(__dirname, "dist"),
+        path: dist,
         filename: "extension.js",
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../[resource-path]",
@@ -74,7 +80,7 @@ const extensionConfig = {
 const webviewConfig = {
     ...baseConfig,
     target: ["web", "es2020"],
-    entry: "./src/webview-ui/index.tsx",
+    entry: "./src/webview-ui/main.ts",
     experiments: { outputModule: true },
     resolve: {
         extensions: [".ts", ".tsx", ".js", ".jsx", ".css"],
@@ -108,11 +114,43 @@ const webviewConfig = {
         // new ESLintPlugin({ extensions: ["ts", "tsx"], }),
     ],
     output: {
-        path: path.resolve(__dirname, "dist"),
+        path: dist,
         filename: "webview.js",
         libraryTarget: "module",
         chunkFormat: "module",
     },
 };
 
-module.exports = [extensionConfig, webviewConfig];
+const rustWebviewConfig = {
+    ...baseConfig,
+    entry: {
+        index: path.resolve(webviewPath, "index.js"),
+    },
+    output: {
+        path: dist,
+        filename: "webview.js"
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: path.resolve(webviewPath, "index.html")
+        }),
+        new WasmPackPlugin({
+            crateDirectory: webviewPath,
+            outDir: path.resolve(webviewPath, "pkg"),
+            outName: "webview",
+        }),
+        // Have this example work in Edge which doesn't ship `TextEncoder` or
+        // `TextDecoder` at this time.
+        new webpack.ProvidePlugin({
+          TextDecoder: ['text-encoding', 'TextDecoder'],
+          TextEncoder: ['text-encoding', 'TextEncoder']
+        })
+    ],
+    experiments: {
+        asyncWebAssembly: true,
+        syncWebAssembly: true,
+    }
+}
+
+
+module.exports = [extensionConfig, rustWebviewConfig];

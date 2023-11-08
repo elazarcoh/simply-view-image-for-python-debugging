@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use glam::{Mat3, Vec2, Vec3, Mat4};
+use glam::{Mat3, Vec2, Vec3};
 
 use wasm_bindgen::prelude::*;
 use web_sys::{
@@ -178,7 +178,7 @@ impl Renderer {
     fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs, String> {
         let normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image.frag"))
+            .fragment_shader(include_str!("../shaders/image-normalized.frag"))
             .attribute("vin_position")
             .build()?;
         let uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
@@ -361,8 +361,10 @@ impl Renderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
-        let drawing_options = rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
-        let (color_multiplier, u_color_addition) = calculate_color_matrix(&texture.image.info, &drawing_options);
+        let drawing_options =
+            rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
+        let (color_multiplier, u_color_addition) =
+            calculate_color_matrix(&texture.image.info, &drawing_options);
 
         gl.use_program(Some(&program.program));
         set_uniforms(

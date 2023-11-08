@@ -130,11 +130,11 @@ pub fn App() -> Html {
 
     // TODO: move from here
     let view_id = ViewId::Primary;
-    let my_node_ref = dispatch.get().image_views().borrow().get_node_ref(view_id);
+    let gl_view_node_ref = dispatch.get().image_views().borrow().get_node_ref(view_id);
 
     use_effect({
         let canvas_ref = canvas_ref.clone();
-        let my_node_ref = my_node_ref.clone();
+        let my_node_ref = gl_view_node_ref.clone();
 
         move || {
             // send message to VSCode that the webview is ready
@@ -239,24 +239,9 @@ pub fn App() -> Html {
     //     }
     // });
 
-    // TODO: remove this
-    let onclick = Callback::from(|_| {
-        // try_websocket(41091);
-    });
-
     let main_style = use_style!(
         r#"
-        /* make sure we don't overflow, so no scroll bar.
-         TODO: find the best value for this, or a better way to do this
-         */
-        width: 95vw;
-        height: 90vh;
-        margin: 0;
-        padding: 0;
 
-        .disable-hover {
-            pointer-events: none;
-        }
     "#,
     );
     let canvas_style = use_style!(
@@ -272,8 +257,7 @@ pub fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-            <vscode-button onclick={onclick}> {"FooBar"} </vscode-button>
-            <Main gl_view_node_ref={my_node_ref} />
+            <Main gl_view_node_ref={gl_view_node_ref} />
         </div>
     }
 }

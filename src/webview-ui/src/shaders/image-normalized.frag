@@ -8,6 +8,7 @@ uniform sampler2D u_texture;
 
 // drawing options
 uniform mat4 u_color_multiplier;
+uniform vec4 u_color_addition;
 uniform bool u_invert;
 
 uniform vec2 u_buffer_dimension;
@@ -27,7 +28,10 @@ void main()
 {
   vec2 pix = vout_uv;
   vec4 sampled = texture(u_texture, pix);
-  vec4 color = vec4((u_color_multiplier*vec4(sampled.rgb,1.0)).rgb,sampled.a);
+
+  vec4 color = u_color_multiplier * sampled + u_color_addition;
+
+  color = clamp(color, 0.0, 1.0);
 
   if(u_invert){
     color.rgb = 1.-color.rgb;

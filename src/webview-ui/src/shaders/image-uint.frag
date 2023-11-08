@@ -34,6 +34,8 @@ void main()
 
   vec4 color = u_color_multiplier * sampled + u_color_addition;
 
+  color = clamp(color, 0.0, 1.0);
+
   if(u_invert){
     color.rgb = 1.-color.rgb;
   }

@@ -66,12 +66,12 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
         .interleave(
             std::iter::once(html! { <hr class={css!("margin: 0; border-color: var(--vscode-menu-border);")} /> })
                 .cycle()
-                .take(num_entries.saturating_sub(1)),
+                .take(num_entries),
         )
         .collect::<Vec<_>>();
 
     html! {
-        <div>
+        <div class={css!("width: 100%; margin-bottom: 100px;")}>
             {for entries}
         </div>
     }

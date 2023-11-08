@@ -1,5 +1,5 @@
 use gloo::events::EventListener;
-use stylist::yew::use_style;
+use stylist::{yew::use_style, css};
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
@@ -7,7 +7,7 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        icon_button::{IconButton, IconToggleButton, ToggleState},
+        icon_button::{IconButton, IconToggleButton, ToggleState}, image_selection_list::ImageSelectionList,
     }, vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -20,23 +20,21 @@ struct ToolbarProps {
 fn Toolbar(props: &ToolbarProps) -> Html {
     let ToolbarProps { children } = props;
 
-    // let toggle_pinned = {
-    //     let pinned_button_clicked = pinned_button_clicked.clone();
-    //     Callback::from(move |_| {
-    //         pinned_button_clicked.emit(());
-    //     })
-    // };
-
     let toolbar_style = use_style!(
         r#"
         width: 100%;
+
         display: inline-flex;
         flex-direction: row;
-        align-items: center;
+        align-items: flex-end;
         justify-content: flex-end;
         align-content: center;
         flex-wrap: nowrap;
         column-gap: 4px;
+
+        border-bottom: 1px var(--vscode-panel-border) solid;
+        padding-bottom: 2px;
+        padding-top: 2px;
         "#,
     );
 
@@ -58,6 +56,7 @@ pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
 
     html! {
         <IconButton
+            title={"Refresh Images"}
             aria_label={"Refresh"}
             icon={"codicon codicon-refresh"}
             onclick={Callback::from({
@@ -124,7 +123,8 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
 
     let pin_toggle_button = html! {
         <IconToggleButton
-            aria_label={"Toggle sidebar"}
+            title={"Pin sidebar"}
+            aria_label={"Pin sidebar"}
             on_icon={"codicon codicon-pinned"}
             off_icon={"codicon codicon-pin"}
             initial_state={if *pinned {ToggleState::On} else {ToggleState::Off}}
@@ -137,14 +137,23 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
     };
 
     let collapse_toggle_button = html! {
-        <IconToggleButton
+        <IconButton
+            title={"Toggle sidebar"}
             aria_label={"Toggle sidebar"}
-            on_icon={"codicon codicon-chevron-right"}
-            off_icon={"codicon codicon-chevron-left"}
-            initial_state={if *collapsed {ToggleState::On} else {ToggleState::Off}}
-            on_state_changed={
+            icon={"codicon codicon-chevron-left"}
+            onclick={
                 let collapsed = collapsed.clone();
-                Callback::from(move |(state, _)| collapsed.set(state == ToggleState::On))
+                Callback::from(move |_| collapsed.set(true))
+            } />
+    };
+    let expand_toggle_button = html! {
+        <IconButton
+            title={"Toggle sidebar"}
+            aria_label={"Toggle sidebar"}
+            icon={"codicon codicon-chevron-right"}
+            onclick={
+                let collapsed = collapsed.clone();
+                Callback::from(move |_| collapsed.set(false))
             } />
     };
     let refresh_button = html! {
@@ -193,12 +202,12 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
                     else {classes!(sidebar_style.clone(), sidebar_unpinned_style.clone(), not_dragging_style.clone())}
         }>
             <Toolbar>
-                {refresh_button}
+                {refresh_button.clone()}
                 {pin_toggle_button}
                 {collapse_toggle_button}
             </Toolbar>
-            <div>
-                <crate::components::image_selection_list::ImageSelectionList />
+            <div class={css!("overflow-y: auto; height: 100%;")}>
+                <ImageSelectionList />
             </div>
         </div>
     };
@@ -206,10 +215,17 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
     /* Collapsed sidebar */
     let collapsed_style = use_style!(
         r#"
+        display: flex;
+        flex-direction: column;
+        padding: 2px;
+        background-color: var(--vscode-panel-background);
+        height: 100%;
         "#,
     );
     let collapsed_html = html! {
     <div class={collapsed_style}>
+        {expand_toggle_button}
+        {refresh_button}
     </div>
     };
 

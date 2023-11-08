@@ -59,9 +59,6 @@ pub fn Main(props: &MainProps) -> Html {
         <div class={main_style.clone()}>
             <Sidebar />
             <div class={"main"}>
-                <div class={"main-toolbar"}>
-                    <MainToolbar />
-                </div>
                 <GLView node_ref={gl_view_node_ref} />
             </div>
         </div>

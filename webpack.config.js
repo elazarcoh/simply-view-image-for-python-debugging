@@ -114,6 +114,12 @@ const WebviewConfig = {
                     ),
                     to: path.posix.join(__dirname.replace(/\\/g, '/'), 'dist', "[name][ext]"),
                 },
+                {
+                    from: path.posix.join(
+                        webviewPath, 'icons','dist', 'svifpd-icons.{ttf,css}',
+                    ),
+                    to: path.posix.join(__dirname.replace(/\\/g, '/'), 'dist', "[name][ext]"),
+                },
             ],
         })],
     experiments: {

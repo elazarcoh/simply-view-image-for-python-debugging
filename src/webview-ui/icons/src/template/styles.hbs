@@ -9,7 +9,7 @@
 	src: {{{ fontSrc }}};
 }
 
-.my-icons[class*='my-icons-'] {
+.svifpd-icons[class*='svifpd-icons-'] {
 	font: normal normal normal 16px/1 {{ name }};
 	display: inline-block;
 	text-decoration: none;
@@ -26,29 +26,29 @@
  *  Modifiers
  *-------------------*/
 
-@keyframes my-icons-spin {
+@keyframes svifpd-icons-spin {
 	100% {
 		transform:rotate(360deg);
 	}
 }
 
-.my-icons-sync.my-icons-modifier-spin,
-.my-icons-loading.my-icons-modifier-spin,
-.my-icons-gear.my-icons-modifier-spin {
+.svifpd-icons-sync.svifpd-icons-modifier-spin,
+.svifpd-icons-loading.svifpd-icons-modifier-spin,
+.svifpd-icons-gear.svifpd-icons-modifier-spin {
 	/* Use steps to throttle FPS to reduce CPU usage */
-	animation: my-icons-spin 1.5s steps(30) infinite;
+	animation: svifpd-icons-spin 1.5s steps(30) infinite;
 }
 
-.my-icons-modifier-disabled {
+.svifpd-icons-modifier-disabled {
 	opacity: 0.5;
 }
 
-.my-icons-modifier-hidden {
+.svifpd-icons-modifier-hidden {
 	opacity: 0;
 }
 
 /* custom speed & easing for loading icon */
-.my-icons-loading {
+.svifpd-icons-loading {
 	animation-duration: 1s !important;
 	animation-timing-function: cubic-bezier(0.53, 0.21, 0.29, 0.67) !important;
 }

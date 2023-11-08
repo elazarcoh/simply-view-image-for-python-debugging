@@ -2,8 +2,8 @@ const package = require('./package.json');
 const codepoints = require('./src/template/mapping.json');
 
 module.exports = {
-    name: 'my-icons',
-    prefix: 'my-icons',
+    name: 'svifpd-icons',
+    prefix: 'svifpd-icons',
     codepoints: codepoints,
     inputDir: './src/icons',
     outputDir: './dist',

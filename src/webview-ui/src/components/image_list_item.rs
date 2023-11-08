@@ -16,14 +16,15 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     let DisplayOptionProps {} = props;
 
     let grayscale_button = html! {
-        <vscode-button aria-label={"Grayscale"}>
-            {"G"}
-        </vscode-button>
+        <IconButton
+            aria_label={"Refresh"}
+            icon={"codicon codicon-refresh"}
+        />
     };
     let high_contrast_button = html! {
         <IconButton
             aria_label={"High Contrast"}
-            icon={"codicon codicon-refresh"}
+            icon={"svifpd-icons svifpd-icons-contrast"}
         />
     };
 

@@ -1,13 +1,13 @@
 {
-  "name": "my-icons",
+  "name": "svifpd-icons",
   "version": "0.0.1",
   "fontVersion": "0.1",
   "main": "index.js",
   "scripts": {
     "clean": "node ./scripts/reset.js",
     "svgo": "svgo -f ./src/icons/ --config svgo.config.js",
-    "sprite": "node ./scripts/svg-sprite.js --outDir dist --outFile my-icons.svg",
-    "export-to-csv": "node ./scripts/export-to-csv.js -f ./dist/my-icons.ttf > ./dist/my-icons.csv",
+    "sprite": "node ./scripts/svg-sprite.js --outDir dist --outFile svifpd-icons.svg",
+    "export-to-csv": "node ./scripts/export-to-csv.js -f ./dist/svifpd-icons.ttf > ./dist/svifpd-icons.csv",
     "fonts": "fantasticon",
     "build": "npm run clean && npm run svgo && npm run fonts && npm run export-to-csv && npm run sprite",
     "release": "release-it"

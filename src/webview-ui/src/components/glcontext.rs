@@ -227,9 +227,16 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
     }
 
     html! {
-        <ContextProvider<MessageContext> context={msg}>
-            <canvas id="gl-canvas" ref={canvas_ref} ></canvas>
-            {props.children.clone()}
-        </ContextProvider<MessageContext>>
-    }
+          <ContextProvider<MessageContext> context={msg}>
+              <canvas id="gl-canvas" ref={canvas_ref}
+                position="absolute"
+                top="0"
+                width="100%"
+                height="100%"
+                z-index="-1"
+                display="block"
+               ></canvas>
+              {props.children.clone()}
+          </ContextProvider<MessageContext>>
+      }
 }

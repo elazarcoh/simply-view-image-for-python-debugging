@@ -52,6 +52,7 @@ features = [
   'Document',
   'Element',
   'HtmlElement',
+  'DomRect',
   'Node',
   'Window',
   'HtmlCanvasElement',

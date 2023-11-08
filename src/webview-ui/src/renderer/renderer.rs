@@ -8,6 +8,7 @@ use yew::NodeRef;
 
 use super::{ImageCache, InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
 use crate::webgl_utils;
+use crate::webgl_utils::types::{ArrayData, ArraySpec};
 
 fn views(vt: ViewsType) -> Vec<String> {
     match vt {
@@ -217,6 +218,17 @@ impl Renderer {
 
         let vert_code = include_str!("../shaders/basic.vert");
         let frag_code = include_str!("../shaders/basic.frag");
+            
+        let array_info: ArraySpec<&[f32]> = ArraySpec {
+            name: "a_position".to_string(),
+            data: ArrayData::Slice(&[
+                -0.5_f32, -0.5, // bottom left
+                0.5, -0.5, // bottom right
+                0.0, 0.5, // top
+            ]),
+            num_components: 2,
+        };
+        let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
 
         // triangle at the center of the screen
         let vertices: Vec<f32> = vec![

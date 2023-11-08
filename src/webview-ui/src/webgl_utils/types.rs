@@ -8,14 +8,15 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
 
+use super::attributes::IntoJsArray;
 use super::constants::GL_CONSTANT_NAMES;
 
-pub(crate) type GLConstant = u32;
+pub type GLConstant = u32;
 
-pub(crate) type GLSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
+pub type GLSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
 
 #[repr(u32)]
-pub(crate) enum ElementType {
+pub enum ElementType {
     UnsignedByte = GL::UNSIGNED_BYTE,
 }
 
@@ -25,31 +26,57 @@ impl Into<GLConstant> for ElementType {
     }
 }
 
-pub(crate) enum ArrayData<T> {
-    Slice(T),
-    Buffer(WebGlBuffer),
+pub trait ElementTypeFor {
+    const ELEMENT_TYPE: ElementType;
 }
 
-pub(crate) struct ArraySpec<T> {
-    pub num_components: u32,
+impl ElementTypeFor for u8 {
+    const ELEMENT_TYPE: ElementType = ElementType::UnsignedByte;
+}
+
+impl ElementTypeFor for f32 {
+    const ELEMENT_TYPE: ElementType = ElementType::UnsignedByte;
+}
+
+impl<T: ElementTypeFor> ElementTypeFor for &[T] {
+    const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+}
+
+impl<T: ElementTypeFor> ElementTypeFor for Vec<T> {
+    const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+}
+
+pub enum ArrayData<T> {
+    Slice(T),
+    // Buffer(WebGlBuffer),
+}
+
+pub struct ArraySpec<T: IntoJsArray> {
+    pub num_components: usize,
     pub name: String,
     pub data: ArrayData<T>,
 }
 
-pub(crate) struct AttribInfo {
-    num_components: u32,
+pub struct AttribInfo {
+    pub name: String,
+    pub num_components: usize,
+    pub buffer: WebGlBuffer,
+    pub gl_type: ElementType,
+    //  normalize:     normalization,
+    //  stride:        array.stride || 0,
+    //  offset:        array.offset || 0,
+    //  divisor:       array.divisor === undefined ? undefined : array.divisor,
+    //  drawType:      array.drawType,
 }
 
-pub(crate) struct BufferInfo {
-    num_elements: u32,
+pub struct BufferInfo {
+    num_elements: usize,
     element_type: ElementType,
     indices: Option<WebGlBuffer>,
     attribs: HashMap<String, AttribInfo>,
 }
 
-
-
-pub(crate) struct ProgramBundle {
+pub struct ProgramBundle {
     pub program: WebGlProgram,
     pub shaders: Vec<WebGlShader>,
     pub uniform_setters: HashMap<String, GLSetter>,

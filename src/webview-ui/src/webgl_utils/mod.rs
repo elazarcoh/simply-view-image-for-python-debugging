@@ -1,8 +1,8 @@
 // based on twgl
-mod types;
-mod constants;
-mod program;
-mod attributes;
+pub mod types;
+pub mod constants;
+pub mod program;
+pub mod attributes;
 
 pub use program::GLProgramBuilder;
 

@@ -9,18 +9,15 @@ use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
 };
 
-
 use crate::common::Size;
 use crate::image_view::camera;
 use crate::math_utils::ToHom;
-use crate::webgl_utils::attributes::{
-    create_buffer_info_from_arrays, Arrays,
-};
+use crate::webgl_utils;
+use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
 use crate::webgl_utils::constants::*;
 use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
-use crate::webgl_utils;
 
 use super::camera::Camera;
 use super::constants::VIEW_SIZE;
@@ -188,9 +185,7 @@ impl Renderer {
     }
 
     fn canvas(gl: &GL) -> HtmlCanvasElement {
-        
-        gl
-            .canvas()
+        gl.canvas()
             .unwrap()
             .dyn_into::<HtmlCanvasElement>()
             .unwrap()
@@ -236,23 +231,18 @@ impl Renderer {
 
     fn calculate_pixels_information(
         gl: &GL,
-        camera: &Camera,
         image_size: &Size,
+        view_projection: &Mat3,
+        rendered_area_size: &Size,
     ) -> PixelsInformation {
-        let canvas = Renderer::canvas(gl);
-        let canvas_size = Size {
-            width: canvas.width() as f32,
-            height: canvas.height() as f32,
-        };
         let tl_ndc: Vec3 = Vec2::new(-1.0, 1.0).to_hom();
         let br_ndc: Vec3 = Vec2::new(1.0, -1.0).to_hom();
 
-        let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
         let image_pixels_to_view = Mat3::from_scale(Vec2::new(
             VIEW_SIZE.width / image_size.width,
             VIEW_SIZE.height / image_size.height,
         ));
-        let view_projection_inv = (view_projection * image_pixels_to_view).inverse();
+        let view_projection_inv = (*view_projection * image_pixels_to_view).inverse();
 
         let tl_world = view_projection_inv * tl_ndc;
         let br_world = view_projection_inv * br_ndc;
@@ -270,7 +260,7 @@ impl Renderer {
         let upper_x_px = i32::min(image_size.width as i32, (f32::ceil(br.x) as i32) + 1);
         let upper_y_px = i32::min(image_size.height as i32, (f32::ceil(br.y) as i32) + 1);
 
-        let pixel_size_device = (canvas_size.width / (brx - tlx)) as i32;
+        let pixel_size_device = (rendered_area_size.width / (brx - tlx)) as i32;
 
         PixelsInformation {
             lower_x_px,
@@ -332,16 +322,21 @@ impl Renderer {
         let program = &rendering_data.programs.image;
         let config = rendering_context.rendering_configuration();
 
-        let canvas = Renderer::canvas(gl);
-        let canvas_size = Size {
-            width: canvas.width() as f32,
-            height: canvas.height() as f32,
+        let html_element_size = Size {
+            width: image_view_data.html_element.client_width() as f32,
+            height: image_view_data.html_element.client_height() as f32,
         };
         let camera = &image_view_data.camera;
 
-        let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
+        let view_projection =
+            camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera);
 
-        let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
+        let pixels_info = Renderer::calculate_pixels_information(
+            gl,
+            &texture.image_size(),
+            &view_projection,
+            &html_element_size,
+        );
         let enable_borders =
             pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_border as _;
         let image_size = texture.image_size();

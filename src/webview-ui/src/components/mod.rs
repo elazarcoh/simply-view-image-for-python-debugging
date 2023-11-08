@@ -6,4 +6,5 @@ pub mod single_view;
 pub mod set_image_into_view_button;
 pub mod main;
 pub mod sidebar;
+pub mod main_toolbar;
 pub use gl_view::GLView;

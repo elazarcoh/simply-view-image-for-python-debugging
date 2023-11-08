@@ -410,6 +410,10 @@ pub fn App() -> Html {
         height: 90vh;
         margin: 0;
         padding: 0;
+
+        .disable-hover {
+            pointer-events: none;
+        }
     "#,
     );
     let canvas_style = use_style!(
@@ -420,19 +424,6 @@ pub fn App() -> Html {
         width: 100%;
         height: 100%;
         z-index: -1;
-    "#,
-    );
-
-    let image_view_container_style = use_style!(
-        r#"
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        justify-content: center;
-        align-items: center;
     "#,
     );
 
@@ -450,7 +441,6 @@ pub fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-            <Main />
             // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
             // <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
             // <vscode-panels>
@@ -473,9 +463,7 @@ pub fn App() -> Html {
             // </vscode-panels>
             // <div>{ "Hello World!" }</div>
             // <ImageSelectionList images={ entries }/>
-            <div class={image_view_container_style}>
-                <GLView node_ref={my_node_ref} />
-            </div>
+            <Main gl_view_node_ref={my_node_ref} />
         </div>
     }
 }

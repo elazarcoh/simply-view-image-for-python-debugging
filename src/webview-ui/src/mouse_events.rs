@@ -56,7 +56,7 @@ impl PanHandler {
         view_id: InViewName,
         view_element: &web_sys::HtmlElement,
         camera_context: Rc<dyn CameraContext>,
-    ) -> (EventListener, EventListener, EventListener, EventListener) {
+    ) -> Vec<EventListener> {
         let handler = Rc::new(RefCell::new(Self::new()));
 
         let mousedown = {
@@ -101,6 +101,21 @@ impl PanHandler {
                 (*self_handler).borrow_mut().is_panning = false;
             })
         };
+        let mouseenter = {
+            let self_handler = Rc::clone(&handler);
+            Callback::from(move |_event: Event| {
+                // if mouse is up, then we're not panning
+                if !(*self_handler).borrow().is_panning {
+                    return;
+                }
+                let event = _event
+                    .dyn_ref::<web_sys::MouseEvent>()
+                    .expect("Unable to cast event to MouseEvent");
+                if event.buttons() == 0 {
+                    (*self_handler).borrow_mut().is_panning = false;
+                }
+            })
+        };
         let mousemove = {
             let canvas_element = canvas_ref
                 .cast::<HtmlCanvasElement>()
@@ -136,7 +151,7 @@ impl PanHandler {
         };
 
         let options = EventListenerOptions::enable_prevent_default();
-        (
+        vec![
             EventListener::new_with_options(view_element, "mousedown", options, move |e| {
                 mousedown.emit(e.clone())
             }),
@@ -146,10 +161,13 @@ impl PanHandler {
             EventListener::new_with_options(view_element, "mousemove", options, move |e| {
                 mousemove.emit(e.clone())
             }),
-            EventListener::new_with_options(view_element, "mouseleave", options, move |e| {
-                mouseleave.emit(e.clone())
+            // EventListener::new_with_options(view_element, "mouseleave", options, move |e| {
+            //     mouseleave.emit(e.clone())
+            // }),
+            EventListener::new_with_options(view_element, "mouseenter", options, move |e| {
+                mouseenter.emit(e.clone())
             }),
-        )
+        ]
     }
 }
 

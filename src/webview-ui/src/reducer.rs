@@ -5,7 +5,7 @@ use yewdux::prelude::*;
 
 use crate::{
     communication::incoming_messages::ImageInfo,
-    image_view::types::{ImageId, TextureImage, ViewId, DrawingOptions, Coloring},
+    image_view::{types::{ImageId, TextureImage, ViewId, DrawingOptions, Coloring}, colormap::ColorMap},
     store::AppState,
 };
 

@@ -7,11 +7,13 @@ use crate::{
     configurations,
     image_view::{
         camera::ViewsCameras,
+        colormap,
         image_cache::ImageCache,
         image_views::ImageViews,
         types::{DrawingOptions, ImageId, ViewId},
     },
     vscode::vscode_requests::VSCodeRequests,
+    webgl_utils::GLGuard,
 };
 
 #[derive(Default)]
@@ -35,6 +37,35 @@ impl ImagesDrawingOptions {
             .get(image_id)
             .cloned()
             .unwrap_or(DrawingOptions::default())
+    }
+}
+
+struct ColorMapsCache(HashMap<String, GLGuard<web_sys::WebGlTexture>>);
+
+impl ColorMapsCache {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn get_or_create(
+        &mut self,
+        gl: &WebGl2RenderingContext,
+        colormap: &colormap::ColorMap,
+    ) -> Result<&GLGuard<web_sys::WebGlTexture>, String> {
+        let name = colormap.name.to_string();
+        if self.0.contains_key(&name) {
+            return Ok(self.0.get(&name).unwrap());
+        }
+
+        let tex = colormap::create_texture_for_colormap(gl, colormap)?;
+        self.0.insert(name.clone(), tex);
+        Ok(self.0.get(&name).unwrap())
+    }
+}
+
+impl Default for ColorMapsCache {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -78,6 +109,8 @@ pub struct AppState {
     pub image_cache: Mrc<ImageCache>,
     pub drawing_options: Mrc<ImagesDrawingOptions>,
 
+    color_maps_cache: Mrc<ColorMapsCache>,
+
     pub view_cameras: Mrc<ViewsCameras>,
 
     // pub message_service: Option<Rc<dyn OutgoingMessageSender>>,
@@ -105,7 +138,7 @@ impl Default for AppState {
             image_views: Default::default(),
             image_cache: Default::default(),
             view_cameras: Default::default(),
-            // message_service: Default::default(),
+            color_maps_cache: Default::default(),
             configuration: Default::default(),
             drawing_options: Default::default(),
         }

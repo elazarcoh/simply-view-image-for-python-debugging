@@ -105,6 +105,7 @@ pub enum Coloring {
     B,
     SwapRgbBgr,
     Segmentation,
+    Heatmap { name: String },
 }
 
 #[derive(
@@ -230,23 +231,6 @@ lazy_static! {
     };
 }
 
-fn typed_array_from_bytes(
-    bytes: &[u8],
-    element_type: ElementType,
-) -> Result<js_sys::Object, String> {
-    let array_buffer = js_sys::Uint8Array::from(bytes).buffer();
-    let array = match element_type {
-        ElementType::Byte => js_sys::Int8Array::new(&array_buffer).into(),
-        ElementType::UnsignedByte => js_sys::Uint8Array::new(&array_buffer).into(),
-        ElementType::Short => js_sys::Int16Array::new(&array_buffer).into(),
-        ElementType::UnsignedShort => js_sys::Uint16Array::new(&array_buffer).into(),
-        ElementType::Int => js_sys::Int32Array::new(&array_buffer).into(),
-        ElementType::UnsignedInt => js_sys::Uint32Array::new(&array_buffer).into(),
-        ElementType::Float => js_sys::Float32Array::new(&array_buffer).into(),
-    };
-    Ok(array)
-}
-
 fn create_texture_from_image_data(
     gl: &web_sys::WebGl2RenderingContext,
     image: &crate::communication::incoming_messages::ImageData,
@@ -275,7 +259,7 @@ fn create_texture_from_image_data(
         0,
         format as _,
         type_ as _,
-        &typed_array_from_bytes(&image.bytes, type_)?,
+        &webgl_utils::utils::js_typed_array_from_bytes(&image.bytes, type_)?,
         0,
     )
     .map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;

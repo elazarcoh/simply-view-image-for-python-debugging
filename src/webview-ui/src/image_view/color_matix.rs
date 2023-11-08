@@ -218,7 +218,9 @@ pub fn calculate_color_matrix(
         Channels::Four => IDENTITY,
     };
     let (reorder, reorder_add) = match drawing_options.coloring {
-        Coloring::Default => {
+        | Coloring::Default
+        | Coloring::Heatmap{..} // Heatmap coloring using the default coloring
+         => {
             match datatype {
                 | Datatype::Uint8
                 | Datatype::Uint16
@@ -334,7 +336,6 @@ pub fn calculate_color_matrix(
 
     let modify_value_mult = normalization_matrix * modify_value_mult;
 
-    
     (
         reorder * modify_value_mult * right_reorder,
         reorder * normalization_matrix * (modify_value_add + reorder_add),

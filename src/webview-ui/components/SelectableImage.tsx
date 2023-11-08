@@ -41,21 +41,23 @@ const ImageFrame = ({ imageData, isLoading }: ImageFrameProps) => {
 
 interface SelectableImageProps {
     names: string[];
-    imageDataByName: (name: string) => Promise<ImageData>;
+    // imageDataByName: (name: string) => Promise<ImageData>;
+    imageData: ImageData;
 }
 
 const SelectableImage = (props: SelectableImageProps) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const [imageData, setImageData] = useState<ImageData | null>(null);
+    // const [imageData, setImageData] = useState<ImageData | null>(null);
+    const imageData = props.imageData;
 
     const handleMenuItemClick = async (name: string) => {
-        setImageData(null);
-        // sleep to emulate async image loading
-        // FIXME: remove this when we have a real async image loading function
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setSelectedImage(name);
-        const data = await props.imageDataByName(name);
-        setImageData(data);
+        //     setImageData(null);
+        //     // sleep to emulate async image loading
+        //     // FIXME: remove this when we have a real async image loading function
+        //     await new Promise((resolve) => setTimeout(resolve, 1000));
+        //     setSelectedImage(name);
+        //     const data = await props.imageDataByName(name);
+        //     setImageData(data);
     };
 
     return (
@@ -76,7 +78,7 @@ const SelectableImage = (props: SelectableImageProps) => {
                 ))}
             </VSCodeDropdown>
             <div className="svifpd-selectable-image__image">
-                {selectedImage !== null ? (
+                {selectedImage !== null || imageData !== null ? (
                     <ImageFrame
                         imageData={imageData}
                         isLoading={imageData === null}

@@ -18,6 +18,7 @@ import { hasValue } from "./utils/Utils";
 import { setupPluginManager } from "./plugins";
 import { HelloWorldPanel } from "./webview/panels/HelloWorldPanel";
 import { HoverProvider } from "./HoverProvider";
+import * as fs from "fs/promises";
 
 function onConfigChange(): void {
     initLog();
@@ -110,16 +111,17 @@ export function activate(context: vscode.ExtensionContext) {
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };
 
-    // const panel = createPanel(context.extensionUri);
-    // if (panel) context.subscriptions.push(panel);
-    // Create the show hello world command
-
     context.subscriptions.push(
         vscode.commands.registerCommand("svifpd.open-settings", async () => {
             HelloWorldPanel.render(context);
-            setTimeout(() => {
-                if(HelloWorldPanel.currentPanel !== undefined) {
-                    HelloWorldPanel.currentPanel.postMessage({ command: 'hello', text: 'extension hello world' });
+            setTimeout(async () => {
+                if (HelloWorldPanel.currentPanel !== undefined) {
+                    const path = "C:/Users/hodaya/Documents/simply-view-image-for-python-debugging/watch-view.png";
+                    const contents = await fs.readFile(path, {encoding: 'base64'});
+                    HelloWorldPanel.currentPanel.postMessage("view-image", {
+                        message: "Foo",
+                        imageBase64: contents,
+                    });
                 }
             }, 1000);
         })

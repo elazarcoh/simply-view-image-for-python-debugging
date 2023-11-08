@@ -207,7 +207,13 @@ export class HelloWorldPanel {
         // }
     }
 
-    public postMessage(message: unknown) {
-        this._panel.webview.postMessage(message);
+    public postMessage<C extends keyof WebviewPushCommands>(
+        command: C,
+        payload: WebviewPushCommands[C]
+    ) {
+        this._panel.webview.postMessage({
+            command,
+            payload,
+        });
     }
 }

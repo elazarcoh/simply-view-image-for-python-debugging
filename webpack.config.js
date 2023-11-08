@@ -20,9 +20,6 @@ const path = require("path");
 const baseConfig = {
     mode: "development",
     devtool: "inline-source-map",
-    externals: {
-        vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded.
-    },
     infrastructureLogging: {
         level: "log", // enables logging required for problem matchers
     },
@@ -34,7 +31,10 @@ const extensionConfig = {
     ...baseConfig,
     target: "node",
     entry: "./src/extension.ts",
-    externals: ["vscode"],
+    externals: {
+        vscode: "commonjs vscode",
+        sharp: "commonjs sharp",
+    },
     resolve: {
         extensions: [".ts", ".js"],
     },
@@ -74,7 +74,7 @@ const extensionConfig = {
 const webviewConfig = {
     ...baseConfig,
     target: ["web", "es2020"],
-    entry: "./src/webview-ui/src/index.tsx",
+    entry: "./src/webview-ui/index.tsx",
     experiments: { outputModule: true },
     resolve: {
         extensions: [".ts", ".tsx", ".js", ".jsx", ".css"],

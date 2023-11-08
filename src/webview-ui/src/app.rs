@@ -216,30 +216,9 @@ pub fn App() -> Html {
                 .borrow_mut()
                 .set_rendering_context(Rc::new(rendering_context()));
 
-            log::debug!("creating debug image texture");
-            let images = vec![
-                crate::tmp_for_debug::image_texture_rgba_u8(&gl),
-                crate::tmp_for_debug::image_texture_rgb_u8(&gl),
-                crate::tmp_for_debug::image_texture_rg_u8(&gl),
-                crate::tmp_for_debug::image_texture_gray_u8(&gl),
-                crate::tmp_for_debug::image_texture_rgba_f32(&gl),
-                crate::tmp_for_debug::image_texture_rgb_f32(&gl),
-                crate::tmp_for_debug::image_texture_gray_f32(&gl),
-            ];
-            dispatch.apply(StoreAction::UpdateImages(
-                images
-                    .iter()
-                    .map(|image| (image.image.info.image_id.clone(), image.image.info.clone()))
-                    .collect(),
-            ));
 
-            for image in images {
-                let image_id = image.image.info.image_id.clone();
-                dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), image));
-                log::debug!("setting image to view");
-                let view_id = ViewId::Primary;
-                dispatch.apply(StoreAction::SetImageToView(image_id, view_id));
-            }
+            // TODO: remove this
+            crate::tmp_for_debug::set_debug_images(&gl);
 
             move || {
                 dispatch.reduce_mut(|state| {
@@ -297,6 +276,7 @@ pub fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
+            <crate::components::image_list_item::DisplayOption />
             // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
             <vscode-button onclick={onclick}> {"FooBar"} </vscode-button>
             // <vscode-panels>

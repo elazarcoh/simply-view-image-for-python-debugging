@@ -2,6 +2,11 @@ use std::{collections::HashMap, fmt::format};
 
 use image::EncodableLayout;
 use web_sys::WebGl2RenderingContext;
+use yewdux::prelude::Dispatch;
+
+use crate::image_view::types::ViewId;
+use crate::reducer::StoreAction;
+use crate::store::AppState;
 
 use crate::{
     communication::incoming_messages::{Datatype, ImageData, ImageInfo, ValueVariableKind},
@@ -166,13 +171,13 @@ fn image_data_with(bytes: &[u8], datatype: Datatype, channels: u32) -> ImageData
     }
 }
 
-pub fn image_texture_rgba_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgba_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let image_data = image_data_with(bytes_rgba, Datatype::Uint8, 4);
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
-pub fn image_texture_rgb_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgb_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -182,7 +187,7 @@ pub fn image_texture_rgb_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
-pub fn image_texture_rg_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rg_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -192,7 +197,7 @@ pub fn image_texture_rg_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
-pub fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -208,7 +213,7 @@ pub fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
-pub fn image_texture_rgba_f32(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgba_f32(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -224,7 +229,7 @@ pub fn image_texture_rgba_f32(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
-pub fn image_texture_rgb_f32(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgb_f32(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -239,7 +244,7 @@ pub fn image_texture_rgb_f32(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
-pub fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -252,4 +257,34 @@ pub fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
         .collect::<Vec<f32>>();
     let image_data = image_data_with(data.as_bytes(), Datatype::Float32, 1);
     TextureImage::try_new(image_data, gl).unwrap()
+}
+
+#[cfg(debug_assertions)]
+pub fn set_debug_images(gl: &WebGl2RenderingContext) {
+    let dispatch = Dispatch::<AppState>::new();
+
+    log::debug!("creating debug image texture");
+    let images = vec![
+        image_texture_rgba_u8(&gl),
+        image_texture_rgb_u8(&gl),
+        image_texture_rg_u8(&gl),
+        image_texture_gray_u8(&gl),
+        image_texture_rgba_f32(&gl),
+        image_texture_rgb_f32(&gl),
+        image_texture_gray_f32(&gl),
+    ];
+    dispatch.apply(StoreAction::UpdateImages(
+        images
+            .iter()
+            .map(|image| (image.image.info.image_id.clone(), image.image.info.clone()))
+            .collect(),
+    ));
+
+    for image in images {
+        let image_id = image.image.info.image_id.clone();
+        dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), image));
+        log::debug!("setting image to view");
+        let view_id = ViewId::Primary;
+        dispatch.apply(StoreAction::SetImageToView(image_id, view_id));
+    }
 }

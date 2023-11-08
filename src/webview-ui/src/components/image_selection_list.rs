@@ -30,9 +30,9 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
 
     let entries = images_data
         .borrow()
-        .by_id
+        .image_ids
         .iter()
-        .map(|(id, data)| {
+        .map(|id| {
             let onclick = {
                 let selected_entry = selected_entry.clone();
 
@@ -48,6 +48,7 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             };
 
             let is_selected = *selected_entry == Some(id.clone());
+            let data = images_data.borrow().by_id.get(id).unwrap().clone();
 
             html! {
             <div>
@@ -56,7 +57,7 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                     {onclick}
                     class={entry_style.clone()}
                 >
-                    <ImageListItem entry={data.clone()} />
+                    <ImageListItem entry={data} />
                 </vscode-option>
             </div>
             }

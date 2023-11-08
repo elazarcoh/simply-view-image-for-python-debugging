@@ -35,6 +35,7 @@ impl ImagesDrawingOptions {
             DrawingOptions {
                 coloring: crate::image_view::types::Coloring::Default,
                 invert: false,
+                high_contrast: false,
             }
         })
     }

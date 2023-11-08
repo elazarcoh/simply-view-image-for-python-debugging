@@ -10,7 +10,7 @@ use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
     common::Size,
-    communication::incoming_messages::{Datatype, ImageData},
+    communication::incoming_messages::{Datatype, ImageData, Channels},
     webgl_utils::{
         self,
         draw::draw_buffer_info,
@@ -43,7 +43,7 @@ fn rect_to_positions(rect: Rect) -> [f32; 12] {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PixelValue {
-    num_channels: u32,
+    num_channels: Channels,
     datatype: Datatype,
     bytes: [u8; 32], // we need at most: 4 channels * 8 bytes per channel
 }
@@ -77,7 +77,7 @@ impl PixelValue {
             Datatype::Uint16 | Datatype::Int16 => 2,
             Datatype::Float32 => 4,
         };
-        (0..self.num_channels)
+        (0..self.num_channels.into())
             .map(|c| {
                 let start = c as usize * bytes_per_element;
                 let end = start + bytes_per_element;
@@ -105,10 +105,9 @@ impl PixelValue {
 
     fn text_color(&self) -> Vec4 {
         let multipliers: [f32; 3] = match self.num_channels {
-            1 => [1.0, 0.0, 0.0],
-            2 => [0.51, 0.49, 0.0],
-            3 | 4 => [0.299, 0.587, 0.114],
-            _ => panic!("Unsupported number of channels: {}", self.num_channels),
+            Channels::One => [1.0, 0.0, 0.0],
+            Channels::Two => [0.51, 0.49, 0.0],
+            Channels::Three | Channels::Four => [0.299, 0.587, 0.114],
         };
         let mut gray = 0.0;
         let bytes_per_element = match self.datatype {
@@ -133,7 +132,7 @@ impl PixelValue {
         });
 
         #[rustfmt::skip]
-        let alpha = if self.num_channels < 4 {
+        let alpha = if self.num_channels < Channels::Four {
             1.0
         } else {
             let start = 3 * bytes_per_element;

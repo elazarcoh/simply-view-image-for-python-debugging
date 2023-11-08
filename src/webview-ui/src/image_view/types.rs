@@ -18,10 +18,29 @@ pub enum Coloring {
     // Segmentation,
 }
 
-#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(
+    Builder, tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash,
+)]
 pub struct DrawingOptions {
     pub coloring: Coloring,
     pub invert: bool,
+    pub high_contrast: bool,
+}
+
+// TODO: find better approach
+impl DrawingOptions {
+    fn replace(self) -> DrawingOptionsBuilder {
+        DrawingOptionsBuilder::from(self)
+    }
+}
+impl From<DrawingOptions> for DrawingOptionsBuilder {
+    fn from(drawing_options: DrawingOptions) -> Self {
+        DrawingOptionsBuilder::default()
+            .coloring(drawing_options.coloring)
+            .invert(drawing_options.invert)
+            .high_contrast(drawing_options.high_contrast)
+            .clone()
+    }
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -131,11 +150,11 @@ fn create_texture_from_image_data(
     let height = image.info.height;
     gl.bind_texture(webgl_utils::TextureTarget::Texture2D as _, Some(&tex));
     let (internal_format, format, type_) = *FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS
-        .get(&(image.info.datatype, image.info.channels))
+        .get(&(image.info.datatype, image.info.channels as _))
         .ok_or_else(|| {
             format!(
                 "Could not find internal format for datatype {:?} and channels {}",
-                image.info.datatype, image.info.channels
+                image.info.datatype, image.info.channels,
             )
         })?;
     gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(

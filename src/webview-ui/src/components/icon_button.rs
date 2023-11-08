@@ -8,6 +8,16 @@ pub enum ToggleState {
     Off,
 }
 
+impl From<bool> for ToggleState {
+    fn from(b: bool) -> Self {
+        if b {
+            ToggleState::On
+        } else {
+            ToggleState::Off
+        }
+    }
+}
+
 #[derive(PartialEq, Properties, Default)]
 pub struct IconButtonProps {
     #[prop_or_default]
@@ -73,11 +83,14 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
 
 #[derive(PartialEq, Properties)]
 pub struct IconToggleButtonProps {
+    #[prop_or_default]
     pub aria_label: AttrValue,
-    pub on_icon: AttrValue,
+    #[prop_or_default]
+    pub on_icon: Option<AttrValue>,
     pub off_icon: AttrValue,
     pub initial_state: ToggleState,
-    pub on_state_changed: Callback<(ToggleState, MouseEvent)>,
+    #[prop_or_default]
+    pub on_state_changed: Option<Callback<(ToggleState, MouseEvent)>>,
 }
 
 #[styled_component]
@@ -100,7 +113,9 @@ pub fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
                 ToggleState::On => ToggleState::Off,
                 ToggleState::Off => ToggleState::On,
             };
-            on_state_changed.emit((new_state, e));
+            if let Some(on_state_changed) = on_state_changed.as_ref() {
+                on_state_changed.emit((new_state, e));
+            }
             state.set(new_state);
         })
     };
@@ -113,7 +128,7 @@ pub fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
                     background-color: var(--vscode-checkbox-background);
                 }
                 "#)}>
-                <IconButton aria_label={Some(aria_label.clone())} icon={on_icon.clone()} onclick={Some(onclick.clone())} />
+                <IconButton aria_label={Some(aria_label.clone())} icon={on_icon.clone().unwrap_or_else(|| off_icon.clone()).clone()} onclick={Some(onclick.clone())} />
             </div>
         } else {
             <div >

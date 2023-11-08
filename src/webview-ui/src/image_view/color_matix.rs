@@ -1,7 +1,7 @@
 use glam::Mat4;
 
 use crate::{
-    communication::incoming_messages::{Datatype, ImageData, ImageInfo},
+    communication::incoming_messages::{Channels, Datatype, ImageData, ImageInfo},
     math_utils::mat4::transpose,
     webgl_utils::draw,
 };
@@ -35,16 +35,16 @@ const RGB_TO_R : Mat4 = transpose(&Mat4::from_cols_array(&[
 pub fn calculate_color_matrix(image_info: &ImageInfo, drawing_options: &DrawingOptions) -> Mat4 {
     match drawing_options.coloring {
         Coloring::Default => {
-            if image_info.channels == 1 && image_info.datatype == Datatype::Float32 {
+            if image_info.channels == Channels::One && image_info.datatype == Datatype::Float32 {
                 RED_AS_GRAYSCALE
             } else {
                 DEFAULT
             }
         }
         Coloring::Grayscale => {
-            if image_info.channels == 1 && image_info.datatype == Datatype::Float32 {
+            if image_info.channels == Channels::One && image_info.datatype == Datatype::Float32 {
                 RED_AS_GRAYSCALE
-            } else if image_info.channels == 3 {
+            } else if image_info.channels == Channels::Three {
                 RGB_TO_GRAYSCALE
             } else {
                 log::warn!("Grayscale coloring is not supported for this image: {:?}, drawing_options: {:?}", image_info, drawing_options);
@@ -52,11 +52,11 @@ pub fn calculate_color_matrix(image_info: &ImageInfo, drawing_options: &DrawingO
             }
         }
         Coloring::R => {
-            if image_info.channels == 1 {
+            if image_info.channels == Channels::One {
                 IDENTITY
-            } else if image_info.channels == 2
-                || image_info.channels == 3
-                || image_info.channels == 4
+            } else if image_info.channels == Channels::Two
+                || image_info.channels == Channels::Three
+                || image_info.channels == Channels::Four
             {
                 RGB_TO_R
             } else {

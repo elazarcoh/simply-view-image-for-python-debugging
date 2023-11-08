@@ -272,7 +272,6 @@ pub fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-            <crate::components::image_list_item::DisplayOption />
             // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
             <vscode-button onclick={onclick}> {"FooBar"} </vscode-button>
             // <vscode-panels>

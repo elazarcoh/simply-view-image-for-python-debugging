@@ -22,9 +22,8 @@ impl Reducer<AppState> for StoreAction {
 
         match self {
             StoreAction::UpdateImages(images) => {
-                // log::debug!("UpdateImages: {:?}", images);
+                let ids = images.iter().map(|(id, _)| id.clone()).collect::<Vec<_>>();
                 let images_hashmap = images.into_iter().collect::<HashMap<_, _>>();
-                let ids = images_hashmap.keys().cloned().collect::<Vec<_>>();
                 {
                     let mut mutable = state.images.borrow_mut();
                     mutable.image_ids = ids;

@@ -4,6 +4,7 @@ use image::EncodableLayout;
 use web_sys::WebGl2RenderingContext;
 use yewdux::prelude::Dispatch;
 
+use crate::communication::incoming_messages::Channels;
 use crate::image_view::types::ViewId;
 use crate::reducer::StoreAction;
 use crate::store::AppState;
@@ -151,7 +152,7 @@ fn image_rgba_data_u8() -> &'static [u8] {
     DATA
 }
 
-fn image_data_with(bytes: &[u8], datatype: Datatype, channels: u32, name: &str) -> ImageData {
+fn image_data_with(bytes: &[u8], datatype: Datatype, channels: Channels, name: &str) -> ImageData {
     ImageData {
         info: ImageInfo {
             image_id: ImageId::generate(),
@@ -169,7 +170,7 @@ fn image_data_with(bytes: &[u8], datatype: Datatype, channels: u32, name: &str) 
 
 fn image_texture_rgba_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
-    let image_data = image_data_with(bytes_rgba, Datatype::Uint8, 4, "image_rgba_u8");
+    let image_data = image_data_with(bytes_rgba, Datatype::Uint8, Channels::Four, "image_rgba_u8");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -179,7 +180,7 @@ fn image_texture_rgb_u8(gl: &WebGl2RenderingContext) -> TextureImage {
         .chunks_exact(4)
         .flat_map(|chunk| chunk[0..3].to_vec())
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, 3, "image_rgb_u8");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, Channels::Three, "image_rgb_u8");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -189,7 +190,7 @@ fn image_texture_rg_u8(gl: &WebGl2RenderingContext) -> TextureImage {
         .chunks_exact(4)
         .flat_map(|chunk| chunk[0..2].to_vec())
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, 2, "image_rg_u8");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, Channels::Two, "image_rg_u8");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -205,7 +206,7 @@ fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
             (r * 0.3 + g * 0.59 + b * 0.11) as u8
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, 1, "image_gray_u8");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, Channels::One, "image_gray_u8");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -221,7 +222,7 @@ fn image_texture_rgba_f32(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b, a]
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Float32, 4, "image_rgba_f32");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Float32, Channels::Four, "image_rgba_f32");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -236,7 +237,7 @@ fn image_texture_rgb_f32(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b]
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Float32, 3, "image_rgb_f32");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Float32, Channels::Three, "image_rgb_f32");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -251,7 +252,7 @@ fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
             (r * 0.3 + g * 0.59 + b * 0.11)
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Float32, 1, "image_gray_f32");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Float32, Channels::One, "image_gray_f32");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
@@ -278,7 +279,7 @@ fn image_texture_with_transparency(gl: &WebGl2RenderingContext) -> TextureImage 
     let image_data = image_data_with(
         data.as_bytes(),
         Datatype::Uint8,
-        4,
+        Channels::Four,
         "image_with_transparency",
     );
     TextureImage::try_new(image_data, gl).unwrap()
@@ -296,7 +297,7 @@ fn image_fully_transparent(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b, a]
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, 4, "transparent_image");
+    let image_data = image_data_with(data.as_bytes(), Datatype::Uint8, Channels::Four, "transparent_image");
     TextureImage::try_new(image_data, gl).unwrap()
 }
 

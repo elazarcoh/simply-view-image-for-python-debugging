@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 
 use crate::image_view::types::ImageId;
 
@@ -10,6 +10,43 @@ pub enum ValueVariableKind {
     Variable,
     #[serde(rename = "expression")]
     Expression,
+}
+
+#[derive(serde_repr::Deserialize_repr, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum Channels {
+    One = 1,
+    Two = 2,
+    Three = 3,
+    Four = 4,
+}
+impl From<Channels> for u32 {
+    fn from(c: Channels) -> Self {
+        c as u32
+    }
+}
+impl TryFrom<u32> for Channels {
+    type Error = &'static str;
+    fn try_from(v: u32) -> Result<Self, Self::Error> {
+        match v {
+            1 => Ok(Channels::One),
+            2 => Ok(Channels::Two),
+            3 => Ok(Channels::Three),
+            4 => Ok(Channels::Four),
+            _ => Err("Invalid value for Channels"),
+        }
+    }
+}
+impl Display for Channels {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Channels::One => "1",
+            Channels::Two => "2",
+            Channels::Three => "3",
+            Channels::Four => "4",
+        };
+        f.write_str(s)
+    }
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -45,7 +82,8 @@ pub struct ImageInfo {
     pub expression: String,
     pub width: u32,
     pub height: u32,
-    pub channels: u32,
+    #[tsify(type = "1 | 2 | 3 | 4")]
+    pub channels: Channels,
     pub datatype: Datatype,
     pub additional_info: HashMap<String, String>,
 }

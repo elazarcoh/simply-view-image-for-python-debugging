@@ -7,14 +7,14 @@ use web_sys::{Event, HtmlCanvasElement, MouseEvent};
 use yew::{Callback, NodeRef};
 
 use crate::{
-    common::Size,
+    common::{constants::MAX_PIXEL_SIZE_DEVICE, Size},
     image_view::{
         camera::{self, Camera},
         constants::VIEW_SIZE,
-        rendering_context::CameraContext,
+        rendering_context::ViewContext,
         types::ViewId,
     },
-    math_utils::ToHom,
+    math_utils::{image_calculations::calculate_pixels_information, ToHom},
 };
 
 fn get_clip_space_mouse_position(e: MouseEvent, canvas: &web_sys::HtmlCanvasElement) -> Vec2 {
@@ -55,7 +55,7 @@ impl PanHandler {
         canvas_ref: NodeRef,
         view_id: ViewId,
         view_element: &web_sys::HtmlElement,
-        camera_context: Rc<dyn CameraContext>,
+        camera_context: Rc<dyn ViewContext>,
     ) -> Vec<EventListener> {
         let handler = Rc::new(RefCell::new(Self::new()));
 
@@ -178,7 +178,7 @@ impl ZoomHandler {
         canvas_ref: NodeRef,
         view_id: ViewId,
         view_element: &web_sys::HtmlElement,
-        camera_context: Rc<dyn CameraContext>,
+        camera_context: Rc<dyn ViewContext>,
     ) -> EventListener {
         let wheel = {
             let canvas_element = canvas_ref
@@ -186,50 +186,75 @@ impl ZoomHandler {
                 .expect("canvas_ref not attached to a canvas element");
             let camera_context = Rc::clone(&camera_context);
 
-            Callback::from(move |event: Event| {
-                event.prevent_default();
-                let event = event
-                    .dyn_ref::<web_sys::WheelEvent>()
-                    .expect("Unable to cast event to WheelEvent");
-                let camera = camera_context.get_camera_for_view(view_id);
+            Callback::from({
+                let view_element = view_element.clone();
+                move |event: Event| {
+                    event.prevent_default();
 
-                let clip_coordinates = get_clip_space_mouse_position(
-                    event.clone().dyn_into().unwrap(),
-                    &canvas_element,
-                );
+                    let html_element_size = Size {
+                        width: view_element.client_width() as f32,
+                        height: view_element.client_height() as f32,
+                    };
+                    let canvas_size = Size {
+                        width: canvas_element.width() as f32,
+                        height: canvas_element.height() as f32,
+                    };
+                    let camera = camera_context.get_camera_for_view(view_id);
 
-                let canvas_size = Size {
-                    width: canvas_element.width() as f32,
-                    height: canvas_element.height() as f32,
-                };
-                let view_projection_matrix_inv =
-                    camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &camera).inverse();
-                let pre_zoom_position =
-                    (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
+                    let view_projection =
+                        camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &camera);
+                    let view_projection_matrix_inv = view_projection.inverse();
+                    let image_size = match camera_context.get_image_size_for_view(view_id) {
+                        Some(it) => it,
+                        None => return,
+                    };
+                    let pixels_info = calculate_pixels_information(
+                        &image_size,
+                        &view_projection,
+                        &html_element_size,
+                    );
 
-                let delta_y = event.delta_y();
-                let new_zoom = camera.zoom * (f32::powf(2.0, delta_y as f32 / 100.0));
-                let new_zoom = f32::clamp(new_zoom, 0.5, 500.0);
+                    let event = event
+                        .dyn_ref::<web_sys::WheelEvent>()
+                        .expect("Unable to cast event to WheelEvent");
 
-                let new_camera = Camera {
-                    zoom: new_zoom,
-                    ..camera
-                };
+                    let delta_y = event.delta_y();
+                    if pixels_info.image_pixel_size_device > MAX_PIXEL_SIZE_DEVICE && delta_y > 0.0
+                    {
+                        return;
+                    }
 
-                let view_projection_matrix_inv =
-                    camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &new_camera)
-                        .inverse();
-                let post_zoom_position =
-                    (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
+                    let clip_coordinates = get_clip_space_mouse_position(
+                        event.clone().dyn_into().unwrap(),
+                        &canvas_element,
+                    );
 
-                let translation = camera.translation + (pre_zoom_position - post_zoom_position);
+                    let pre_zoom_position =
+                        (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
 
-                let new_camera = Camera {
-                    translation,
-                    ..new_camera
-                };
+                    let new_zoom = camera.zoom * (f32::powf(2.0, delta_y as f32 / 100.0));
+                    let new_zoom = f32::max(new_zoom, 0.5);
 
-                camera_context.set_camera_for_view(view_id, new_camera);
+                    let new_camera = Camera {
+                        zoom: new_zoom,
+                        ..camera
+                    };
+
+                    let view_projection_matrix_inv =
+                        camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &new_camera)
+                            .inverse();
+                    let post_zoom_position =
+                        (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
+
+                    let translation = camera.translation + (pre_zoom_position - post_zoom_position);
+
+                    let new_camera = Camera {
+                        translation,
+                        ..new_camera
+                    };
+
+                    camera_context.set_camera_for_view(view_id, new_camera);
+                }
             })
         };
 

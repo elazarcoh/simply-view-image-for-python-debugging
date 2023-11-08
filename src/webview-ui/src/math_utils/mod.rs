@@ -2,6 +2,7 @@ use glam::{Vec3, Vec2, Vec4};
 
 pub mod mat3;
 pub mod mat4;
+pub mod image_calculations;
 
 pub trait ToHom<Target> {
     fn to_hom(&self) -> Target;

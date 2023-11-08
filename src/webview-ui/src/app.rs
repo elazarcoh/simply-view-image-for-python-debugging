@@ -11,6 +11,7 @@ use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
+use crate::common::Size;
 // use crate::communication::websocket_client::try_websocket;
 use crate::components::main::Main;
 
@@ -19,9 +20,9 @@ use crate::image_view;
 
 use crate::image_view::color_matix::calculate_color_matrix;
 use crate::image_view::renderer::Renderer;
-use crate::image_view::rendering_context::CameraContext;
 use crate::image_view::rendering_context::ImageViewData;
 use crate::image_view::rendering_context::RenderingContext;
+use crate::image_view::rendering_context::ViewContext;
 use crate::image_view::types::DrawingOptions;
 use crate::image_view::types::ImageId;
 use crate::image_view::types::TextureImage;
@@ -106,10 +107,10 @@ fn rendering_context() -> impl RenderingContext {
     RenderingContextImpl {}
 }
 
-fn camera_context() -> impl CameraContext {
+fn camera_context() -> impl ViewContext {
     struct CameraContextImpl {}
 
-    impl CameraContext for CameraContextImpl {
+    impl ViewContext for CameraContextImpl {
         fn get_camera_for_view(&self, view_id: ViewId) -> image_view::camera::Camera {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().view_cameras.borrow().get(view_id)
@@ -122,6 +123,21 @@ fn camera_context() -> impl CameraContext {
                 .view_cameras
                 .borrow_mut()
                 .set(view_id, camera);
+        }
+
+        fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size> {
+            let dispatch = Dispatch::<AppState>::new();
+            let image_id = dispatch.get().image_views().borrow().get_image_id(view_id);
+            dispatch
+                .get()
+                .images
+                .borrow()
+                .by_id
+                .get(&image_id?)
+                .map(|image| Size {
+                    width: image.width as _,
+                    height: image.height as _,
+                })
         }
     }
 
@@ -150,7 +166,7 @@ pub fn App() -> Html {
 
             let message_listener = VSCodeListener::install_incoming_message_handler();
 
-            let camera_context_rc = Rc::new(camera_context()) as Rc<dyn CameraContext>;
+            let camera_context_rc = Rc::new(camera_context()) as Rc<dyn ViewContext>;
 
             let zoom_listener = {
                 let canvas_ref = canvas_ref.clone();

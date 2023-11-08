@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
-use crate::{configurations::RenderingConfiguration, webgl_utils};
+use crate::{configurations::RenderingConfiguration, webgl_utils, common::Size};
 
 use super::{
     camera::Camera,
@@ -28,7 +28,8 @@ pub trait RenderingContext {
     ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>, String>;
 }
 
-pub trait CameraContext {
+pub trait ViewContext {
+    fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size>;
     fn get_camera_for_view(&self, view_id: ViewId) -> Camera;
     fn set_camera_for_view(&self, view_id: ViewId, camera: Camera);
 }

@@ -2,6 +2,8 @@
 
 use do_notation::m;
 
+use std::ops::Deref;
+
 use wasm_bindgen::JsCast;
 use web_sys::*;
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
@@ -754,6 +756,7 @@ fn set_texture_from_array(
 type GLConstant = u32;
 pub struct StringVertexShader(String);
 pub struct StringFragmentShader(String);
+pub struct StringAttribute(String);
 
 pub struct ProgramInfo {}
 
@@ -818,20 +821,57 @@ fn getProgramErrors(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
     }
 }
 
-//   fn hasErrors(gl: GL, program: WebGlProgram) {
-//     let errors = getProgramErrors(gl, program, progOptions.errorCallback);
-//     if (errors) {
-//       deleteProgramAndShaders(gl, program, shaderSet);
-//     }
-//     return errors;
-//   }
+pub trait GLDrop {
+    fn drop(&self, gl: &GL);
+}
+
+impl GLDrop for WebGlProgram {
+    fn drop(&self, gl: &GL) {
+        gl.delete_program(Some(self));
+    }
+}
+
+impl GLDrop for WebGlShader {
+    fn drop(&self, gl: &GL) {
+        gl.delete_shader(Some(self));
+    }
+}
+
+impl GLDrop for WebGlBuffer {
+    fn drop(&self, gl: &GL) {
+        gl.delete_buffer(Some(self));
+    }
+}
+
+pub struct GLGuard<T: GLDrop> {
+    gl: GL,
+    obj: T,
+}
+
+impl<T: GLDrop> Drop for GLGuard<T> {
+    fn drop(&mut self) {
+        self.obj.drop(&self.gl);
+    }
+}
+
+impl<T: GLDrop> Deref for GLGuard<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.obj
+    }
+}
+
+fn gl_guarded<T: GLDrop, E>(gl: GL, f: impl FnOnce(&GL) -> Result<T, E>) -> Result<GLGuard<T>, E> {
+    f(&gl).map(move |obj| GLGuard { gl, obj })
+}
 
 pub fn createProgram(
     gl: &GL,
     vertex_shader: StringVertexShader,
     fragment_shader: StringFragmentShader,
-    opt_attribs: Option<Vec<String>>,
-) {
+    opt_attribs: Option<Vec<StringAttribute>>,
+) -> Result<GLGuard<WebGlProgram>, String> {
     // This code is really convoluted, because it may or may not be async
     // Maybe it would be better to have a separate function
     //   const progOptions = getProgramOptions(opt_attribs, opt_locations, opt_errorCallback);
@@ -842,45 +882,39 @@ pub fn createProgram(
     let attribute_locations = binding
         .iter()
         .enumerate()
-        .collect::<Vec<(usize, &String)>>();
+        .collect::<Vec<(usize, &StringAttribute)>>();
 
-    let x: Result<WebGlProgram, &str> = m! {
-        program <- gl.create_program().ok_or("Could not create program");
-        gl_vertex_shader <- gl.create_shader(WebGl2RenderingContext::VERTEX_SHADER).ok_or("Could not create vertex shader");
-        gl_fragment_shader <- gl.create_shader(WebGl2RenderingContext::FRAGMENT_SHADER).ok_or("Could not create fragment shader");
-        let _ = gl.shader_source(&gl_vertex_shader, vertex_shader.0.as_str());
-        let _ = gl.shader_source(&gl_fragment_shader, fragment_shader.0.as_str());
-        let _= gl.compile_shader(&gl_vertex_shader);
-        let _= gl.compile_shader(&gl_fragment_shader);
-        let _ = gl.attach_shader(&program, &gl_vertex_shader);
-        let _ = gl.attach_shader(&program, &gl_fragment_shader);
+    let program = gl_guarded(gl.clone(), |gl| {
+        gl.create_program().ok_or("Could not create program")
+    })?;
 
-        let _ = attribute_locations.iter().for_each(|(i, name)| {
-            gl.bind_attrib_location(&program, *i as u32, name.as_str());
-        });
+    let gl_vertex_shader = gl_guarded(gl.clone(), |gl| {
+        gl.create_shader(WebGl2RenderingContext::VERTEX_SHADER)
+            .ok_or("Could not create vertex shader")
+            .map(|shader| {
+                gl.shader_source(&shader, vertex_shader.0.as_str());
+                gl.compile_shader(&shader);
+                gl.attach_shader(&program, &shader);
+                shader
+            })
+    })?;
 
-        let _ = gl.link_program(&program);
+    let gl_fragment_shader = gl_guarded(gl.clone(), |gl| {
+        gl.create_shader(WebGl2RenderingContext::FRAGMENT_SHADER)
+            .ok_or("Could not create fragment shader")
+            .map(|shader| {
+                gl.shader_source(&shader, fragment_shader.0.as_str());
+                gl.compile_shader(&shader);
+                gl.attach_shader(&program, &shader);
+                shader
+            })
+    })?;
 
-        Ok(program)
-    };
+    let bounded_attributes = attribute_locations.iter().for_each(|(i, name)| {
+        gl.bind_attrib_location(&program, *i as u32, name.0.as_str());
+    });
 
-    //   function hasErrors(gl, program) {
-    //     const errors = getProgramErrors(gl, program, progOptions.errorCallback);
-    //     if (errors) {
-    //       deleteProgramAndShaders(gl, program, shaderSet);
-    //     }
-    //     return errors;
-    //   }
-
-    //   if (progOptions.callback) {
-    //     waitForProgramLinkCompletionAsync(gl, program).then(() => {
-    //       const errors = hasErrors(gl, program);
-    //       progOptions.callback(errors, errors ? undefined : program);
-    //     });
-    //     return undefined;
-    //   }
-
-    //   return hasErrors(gl, program) ? undefined : program;
+    Ok(program)
 }
 
 // pub fn createProgramInfo(

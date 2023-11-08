@@ -124,6 +124,7 @@ impl<B> BufferInfo<B>
 where
     B: GLBuffer,
 {
+    #[allow(dead_code)]
     pub fn get_attrib(&self, name: &str) -> Option<&Attrib<B>> {
         self.attribs.iter().find(|attrib| attrib.info.name == name)
     }

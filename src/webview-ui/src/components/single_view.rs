@@ -1,4 +1,4 @@
-use stylist::yew::use_style;
+
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
@@ -9,7 +9,7 @@ pub struct SingleViewProps {
 #[function_component]
 pub fn SingleView(props: &SingleViewProps) -> Html {
     let SingleViewProps {
-        node_ref,
+        node_ref: _,
     } = props;
     html! {
         <div>

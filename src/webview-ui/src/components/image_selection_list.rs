@@ -1,23 +1,24 @@
 use stylist::yew::use_style;
-use yew::prelude::*;
+use yew::{html::Scope, prelude::*};
 use yewdux::prelude::*;
 
-use crate::{components::image_list_item::ImageListItem, store::{AppState, ImageInfo}};
-
+use crate::{
+    components::image_list_item::ImageListItem,
+    image_view::types::{ImageId, ViewId},
+    reducer,
+    store::{AppState, ImageInfo},
+};
 
 #[derive(PartialEq, Properties)]
-pub struct ImageSelectionListProps {
-}
+pub struct ImageSelectionListProps {}
 
 #[function_component]
 pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
-
     let images_data = use_selector(|state: &AppState| state.images.clone());
-    let image_infos = images_data.borrow().by_id.values().map(|image_data| image_data.info.clone()).collect::<Vec<_>>();
 
     let ImageSelectionListProps {} = props;
 
-    let selected_entry = use_state::<Option<(usize, ImageInfo)>, _>(|| None);
+    let selected_entry = use_state::<Option<ImageId>, _>(|| None);
 
     let entry_style = use_style!(
         r#"
@@ -27,30 +28,40 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     "#,
     );
 
-    let entries = (0..image_infos.len()).map(|i| {
-        let entry = &image_infos[i];
-        let onclick = {
-            let selected_entry = selected_entry.clone();
-            let entry = entry.clone();
-            Callback::from(move |_| {
-                selected_entry.set(Some((i, entry.clone())));
-            })
-        };
+    let entries = images_data
+        .borrow()
+        .by_id
+        .iter()
+        .map(|(id, data)| {
+            let onclick = {
+                let selected_entry = selected_entry.clone();
 
-        let is_selected = *selected_entry == Some((i, entry.clone()));
+                let dispatch = Dispatch::<AppState>::new();
+                let cb = dispatch.apply_callback({
+                    let id = id.clone();
+                    move |_|  {
+                        selected_entry.set(Some(id.clone()));
+                        reducer::StoreAction::SetImageToView(id.clone(), ViewId::Primary)
+                    }
+                });
+                cb
+            };
 
-        html! {
-        <div>
-            <vscode-option
-                aria-selected={if is_selected {"true"} else {"false"}}
-                {onclick}
-                class={entry_style.clone()}
-            >
-                <ImageListItem entry={entry.clone()} />
-            </vscode-option>
-        </div>
-        }
-    });
+            let is_selected = *selected_entry == Some(id.clone());
+
+            html! {
+            <div>
+                <vscode-option
+                    aria-selected={if is_selected {"true"} else {"false"}}
+                    {onclick}
+                    class={entry_style.clone()}
+                >
+                    <ImageListItem entry={data.info.clone()} />
+                </vscode-option>
+            </div>
+            }
+        })
+        .collect::<Vec<_>>();
 
     html! {
         <div>

@@ -1,10 +1,7 @@
-
 use std::convert::TryFrom;
 use std::mem;
 
 use std::collections::HashMap;
-
-
 
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
@@ -94,6 +91,7 @@ pub enum TextureWrap {
     Repeat = GL::REPEAT,
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
 pub enum BindingPoint {

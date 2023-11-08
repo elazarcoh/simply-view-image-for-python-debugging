@@ -395,7 +395,6 @@ impl PixelTextRenderer {
     ) -> Result<&'a PixelTextData, String> {
         if let Some(pixel_data) = data.pixel_text_cache.0.get_mut(data.pixel_loc) {
             if pixel_data.pixel_value != *data.pixel_value {
-                // log::debug!("Updating pixel text cache");
                 Self::pixel_value_into_buffers(
                     data.pixel_loc,
                     data.pixel_value,
@@ -403,6 +402,8 @@ impl PixelTextRenderer {
                     &self.font,
                     pixel_data,
                 );
+
+                pixel_data.pixel_value = *data.pixel_value;
             }
         } else {
             // log::debug!("Creating new pixel text cache");

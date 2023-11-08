@@ -1,6 +1,7 @@
 use base64::engine::general_purpose;
 use base64::Engine;
 use gloo_utils::format::JsValueSerdeExt;
+use yewdux::dispatch;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -22,14 +23,9 @@ use crate::communication::message_handler::install_incoming_message_handler;
 use crate::communication::message_handler::IncomeMessageHandler;
 use crate::communication::message_handler::OutgoingMessageSender;
 use crate::communication::outgoing_messages::OutgoingMessage;
-use crate::communication::outgoing_messages::RequestImageMessage;
 
-use crate::components::GLView;
-
-use crate::components::image_list_item::ImageListItem;
-use crate::components::image_selection_list::ImageSelectionList;
 use crate::components::main::Main;
-use crate::components::set_image_into_view_button::SetImageIntoViewButton;
+
 use crate::configurations;
 use crate::image_view;
 use crate::image_view::camera::ViewsCameras;
@@ -40,16 +36,15 @@ use crate::image_view::rendering_context::CameraContext;
 use crate::image_view::rendering_context::ImageViewData;
 use crate::image_view::rendering_context::RenderingContext;
 use crate::image_view::types::ImageId;
-use crate::image_view::types::InSingleViewName;
-use crate::image_view::types::InViewName;
 use crate::image_view::types::TextureImage;
+use crate::image_view::types::ViewId;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
+use crate::reducer::StoreAction;
 use crate::store::AppState;
 use crate::store::ImageData;
 use crate::store::ImageInfo;
 use crate::store::ValueVariableKind;
-use crate::store_action::StoreAction;
 use crate::vscode;
 
 fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, String> {
@@ -186,7 +181,7 @@ struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
     // configuration: configurations::Configuration,
     pub texture_image_cache: RefCell<ImageCache>,
-    pub image_views: RefCell<ImageViews>,
+    // pub image_views: RefCell<ImageViews>,
     views_cameras: RefCell<ViewsCameras>,
     vscode: WebviewApi,
 }
@@ -201,18 +196,26 @@ impl RenderingContext for Coordinator {
     }
 
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>> {
-        self.texture_image_cache.borrow().get(id).map(Rc::clone)
+        // log::debug!("Getting texture by id {:?}", id);
+        let dispatch = Dispatch::<AppState>::new();
+        dispatch.get().image_cache.borrow().get(id).map(Rc::clone)
     }
 
-    fn visible_nodes(&self) -> Vec<InViewName> {
-        self.image_views.borrow().visible_views()
+    fn visible_nodes(&self) -> Vec<ViewId> {
+        let dispatch = Dispatch::<AppState>::new();
+        dispatch.get().image_views().borrow().visible_views()
     }
 
-    fn view_data(&self, view_id: InViewName) -> ImageViewData {
+    fn view_data(&self, view_id: ViewId) -> ImageViewData {
+        // log::debug!("Getting view data for {:?}", view_id);
+        let dispatch = Dispatch::<AppState>::new();
+        let x = dispatch.get().image_views().borrow().get_node_ref(view_id);
+        // log::debug!("Node ref for view {:?} is {:?}", view_id, x);
         ImageViewData {
             camera: self.views_cameras.borrow().get(view_id),
-            html_element: self
-                .image_views
+            html_element: dispatch
+                .get()
+                .image_views()
                 .borrow()
                 .get_node_ref(view_id)
                 .cast::<HtmlElement>()
@@ -222,7 +225,7 @@ impl RenderingContext for Coordinator {
                         view_id
                     )
                 }),
-            image_id: self.image_views.borrow().get_image_id(view_id),
+            image_id: dispatch.get().image_views().borrow().get_image_id(view_id),
         }
     }
 
@@ -233,11 +236,11 @@ impl RenderingContext for Coordinator {
 }
 
 impl CameraContext for Coordinator {
-    fn get_camera_for_view(&self, view_id: InViewName) -> image_view::camera::Camera {
+    fn get_camera_for_view(&self, view_id: ViewId) -> image_view::camera::Camera {
         self.views_cameras.borrow().get(view_id)
     }
 
-    fn set_camera_for_view(&self, view_id: InViewName, camera: image_view::camera::Camera) {
+    fn set_camera_for_view(&self, view_id: ViewId, camera: image_view::camera::Camera) {
         self.views_cameras.borrow_mut().set(view_id, camera);
     }
 }
@@ -262,11 +265,11 @@ impl IncomeMessageHandler for Coordinator {
 
             let image_id = self.texture_image_cache.borrow_mut().add(image);
 
-            let view_id = InViewName::Single(InSingleViewName::Single);
+            let view_id = ViewId::Primary;
 
-            self.image_views
-                .borrow_mut()
-                .set_image_to_view(image_id, view_id);
+            // self.image_views
+            //     .borrow_mut()
+            //     .set_image_to_view(image_id, view_id);
         };
 
         match message {
@@ -289,7 +292,7 @@ pub fn App() -> Html {
             gl: RefCell::new(None),
             // configuration: configurations::Configuration::default(),
             texture_image_cache: RefCell::new(ImageCache::new()),
-            image_views: RefCell::new(ImageViews::new()),
+            // image_views: RefCell::new(ImageViews::new()),
             views_cameras: RefCell::new(ViewsCameras::new()),
             vscode: vscode::acquire_vscode_api(),
         }
@@ -297,9 +300,10 @@ pub fn App() -> Html {
 
     let canvas_ref = use_node_ref();
 
+    let dispatch = Dispatch::<AppState>::new();
     // TODO: move from here
-    let view_id = InViewName::Single(InSingleViewName::Single);
-    let my_node_ref = coordinator.image_views.borrow().get_node_ref(view_id);
+    let view_id = ViewId::Primary;
+    let my_node_ref = dispatch.get().image_views().borrow().get_node_ref(view_id);
 
     use_effect({
         let coordinator = Rc::clone(&coordinator);
@@ -345,7 +349,7 @@ pub fn App() -> Html {
         }
     });
 
-    let renderer = use_memo((), { |_| RefCell::new(Renderer::new()) });
+    let renderer = use_memo((), |_| RefCell::new(Renderer::new()));
     use_effect_with(canvas_ref.clone(), {
         let renderer = Rc::clone(&renderer);
         let coordinator = Rc::clone(&coordinator);
@@ -361,33 +365,17 @@ pub fn App() -> Html {
                 .dyn_into()
                 .unwrap();
 
-            log::debug!("GL context created");
+            // log::debug!("GL context created");
 
             coordinator.gl.replace(Some(gl.clone()));
+
+            Dispatch::<AppState>::new().reduce_mut(|state| {
+                state.gl = Some(gl.clone());
+            });
 
             renderer
                 .borrow_mut()
                 .set_rendering_context(coordinator.clone());
-
-            // TODO: remove. debug thing
-            if let Err(err) = create_image_for_view(&gl)
-                .map(|image| coordinator.texture_image_cache.borrow_mut().add(image))
-                .map(|id| {
-                    coordinator.image_views.borrow_mut().set_image_to_view(
-                        id,
-                        image_view::types::InViewName::Single(
-                            image_view::types::InSingleViewName::Single,
-                        ),
-                    )
-                })
-            {
-                log::error!("Error creating image: {:?}", err);
-            }
-
-            Dispatch::<AppState>::new().set(AppState {
-                gl: Some(gl.clone()),
-                ..Default::default()
-            });
 
             move || {
                 coordinator.gl.replace(None);

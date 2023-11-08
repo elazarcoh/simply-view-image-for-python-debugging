@@ -12,7 +12,7 @@ use crate::{
         camera::{self, Camera},
         constants::VIEW_SIZE,
         rendering_context::CameraContext,
-        types::InViewName,
+        types::ViewId,
     },
     math_utils::ToHom,
 };
@@ -53,7 +53,7 @@ impl PanHandler {
 
     pub fn install(
         canvas_ref: NodeRef,
-        view_id: InViewName,
+        view_id: ViewId,
         view_element: &web_sys::HtmlElement,
         camera_context: Rc<dyn CameraContext>,
     ) -> Vec<EventListener> {
@@ -95,7 +95,7 @@ impl PanHandler {
                 (*self_handler).borrow_mut().is_panning = false;
             })
         };
-        let mouseleave = {
+        let _mouseleave = {
             let self_handler = Rc::clone(&handler);
             Callback::from(move |_event: Event| {
                 (*self_handler).borrow_mut().is_panning = false;
@@ -176,7 +176,7 @@ pub struct ZoomHandler {}
 impl ZoomHandler {
     pub fn install(
         canvas_ref: NodeRef,
-        view_id: InViewName,
+        view_id: ViewId,
         view_element: &web_sys::HtmlElement,
         camera_context: Rc<dyn CameraContext>,
     ) -> EventListener {

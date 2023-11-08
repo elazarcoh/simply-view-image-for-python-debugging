@@ -1,4 +1,4 @@
-use stylist::yew::use_style;
+
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]

@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{common::Size, math_utils};
 
-use super::types::{all_views, InViewName};
+use super::types::{all_views, ViewId};
 
 #[derive(Copy, Clone)]
 pub struct Camera {
@@ -30,7 +30,7 @@ impl Camera {
     }
 }
 
-pub struct ViewsCameras(HashMap<InViewName, Rc<RefCell<Camera>>>);
+pub struct ViewsCameras(HashMap<ViewId, Rc<RefCell<Camera>>>);
 
 impl ViewsCameras {
     pub fn new() -> Self {
@@ -39,11 +39,11 @@ impl ViewsCameras {
                 .map(|v| (v, Rc::new(RefCell::new(Camera::default()))))
                 .collect())
     }
-    pub fn get(&self, view_id: InViewName) -> Camera {
+    pub fn get(&self, view_id: ViewId) -> Camera {
         self.0.get(&view_id).unwrap().borrow().to_owned()
     }
 
-    pub fn set(&mut self, view_id: InViewName, camera: Camera) {
+    pub fn set(&mut self, view_id: ViewId, camera: Camera) {
         self.0.get(&view_id).unwrap().replace(camera);
     }
 }

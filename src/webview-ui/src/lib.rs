@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 #[macro_use]
 extern crate derive_builder;
 #[macro_use]
@@ -16,7 +18,7 @@ mod mouse_events;
 mod vscode;
 mod webgl_utils;
 mod store;
-mod store_action;
+mod reducer;
 use app::App;
 use cfg_if::cfg_if;
 use wasm_bindgen::prelude::*;

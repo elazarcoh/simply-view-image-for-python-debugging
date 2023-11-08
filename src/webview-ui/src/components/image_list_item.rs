@@ -1,7 +1,7 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
 
-use crate::{components::set_image_into_view_button::SetImageIntoViewButton, store::ImageInfo};
+use crate::{store::ImageInfo};
 
 fn shape_to_string(shape: &[u32]) -> String {
     let mut shape_string = String::new();

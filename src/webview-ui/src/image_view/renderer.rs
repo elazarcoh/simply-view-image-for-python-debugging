@@ -19,20 +19,19 @@ use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
-use super::camera::Camera;
 use super::constants::VIEW_SIZE;
 use super::pixel_text_rendering::{
     PixelLoc, PixelTextCache, PixelTextRenderer, PixelTextRenderingData, PixelValue,
 };
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::types::{all_views, InViewName, TextureImage};
+use super::types::{all_views, TextureImage, ViewId};
 
 struct Programs {
     image: ProgramBundle,
 }
 
 struct RenderingData {
-    pixel_text_cache_per_view: HashMap<InViewName, PixelTextCache>,
+    pixel_text_cache_per_view: HashMap<ViewId, PixelTextCache>,
 
     gl: GL,
     programs: Programs,
@@ -119,7 +118,7 @@ impl Renderer {
     }
 
     pub fn set_rendering_context(&mut self, rendering_context: Rc<dyn RenderingContext>) {
-        log::debug!("Renderer::bind_view_holders");
+        log::debug!("Renderer::set_rendering_context");
         Renderer::setup_rendering_callback_if_ready(rendering_context);
     }
 
@@ -230,7 +229,7 @@ impl Renderer {
     }
 
     fn calculate_pixels_information(
-        gl: &GL,
+        _gl: &GL,
         image_size: &Size,
         view_projection: &Mat3,
         rendered_area_size: &Size,
@@ -276,7 +275,7 @@ impl Renderer {
         rendering_data: &mut RenderingData,
         image_view_data: &ImageViewData,
         rendering_context: &dyn RenderingContext,
-        view_name: &InViewName,
+        view_name: &ViewId,
     ) -> Result<(), String> {
         let canvas = Renderer::canvas(gl);
 
@@ -316,7 +315,7 @@ impl Renderer {
         rendering_data: &mut RenderingData,
         texture: Rc<TextureImage>,
         image_view_data: &ImageViewData,
-        view_name: &InViewName,
+        view_name: &ViewId,
     ) {
         let gl = &rendering_data.gl;
         let program = &rendering_data.programs.image;

@@ -3,12 +3,14 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct Props {
+pub struct GLViewProps {
     pub node_ref: NodeRef,
 }
 
 #[function_component]
-pub fn GLView(props: &Props) -> Html {
+pub fn GLView(props: &GLViewProps) -> Html {
+    let GLViewProps { node_ref } = props;
+
     let image_view_style = use_style!(
         r#"
         height: 100%;
@@ -18,6 +20,6 @@ pub fn GLView(props: &Props) -> Html {
     );
 
     html! {
-        <div ref={props.node_ref.clone()} class={image_view_style} />
+        <div ref={node_ref} class={image_view_style} />
     }
 }

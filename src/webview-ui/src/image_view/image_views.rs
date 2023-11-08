@@ -1,15 +1,9 @@
-
-
-use std::{collections::HashMap, iter::FromIterator};
+use std::{collections::HashMap, default, iter::FromIterator};
 
 use web_sys::HtmlElement;
 use yew::NodeRef;
 
-
-
-use super::types::{
-    all_views, ImageId, InViewName,
-};
+use super::types::{all_views, ImageId, ViewId};
 
 // fn views(vt: ViewsType) -> Vec<InViewName> {
 //     match vt {
@@ -27,20 +21,21 @@ use super::types::{
 //     }
 // }
 
-pub struct ImageViews(HashMap<InViewName, (Option<ImageId>, NodeRef)>);
+pub struct ImageViews(HashMap<ViewId, (Option<ImageId>, NodeRef)>);
 
 impl ImageViews {
-    pub fn new() -> Self {
+    fn new() -> Self {
+        log::debug!("ImageViews::new");
         Self(HashMap::from_iter(
-                all_views()
-                    .into_iter()
-                    .map(|v| (v, (None, NodeRef::default()))),
-            ))
+            all_views()
+                .into_iter()
+                .map(|v| (v, (None, NodeRef::default()))),
+        ))
     }
 
     pub fn is_visible(
         &self,
-        _view_id: &InViewName,
+        _view_id: &ViewId,
         image_id: &Option<ImageId>,
         node_ref: &NodeRef,
     ) -> bool {
@@ -48,7 +43,7 @@ impl ImageViews {
         node_ref.cast::<HtmlElement>().is_some() && image_id.is_some()
     }
 
-    pub fn visible_views(&self) -> Vec<InViewName> {
+    pub fn visible_views(&self) -> Vec<ViewId> {
         self.0
             .iter()
             .filter(|(v, (image_id, node_ref))| self.is_visible(v, image_id, node_ref))
@@ -56,16 +51,24 @@ impl ImageViews {
             .collect::<Vec<_>>()
     }
 
-    pub fn get_node_ref(&self, view_id: InViewName) -> NodeRef {
+    pub fn get_node_ref(&self, view_id: ViewId) -> NodeRef {
         self.0.get(&view_id).unwrap().1.clone()
     }
 
-    pub fn get_image_id(&self, view_id: InViewName) -> Option<ImageId> {
+    pub fn get_image_id(&self, view_id: ViewId) -> Option<ImageId> {
         self.0.get(&view_id).unwrap().0.clone()
     }
 
-    pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: InViewName) {
+    pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
         view.0 = Some(image_id);
+    }
+
+
+}
+
+impl Default for ImageViews {
+    fn default() -> Self {
+        Self::new()
     }
 }

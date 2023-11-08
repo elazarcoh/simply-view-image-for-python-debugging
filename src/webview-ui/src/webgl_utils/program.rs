@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::ops::Deref;
+
 
 use wasm_bindgen::JsCast;
 use web_sys::WebGl2RenderingContext as GL;
@@ -42,7 +42,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
     gl.validate_program(program);
 
     let linked = gl
-        .get_program_parameter(&program, GL::LINK_STATUS)
+        .get_program_parameter(program, GL::LINK_STATUS)
         .as_bool()
         .unwrap();
 
@@ -55,7 +55,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
             .map(|shader| {
                 let shader: &WebGlShader = shader.dyn_ref::<WebGlShader>().unwrap();
                 check_shader_status(
-                    &gl,
+                    gl,
                     gl.get_shader_parameter(shader, GL::SHADER_TYPE)
                         .as_f64()
                         .unwrap() as GLConstant,
@@ -195,7 +195,7 @@ pub fn set_buffers_and_attributes<B>(program: &ProgramBundle, buffer_info: &Buff
 where
     B: GLBuffer,
      {
-    buffer_info.attribs.iter().for_each(|(attrib)| {
+    buffer_info.attribs.iter().for_each(|attrib| {
         if let Some(attr_setter) = program.attribute_setters.get(attrib.info.name.as_str()) {
             (attr_setter.setter)(&program.gl, &attrib.info, &attrib.buffer);
         } else {
@@ -218,7 +218,7 @@ pub fn create_program_bundle(
     fragment_shader: &str,
     opt_attribs: Option<Vec<&str>>,
 ) -> Result<ProgramBundle, String> {
-    let binding = opt_attribs.unwrap_or(vec![]);
+    let binding = opt_attribs.unwrap_or_default();
     let attribute_locations = binding.iter().enumerate().collect::<Vec<(usize, &&str)>>();
 
     let program = gl_guarded(gl.clone(), |gl| {
@@ -247,7 +247,7 @@ pub fn create_program_bundle(
             })
     })?;
 
-    let bounded_attributes = attribute_locations.iter().for_each(|(i, name)| {
+    attribute_locations.iter().for_each(|(i, name)| {
         gl.bind_attrib_location(&program, *i as _, name);
     });
 
@@ -294,7 +294,7 @@ pub struct GLProgramBuilder<'a> {
 }
 
 impl<'a> GLProgramBuilder<'a> {
-    pub fn new<'b>(gl: &'b GL) -> GLProgramBuilderBuilder<'b> {
+    pub fn create(gl: &GL) -> GLProgramBuilderBuilder<'_> {
         GLProgramBuilderBuilder {
             gl: Some(gl),
             ..GLProgramBuilderBuilder::empty()

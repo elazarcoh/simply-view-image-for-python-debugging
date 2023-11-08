@@ -1,8 +1,8 @@
-use std::ops::Deref;
 
-use super::{constants::*, types::*};
 
-use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer, WebGlProgram};
+use super::{types::*};
+
+use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer};
 /**
  * Given typed array creates a WebGLBuffer and copies the typed array
  * into it.

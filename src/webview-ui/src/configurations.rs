@@ -24,7 +24,7 @@ pub struct Configuration {
 pub enum UpdateConfigurationAction {}
 
 impl UpdateConfigurationAction {
-    fn update(self, configuration: Configuration) -> Configuration {
+    fn update(self, _configuration: Configuration) -> Configuration {
         match self {
             
         }
@@ -49,7 +49,7 @@ pub struct ConfigurationProviderProps {
 
 #[function_component]
 pub fn ConfigurationProvider(props: &ConfigurationProviderProps) -> Html {
-    let msg = use_reducer(|| Configuration::default());
+    let msg = use_reducer(Configuration::default);
 
     html! {
         <ContextProvider<ConfigurationContext> context={msg}>

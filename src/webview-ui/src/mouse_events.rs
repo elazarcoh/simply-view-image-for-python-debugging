@@ -1,9 +1,9 @@
-use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use glam::{Mat3, Vec2, Vec3Swizzles, Vec3};
+use glam::{Mat3, Vec2, Vec3Swizzles};
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::JsCast;
-use web_sys::{Element, Event, HtmlCanvasElement, MouseEvent};
+use web_sys::{Event, HtmlCanvasElement, MouseEvent};
 use yew::{Callback, NodeRef};
 
 use crate::{
@@ -80,7 +80,7 @@ impl PanHandler {
                 let start_mouse_position_clip_space =
                     get_clip_space_mouse_position(event.clone(), &canvas_element);
                 let start_mouse_position =
-                    (start_in_view_projection_matrix * start_mouse_position_clip_space.to_hom());
+                    start_in_view_projection_matrix * start_mouse_position_clip_space.to_hom();
 
                 (*self_handler).borrow_mut().is_panning = true;
                 (*self_handler).borrow_mut().start_camera = camera;
@@ -137,16 +137,16 @@ impl PanHandler {
 
         let options = EventListenerOptions::enable_prevent_default();
         (
-            EventListener::new_with_options(&view_element, "mousedown", options, move |e| {
+            EventListener::new_with_options(view_element, "mousedown", options, move |e| {
                 mousedown.emit(e.clone())
             }),
-            EventListener::new_with_options(&view_element, "mouseup", options, move |e| {
+            EventListener::new_with_options(view_element, "mouseup", options, move |e| {
                 mouseup.emit(e.clone())
             }),
-            EventListener::new_with_options(&view_element, "mousemove", options, move |e| {
+            EventListener::new_with_options(view_element, "mousemove", options, move |e| {
                 mousemove.emit(e.clone())
             }),
-            EventListener::new_with_options(&view_element, "mouseleave", options, move |e| {
+            EventListener::new_with_options(view_element, "mouseleave", options, move |e| {
                 mouseleave.emit(e.clone())
             }),
         )
@@ -216,7 +216,7 @@ impl ZoomHandler {
         };
 
         let options = EventListenerOptions::enable_prevent_default();
-        EventListener::new_with_options(&view_element, "wheel", options, move |e| {
+        EventListener::new_with_options(view_element, "wheel", options, move |e| {
             wheel.emit(e.clone())
         })
     }

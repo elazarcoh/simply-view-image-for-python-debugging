@@ -165,7 +165,7 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
     ];
     // let solid_image_data =
     //     image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
-    let data_vec = data.iter().map(|x| *x).collect::<Vec<u8>>();
+    let data_vec = data.to_vec();
     let solid_image_data = image::ImageBuffer::from_raw(25, 25, data_vec).unwrap();
     let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
 
@@ -195,7 +195,7 @@ impl RenderingContext for Coordinator {
         self.texture_image_cache
             .borrow()
             .get(id)
-            .map(|x| Rc::clone(x))
+            .map(Rc::clone)
     }
 
     fn visible_nodes(&self) -> Vec<InViewName> {
@@ -210,13 +210,8 @@ impl RenderingContext for Coordinator {
                 .borrow()
                 .get_node_ref(view_id)
                 .cast::<HtmlElement>()
-                .expect(
-                    format!(
-                        "Unable to cast node ref to HtmlElement for view {:?}",
-                        view_id
-                    )
-                    .as_str(),
-                ),
+                .unwrap_or_else(|| panic!("Unable to cast node ref to HtmlElement for view {:?}",
+                        view_id)),
             image_id: self.image_views.borrow().get_image_id(view_id),
         }
     }
@@ -244,9 +239,9 @@ impl IncomeMessageHandler for Coordinator {
                 .unwrap();
             let image =
                 image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).unwrap();
-            let width = image.width();
-            let height = image.height();
-            let channels = image.color().channel_count();
+            let _width = image.width();
+            let _height = image.height();
+            let _channels = image.color().channel_count();
 
             // TODO: remove this
             let image = image::DynamicImage::ImageRgba8(image.to_rgba8());
@@ -365,7 +360,7 @@ pub fn App() -> Html {
 
             // TODO: remove. debug thing
             if let Err(err) = create_image_for_view(&gl)
-                .map(|image| (&coordinator).texture_image_cache.borrow_mut().add(image))
+                .map(|image| coordinator.texture_image_cache.borrow_mut().add(image))
                 .map(|id| {
                     coordinator.image_views.borrow_mut().set_image_to_view(
                         id,

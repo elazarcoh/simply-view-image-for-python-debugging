@@ -1,5 +1,5 @@
 use image::DynamicImage;
-use web_sys::WebGl2RenderingContext;
+
 
 use crate::{
     common::Size,
@@ -100,7 +100,7 @@ impl TextureImage {
         gl: &web_sys::WebGl2RenderingContext,
     ) -> Result<Self, String> {
         let texture = webgl_utils::textures::create_texture_from_image(
-            &gl,
+            gl,
             &image,
             webgl_utils::types::CreateTextureParametersBuilder::default()
                 .mag_filter(webgl_utils::constants::TextureMagFilter::Nearest)

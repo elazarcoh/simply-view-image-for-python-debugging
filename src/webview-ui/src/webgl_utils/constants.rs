@@ -1,11 +1,11 @@
-use do_notation::m;
+
 use std::convert::TryFrom;
 use std::mem;
 
 use std::collections::HashMap;
-use std::ops::Deref;
 
-use web_sys::*;
+
+
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 use super::types::*;
@@ -180,9 +180,9 @@ fn float_attribute_setter(index: u32) -> AttributeSetter {
     }
 }
 
-fn int_attribute_setter(gl: &GL, index: u32) {}
+fn int_attribute_setter(_gl: &GL, _index: u32) {}
 
-fn uint_attribute_setter(gl: &GL, index: u32) {}
+fn uint_attribute_setter(_gl: &GL, _index: u32) {}
 
 lazy_static! {
     pub static ref GL_ATTRIBUTE_SETTER_FOR_TYPE: HashMap<GLPrimitive, AttributeSetterBuilder> = {

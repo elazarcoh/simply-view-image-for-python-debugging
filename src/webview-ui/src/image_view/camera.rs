@@ -34,12 +34,10 @@ pub struct ViewsCameras(HashMap<InViewName, Rc<RefCell<Camera>>>);
 
 impl ViewsCameras {
     pub fn new() -> Self {
-        Self {
-            0: all_views()
+        Self(all_views()
                 .into_iter()
                 .map(|v| (v, Rc::new(RefCell::new(Camera::default()))))
-                .collect(),
-        }
+                .collect())
     }
     pub fn get(&self, view_id: InViewName) -> Camera {
         self.0.get(&view_id).unwrap().borrow().to_owned()
@@ -90,8 +88,7 @@ pub fn calculate_view_projection(
         ))
     };
 
-    let view_projection_matrix =
-        canvas_projection * center_in_canvas_matrix * view_to_canvas * view_matrix;
+    
 
-    view_projection_matrix
+    canvas_projection * center_in_canvas_matrix * view_to_canvas * view_matrix
 }

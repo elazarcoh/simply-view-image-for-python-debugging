@@ -1,37 +1,23 @@
-use std::{collections::HashMap, iter::FromIterator, ops::Deref, rc::Rc};
+use std::collections::HashMap;
 
-use ab_glyph::{Font, FontArc, Glyph, GlyphId, Point, PxScale, Rect};
+use ab_glyph::{FontArc, Glyph, GlyphId, PxScale, Rect};
 use glam::{Mat3, Vec4};
-use glyph_brush::{GlyphBrush, GlyphBrushBuilder};
+
 use glyph_brush_draw_cache::{DrawCache, Rectangle};
 use glyph_brush_layout::{GlyphPositioner, Layout, SectionGeometry, SectionText};
 use image::DynamicImage;
-use web_sys::{WebGl2RenderingContext, WebGlBuffer, WebGlTexture};
+use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
     common::Size,
     webgl_utils::{
         self,
-        attributes::{create_buffer_info_from_arrays, Arrays},
         draw::draw_buffer_info,
         program::{set_buffers_and_attributes, set_uniforms},
         reusable_buffer::ReusableBuffer,
         *,
     },
 };
-
-struct Buffers {
-    buffers: BufferInfo<ReusableBuffer>,
-}
-
-impl Buffers {
-    fn uv_buffer(&mut self) -> &mut ReusableBuffer {
-        &mut self.buffers.get_attrib_mut("uv").unwrap().buffer
-    }
-    fn position_buffer(&mut self) -> &mut ReusableBuffer {
-        &mut self.buffers.get_attrib_mut("vin_position").unwrap().buffer
-    }
-}
 
 pub struct PixelTextRenderer {
     gl: WebGl2RenderingContext,
@@ -78,13 +64,13 @@ impl PixelValue {
         }
     }
 
-    fn to_color(&self) -> Vec4 {
+    fn to_color(self) -> Vec4 {
         match self {
             Self::Rgba(r, g, b, a) => Vec4::new(
-                *r as f32 / 255.0,
-                *g as f32 / 255.0,
-                *b as f32 / 255.0,
-                *a as f32 / 255.0,
+                r as f32 / 255.0,
+                g as f32 / 255.0,
+                b as f32 / 255.0,
+                a as f32 / 255.0,
             ),
         }
     }
@@ -133,7 +119,7 @@ impl PixelTextData {
 
         Ok(Self {
             buffer_info,
-            pixel_value: pixel_value.clone(),
+            pixel_value: *pixel_value,
         })
     }
 
@@ -256,7 +242,7 @@ impl GlyphTexture {
         let gl = &self.gl;
         let update_texture = |rect: Rectangle<u32>, tex_data: &[u8]| {
             // log::debug!("Updating texture");
-            gl.bind_texture(TextureTarget::Texture2D as _, Some(&texture));
+            gl.bind_texture(TextureTarget::Texture2D as _, Some(texture));
 
             gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_opt_u8_array(
                 TextureTarget::Texture2D as _,
@@ -267,7 +253,7 @@ impl GlyphTexture {
                 rect.height() as _,
                 Format::Red as _,
                 ElementType::UnsignedByte as _,
-                Some(&tex_data),
+                Some(tex_data),
             )
             .unwrap();
         };
@@ -279,7 +265,7 @@ impl GlyphTexture {
     fn glyph_uv(&self, section_glyph: &glyph_brush_layout::SectionGlyph) -> Option<(Rect, Rect)> {
         self.glyphs
             .get(&section_glyph.glyph.id)
-            .map(|(_, glyph)| {
+            .and_then(|(_, glyph)| {
                 let diff = section_glyph.glyph.position - glyph.position;
                 self.draw_cache
                     .rect_for(
@@ -299,7 +285,6 @@ impl GlyphTexture {
                         (uv, bbox)
                     })
             })
-            .flatten()
     }
 }
 
@@ -319,7 +304,7 @@ impl PixelTextRenderer {
             FontArc::try_from_slice(include_bytes!("../../assets/fonts/ChakraPetch-Regular.ttf"))
                 .map_err(|e| e.to_string())?;
 
-        let text_program = webgl_utils::program::GLProgramBuilder::new(&gl)
+        let text_program = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/text.vert"))
             .fragment_shader(include_str!("../shaders/text.frag"))
             .attribute("vin_position")
@@ -395,11 +380,11 @@ impl PixelTextRenderer {
 
         pixel_data
             .uv_buffer()
-            .set_content(&bytemuck::cast_slice(&uvs), 0)
+            .set_content(bytemuck::cast_slice(&uvs), 0)
             .unwrap();
         pixel_data
             .position_buffer()
-            .set_content(&bytemuck::cast_slice(&bbox), 0)
+            .set_content(bytemuck::cast_slice(&bbox), 0)
             .unwrap();
         pixel_data.buffer_info.num_elements = 6 * num_rendered_glyphs;
     }
@@ -408,7 +393,7 @@ impl PixelTextRenderer {
         &self,
         data: PixelTextRenderingData<'a>,
     ) -> Result<&'a PixelTextData, String> {
-        if let Some(pixel_data) = data.pixel_text_cache.0.get_mut(&data.pixel_loc) {
+        if let Some(pixel_data) = data.pixel_text_cache.0.get_mut(data.pixel_loc) {
             if pixel_data.pixel_value != *data.pixel_value {
                 // log::debug!("Updating pixel text cache");
                 Self::pixel_value_into_buffers(
@@ -432,7 +417,7 @@ impl PixelTextRenderer {
 
             data.pixel_text_cache.0.insert(*data.pixel_loc, pixel_data);
         }
-        Ok(data.pixel_text_cache.0.get(&data.pixel_loc).unwrap())
+        Ok(data.pixel_text_cache.0.get(data.pixel_loc).unwrap())
     }
 
     pub(super) fn make_pixel_text_cache(&self) -> PixelTextCache {
@@ -465,7 +450,7 @@ impl PixelTextRenderer {
                 ),
                 (
                     "u_projectionMatrix",
-                    UniformValue::Mat3(&data.view_projection),
+                    UniformValue::Mat3(data.view_projection),
                 ),
             ]),
         );

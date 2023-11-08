@@ -1,28 +1,26 @@
 use std::iter::FromIterator;
-use std::ops::{Deref, IndexMut};
+
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use glam::{Mat3, Vec2, Vec3};
-use glyph_brush::Section;
-use image::{self, DynamicImage};
+
 use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
-    WebGlTexture,
 };
-use yew::NodeRef;
+
 
 use crate::common::Size;
 use crate::image_view::camera;
 use crate::math_utils::ToHom;
 use crate::webgl_utils::attributes::{
-    create_attributes_from_array, create_buffer_info_from_arrays, Arrays,
+    create_buffer_info_from_arrays, Arrays,
 };
 use crate::webgl_utils::constants::*;
 use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
-use crate::{math_utils, webgl_utils};
+use crate::webgl_utils;
 
 use super::camera::Camera;
 use super::constants::VIEW_SIZE;
@@ -33,7 +31,6 @@ use super::rendering_context::{ImageViewData, RenderingContext};
 use super::types::{all_views, InViewName, TextureImage};
 
 struct Programs {
-    basic: ProgramBundle,
     image: ProgramBundle,
 }
 
@@ -110,61 +107,6 @@ fn create_image_plane_attributes(
     )
 }
 
-struct PixelValueFormatter {}
-
-struct FormattedPixelValue {
-    section: glyph_brush::OwnedSection,
-    text_to_image: Mat3,
-}
-
-impl PixelValueFormatter {
-    fn format_pixel_value(image: &image::DynamicImage, x: i32, y: i32) -> FormattedPixelValue {
-        let font_scale = 100.0;
-        let max_rows = 3_f32;
-        let max_cols = 5_f32;
-        let max_rows_cols = f32::max(max_rows, max_cols);
-        let letters_offset_inside_pixel = max_rows_cols / 2.0;
-        let pixel_offset = max_rows_cols;
-        let px = 0.0;
-        let py = 0.0;
-
-        // let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
-        let text = match image {
-            DynamicImage::ImageRgba8(image) => {
-                let pixel = image.get_pixel(x as u32, y as u32);
-                format!(
-                    "{:.5}\n{:.5}\n{:.5}\n{:.5}",
-                    pixel[0], pixel[1], pixel[2], pixel[3]
-                )
-            }
-            _ => "Not RGBA".to_string(),
-        };
-
-        let text_to_image = Mat3::from_scale(Vec2::new(
-            (1.0 / max_rows_cols) / (font_scale),
-            (1.0 / max_rows_cols) / (font_scale),
-        ));
-
-        let section = glyph_brush::Section::default()
-            .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
-            .with_layout(
-                glyph_brush::Layout::default()
-                    .h_align(glyph_brush::HorizontalAlign::Center)
-                    .v_align(glyph_brush::VerticalAlign::Center),
-            )
-            .with_screen_position((
-                ((x as f32 + px) * pixel_offset + letters_offset_inside_pixel) * font_scale,
-                ((y as f32 + py) * pixel_offset + letters_offset_inside_pixel) * font_scale,
-            ))
-            .to_owned();
-
-        FormattedPixelValue {
-            section,
-            text_to_image,
-        }
-    }
-}
-
 pub struct Renderer {}
 
 impl Renderer {
@@ -223,7 +165,6 @@ impl Renderer {
                     // Drop our handle to this closure so that it will get cleaned
                     // up once we return.
                     let _ = cb.borrow_mut().take();
-                    return;
                 } else {
                     Renderer::render(&gl, &mut rendering_data, rendering_context.as_ref());
                     Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
@@ -235,34 +176,24 @@ impl Renderer {
     }
 
     fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs, String> {
-        let vert_code = include_str!("../shaders/basic.vert");
-        let frag_code = include_str!("../shaders/basic.frag");
-
-        let shader_program = webgl_utils::program::GLProgramBuilder::new(&gl)
-            .vertex_shader(vert_code)
-            .fragment_shader(frag_code)
-            .attribute("a_position")
-            .build()?;
-
-        let image_program = webgl_utils::program::GLProgramBuilder::new(&gl)
+        let image_program = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
             .fragment_shader(include_str!("../shaders/image.frag"))
             .attribute("vin_position")
             .build()?;
 
         Ok(Programs {
-            basic: shader_program,
             image: image_program,
         })
     }
 
     fn canvas(gl: &GL) -> HtmlCanvasElement {
-        let canvas = gl
+        
+        gl
             .canvas()
             .unwrap()
             .dyn_into::<HtmlCanvasElement>()
-            .unwrap();
-        canvas
+            .unwrap()
     }
 
     fn render(
@@ -376,7 +307,7 @@ impl Renderer {
         let image_id = image_view_data.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
-        let texture = rendering_context.texture_by_id(&image_id).ok_or(
+        let texture = rendering_context.texture_by_id(image_id).ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
         Renderer::render_image(

@@ -1,15 +1,14 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+
+
 use std::{collections::HashMap, iter::FromIterator};
 
 use web_sys::HtmlElement;
 use yew::NodeRef;
 
-use super::camera::Camera;
-use super::image_cache::ImageCache;
+
+
 use super::types::{
-    all_views, ImageId, InDualViewName, InQuadViewName, InSingleViewName, InViewName, TextureImage,
-    ViewsType,
+    all_views, ImageId, InViewName,
 };
 
 // fn views(vt: ViewsType) -> Vec<InViewName> {
@@ -32,18 +31,16 @@ pub struct ImageViews(HashMap<InViewName, (Option<ImageId>, NodeRef)>);
 
 impl ImageViews {
     pub fn new() -> Self {
-        Self {
-            0: HashMap::from_iter(
+        Self(HashMap::from_iter(
                 all_views()
                     .into_iter()
                     .map(|v| (v, (None, NodeRef::default()))),
-            ),
-        }
+            ))
     }
 
     pub fn is_visible(
         &self,
-        view_id: &InViewName,
+        _view_id: &InViewName,
         image_id: &Option<ImageId>,
         node_ref: &NodeRef,
     ) -> bool {
@@ -55,7 +52,7 @@ impl ImageViews {
         self.0
             .iter()
             .filter(|(v, (image_id, node_ref))| self.is_visible(v, image_id, node_ref))
-            .map(|(v, _)| v.clone())
+            .map(|(v, _)| *v)
             .collect::<Vec<_>>()
     }
 

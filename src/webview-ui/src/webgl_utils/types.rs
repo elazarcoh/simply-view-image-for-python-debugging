@@ -1,6 +1,6 @@
 use enum_dispatch::enum_dispatch;
 use std::collections::HashMap;
-use std::convert::TryFrom;
+
 use std::mem;
 
 use std::ops::Deref;
@@ -31,10 +31,11 @@ pub enum UniformValue<'a> {
 }
 
 pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
+pub type AttributeSetterFunction = Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>;
 
 pub struct AttributeSetter {
     pub index: u32,
-    pub setter: Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>,
+    pub setter: AttributeSetterFunction,
 }
 
 pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
@@ -221,23 +222,23 @@ pub fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
 
 #[enum_dispatch]
 pub trait GLSet {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> ();
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation);
 }
 
 impl GLSet for &f32 {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform1f(Some(location), **self);
     }
 }
 
 impl GLSet for &bool {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform1i(Some(location), **self as i32);
     }
 }
 
 impl GLSet for &WebGlTexture {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         let texture_unit = 0;
         gl.uniform1i(Some(location), texture_unit); // TODO: need to fine the texture unit
         gl.active_texture(GL::TEXTURE0 + texture_unit as u32);
@@ -247,31 +248,31 @@ impl GLSet for &WebGlTexture {
 }
 
 impl GLSet for &glam::Vec2 {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform2fv_with_f32_array(Some(location), self.as_ref());
     }
 }
 
 impl GLSet for &glam::Vec3 {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform3fv_with_f32_array(Some(location), self.as_ref());
     }
 }
 
 impl GLSet for &glam::Vec4 {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform4fv_with_f32_array(Some(location), self.as_ref());
     }
 }
 
 impl GLSet for &glam::Mat3 {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform_matrix3fv_with_f32_array(Some(location), false, self.to_cols_array().as_slice());
     }
 }
 
 impl GLSet for &glam::Mat4 {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform_matrix4fv_with_f32_array(Some(location), false, self.to_cols_array().as_slice());
     }
 }

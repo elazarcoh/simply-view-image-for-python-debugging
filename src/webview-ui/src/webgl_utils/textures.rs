@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+
 
 use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
@@ -35,18 +35,10 @@ cfg_if! {
             0,
         ).map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;
 
-        parameters.mag_filter.map(|mag_filter| {
-            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_MAG_FILTER, mag_filter as i32);
-        });
-        parameters.min_filter.map(|min_filter| {
-            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_MIN_FILTER, min_filter as i32);
-        });
-        parameters.wrap_s.map(|wrap_s| {
-            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_WRAP_S, wrap_s as i32);
-        });
-        parameters.wrap_t.map(|wrap_t| {
-            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_WRAP_T, wrap_t as i32);
-        });
+        if let Some(mag_filter) = parameters.mag_filter { gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_MAG_FILTER, mag_filter as i32); }
+        if let Some(min_filter) = parameters.min_filter { gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_MIN_FILTER, min_filter as i32); }
+        if let Some(wrap_s) = parameters.wrap_s { gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_WRAP_S, wrap_s as i32); }
+        if let Some(wrap_t) = parameters.wrap_t { gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_WRAP_T, wrap_t as i32); }
 
         Ok(tex)
     }

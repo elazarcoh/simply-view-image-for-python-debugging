@@ -1,6 +1,7 @@
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
-
+// used for debugging
+#[allow(dead_code)]
 pub fn buffer_content_as_vec(
     gl: &WebGl2RenderingContext,
     buf: &WebGlBuffer,

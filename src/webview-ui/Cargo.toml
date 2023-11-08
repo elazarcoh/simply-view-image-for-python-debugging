@@ -41,6 +41,7 @@ js-sys = "0.3"
 yew = { version = "0.20", features = ["csr"] }
 serde = { version = "1.0.183", features = ["derive"] }
 gloo-utils = { version = "0.1.7", features = ["serde"] }
+gloo-events = "0.2"
 tsify = "0.4.5"
 
 [dependencies.web-sys]

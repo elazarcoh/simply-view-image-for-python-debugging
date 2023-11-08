@@ -118,7 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
                 if (HelloWorldPanel.currentPanel !== undefined) {
                     const path = "C:/Users/hodaya/Documents/simply-view-image-for-python-debugging/watch-view.png";
                     const contents = await fs.readFile(path, {encoding: 'base64'});
-                    HelloWorldPanel.currentPanel.postMessage("view-image", {
+                    HelloWorldPanel.currentPanel.postMessage({
                         message: "Foo",
                         imageBase64: contents,
                     });

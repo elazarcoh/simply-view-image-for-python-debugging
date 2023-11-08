@@ -13,6 +13,7 @@ import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
 import { MessageHandlerData } from "../../utils/MessageHandlerData";
+import { WebviewMessageHandler } from "./WebviewMessageHandler";
 
 /**
  * This class manages the state and behavior of HelloWorld webview panels.
@@ -28,6 +29,8 @@ export class HelloWorldPanel {
     public static currentPanel: HelloWorldPanel | undefined;
     private readonly _panel: WebviewPanel;
     private _disposables: Disposable[] = [];
+
+    private _webviewMessageHandler: WebviewMessageHandler;
 
     /**
      * The HelloWorldPanel class private constructor (called only from the render method).
@@ -52,8 +55,15 @@ export class HelloWorldPanel {
             extensionUri
         );
 
+        this._webviewMessageHandler = new WebviewMessageHandler(this._panel.webview);
+
         // Set an event listener to listen for messages passed from the webview context
-        this._setWebviewMessageListener(this._panel.webview, context);
+        // this._setWebviewMessageListener(this._panel.webview, context);
+        this._panel.webview.onDidReceiveMessage(
+            this._webviewMessageHandler.onWebviewMessage,
+            undefined,
+            context.subscriptions
+        );
     }
 
     /**
@@ -202,28 +212,7 @@ export class HelloWorldPanel {
         context: vscode.ExtensionContext
     ) {
         webview.onDidReceiveMessage(
-            (message) => {
-                console.log(message);
-                message = JSON.parse(message);
-
-                const { command, requestId, payload } = message;
-
-                // Do something with the payload
-                console.log(payload);
-
-                switch (command) {
-                    case "hello":
-                        window.showInformationMessage(payload);
-                        return;
-                    default:
-                        // Send a response back to the webview
-                        return webview.postMessage({
-                            command,
-                            requestId, // The requestId is used to identify the response
-                            payload: `Hello from the extension!`,
-                        } as MessageHandlerData<string>);
-                }
-            },
+            new WebviewMessageHandler(webview).onWebviewMessage,
             undefined,
             context.subscriptions
         );
@@ -256,13 +245,13 @@ export class HelloWorldPanel {
         // }
     }
 
-    public postMessage<C extends keyof WebviewPushCommands>(
-        command: C,
-        payload: WebviewPushCommands[C]
+    public postMessage(
+        message: any
     ) {
-        this._panel.webview.postMessage({
-            command,
-            payload,
-        });
+        this._webviewMessageHandler.sendToWebview(message);
+        // this._panel.webview.postMessage({
+        //     command,
+        //     payload,
+        // });
     }
 }

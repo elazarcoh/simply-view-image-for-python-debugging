@@ -24,11 +24,11 @@ import {
 // *********************
 // Some general commands
 // *********************
-async function openExtensionSettings(): Promise<void> {
-    await vscode.commands.executeCommand("workbench.action.openSettings", {
-        query: "svifpd",
-    });
-}
+// async function openExtensionSettings(): Promise<void> {
+//     await vscode.commands.executeCommand("workbench.action.openSettings", {
+//         query: "svifpd",
+//     });
+// }
 
 // *********************************
 // VSCode extension commands helpers

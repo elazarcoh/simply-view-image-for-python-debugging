@@ -5,6 +5,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use gloo::console;
+use gloo::events::EventListener;
 use js_sys::Date;
 use yew::{html, Component, Context, Html, NodeRef};
 use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext as GL, WebGlRenderingContext};

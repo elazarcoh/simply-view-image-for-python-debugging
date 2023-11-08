@@ -9,7 +9,7 @@ use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use yew::prelude::*;
 use yew::{function_component, html, use_effect_with_deps, use_node_ref, Html};
 
-use crate::renderer::Renderer;
+use crate::image_view::renderer::Renderer;
 
 #[derive(Properties, PartialEq)]
 pub struct RendererProviderProps {

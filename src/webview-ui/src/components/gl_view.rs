@@ -9,28 +9,18 @@ use yew::prelude::*;
 use yew_hooks::use_raf;
 
 use crate::components::renderer_context::RendererContext;
-use crate::renderer::{ InSingleViewName, InViewName, Renderer };
 
 // use crate::components::glcontext::use_gl_context;
 // use crate::components::GL;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub view_name: InViewName,
+    pub node_ref: NodeRef,
 }
 
 #[function_component]
 pub fn GLView(props: &Props) -> Html {
-    let div_ref = use_node_ref();
 
-    let renderer_ctx = use_context::<RendererContext>();
-    if let Some(renderer_ctx) = renderer_ctx {
-        log::debug!("GLView got renderer");
-        let renderer = renderer_ctx.renderer;
-        (*renderer.borrow_mut()).register(props.view_name.clone(), div_ref.clone());
-    } else {
-        log::error!("GLView no renderer");
-    }
 
     let image_view_style = use_style!(
         r#"
@@ -42,7 +32,7 @@ pub fn GLView(props: &Props) -> Html {
 
 
     html! {
-        <div ref={div_ref} class={image_view_style} />
+        <div ref={props.node_ref.clone()} class={image_view_style} />
     }
     // if glctx.is_none() {
     //     console::log!("GLView got no context");

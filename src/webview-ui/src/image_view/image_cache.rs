@@ -1,19 +1,7 @@
 use std::collections::HashMap;
 
-use image::DynamicImage;
+use super::types::Image;
 
-#[derive(PartialEq)]
-pub struct Image {
-    pub image: DynamicImage,
-}
-
-impl Image {
-    pub fn new(image: DynamicImage) -> Self {
-        Self { image }
-    }
-}
-
-#[derive(PartialEq)]
 pub struct ImageCache {
     cache: HashMap<String, Image>,
 }

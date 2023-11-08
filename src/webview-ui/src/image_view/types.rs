@@ -1,3 +1,4 @@
+use image::DynamicImage;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ViewsType {
@@ -32,6 +33,18 @@ pub enum InViewName {
     Quad(InQuadViewName),
 }
 
+pub fn all_views() -> Vec<InViewName> {
+    vec![
+        InViewName::Single(InSingleViewName::Single),
+        InViewName::Dual(InDualViewName::Left),
+        InViewName::Dual(InDualViewName::Right),
+        InViewName::Quad(InQuadViewName::TopLeft),
+        InViewName::Quad(InQuadViewName::TopRight),
+        InViewName::Quad(InQuadViewName::BottomLeft),
+        InViewName::Quad(InQuadViewName::BottomRight),
+    ]
+}
+
 impl ToString for InSingleViewName {
     fn to_string(&self) -> String {
         match self {
@@ -57,5 +70,15 @@ impl ToString for InQuadViewName {
             InQuadViewName::BottomLeft => "BottomLeft".to_string(),
             InQuadViewName::BottomRight => "BottomRight".to_string(),
         }
+    }
+}
+
+pub struct Image {
+    pub image: DynamicImage,
+}
+
+impl Image {
+    pub fn new(image: DynamicImage) -> Self {
+        Self { image }
     }
 }

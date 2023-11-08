@@ -8,18 +8,19 @@ extern crate cfg_if;
 mod communication;
 use base64::{engine::general_purpose, Engine as _};
 mod components;
-mod renderer;
+mod image_view;
 mod vscode;
 mod webgl_utils;
 use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 
+use image_view::image_views_coordinator::ImageViewsCoordinator;
 use serde::{Deserialize, Serialize};
-use web_sys::AddEventListenerOptions;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
 use web_sys::window;
+use web_sys::AddEventListenerOptions;
 
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::prelude::*;
@@ -29,11 +30,11 @@ use yew_hooks::prelude::*;
 
 use crate::components::GLView;
 use crate::components::RendererProvider;
-use crate::renderer::Image;
-use crate::renderer::ImageCache;
-use crate::renderer::InSingleViewName;
-use crate::renderer::InViewName;
-use crate::renderer::Renderer;
+use crate::image_view::image_cache::ImageCache;
+use crate::image_view::renderer::Renderer;
+use crate::image_view::types::Image;
+use crate::image_view::types::InSingleViewName;
+use crate::image_view::types::InViewName;
 
 // #[wasm_bindgen]
 // pub fn send_example_to_js() -> JsValue {
@@ -115,6 +116,7 @@ impl VSCodeMessageHandler {
 
 struct Coordinator {
     renderer: Rc<RefCell<Renderer>>,
+    image_views_coordinator: Rc<RefCell<ImageViewsCoordinator>>,
     vscode_message_handler: Rc<VSCodeMessageHandler>,
 }
 
@@ -125,12 +127,26 @@ fn App() -> Html {
             let vscode = vscode::acquire_vscode_api();
             let image_cache = Rc::new(RefCell::new(ImageCache::new()));
             |_| Coordinator {
-                renderer: Rc::new(RefCell::new(Renderer::new(image_cache.clone()))),
+                renderer: Rc::new(RefCell::new(Renderer::new())),
+                image_views_coordinator: Rc::new(RefCell::new(ImageViewsCoordinator::new())),
                 vscode_message_handler: Rc::new(VSCodeMessageHandler::new(vscode, image_cache)),
             }
         },
         (),
     );
+    coordinator
+        .renderer
+        .borrow_mut()
+        .bind_view_holders(Rc::clone(
+            &coordinator.image_views_coordinator.borrow().view_holders,
+        ));
+
+    // TODO: move from here
+    let view_id = InViewName::Single(InSingleViewName::Single);
+    let my_node_ref = coordinator
+        .image_views_coordinator
+        .borrow()
+        .get_node_ref(view_id);
 
     use_effect({
         let window = window().unwrap();
@@ -156,12 +172,10 @@ fn App() -> Html {
                 event.prevent_default();
             });
             let options = EventListenerOptions::enable_prevent_default();
-            let wheel_listener = EventListener::new_with_options(
-                &window,
-                "wheel",
-                options,
-                move |e| onwheel.emit(e.clone()),
-            );
+            let wheel_listener =
+                EventListener::new_with_options(&window, "wheel", options, move |e| {
+                    onwheel.emit(e.clone())
+                });
 
             move || {
                 drop(message_listener);
@@ -188,11 +202,10 @@ fn App() -> Html {
     let onclick_view_image = Callback::from({
         let renderer = coordinator.renderer.clone();
         move |_| {
-            (*renderer.borrow_mut())
-                .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
+            // (*renderer.borrow_mut())
+            //     .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
         }
     });
-
 
     let main_style = use_style!(
         r#"
@@ -225,7 +238,7 @@ fn App() -> Html {
                 <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
                 <div>{ "Hello World!" }</div>
                 <div class={image_view_container_style}>
-                    <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
+                    <GLView node_ref={my_node_ref} />
                 </div>
             </RendererProvider>
         </div>

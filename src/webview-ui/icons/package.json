@@ -1,0 +1,23 @@
+{
+  "name": "my-icons",
+  "version": "0.0.1",
+  "fontVersion": "0.1",
+  "main": "index.js",
+  "scripts": {
+    "clean": "node ./scripts/reset.js",
+    "svgo": "svgo -f ./src/icons/ --config svgo.config.js",
+    "sprite": "node ./scripts/svg-sprite.js --outDir dist --outFile my-icons.svg",
+    "export-to-csv": "node ./scripts/export-to-csv.js -f ./dist/my-icons.ttf > ./dist/my-icons.csv",
+    "fonts": "fantasticon",
+    "build": "npm run clean && npm run svgo && npm run fonts && npm run export-to-csv && npm run sprite",
+    "release": "release-it"
+  },
+  "devDependencies": {
+    "ansi-regex": ">=5.0.1",
+    "fantasticon": "^1.2.3",
+    "opentype.js": "^1.3.3",
+    "release-it": "15.10.1",
+    "svg-sprite": "^1.5.2",
+    "svgo": "2.7.0"
+  }
+}

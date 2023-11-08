@@ -16,7 +16,7 @@ import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
-import { HelloWorldPanel } from "./webview/panels/HelloWorldPanel";
+import { ImageViewPanel } from "./webview/panels/ImageViewPanel";
 import { HoverProvider } from "./HoverProvider";
 import { SocketServer } from "./webview/communication/Server";
 
@@ -117,7 +117,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand("svifpd.open-settings", async () => {
-            HelloWorldPanel.render(context);
+            ImageViewPanel.render(context);
         })
     );
 }

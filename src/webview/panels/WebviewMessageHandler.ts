@@ -1,24 +1,16 @@
 import * as vscode from "vscode";
-import * as fs from "fs/promises";
 import {
-    FromExtensionMessage,
-    FromExtensionMessageWithId,
     FromWebviewMessageWithId,
     ImageInfo,
     MessageId,
     RequestImageData,
 } from "../webview";
-import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
-import { hasValue } from "../../utils/Utils";
 import { findExpressionViewables } from "../../PythonObjectInfo";
 import { Except } from "../../utils/Except";
 import { serializePythonObjectToDisk } from "../../from-python-serialization/DiskSerialization";
-// import Container from "typedi";
-// import { WebsocketServer } from "../communication/WebsocketServer";
 import { logDebug } from "../../Logging";
 
 export class WebviewMessageHandler {
-    constructor(private webview: vscode.Webview) {}
 
     handleImagesRequest(_id: MessageId) {
         // const validVariables: ImageInfo[] =
@@ -34,7 +26,6 @@ export class WebviewMessageHandler {
         //         )
         //         .filter(hasValue) ?? [];
         // const validExpressions: ImageInfo[] = []; // TODO: Implement this
-
         // const message: FromExtensionMessage = {
         //     type: "ImageObjects",
         //     variables: validVariables,
@@ -112,10 +103,10 @@ export class WebviewMessageHandler {
         //     data,
         // };
         // this.sendToWebview({ id, message });
-        return this.sendToWebview({
-            id,
-            message: { type: "ImageData", ...image_info, bytes: arrayBuffer },
-        });
+        // return this.sendToWebview({
+        //     id,
+        //     message: { type: "ImageData", ...image_info, bytes: arrayBuffer },
+        // });
     }
 
     async onWebviewMessage(message_with_id: FromWebviewMessageWithId) {
@@ -137,9 +128,5 @@ export class WebviewMessageHandler {
                     throw new Error(`Unknown message type: ${type}`);
                 })(type);
         }
-    }
-
-    sendToWebview(message: FromExtensionMessageWithId) {
-        return this.webview.postMessage(message);
     }
 }

@@ -13,7 +13,6 @@ import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
-import { FromExtensionMessageWithId } from "../webview";
 import Container from "typedi";
 import { WebviewClient } from "../communication/WebviewClient";
 
@@ -27,8 +26,8 @@ import { WebviewClient } from "../communication/WebviewClient";
  * - Setting the HTML (and by proxy CSS/JavaScript) content of the webview panel
  * - Setting message listeners so data can be passed between the webview and extension
  */
-export class HelloWorldPanel {
-    public static currentPanel: HelloWorldPanel | undefined;
+export class ImageViewPanel {
+    public static currentPanel: ImageViewPanel | undefined;
     private readonly _panel: WebviewPanel;
     private _disposables: Disposable[] = [];
 
@@ -57,9 +56,7 @@ export class HelloWorldPanel {
             extensionUri
         );
 
-        this._webviewMessageHandler = new WebviewMessageHandler(
-            this._panel.webview
-        );
+        this._webviewMessageHandler = new WebviewMessageHandler();
         Container.get(WebviewClient).setWebview(this._panel.webview);
 
         // Set an event listener to listen for messages passed from the webview context
@@ -79,28 +76,20 @@ export class HelloWorldPanel {
      */
     public static render(context: vscode.ExtensionContext) {
         const extensionUri = context.extensionUri;
-        if (HelloWorldPanel.currentPanel) {
-            // If the webview panel already exists reveal it
-            HelloWorldPanel.currentPanel._panel.reveal(ViewColumn.Beside);
+        if (ImageViewPanel.currentPanel) {
+            ImageViewPanel.currentPanel._panel.reveal(ViewColumn.Beside);
         } else {
-            // If a webview panel does not already exist create and show a new one
             const panel = window.createWebviewPanel(
-                // Panel view type
-                "showHelloWorld",
-                // Panel title
-                "Hello World",
-                // The editor column the panel should be displayed in
+                "image-view",
+                "Image View",
                 ViewColumn.Beside,
-                // Extra panel configurations
                 {
-                    // Enable JavaScript in the webview
                     enableScripts: true,
-                    // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
                     localResourceRoots: [Uri.joinPath(extensionUri, "dist")],
                 }
             );
 
-            HelloWorldPanel.currentPanel = new HelloWorldPanel(
+            ImageViewPanel.currentPanel = new ImageViewPanel(
                 panel,
                 extensionUri,
                 context
@@ -112,7 +101,7 @@ export class HelloWorldPanel {
      * Cleans up and disposes of webview resources when the webview panel is closed.
      */
     public dispose() {
-        HelloWorldPanel.currentPanel = undefined;
+        ImageViewPanel.currentPanel = undefined;
 
         // Dispose of the current webview panel
         this._panel.dispose();
@@ -204,9 +193,5 @@ export class HelloWorldPanel {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
             });
         return htmlWithVscodeResourceUris;
-    }
-
-    public postMessage(message: FromExtensionMessageWithId) {
-        this._webviewMessageHandler.sendToWebview(message);
     }
 }

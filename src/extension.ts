@@ -16,6 +16,7 @@ import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
+import { HelloWorldPanel } from "./webview/panels/HelloWorldPanel";
 import { HoverProvider } from "./HoverProvider";
 
 function onConfigChange(): void {
@@ -108,4 +109,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };
+
+    // const panel = createPanel(context.extensionUri);
+    // if (panel) context.subscriptions.push(panel);
+ // Create the show hello world command
+
+    HelloWorldPanel.render(context.extensionUri);
+
 }

@@ -1,4 +1,4 @@
-type Body<T extends { body: unknown }> = T["body"];
+type BodyOf<T extends { body: unknown }> = T["body"];
 type ExceptError = {
     error: Error | string;
     errorMessage: string;

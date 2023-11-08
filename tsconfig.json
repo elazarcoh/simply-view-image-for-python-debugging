@@ -7,7 +7,10 @@
 			"ES2021"
 		],
 		"sourceMap": true,
-		"rootDir": "src",
+		"rootDirs": [
+			"src",
+			"webview-ui/src"
+		],
 		"strict": true, /* enable all strict type-checking options */
 		"esModuleInterop": true,
 		/* Additional Checks */
@@ -15,7 +18,8 @@
 		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
 		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
 		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true
+		"experimentalDecorators": true,
+		"jsx": "react-jsx", /* For react webview */
 	},
 	"exclude": [
 		"node_modules",

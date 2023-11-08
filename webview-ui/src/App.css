@@ -1,0 +1,15 @@
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+}
+
+textarea {
+  background-color: var(--vscode-editor-background);
+}
+
+main > * {
+  margin: 1rem 0;
+}

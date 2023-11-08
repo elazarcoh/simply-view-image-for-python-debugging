@@ -9,7 +9,7 @@ function runThroughDebugger(
     session: vscode.DebugSession,
     expression: string,
     { context, frameId }: RunInPythonOptions
-): Thenable<Body<DebugProtocol.EvaluateResponse>> {
+): Thenable<BodyOf<DebugProtocol.EvaluateResponse>> {
     const debugVariablesTracker =
         activeDebugSessionData(session).debugVariablesTracker;
 

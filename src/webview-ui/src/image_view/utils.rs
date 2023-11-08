@@ -31,15 +31,17 @@ pub fn image_minmax_on_bytes(
                 };
                 let current_min = min.get_mut::<f32>(channel as _);
                 let current_max = max.get_mut::<f32>(channel as _);
-                if value < *current_min {
-                    *current_min = value;
-                }
-                if value > *current_max {
-                    *current_max = value;
+                if f32::is_finite(value) {
+                    if value < *current_min {
+                        *current_min = value;
+                    }
+                    if value > *current_max {
+                        *current_max = value;
+                    }
                 }
             }
         });
-    
+
     log::debug!("min: {}, max: {}", min, max);
 
     (min, max)

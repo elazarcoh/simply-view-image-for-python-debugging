@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use glam::Mat4;
 use web_sys::WebGl2RenderingContext;
 use yewdux::prelude::Dispatch;
 
@@ -13,6 +14,7 @@ use crate::{
     image_view::types::{ImageId, TextureImage},
 };
 
+#[cfg(debug_assertions)]
 fn image_rgba_data_u8() -> (&'static [u8], u32, u32) {
     const DATA: &[u8] = &[
         0u8, 0, 0, 255, 200, 191, 231, 255, 200, 191, 231, 255, 200, 191, 231, 255, 200, 191, 231,
@@ -151,6 +153,7 @@ fn image_rgba_data_u8() -> (&'static [u8], u32, u32) {
     (DATA, 25, 25)
 }
 
+#[cfg(debug_assertions)]
 fn heatmap_gray_data_u16() -> (&'static [u8], u32, u32) {
     const DATA: &[u8] = &[
         255, 255, 255, 253, 3, 252, 10, 250, 22, 248, 38, 246, 58, 244, 81, 242, 109, 240, 140,
@@ -6652,6 +6655,7 @@ fn heatmap_gray_data_u16() -> (&'static [u8], u32, u32) {
     (DATA, 256, 256)
 }
 
+#[cfg(debug_assertions)]
 fn segmentation_gray_data_u8() -> (&'static [u8], u32, u32) {
     const DATA: &[u8] = &[
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
@@ -9209,6 +9213,38 @@ fn segmentation_texture_u8(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
+fn matrix_4x4_with_scientific_nan_inf(gl: &WebGl2RenderingContext) -> TextureImage {
+    let matrix: &[f32] = &[
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        f32::NAN,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        11.0,
+        12.0,
+        12345.0e-130,
+        10.0,
+        0.123_456_7,
+        0.000_123_456,
+        13.0,
+        14.0,
+        15.0,
+    ];
+
+    let (data, w, h) = (bytemuck::cast_slice(matrix), 4, 4);
+    let image_data = image_data_with(
+        data,
+        Datatype::Float32,
+        Channels::One,
+        "matrix_4x4_with_scientific_nan_inf",
+        w,
+        h,
+    );
+    TextureImage::try_new(image_data, gl).unwrap()
+}
+
 #[cfg(debug_assertions)]
 pub fn set_debug_images(gl: &WebGl2RenderingContext) {
     let dispatch = Dispatch::<AppState>::new();
@@ -9232,6 +9268,7 @@ pub fn set_debug_images(gl: &WebGl2RenderingContext) {
         image_texture_bool_gray(gl),
         heatmap_texture_u16(gl),
         segmentation_texture_u8(gl),
+        matrix_4x4_with_scientific_nan_inf(gl),
     ];
     dispatch.apply(StoreAction::UpdateImages(
         images

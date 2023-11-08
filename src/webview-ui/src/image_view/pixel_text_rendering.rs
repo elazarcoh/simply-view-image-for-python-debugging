@@ -56,12 +56,7 @@ fn format_pixel_value(pixel_value: &PixelValue) -> String {
                 Datatype::Int8 => format!("{}", i8::from_ne_bytes([bytes[0]])),
                 Datatype::Float32 => {
                     let value = f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-                    // if too long, use scientific notation
-                    if value.abs() > 1000.0 {
-                        format!("{:.2e}", value)
-                    } else {
-                        format!("{:.2}", value)
-                    }
+                    format!("{:.7}", float_pretty_print::PrettyPrintFloat(value as f64))
                 }
                 Datatype::Bool => format!("{}", (bytes[0] != 0) as u8),
                 Datatype::Uint16 => format!("{}", u16::from_ne_bytes([bytes[0], bytes[1]])),
@@ -118,6 +113,10 @@ fn text_color(pixel_value: &PixelValue, invert: bool, ignoring_alpha: bool) -> V
             Datatype::Int32 => i32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / i32::MAX as f32,
         }
     };
+
+    if f32::is_nan(gray) {  // nan is drawn as black
+        gray = 0.0;
+    } 
 
     if alpha < 0.5 {
         Vec4::new(0.0, 0.0, 0.0, 1.0)
@@ -268,7 +267,7 @@ impl GlyphTexture {
 
     fn prepare_glyphs(&mut self, font: &FontArc) {
         let scale = 100.0;
-        let required_letters = "0123456789., -+enaif";
+        let required_letters = "0123456789., -+enNaif";
         let glyphs = Layout::default().calculate_glyphs(
             &[&font],
             &SectionGeometry {
@@ -396,8 +395,8 @@ impl PixelTextRenderer {
         let px = 0.0;
         let py = 0.0;
 
-        // let pixel_text = "454\n123";
         let pixel_text = format_pixel_value(pixel_value);
+        log::debug!("Pixel text: {}", pixel_text);
 
         let glyphs = Layout::default()
             .v_align(glyph_brush_layout::VerticalAlign::Center)

@@ -25,25 +25,36 @@ float checkboard(vec2 st) {
   vec2 pos = mod(st, CHECKER_SIZE * 2.0);
   float value = mod(step(CHECKER_SIZE, pos.x) + step(CHECKER_SIZE, pos.y), 2.0);
   return mix(BLACK_CHECKER, WHITE_CHECKER, value);
- }
+}
+
+bool is_nan( float val )
+{
+  return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
+}
 
 void main()
 {
   vec2 pix = vout_uv;
   vec4 sampled = texture(u_texture, pix);
 
-  vec4 color = u_color_multiplier * sampled + u_color_addition;
+  vec4 color;
+  if (is_nan(sampled.r) || is_nan(sampled.g) || is_nan(sampled.b) || is_nan(sampled.a)) {
+    color = vec4(0.0, 0.0, 0.0, 1.0);
+  } else {
+      
+    color = u_color_multiplier * sampled + u_color_addition;
 
-  color = clamp(color, 0.0, 1.0);
+    color = clamp(color, 0.0, 1.0);
 
-  if(u_invert){
-    color.rgb = 1.-color.rgb;
-  }
+    if(u_invert){
+      color.rgb = 1.-color.rgb;
+    }
 
-  if (u_use_colormap) {
-    vec2 colormap_uv = vec2(color.r, 0.5);
-    vec4 colormap_color = texture(u_colormap, colormap_uv);
-    color.rgb = colormap_color.rgb;
+    if (u_use_colormap) {
+      vec2 colormap_uv = vec2(color.r, 0.5);
+      vec4 colormap_color = texture(u_colormap, colormap_uv);
+      color.rgb = colormap_color.rgb;
+    }
   }
 
   float c = checkboard(gl_FragCoord.xy);

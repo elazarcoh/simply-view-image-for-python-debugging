@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use wasm_bindgen::prelude::*;
-use web_sys::WebGlRenderingContext;
+use web_sys::{HtmlElement, WebGlRenderingContext};
 use yew::NodeRef;
 
 use super::{InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
@@ -28,9 +28,37 @@ struct ViewHolder {
 }
 
 #[derive(PartialEq)]
+struct ViewHolders(HashMap<ViewsType, HashMap<String, ViewHolder>>);
+
+impl ViewHolders {
+    fn visible_nodes(&self) -> Vec<(&ViewHolder, HtmlElement)> {
+        self.0
+            .values()
+            .flat_map(|m| m.values())
+            .filter_map(|v| v.node.cast::<HtmlElement>().map(|e| (v, e)))
+            .collect::<Vec<_>>()
+    }
+
+    pub fn register(&mut self, view_id: InViewName, node: NodeRef) {
+        log::debug!("Renderer::register({:?})", view_id);
+        let view_id = match view_id {
+            InViewName::Single(v) => (ViewsType::Single, v.to_string()),
+            InViewName::Dual(v) => (ViewsType::Dual, v.to_string()),
+            InViewName::Quad(v) => (ViewsType::Quad, v.to_string()),
+        };
+        self.0
+            .get_mut(&view_id.0)
+            .unwrap()
+            .get_mut(&view_id.1)
+            .unwrap()
+            .node = node;
+    }
+}
+
+#[derive(PartialEq)]
 pub struct Renderer {
     gl: Option<WebGlRenderingContext>,
-    view_holders: HashMap<ViewsType, HashMap<String, ViewHolder>>,
+    view_holders: Rc<RefCell<ViewHolders>>,
 }
 
 impl Renderer {
@@ -47,11 +75,11 @@ impl Renderer {
         };
         Self {
             gl: None,
-            view_holders: HashMap::from_iter(
+            view_holders: Rc::new(RefCell::new(ViewHolders(HashMap::from_iter(
                 vec![ViewsType::Single, ViewsType::Dual, ViewsType::Quad]
                     .into_iter()
                     .map(|vt| (vt, make_map(vt))),
-            ),
+            )))),
         }
     }
 
@@ -65,6 +93,8 @@ impl Renderer {
     pub fn bind_gl(&mut self, gl: WebGlRenderingContext) {
         log::debug!("Renderer::bind_gl");
 
+        gl.enable(WebGlRenderingContext::SCISSOR_TEST);
+
         // Gloo-render's request_animation_frame has this extra closure
         // wrapping logic running every frame, unnecessary cost.
         // Here constructing the wrapped closure just once.
@@ -74,6 +104,7 @@ impl Renderer {
         *cb.borrow_mut() = Some(Closure::wrap(Box::new({
             let cb = cb.clone();
             let gl = gl.clone();
+            let view_holders = self.view_holders.clone();
             move || {
                 if gl.is_context_lost() {
                     // Drop our handle to this closure so that it will get cleaned
@@ -81,7 +112,7 @@ impl Renderer {
                     let _ = cb.borrow_mut().take();
                     return;
                 } else {
-                    Renderer::render(&gl);
+                    Renderer::render(&gl, &view_holders);
                     Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
@@ -98,22 +129,42 @@ impl Renderer {
     }
 
     pub fn register(&mut self, view_id: InViewName, node: NodeRef) {
-        log::debug!("Renderer::register({:?})", view_id);
-        let view_id = match view_id {
-            InViewName::Single(v) => (ViewsType::Single, v.to_string()),
-            InViewName::Dual(v) => (ViewsType::Dual, v.to_string()),
-            InViewName::Quad(v) => (ViewsType::Quad, v.to_string()),
-        };
-        self.view_holders
-            .get_mut(&view_id.0)
-            .unwrap()
-            .get_mut(&view_id.1)
-            .unwrap()
-            .node = node;
+        self.view_holders.borrow_mut().register(view_id, node);
     }
 
-    fn render(gl: &WebGlRenderingContext) {
-        gl.clear_color(0.0, 1.0, 0.0, 1.0);
+    fn render(gl: &WebGlRenderingContext, view_holders: &Rc<RefCell<ViewHolders>>) {
+        view_holders
+            .borrow()
+            .visible_nodes()
+            .iter()
+            .for_each(|(v, e)| {
+                Renderer::render_view(gl, v, e);
+            });
+        // gl.clear_color(0.0, 1.0, 0.0, 1.0);
+        // gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+    }
+
+    fn render_view(gl: &WebGlRenderingContext, v: &ViewHolder, e: &HtmlElement) {
+        let rect = e.get_bounding_client_rect();
+
+        let width = rect.right() - rect.left();
+        let height = rect.bottom() - rect.top();
+        let left = rect.left();
+        // let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
+        let bottom = 100;
+
+        // log::debug!(
+        //     "width: {}, height: {}, left: {}, bottom: {}",
+        //     width,
+        //     height,
+        //     left,
+        //     bottom
+        // );
+
+        gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
+        gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
+
+        gl.clear_color(1.0, 0.0, 0.0, 1.0);
         gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
     }
 

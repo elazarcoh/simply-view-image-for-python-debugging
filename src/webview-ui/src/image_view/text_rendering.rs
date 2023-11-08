@@ -1,7 +1,7 @@
 use std::{collections::HashMap, iter::FromIterator, ops::Deref, rc::Rc};
 
-use ab_glyph::{Font, FontArc, Glyph, Point, PxScale, Rect, GlyphId};
-use glam::{Mat3, Vec4};
+use ab_glyph::{Font, FontArc, Glyph, GlyphId, Point, PxScale, Rect};
+use glam::{Mat3, Vec4, UVec2};
 use glyph_brush::{GlyphBrush, GlyphBrushBuilder};
 use glyph_brush_draw_cache::{DrawCache, Rectangle};
 use glyph_brush_layout::{GlyphPositioner, Layout, SectionGeometry, SectionText};
@@ -155,9 +155,11 @@ struct PixelTextData {
     pixel_value: PixelValue,
 }
 
-struct Buffers1<'a> {
-    uv_buffer: &'a mut ReusableBuffer,
-    position_buffer: &'a mut ReusableBuffer,
+fn calculate_text_to_image(font_scale: f32, max_rows_cols: f32) -> Mat3 {
+    Mat3::from_scale(glam::Vec2::new(
+        (1.0 / max_rows_cols) / (font_scale),
+        (1.0 / max_rows_cols) / (font_scale),
+    ))
 }
 
 impl PixelTextData {
@@ -198,16 +200,6 @@ impl PixelTextData {
     fn create_buffer_for_pixel(gl: &WebGl2RenderingContext) -> Result<ReusableBuffer, String> {
         ReusableBuffer::new(gl.clone(), 1024)
     }
-
-    // fn buffers(&mut self) -> Buffers1 {
-    //     let (uv_attr, pos_attr) = self.buffer_info.attribs.split_at_mut(1);
-    //     let uv_buffer = &mut uv_attr[0].buffer;
-    //     let position_buffer = &mut pos_attr[0].buffer;
-    //     Buffers1 {
-    //         uv_buffer,
-    //         position_buffer,
-    //     }
-    // }
 
     fn uv_buffer(&mut self) -> &mut ReusableBuffer {
         &mut self.buffer_info.get_attrib_mut("uv").unwrap().buffer
@@ -344,10 +336,7 @@ impl GlyphTexture {
             .unwrap();
     }
 
-    fn glyph_uv(
-        &self,
-        section_glyph: &glyph_brush_layout::SectionGlyph,
-    ) -> Option<(Rect, Rect)> {
+    fn glyph_uv(&self, section_glyph: &glyph_brush_layout::SectionGlyph) -> Option<(Rect, Rect)> {
         self.glyphs
             .get(&section_glyph.glyph.id)
             .map(|(_, glyph)| {
@@ -379,7 +368,7 @@ struct PixelTextCache {
     font: FontArc,
     glyph_texture: GlyphTexture,
 
-    pixel_text_cache: HashMap<(i32, i32), PixelTextData>,
+    pixel_text_cache: HashMap<UVec2, PixelTextData>,
 }
 
 impl PixelTextCache {
@@ -395,6 +384,7 @@ impl PixelTextCache {
     }
 
     fn pixel_value_into_buffers(
+        pixel_loc: &UVec2,
         pixel_value: PixelValue,
         glyph_texture: &GlyphTexture,
         font: &FontArc,
@@ -403,21 +393,35 @@ impl PixelTextCache {
         // buffers: &mut Buffers1,
         pixel_data: &mut PixelTextData,
     ) {
-        let pixel_text = "454\n123";
-        // let pixel_text = pixel_value.format_value();
-        log::debug!("Pixel text: {}", pixel_text);
+        let x = pixel_loc.x;
+        let y = pixel_loc.y;
+        let font_scale = 100.0;
+        let max_rows = 3_f32;
+        let max_cols = 5_f32;
+        let max_rows_cols = f32::max(max_rows, max_cols);
+        let letters_offset_inside_pixel = max_rows_cols / 2.0;
+        let pixel_offset = max_rows_cols;
+        let px = 0.0;
+        let py = 0.0;
+
+        // let pixel_text = "454\n123";
+        let pixel_text = pixel_value.format_value();
+
         let glyphs = Layout::default()
-            // .v_align(glyph_brush_layout::VerticalAlign::Center)
-            // .h_align(glyph_brush_layout::HorizontalAlign::Center)
+            .v_align(glyph_brush_layout::VerticalAlign::Center)
+            .h_align(glyph_brush_layout::HorizontalAlign::Center)
             .calculate_glyphs(
                 &[font],
                 &SectionGeometry {
-                    screen_position: (0.0, 0.0),
+                    screen_position: (
+                        ((x as f32 + px) * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                        ((y as f32 + py) * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                    ),
                     ..SectionGeometry::default()
                 },
                 &[SectionText {
                     text: &pixel_text,
-                    scale: PxScale::from(100.0),
+                    scale: PxScale::from(font_scale),
                     font_id: glyph_brush_layout::FontId(0),
                 }],
             );
@@ -470,29 +474,39 @@ impl PixelTextCache {
             )
             .unwrap();
         pixel_data.buffer_info.num_elements = 6 * num_rendered_glyphs;
-        log::debug!("pixel_value_into_buffers");
     }
 
     pub fn get_cache_pixel(
         &mut self,
-        x: i32,
-        y: i32,
+        pixel_loc: &UVec2,
         image: &image::DynamicImage,
     ) -> Result<&PixelTextData, String> {
-        let pixel = PixelValue::from_image(image, x as _, y as _);
-        if let Some(pixel_data) = self.pixel_text_cache.get_mut(&(x, y)) {
+        let pixel = PixelValue::from_image(image, pixel_loc.x, pixel_loc.y);
+        if let Some(pixel_data) = self.pixel_text_cache.get_mut(&pixel_loc) {
             if pixel_data.pixel_value != pixel {
                 log::debug!("Updating pixel text cache");
-                Self::pixel_value_into_buffers(pixel, &self.glyph_texture, &self.font, pixel_data);
+                Self::pixel_value_into_buffers(
+                    pixel_loc,
+                    pixel,
+                    &self.glyph_texture,
+                    &self.font,
+                    pixel_data,
+                );
             }
         } else {
             log::debug!("Creating new pixel text cache");
             let mut pixel_data = PixelTextData::try_new(&self.gl, pixel)?;
-            Self::pixel_value_into_buffers(pixel, &self.glyph_texture, &self.font, &mut pixel_data);
+            Self::pixel_value_into_buffers(
+                pixel_loc,
+                pixel,
+                &self.glyph_texture,
+                &self.font,
+                &mut pixel_data,
+            );
 
-            self.pixel_text_cache.insert((x, y), pixel_data);
+            self.pixel_text_cache.insert(*pixel_loc, pixel_data);
         }
-        Ok(self.pixel_text_cache.get(&(x, y)).unwrap())
+        Ok(self.pixel_text_cache.get(&pixel_loc).unwrap())
     }
 }
 
@@ -802,6 +816,10 @@ impl TextRenderer {
         let gl = &self.gl;
         let program = &self.program;
 
+        let font_scale = 100.0;
+        let max_row_cols = 5;
+        let text_to_image = calculate_text_to_image(font_scale, max_row_cols as _);
+
         // let tex_img = create_debug_texture(&gl).unwrap();
         gl.use_program(Some(&program.program));
         set_uniforms(
@@ -817,7 +835,7 @@ impl TextRenderer {
                 // ),
                 (
                     "u_imageToScreenMatrix",
-                    UniformValue::Mat3(image_coords_to_view_coord_mat),
+                    UniformValue::Mat3(&(*image_coords_to_view_coord_mat * text_to_image)),
                 ),
                 ("u_projectionMatrix", UniformValue::Mat3(view_projection)),
             ]),
@@ -826,8 +844,7 @@ impl TextRenderer {
         let px = self
             .pixel_text_cache
             .get_cache_pixel(
-                0,
-                0,
+                &UVec2::new(0, 0),
                 &image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
                     1,
                     1,

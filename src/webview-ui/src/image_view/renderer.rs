@@ -463,12 +463,11 @@ impl Renderer {
                     VIEW_SIZE.height / texture.image_size().height,
                 ));
                 // // rescale the font to a single pixel
-                let text_to_image = formatted_pixel_value.text_to_image;
-                let text_to_view = image_pixels_to_view * text_to_image;
+                let image_to_view = image_pixels_to_view;
                 
                 rendering_data
                     .text_renderer
-                    .render(&text_to_view, &view_projection);
+                    .render(&image_to_view, &view_projection);
                 break;
             }
             break;

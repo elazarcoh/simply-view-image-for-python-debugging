@@ -342,7 +342,7 @@ impl Renderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
-        let color_multiplier = Mat4::IDENTITY;
+        let color_multiplier = rendering_context.coloring_matrix(image_view_data.image_id.as_ref().unwrap());
 
         gl.use_program(Some(&program.program));
         set_uniforms(

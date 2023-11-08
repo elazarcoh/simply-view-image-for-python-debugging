@@ -21,6 +21,7 @@ pub trait RenderingContext {
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
+    fn coloring_matrix(&self, image_id: &ImageId) -> glam::Mat4;
 }
 
 pub trait CameraContext {

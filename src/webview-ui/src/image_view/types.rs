@@ -4,9 +4,24 @@ use image::DynamicImage;
 
 use crate::{
     common::Size,
-    communication::incoming_messages::ImageData,
     webgl_utils::{self, types::GLGuard},
 };
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Coloring {
+    Default,
+    Grayscale,
+    R,
+    // G,
+    // B,
+    // Bgr,
+    // Segmentation,
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DrawingOptions {
+    pub coloring: Coloring,
+}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ImageId(String);

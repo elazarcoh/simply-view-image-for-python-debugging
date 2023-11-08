@@ -10,13 +10,14 @@ use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
     common::Size,
+    communication::incoming_messages::{Datatype, ImageData},
     webgl_utils::{
         self,
         draw::draw_buffer_info,
         program::{set_buffers_and_attributes, set_uniforms},
         reusable_buffer::ReusableBuffer,
         *,
-    }, communication::incoming_messages::ImageData,
+    },
 };
 
 pub struct PixelTextRenderer {
@@ -40,40 +41,102 @@ fn rect_to_positions(rect: Rect) -> [f32; 12] {
     ]
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum PixelValue {
-    Rgba(u8, u8, u8, u8),
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct PixelValue {
+    num_channels: u32,
+    datatype: Datatype,
+    bytes: [u8; 32], // we need at most: 4 channels * 8 bytes per channel
 }
 
 pub type PixelLoc = glam::UVec2;
 
 impl PixelValue {
     pub fn from_image(image: &ImageData, pixel: &PixelLoc) -> Self {
-        // match image {
-        //     DynamicImage::ImageRgba8(image) => {
-        //         let pixel = image.get_pixel(pixel.x, pixel.y);
-        //         Self::Rgba(pixel[0], pixel[1], pixel[2], pixel[3])
-        //     }
-        //     _ => todo!(),
-        // }
-        PixelValue::Rgba(0, 0, 0, 0)
+        let c = image.info.channels;
+        let pixel_index = (pixel.x + pixel.y * image.info.width) as usize;
+        let bytes_per_element = match image.info.datatype {
+            Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
+            Datatype::Uint16 | Datatype::Int16 => 2,
+            Datatype::Float32 => 4,
+        };
+        let start = pixel_index * c as usize * bytes_per_element;
+        let end = start + c as usize * bytes_per_element;
+        let bytes = &image.bytes[start..end];
+        let mut bytes_array = [0_u8; 32];
+        bytes_array[..bytes.len()].copy_from_slice(bytes);
+        Self {
+            num_channels: c,
+            datatype: image.info.datatype,
+            bytes: bytes_array,
+        }
     }
 
     fn format_value(&self) -> String {
-        match self {
-            Self::Rgba(r, g, b, a) => format!("{:.2}\n{:.2}\n{:.2}\n{:.2}", r, g, b, a),
-        }
+        let bytes_per_element = match self.datatype {
+            Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
+            Datatype::Uint16 | Datatype::Int16 => 2,
+            Datatype::Float32 => 4,
+        };
+        (0..self.num_channels)
+            .map(|c| {
+                let start = c as usize * bytes_per_element;
+                let end = start + bytes_per_element;
+                let bytes = &self.bytes[start..end];
+                match self.datatype {
+                    Datatype::Uint8 => format!("{}", u8::from_ne_bytes([bytes[0]])),
+                    Datatype::Int8 => format!("{}", i8::from_ne_bytes([bytes[0]])),
+                    Datatype::Uint16 => format!("{}", u16::from_ne_bytes([bytes[0], bytes[1]])),
+                    Datatype::Int16 => format!("{}", i16::from_ne_bytes([bytes[0], bytes[1]])),
+                    Datatype::Float32 => {
+                        let value = f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                        // if too long, use scientific notation
+                        if value.abs() > 1000.0 {
+                            format!("{:.2e}", value)
+                        } else {
+                            format!("{:.2}", value)
+                        }
+                    }
+                    Datatype::Bool => format!("{}", bytes[0] != 0),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
-    fn to_color(self) -> Vec4 {
-        match self {
-            Self::Rgba(r, g, b, a) => Vec4::new(
-                r as f32 / 255.0,
-                g as f32 / 255.0,
-                b as f32 / 255.0,
-                a as f32 / 255.0,
-            ),
-        }
+    fn as_rgb_f32(&self) -> glam::Vec3 {
+        let mut rgb = [0.0, 0.0, 0.0];
+        let bytes_per_element = match self.datatype {
+            Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
+            Datatype::Uint16 | Datatype::Int16 => 2,
+            Datatype::Float32 => 4,
+        };
+        (0..3).for_each(|c| {
+            let start = c * bytes_per_element;
+            let end = start + bytes_per_element;
+            let bytes = &self.bytes[start..end];
+            match self.datatype {
+                Datatype::Uint8 => rgb[c] = u8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
+                Datatype::Int8 => rgb[c] = i8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
+                Datatype::Uint16 => {
+                    rgb[c] = u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0
+                }
+                Datatype::Int16 => {
+                    rgb[c] = i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0
+                }
+                Datatype::Float32 => {
+                    rgb[c] = f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
+                }
+                Datatype::Bool => rgb[c] = (bytes[0] != 0) as u8 as f32,
+            }
+        });
+        glam::Vec3::from(rgb)
+    }
+
+    fn text_color(&self) -> Vec4 {
+        let rgb_f32 = self.as_rgb_f32();
+        let gray = rgb_f32.x * 0.299 + rgb_f32.y * 0.587 + rgb_f32.z * 0.114;
+        let gray = 1.0 - f32::floor(gray + 0.5);
+        Vec4::new(gray, gray, gray, 1.0)
     }
 }
 
@@ -443,8 +506,8 @@ impl PixelTextRenderer {
                     UniformValue::Texture(&self.glyph_texture.texture),
                 ),
                 (
-                    "u_pixelColor",
-                    UniformValue::Vec4(&data.pixel_value.to_color()),
+                    "u_textColor",
+                    UniformValue::Vec4(&data.pixel_value.text_color()),
                 ),
                 (
                     "u_imageToScreenMatrix",

@@ -9,7 +9,7 @@ use crate::{
         camera::ViewsCameras,
         image_cache::ImageCache,
         image_views::ImageViews,
-        types::{ImageId, ViewId},
+        types::{ImageId, ViewId, DrawingOptions},
     },
     vscode::vscode_requests::VSCodeRequests,
 };
@@ -18,6 +18,25 @@ use crate::{
 pub struct Images {
     pub image_ids: Vec<ImageId>,
     pub by_id: HashMap<ImageId, crate::communication::incoming_messages::ImageInfo>,
+}
+
+#[derive(Default)]
+pub struct ImagesDrawingOptions {
+    by_id: HashMap<ImageId, DrawingOptions>,
+}
+
+impl ImagesDrawingOptions {
+    pub fn set(&mut self, image_id: ImageId, drawing_options: DrawingOptions) {
+        self.by_id.insert(image_id, drawing_options);
+    }
+
+    pub fn get_or_default(&self, image_id: &ImageId) ->DrawingOptions {
+        self.by_id.get(image_id).cloned().unwrap_or({
+            DrawingOptions {
+                coloring: crate::image_view::types::Coloring::Default,
+            }
+        })
+    }
 }
 
 struct ImagesFetcher;
@@ -61,6 +80,7 @@ pub struct AppState {
     pub images: Mrc<Images>,
     image_views: Mrc<ImageViews>,
     pub image_cache: Mrc<ImageCache>,
+    pub drawing_options: Mrc<ImagesDrawingOptions>,
 
     pub view_cameras: Mrc<ViewsCameras>,
 
@@ -91,6 +111,7 @@ impl Default for AppState {
             view_cameras: Default::default(),
             // message_service: Default::default(),
             configuration: Default::default(),
+            drawing_options: Default::default(),
         }
     }
 }

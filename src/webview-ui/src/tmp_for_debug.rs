@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
 use image::EncodableLayout;
 use web_sys::WebGl2RenderingContext;
@@ -133,11 +133,29 @@ fn image_rgba_data_u8() -> &'static [u8] {
 }
 
 fn image_data_with(bytes: &[u8], datatype: Datatype, channels: u32) -> ImageData {
+    let name = format!(
+        "image_{}_{}",
+        match channels {
+            1 => "gray",
+            2 => "rg",
+            3 => "rgb",
+            4 => "rgba",
+            _ => panic!("invalid number of channels"),
+        },
+        match datatype {
+            Datatype::Uint8 => "u8",
+            Datatype::Float32 => "f32",
+            Datatype::Uint16 => "u16",
+            Datatype::Int8 => "i8",
+            Datatype::Int16 => "i16",
+            Datatype::Bool => "bool",
+        },
+    );
     ImageData {
         info: ImageInfo {
             image_id: ImageId::generate(),
             value_variable_kind: ValueVariableKind::Variable,
-            expression: "image_rgba_u8".to_string(),
+            expression: name,
             width: 25,
             height: 25,
             channels,
@@ -182,7 +200,7 @@ pub fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
             let r = chunk[0] as f32;
             let g = chunk[1] as f32;
             let b = chunk[2] as f32;
-            
+
             (r * 0.3 + g * 0.59 + b * 0.11) as u8
         })
         .collect::<Vec<u8>>();

@@ -17,6 +17,7 @@ use crate::components::main::Main;
 use crate::configurations;
 use crate::image_view;
 
+use crate::image_view::color_matix::calculate_color_matrix;
 use crate::image_view::renderer::Renderer;
 use crate::image_view::rendering_context::CameraContext;
 use crate::image_view::rendering_context::ImageViewData;
@@ -81,6 +82,19 @@ fn rendering_context() -> impl RenderingContext {
         fn rendering_configuration(&self) -> configurations::RenderingConfiguration {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().configuration.rendering.clone()
+        }
+
+        fn coloring_matrix(&self, image_id: &ImageId) -> glam::Mat4 {
+            let dispatch = Dispatch::<AppState>::new();
+            let drawing_options = dispatch
+                .get()
+                .drawing_options
+                .borrow()
+                .get_or_default(image_id);
+            calculate_color_matrix(
+                dispatch.get().images.borrow().by_id.get(image_id).unwrap(),
+                &drawing_options,
+            )
         }
     }
 
@@ -203,27 +217,29 @@ pub fn App() -> Html {
                 .set_rendering_context(Rc::new(rendering_context()));
 
             log::debug!("creating debug image texture");
-            // let image = crate::tmp_for_debug::image_texture_rgba_u8(&gl);
-            // let image = crate::tmp_for_debug::image_texture_rgb_u8(&gl);
-            // let image = crate::tmp_for_debug::image_texture_rg_u8(&gl);
-            // let image = crate::tmp_for_debug::image_texture_gray_u8(&gl);
-            // let image = crate::tmp_for_debug::image_texture_rgba_f32(&gl);
-            // let image = crate::tmp_for_debug::image_texture_rgb_f32(&gl);
-            let image = crate::tmp_for_debug::image_texture_gray_f32(&gl);
-            log::debug!(
-                "image created: w={:?}, h={:?}, c={:?}, dt={:?}, num_bytes={:?}",
-                image.image.info.width,
-                image.image.info.height,
-                image.image.info.channels,
-                image.image.info.datatype,
-                image.image.bytes.len(),
-            );
-            let image_id = image.image.info.image_id.clone();
-            log::debug!("adding image to store");
-            dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), image));
-            log::debug!("setting image to view");
-            let view_id = ViewId::Primary;
-            dispatch.apply(StoreAction::SetImageToView(image_id, view_id));
+            let images = vec![
+                crate::tmp_for_debug::image_texture_rgba_u8(&gl),
+                crate::tmp_for_debug::image_texture_rgb_u8(&gl),
+                crate::tmp_for_debug::image_texture_rg_u8(&gl),
+                crate::tmp_for_debug::image_texture_gray_u8(&gl),
+                crate::tmp_for_debug::image_texture_rgba_f32(&gl),
+                crate::tmp_for_debug::image_texture_rgb_f32(&gl),
+                crate::tmp_for_debug::image_texture_gray_f32(&gl),
+            ];
+            dispatch.apply(StoreAction::UpdateImages(
+                images
+                    .iter()
+                    .map(|image| (image.image.info.image_id.clone(), image.image.info.clone()))
+                    .collect(),
+            ));
+
+            for image in images {
+                let image_id = image.image.info.image_id.clone();
+                dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), image));
+                log::debug!("setting image to view");
+                let view_id = ViewId::Primary;
+                dispatch.apply(StoreAction::SetImageToView(image_id, view_id));
+            }
 
             move || {
                 dispatch.reduce_mut(|state| {

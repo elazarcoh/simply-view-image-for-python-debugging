@@ -182,10 +182,8 @@ export function constructOpenSendAndCloseCode(
     port: number,
     request_id: number,
     expression: string,
-    // type: ObjectType,
 ): EvalCodePython<Except<PythonObjectShape>> {
     return convertExpressionIntoValueWrappedExpression(
-        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${0})`
-        // `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${type.valueOf()})`
+        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression})`
     );
 }

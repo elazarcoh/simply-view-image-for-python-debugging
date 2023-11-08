@@ -38,7 +38,7 @@ export class MessageChunks {
         }
 
         this.messageChunks[chunkNumber] = chunk;
-        this.messageLength += chunkLength + HEADER_LENGTH;
+        this.messageLength += chunkLength;
     }
 
     isComplete() {

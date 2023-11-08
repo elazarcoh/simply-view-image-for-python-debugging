@@ -6,21 +6,19 @@
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
 
-const webpack = require('webpack');
+const webpack = require("webpack");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const {
     VSCodeExtensionsPackageJsonGenerator,
 } = require("vscode-extensions-json-generator/webpack");
 const path = require("path");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyPlugin = require('copy-webpack-plugin');
-
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 const dist = path.resolve(__dirname, "dist");
 
 const webviewPath = path.resolve(__dirname, "src/webview-ui");
-
 
 /** @type WebpackConfig */
 const baseConfig = {
@@ -39,7 +37,6 @@ const extensionConfig = {
     entry: "./src/extension.ts",
     externals: {
         vscode: "commonjs vscode",
-        sharp: "commonjs sharp",
     },
     resolve: {
         extensions: [".ts", ".js"],
@@ -75,7 +72,7 @@ const extensionConfig = {
     ],
 };
 
-// Config for webview source code 
+// Config for webview source code
 /** @type WebpackConfig */
 const WebviewConfig = {
     ...baseConfig,
@@ -88,7 +85,7 @@ const WebviewConfig = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: path.resolve(webviewPath, "index.html")
+            template: path.resolve(webviewPath, "index.html"),
         }),
         new WasmPackPlugin({
             crateDirectory: webviewPath,
@@ -98,35 +95,46 @@ const WebviewConfig = {
         // Have this example work in Edge which doesn't ship `TextEncoder` or
         // `TextDecoder` at this time.
         new webpack.ProvidePlugin({
-            TextDecoder: ['text-encoding', 'TextDecoder'],
-            TextEncoder: ['text-encoding', 'TextEncoder']
+            TextDecoder: ["text-encoding", "TextDecoder"],
+            TextEncoder: ["text-encoding", "TextEncoder"],
         }),
         new CopyPlugin({
             patterns: [
                 {
                     from: path.posix.join(
-                        __dirname.replace(/\\/g, '/'),
-                        'node_modules',
-                        '@vscode',
-                        'codicons',
-                        'dist',
-                        'codicon.{ttf,css}',
+                        __dirname.replace(/\\/g, "/"),
+                        "node_modules",
+                        "@vscode",
+                        "codicons",
+                        "dist",
+                        "codicon.{ttf,css}"
                     ),
-                    to: path.posix.join(__dirname.replace(/\\/g, '/'), 'dist', "[name][ext]"),
+                    to: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "dist",
+                        "[name][ext]"
+                    ),
                 },
                 {
                     from: path.posix.join(
-                        webviewPath, 'icons','dist', 'svifpd-icons.{ttf,css}',
+                        webviewPath,
+                        "icons",
+                        "dist",
+                        "svifpd-icons.{ttf,css}"
                     ),
-                    to: path.posix.join(__dirname.replace(/\\/g, '/'), 'dist', "[name][ext]"),
+                    to: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "dist",
+                        "[name][ext]"
+                    ),
                 },
             ],
-        })],
+        }),
+    ],
     experiments: {
         asyncWebAssembly: true,
         syncWebAssembly: true,
-    }
-}
-
+    },
+};
 
 module.exports = [extensionConfig, WebviewConfig];

@@ -12,6 +12,14 @@ export namespace Except {
             errorMessage: typeof error === "string" ? error : error.message,
         };
     }
+    export function errorFromUnknown<T = unknown>(
+        error: unknown
+    ): Except<T> {
+        if (error instanceof Error) {
+            return Except.error(error.message);
+        }
+        return Except.error(JSON.stringify(error));
+    }
 
     export function map<T, U>(value: Except<T>, f: (t: T) => U): Except<U> {
         if (value.isError) {

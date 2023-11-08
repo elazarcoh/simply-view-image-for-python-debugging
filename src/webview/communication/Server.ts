@@ -1,32 +1,18 @@
 import { Service } from "typedi";
 import * as net from "net";
 import { RequestsManager } from "./RequestsManager";
-import {
-    Sender,
-    MessageChunkHeader,
-    composeHelloMessage,
-    splitHeaderContentRest,
-    parseMessage,
-} from "./protocol";
+import { MessageChunkHeader, parseMessage, splitHeaderContentRest } from "./protocol";
 import { MessageChunks } from "./MessageChunks";
 // import { setDefault } from "../../utils/Utils";
-
-class WebviewClient {
-    constructor(readonly socket: net.Socket) {}
-}
-
-class PythonClient {
-    constructor(readonly socket: net.Socket) {}
-}
+// import { logDebug } from "../../Logging";
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
 @Service()
-export class Server {
+export class SocketServer {
     public readonly server: net.Server;
     private port?: number = undefined;
     private started: boolean = false;
-    private webviewClient?: WebviewClient = undefined;
 
     private outgoingRequestsManager: RequestsManager = new RequestsManager();
     private chunksByMessageId: Map<number, MessageChunks> = new Map();
@@ -70,33 +56,33 @@ export class Server {
     onClientConnected(socket: net.Socket): void {
         const outgoingRequestsManager = this.outgoingRequestsManager;
         logDebug("Client connected");
-        const helloReqId = RequestsManager.randomRequestId();
-        const helloMessage = composeHelloMessage(helloReqId, Sender.Server);
-        logDebug(`Sending hello message to client with reqId ${helloReqId}`);
-        outgoingRequestsManager.subscribeRequest(
-            helloReqId,
-            (header: MessageChunkHeader, _) => {
-                logDebug("Received hello response from client");
-                if (header.requestId !== helloReqId) {
-                    throw new Error(
-                        `Expected hello reqId ${helloReqId} but got ${header.requestId}`
-                    );
-                }
-                if (header.sender === Sender.Webview) {
-                    if (this.webviewClient !== undefined) {
-                        logDebug("Closing previous webview client");
-                        this.webviewClient.socket.end();
-                    }
-                    this.webviewClient = new WebviewClient(socket);
-                    this.webviewClient.socket.on("close", () => {
-                        logDebug("Webview client closed connection");
-                        this.webviewClient = undefined;
-                    });
-                }
-                outgoingRequestsManager.unsubscribeRequest(helloReqId);
-            }
-        );
-        socket.write(helloMessage);
+        // const helloReqId = RequestsManager.randomRequestId();
+        // const helloMessage = composeHelloMessage(helloReqId, Sender.Server);
+        // logDebug(`Sending hello message to client with reqId ${helloReqId}`);
+        // outgoingRequestsManager.subscribeRequest(
+        //     helloReqId,
+        //     (header: MessageChunkHeader, _) => {
+        //         logDebug("Received hello response from client");
+        //         if (header.requestId !== helloReqId) {
+        //             throw new Error(
+        //                 `Expected hello reqId ${helloReqId} but got ${header.requestId}`
+        //             );
+        //         }
+        //         if (header.sender === Sender.Webview) {
+        //             if (this.webviewClient !== undefined) {
+        //                 logDebug("Closing previous webview client");
+        //                 this.webviewClient.socket.end();
+        //             }
+        //             this.webviewClient = new WebviewClient(socket);
+        //             this.webviewClient.socket.on("close", () => {
+        //                 logDebug("Webview client closed connection");
+        //                 this.webviewClient = undefined;
+        //             });
+        //         }
+        //         outgoingRequestsManager.unsubscribeRequest(helloReqId);
+        //     }
+        // );
+        // socket.write(helloMessage);
 
         const handleMessage = (header: MessageChunkHeader, data: Buffer) => {
             logDebug(
@@ -108,13 +94,14 @@ export class Server {
                 outgoingRequestsManager.onData(header, data);
             } else {
                 // handle as request
-                const message = parseMessage(header, data);
+                // const message = parseMessage(header, data);
                 // logDebug("Parsed message from client", message);
             }
         };
 
         let waitingForHandling: Buffer = Buffer.alloc(0);
         const handleData = (data: Buffer) => {
+            logDebug("Received %d bytes from client", data.length);
             logDebug("Received data from client", data);
             while (waitingForHandling.length > 0 || data.length > 0) {
                 if (waitingForHandling.length > 0) {
@@ -152,8 +139,18 @@ export class Server {
                 }
             }
         };
+        const makeSafe = (fn: (...args: any[]) => void) => {
+            return (...args: any[]) => {
+                try {
+                    fn(...args);
+                } catch (err) {
+                    logDebug("Error in handler");
+                    logDebug(err);
+                }
+            };
+        }
 
-        socket.on("data", handleData);
+        socket.on("data", makeSafe(handleData));
         socket.on("close", () => {
             logDebug("Client closed connection");
         });
@@ -165,12 +162,22 @@ export class Server {
             logDebug(err);
         });
     }
+
+    onResponse(
+        requestId: number,
+        callback: (header: MessageChunkHeader, data: Buffer) => void
+    ) {
+        this.outgoingRequestsManager.subscribeRequest(requestId, callback);
+        return () => {
+            this.outgoingRequestsManager.unsubscribeRequest(requestId);
+        };
+    }
 }
 
 // TODO: Remove this
-// function logInfo(...obj: any[]): void {
-//     console.log(...obj);
-// }
+function logInfo(...obj: any[]): void {
+    console.log(...obj);
+}
 function logDebug(...obj: any[]): void {
     console.log(...obj);
 }

@@ -18,13 +18,12 @@ import { hasValue } from "./utils/Utils";
 import { setupPluginManager } from "./plugins";
 import { HelloWorldPanel } from "./webview/panels/HelloWorldPanel";
 import { HoverProvider } from "./HoverProvider";
-import { constructOpenSendAndCloseCode } from "./python-communication/BuildPythonCode";
-import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { Server } from "./webview/communication/Server";
+import { SocketServer } from "./webview/communication/Server";
 
 function onConfigChange(): void {
     initLog();
 }
+
 
 // ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext) {
@@ -110,8 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...registerExtensionCommands(context));
 
-    // const socketServer = Container.get(Server);
-    // socketServer.start();
+    const socketServer = Container.get(SocketServer);
+    socketServer.start();
 
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };
@@ -119,13 +118,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("svifpd.open-settings", async () => {
             HelloWorldPanel.render(context);
-
-            // const code = constructOpenSendAndCloseCode(socketServer.portNumber, 55, "js", ObjectType.Json);
-            // console.log(code);
-            // const session = vscode.debug.activeDebugSession;
-            // // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            // const res = await evaluateInPython(code, session!);
-            // console.log(res);
         })
     );
 }

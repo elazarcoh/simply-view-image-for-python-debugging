@@ -14,6 +14,8 @@ import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
 import { FromExtensionMessageWithId } from "../webview";
+import Container from "typedi";
+import { WebviewClient } from "../communication/WebviewClient";
 
 /**
  * This class manages the state and behavior of HelloWorld webview panels.
@@ -58,6 +60,7 @@ export class HelloWorldPanel {
         this._webviewMessageHandler = new WebviewMessageHandler(
             this._panel.webview
         );
+        Container.get(WebviewClient).setWebview(this._panel.webview);
 
         // Set an event listener to listen for messages passed from the webview context
         // this._setWebviewMessageListener(this._panel.webview, context);

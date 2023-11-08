@@ -4,8 +4,10 @@ import traceback
 import struct
 import numpy as np
 
+CHUNK_SIZE = 4 * 1024  # 4KB
 
-# See SocketSerialization.ts for message format
+# See webview/communication/protocol.ts for message format
+PythonSender = 0x02
 # MessageType 
 PythonSendingObject = 0x01
 # ObjectType
@@ -37,8 +39,15 @@ ExceptionTypes = {
     None: 0xff,  # Unknown exception
 }
 
+MessageLengthType = np.uint32
+MessageIdType = np.uint32
+SenderType = np.uint8
 MessageType = np.uint8
 RequestIdType = np.uint32
+ChunkCountType = np.uint32
+ChunkIndexType = np.uint32
+ChunkLengthType = np.uint32
+
 ObjectIdType = np.uint32
 ObjectType = np.uint8
 NumDimsType = np.uint8
@@ -62,28 +71,65 @@ array_dtype_to_array_data_type = {
 
 BYTE_ORDER = LittleEndian if sys.byteorder == 'little' else BigEndian
 
+def generate_message_id():
+    return np.random.randint(0, 2**32, dtype=np.uint32)
+
+def chunk_header(
+    message_length,
+    message_id,
+    request_id,
+    chunk_count,
+    chunk_index,
+    chunk_length,
+):
+    message_length = MessageLengthType(message_length)
+    message_id  = MessageIdType(message_id)
+    sender = SenderType(PythonSender)
+    request_id = RequestIdType(request_id)
+    message_type = MessageType(PythonSendingObject)
+    chunk_count = ChunkCountType(chunk_count)
+    chunk_index = ChunkIndexType(chunk_index)
+    chunk_length = ChunkLengthType(chunk_length)
+
+    # Create the message
+    header = [
+        message_length,
+        message_id,
+        sender,
+        request_id,
+        message_type,
+        chunk_count,
+        chunk_index,
+        chunk_length,
+    ]
+    # print({
+    #     'message_length': message_length,
+    #     'message_id': message_id,
+    #     'sender': sender,
+    #     'request_id': request_id,
+    #     'message_type': message_type,
+    #     'chunk_count': chunk_count,
+    #     'chunk_index': chunk_index,
+    #     'chunk_length': chunk_length,
+    # })
+    
+    # Create the message format string
+    header_format = f'!IIBIBIII'
+
+    return struct.pack(header_format, *header)
+
 def create_numpy_message(
-    request_id: RequestIdType,
     array: np.ndarray,
 ):
-    # Create the message header
-    message_type = MessageType(PythonSendingObject)
-    request_id = RequestIdType(request_id)
-    object_id = ObjectIdType(id(array))
-    object_type = ObjectType(NumpyArray)
 
-    # Create the message body
+    object_type = ObjectType(NumpyArray)
     array_dtype =   array_dtype_to_array_data_type[str(array.dtype)]
     byte_order =    ByteOrderType(BYTE_ORDER)
     num_dimensions = NumDimsType(len(array.shape))
     array_shape =   np.array(array.shape, dtype=DimType)
     array_data =    array.tobytes()
 
-    # Create the message
-    header = [
-        message_type,
-        request_id,
-        object_id,
+    metadata = [
         object_type,
         array_dtype,
         byte_order,
@@ -92,20 +138,19 @@ def create_numpy_message(
     ]
     
     # add padding before the array data, making sure the offset is a multiple of the element size
-    header_size = 1 + 4 + 4 + 1 + 1 + 1 + 1 + num_dimensions * 4
-    bytes_per_element = array.dtype.itemsize
-    message_length_placeholder = 4
-    padding_size =  (bytes_per_element - (header_size + message_length_placeholder) % bytes_per_element) % bytes_per_element
-    padding = bytes(padding_size)
+    # metadata_size = 1 + 1 + 1 + 1 + num_dimensions * 4
+    # bytes_per_element = array.dtype.itemsize
+    # message_length_placeholder = 4
+    # padding_size =  (bytes_per_element - (header_size + message_length_placeholder) % bytes_per_element) % bytes_per_element
+    # padding = bytes(padding_size)
 
     message = [
-        *header,
-        padding,
+        *metadata,
         array_data,
     ]
 
     # Create the message format string
-    message_format = f'!BIIBBBB{num_dimensions}I{len(padding)}s{len(array_data)}s'
+    message_format = f'!BBBB{num_dimensions}I{len(array_data)}s'
 
     # Pack the message
     message_pack = struct.pack(message_format, *message)
@@ -113,7 +158,6 @@ def create_numpy_message(
     return message_pack
 
 def create_exception_message(
-    request_id: RequestIdType,
     exception: Exception,
 ):
     # Create the message header
@@ -174,26 +218,62 @@ def create_json_message(
 
     return message_pack
 
-def open_send_and_close(port, request_id, obj, type):
+
+def message_chunks(
+    message_length,
+    message_id,
+    request_id,
+    message,
+):
+    loc = 0
+    chunk_count = len(message) // CHUNK_SIZE + 1
+    for chunk_index in range(chunk_count):
+        data = message[loc:loc+CHUNK_SIZE]
+        chunk_length = len(data)
+        header = chunk_header(
+            message_length,
+            message_id,
+            request_id,
+            chunk_count,
+            chunk_index,
+            chunk_length,
+        )
+        loc += CHUNK_SIZE
+        yield header + data
+
+
+def open_send_and_close(port, request_id, obj):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(('localhost', port))
 
         try:
-            if type == NumpyArray:
-                message = create_numpy_message(request_id, obj)
-            elif type == Json:
-                message = create_json_message(request_id, obj)
+            if isinstance(obj, np.ndarray):
+                message = create_numpy_message(obj)
             else:
                 raise ValueError(f'Unknown type {type}')
         except Exception as e:
-            message = create_exception_message(request_id, e)
+            # message = create_exception_message(e)
+            import traceback
+            traceback.print_exc()
+            return
         
-        # Send the message length (4 bytes, big-endian)
-        msg_len = struct.pack('!I', len(message))
-        s.sendall(msg_len)
+        message_length = len(message)
 
         # Send the message data
-        s.sendall(message)
+        message_id = generate_message_id()
+        # print(f'Sending message {message_id}')
+        chunks = message_chunks(message_length, message_id, request_id, message)
+
+        all_data = b''
+
+        # Send the message
+        for chunk in chunks:
+            s.sendall(chunk)
+            all_data += chunk
+
+        # print(f'Sent {len(all_data)} bytes')
+        # buffer = list(np.frombuffer(all_data, dtype=np.uint8))
+        # print([hex(x) for x in buffer])
 
         # Close the socket
         s.close()

@@ -35,7 +35,7 @@ use web_sys::HtmlElement;
 use web_sys::Node;
 use web_sys::WebGl2RenderingContext;
 
-use gloo::events::{EventListener, EventListenerOptions};
+use gloo::events::EventListener;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 use yew::prelude::*;
@@ -47,8 +47,8 @@ use crate::image_view::renderer::Renderer;
 use crate::image_view::types::InSingleViewName;
 use crate::image_view::types::InViewName;
 use crate::image_view::types::TextureImage;
-use crate::mouse_events::PanHelper;
-use mouse_events::calculate_camera_after_wheel_zoom;
+use crate::mouse_events::PanHandler;
+use crate::mouse_events::ZoomHandler;
 
 // #[wasm_bindgen]
 // pub fn send_example_to_js() -> JsValue {
@@ -355,31 +355,18 @@ fn App() -> Html {
                 EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()))
             };
 
-            let wheel_listener: EventListener = {
+            let zoom_listener = {
                 let canvas_ref = canvas_ref.clone();
                 let coordinator = Rc::clone(&coordinator);
-                let onwheel = Callback::from(move |event: Event| {
-                    let event = event
-                        .dyn_ref::<web_sys::WheelEvent>()
-                        .expect("Unable to cast event to WheelEvent");
-                    let canvas_element = canvas_ref
-                        .cast::<HtmlCanvasElement>()
-                        .expect("canvas_ref not attached to a canvas element");
-                    let camera = (&coordinator).views_cameras.borrow().get(view_id);
-                    let new_camera =
-                        calculate_camera_after_wheel_zoom(event, &canvas_element, &camera);
-                    (&coordinator)
-                        .views_cameras
-                        .borrow_mut()
-                        .set(view_id, new_camera);
-                });
-                let options = EventListenerOptions::enable_prevent_default();
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                EventListener::new_with_options(&view_element, "wheel", options, move |e| {
-                    onwheel.emit(e.clone())
-                })
+                ZoomHandler::install(
+                    canvas_ref,
+                    view_id,
+                    &view_element,
+                    coordinator
+                )
             };
 
             let pan_listener = {
@@ -388,7 +375,7 @@ fn App() -> Html {
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                PanHelper::install(
+                PanHandler::install(
                     canvas_ref,
                     view_id,
                     &view_element,
@@ -398,7 +385,7 @@ fn App() -> Html {
 
             move || {
                 drop(message_listener);
-                drop(wheel_listener);
+                drop(zoom_listener);
                 drop(pan_listener);
             }
         }

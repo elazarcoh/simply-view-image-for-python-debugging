@@ -2,6 +2,7 @@ use std::ops::{Deref, IndexMut};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use glam::{Mat3, Vec2, Vec3};
+use glyph_brush::Section;
 use image;
 use wasm_bindgen::prelude::*;
 use web_sys::{
@@ -102,6 +103,49 @@ fn create_image_plane_attributes(
         },
         Some(indices),
     )
+}
+
+struct PixelValueFormatter {}
+
+struct FormattedPixelValue<'a> {
+    section: glyph_brush::Section<'a>,
+    text_to_image: Mat3,
+}
+
+impl PixelValueFormatter {
+    fn format_pixel_value(image: &image::DynamicImage, x: i32, y: i32) -> FormattedPixelValue {
+        let font_scale = 100.0;
+        let num_rows = 3_f32;
+        let num_cols = 5_f32;
+        let max_rows_cols = f32::max(num_rows, num_cols);
+        let letters_offset_inside_pixel = max_rows_cols / 2.0;
+        let pixel_offset = max_rows_cols;
+        let px = 0.0;
+        let py = 0.0;
+        let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
+
+        let text_to_image = Mat3::from_scale(Vec2::new(
+            (1.0 / max_rows_cols) / (font_scale),
+            (1.0 / max_rows_cols) / (font_scale),
+        ));
+
+        let section = glyph_brush::Section::default()
+            .add_text(glyph_brush::Text::new("M").with_scale(font_scale))
+            .with_layout(
+                glyph_brush::Layout::default()
+                    .h_align(glyph_brush::HorizontalAlign::Center)
+                    .v_align(glyph_brush::VerticalAlign::Center),
+            )
+            .with_screen_position((
+                ((x as f32 + px) * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                ((y as f32 + py) * pixel_offset + letters_offset_inside_pixel) * font_scale,
+            ));
+
+        FormattedPixelValue {
+            section,
+            text_to_image,
+        }
+    }
 }
 
 pub struct Renderer {}
@@ -262,14 +306,8 @@ impl Renderer {
 
         let lower_x_px = i32::max(0, (f32::floor(tl.x) as i32) - 1);
         let lower_y_px = i32::max(0, (f32::floor(tl.y) as i32) - 1);
-        let upper_x_px = i32::min(
-            image_size.width as i32,
-            (f32::ceil(br.x) as i32) + 1,
-        );
-        let upper_y_px = i32::min(
-            image_size.height as i32,
-            (f32::ceil(br.y) as i32) + 1,
-        );
+        let upper_x_px = i32::min(image_size.width as i32, (f32::ceil(br.x) as i32) + 1);
+        let upper_y_px = i32::min(image_size.height as i32, (f32::ceil(br.y) as i32) + 1);
 
         let pixel_size_device = (canvas_size.width / (brx - tlx)) as i32;
 
@@ -401,30 +439,50 @@ impl Renderer {
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
+        for x in pixels_info.lower_x_px..pixels_info.upper_x_px {
+            for y in pixels_info.lower_y_px..pixels_info.upper_y_px {
+                let formatted_pixel_value =
+                    PixelValueFormatter::format_pixel_value(&texture.image, x, y);
+
+                rendering_data
+                    .text_renderer
+                    .queue_section(formatted_pixel_value.section);
+                let image_pixels_to_view = Mat3::from_scale(Vec2::new(
+                    VIEW_SIZE.width / texture.image_size().width,
+                    VIEW_SIZE.height / texture.image_size().height,
+                ));
+                // rescale the font to a single pixel
+                let text_to_image = formatted_pixel_value.text_to_image;
+                let text_to_view = image_pixels_to_view * text_to_image;
+                rendering_data
+                    .text_renderer
+                    .render(&text_to_view, &view_projection);
+            }
+        }
         // render text
-        let font_scale = 100.0;
-        let num_rows = 3_f32;
-        let num_cols = 5_f32;
-        let max_rows_cols = f32::max(num_rows, num_cols);
-        let letters_offset_inside_pixel = max_rows_cols / 2.0;
-        let pixel_offset = max_rows_cols;
-        let px = 0.0;
-        let py = 0.0;
-        let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
-        rendering_data.text_renderer.queue_section(
-            glyph_brush::Section::default()
-                .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
-                // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
-                .with_layout(
-                    glyph_brush::Layout::default()
-                        .h_align(glyph_brush::HorizontalAlign::Center)
-                        .v_align(glyph_brush::VerticalAlign::Center),
-                )
-                .with_screen_position((
-                    (px * pixel_offset + letters_offset_inside_pixel) * font_scale,
-                    (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
-                )),
-        );
+        // let font_scale = 100.0;
+        // let num_rows = 3_f32;
+        // let num_cols = 5_f32;
+        // let max_rows_cols = f32::max(num_rows, num_cols);
+        // let letters_offset_inside_pixel = max_rows_cols / 2.0;
+        // let pixel_offset = max_rows_cols;
+        // let px = 0.0;
+        // let py = 0.0;
+        // let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
+        // rendering_data.text_renderer.queue_section(
+        //     glyph_brush::Section::default()
+        //         .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
+        //         // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
+        //         .with_layout(
+        //             glyph_brush::Layout::default()
+        //                 .h_align(glyph_brush::HorizontalAlign::Center)
+        //                 .v_align(glyph_brush::VerticalAlign::Center),
+        //         )
+        //         .with_screen_position((
+        //             (px * pixel_offset + letters_offset_inside_pixel) * font_scale,
+        //             (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
+        //         )),
+        // );
         // rendering_data.text_renderer.queue_section(
         //     glyph_brush::Section::default()
         //         .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
@@ -439,21 +497,18 @@ impl Renderer {
         //             (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
         //         )),
         // );
-        let image_pixels_to_view = Mat3::from_scale(Vec2::new(
-            VIEW_SIZE.width / texture.image_size().width,
-            VIEW_SIZE.height / texture.image_size().height,
-        ));
-        // rescale the font to a single pixel
-        let text_to_image = Mat3::from_scale(Vec2::new(
-            (1.0 / max_rows_cols) / (font_scale),
-            (1.0 / max_rows_cols) / (font_scale),
-        ));
-        let text_to_view = image_pixels_to_view * text_to_image;
-        log::debug!("image_pixels_to_view: {}", image_pixels_to_view);
-        log::debug!("text_to_image: {}", text_to_image);
-        log::debug!("view_projection: {}", view_projection);
-        rendering_data
-            .text_renderer
-            .render(&text_to_view, &view_projection);
+        // let image_pixels_to_view = Mat3::from_scale(Vec2::new(
+        //     VIEW_SIZE.width / texture.image_size().width,
+        //     VIEW_SIZE.height / texture.image_size().height,
+        // ));
+        // // rescale the font to a single pixel
+        // let text_to_image = Mat3::from_scale(Vec2::new(
+        //     (1.0 / max_rows_cols) / (font_scale),
+        //     (1.0 / max_rows_cols) / (font_scale),
+        // ));
+        // let text_to_view = image_pixels_to_view * text_to_image;
+        // rendering_data
+        //     .text_renderer
+        //     .render(&text_to_view, &view_projection);
     }
 }

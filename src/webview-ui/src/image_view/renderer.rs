@@ -1,6 +1,7 @@
 use std::ops::{Deref, IndexMut};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+use glam::{Vec2, Vec3};
 use image;
 use wasm_bindgen::prelude::*;
 use web_sys::{
@@ -11,6 +12,7 @@ use yew::NodeRef;
 
 use crate::common::Size;
 use crate::image_view::camera;
+use crate::math_utils::ToHom;
 use crate::webgl_utils::attributes::{
     create_attributes_from_array, create_buffer_info_from_arrays, Arrays,
 };
@@ -21,7 +23,9 @@ use crate::webgl_utils::types::*;
 use crate::{math_utils, webgl_utils};
 
 use super::camera::Camera;
+use super::constants::VIEW_SIZE;
 use super::rendering_context::{ImageViewData, RenderingContext};
+use super::types::TextureImage;
 
 struct Programs {
     basic: ProgramBundle,
@@ -35,12 +39,14 @@ struct RenderingData {
     image_plane_buffer: BufferInfo,
 }
 
-const VIEW_WIDTH: f32 = 1.0;
-const VIEW_HEIGHT: f32 = 1.0;
-const VIEW_SIZE: Size = Size {
-    width: VIEW_WIDTH,
-    height: VIEW_HEIGHT,
-};
+struct PixelsInformation {
+    lower_x_px: i32,
+    lower_y_px: i32,
+    upper_x_px: i32,
+    upper_y_px: i32,
+
+    pixel_size_device: i32, // assume square pixels
+}
 
 fn create_image_plane_attributes(
     gl: &GL,
@@ -122,7 +128,8 @@ impl Renderer {
         let programs = Renderer::create_programs(&gl).unwrap();
 
         let image_plane_attributes =
-            create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_WIDTH, VIEW_HEIGHT).unwrap();
+            create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
+                .unwrap();
 
         let rendering_data = RenderingData {
             gl: gl.clone(),
@@ -215,6 +222,55 @@ impl Renderer {
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
     }
 
+    fn calculate_pixels_information(
+        gl: &GL,
+        camera: &Camera,
+        image_size: &Size,
+    ) -> PixelsInformation {
+        let canvas = Renderer::canvas(gl);
+        let canvas_size = Size {
+            width: canvas.width() as f32,
+            height: canvas.height() as f32,
+        };
+        let tl_ndc: Vec3 = Vec2::new(-1.0, 1.0).to_hom();
+        let br_ndc: Vec3 = Vec2::new(1.0, -1.0).to_hom();
+
+        let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
+        let view_projection_inv = view_projection.inverse();
+
+        let tl_world = view_projection_inv * tl_ndc;
+        let br_world = view_projection_inv * br_ndc;
+
+        let tlx = f32::min(tl_world.x, br_world.x);
+        let tly = f32::min(tl_world.y, br_world.y);
+        let brx = f32::max(tl_world.x, br_world.x);
+        let bry = f32::max(tl_world.y, br_world.y);
+
+        let tl = Vec2::new(tlx, tly);
+        let br = Vec2::new(brx, bry);
+
+        let lower_x_px = i32::max(0, (f32::floor(tl.x * image_size.width) as i32) - 1);
+        let lower_y_px = i32::max(0, (f32::floor(tl.y * image_size.height) as i32) - 1);
+        let upper_x_px = i32::min(
+            image_size.width as i32,
+            (f32::ceil(br.x * image_size.width) as i32) + 1,
+        );
+        let upper_y_px = i32::min(
+            image_size.height as i32,
+            (f32::ceil(br.y * image_size.height) as i32) + 1,
+        );
+
+        let pixel_size_device = (canvas_size.width / ((brx - tlx) * image_size.width)) as i32;
+
+        PixelsInformation {
+            lower_x_px,
+            lower_y_px,
+            upper_x_px,
+            upper_y_px,
+            pixel_size_device,
+        }
+    }
+
     fn render_view(
         gl: &WebGl2RenderingContext,
         rendering_data: &RenderingData,
@@ -290,14 +346,14 @@ impl Renderer {
         let texture = rendering_context.texture_by_id(&image_id).ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
-        Renderer::render_image(rendering_data, &texture.texture, image_view_data);
+        Renderer::render_image(rendering_data, texture, image_view_data);
 
         Ok(())
     }
 
     fn render_image(
         rendering_data: &RenderingData,
-        texture: &WebGlTexture,
+        texture: Rc<TextureImage>,
         image_view_data: &ImageViewData,
     ) {
         let gl = &rendering_data.gl;
@@ -311,12 +367,19 @@ impl Renderer {
         let camera = &image_view_data.camera;
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
+        let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
+        let enable_borders = pixels_info.pixel_size_device > 30; // TODO: make this configurable/constant
+        let image_size = texture.image_size();
+        let image_size_vec = Vec2::new(image_size.width, image_size.height);
+
         gl.use_program(Some(&program.program));
         set_uniforms(
             program,
             &HashMap::from([
-                ("u_texture", UniformValue::Texture(&texture)),
+                ("u_texture", UniformValue::Texture(&texture.texture)),
                 ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
+                ("u_enable_borders", UniformValue::Bool(&enable_borders)),
+                ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
             ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);

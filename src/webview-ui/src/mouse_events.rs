@@ -11,7 +11,7 @@ use crate::{
     image_view::{
         camera::{self, Camera},
         rendering_context::CameraContext,
-        types::InViewName,
+        types::InViewName, constants::VIEW_SIZE,
     },
     math_utils::ToHom,
 };
@@ -73,13 +73,9 @@ impl PanHandler {
                     width: canvas_element.width() as f32,
                     height: canvas_element.height() as f32,
                 };
-                let view_size = Size {
-                    width: 1.0,
-                    height: 1.0,
-                };
 
                 let start_in_view_projection_matrix =
-                    camera::calculate_view_projection(&canvas_size, &view_size, &camera).inverse();
+                    camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &camera).inverse();
                 let start_mouse_position_clip_space =
                     get_clip_space_mouse_position(event.clone(), &canvas_element);
                 let start_mouse_position =
@@ -191,12 +187,8 @@ impl ZoomHandler {
                     width: canvas_element.width() as f32,
                     height: canvas_element.height() as f32,
                 };
-                let view_size = Size {
-                    width: 1.0,
-                    height: 1.0,
-                };
                 let view_projection_matrix_inv =
-                    camera::calculate_view_projection(&canvas_size, &view_size, &camera).inverse();
+                    camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &camera).inverse();
                 let pre_zoom_position =
                     (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
 
@@ -210,7 +202,7 @@ impl ZoomHandler {
                 };
 
                 let view_projection_matrix_inv =
-                    camera::calculate_view_projection(&canvas_size, &view_size, &new_camera)
+                    camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &new_camera)
                         .inverse();
                 let post_zoom_position =
                     (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();

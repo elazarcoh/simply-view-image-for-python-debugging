@@ -20,6 +20,7 @@ impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 #[enum_dispatch(GLVerifyType, GLSet)]
 pub enum UniformValue<'a> {
     Float(&'a f32),
+    Bool(&'a bool),
     Texture(&'a WebGlTexture),
 
     Vec2(&'a glam::Vec2),
@@ -201,6 +202,12 @@ impl GLSet for &f32 {
     }
 }
 
+impl GLSet for &bool {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform1i(Some(location), **self as i32);
+    }
+}
+
 impl GLSet for &WebGlTexture {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
         let texture_unit = 0;
@@ -266,6 +273,12 @@ fn impl_gl_verify_type(
 impl GLVerifyType for &f32 {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT, gl_type)
+    }
+}
+
+impl GLVerifyType for &bool {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::BOOL, gl_type)
     }
 }
 

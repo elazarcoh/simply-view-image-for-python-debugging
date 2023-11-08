@@ -1,7 +1,10 @@
 use image::DynamicImage;
 use web_sys::WebGl2RenderingContext;
 
-use crate::webgl_utils::{self, types::GLGuard};
+use crate::{
+    common::Size,
+    webgl_utils::{self, types::GLGuard},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ImageId(String);
@@ -92,7 +95,10 @@ pub struct TextureImage {
 }
 
 impl TextureImage {
-    pub fn try_new(image: DynamicImage, gl: &web_sys::WebGl2RenderingContext) -> Result<Self, String> {
+    pub fn try_new(
+        image: DynamicImage,
+        gl: &web_sys::WebGl2RenderingContext,
+    ) -> Result<Self, String> {
         let texture = webgl_utils::textures::create_texture_from_image(
             &gl,
             &image,
@@ -103,5 +109,12 @@ impl TextureImage {
                 .unwrap(),
         )?;
         Ok(Self { image, texture })
+    }
+
+    pub fn image_size(&self) -> Size {
+        Size {
+            width: self.image.width() as f32,
+            height: self.image.height() as f32,
+        }
     }
 }

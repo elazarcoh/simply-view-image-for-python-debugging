@@ -1,7 +1,7 @@
 use std::ops::{Deref, IndexMut};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use glam::{Vec2, Vec3};
+use glam::{Mat3, Vec2, Vec3};
 use image;
 use wasm_bindgen::prelude::*;
 use web_sys::{
@@ -47,7 +47,7 @@ struct PixelsInformation {
     upper_x_px: i32,
     upper_y_px: i32,
 
-    pixel_size_device: i32, // assume square pixels
+    image_pixel_size_device: i32, // assume square pixels
 }
 
 fn create_image_plane_attributes(
@@ -273,7 +273,7 @@ impl Renderer {
             lower_y_px,
             upper_x_px,
             upper_y_px,
-            pixel_size_device,
+            image_pixel_size_device: pixel_size_device,
         }
     }
 
@@ -371,10 +371,14 @@ impl Renderer {
             height: canvas.height() as f32,
         };
         let camera = &image_view_data.camera;
+        let camera = &Camera {
+            zoom: 6.0,
+            translation: Vec2::new(-50.0, 0.0),
+        };
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
         let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
-        let enable_borders = pixels_info.pixel_size_device > 30; // TODO: make this configurable/constant
+        let enable_borders = pixels_info.image_pixel_size_device > 30; // TODO: make this configurable/constant
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
@@ -389,14 +393,61 @@ impl Renderer {
             ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
-        // draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+        draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
         // render text
+        let font_scale = 100.0;
+        let num_rows = 3_f32;
+        let num_cols = 5_f32;
+        let max_rows_cols = f32::max(num_rows, num_cols);
+        let letters_offset_inside_pixel = max_rows_cols / 2.0;
+        let pixel_offset = max_rows_cols;
+        let px = 0.0;
+        let py = 0.0;
+        let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
         rendering_data.text_renderer.queue_section(
             glyph_brush::Section::default()
-                .add_text(glyph_brush::Text::new("Hello glyph_brush"))
-                .with_screen_position((0.0, 0.0)),
+                .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
+                // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
+                .with_layout(
+                    glyph_brush::Layout::default()
+                        .h_align(glyph_brush::HorizontalAlign::Center)
+                        .v_align(glyph_brush::VerticalAlign::Center),
+                )
+                .with_screen_position((
+                    (px * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                    (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                )),
         );
-        rendering_data.text_renderer.render();
+        rendering_data.text_renderer.queue_section(
+            glyph_brush::Section::default()
+                .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
+                // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
+                .with_layout(
+                    glyph_brush::Layout::default()
+                        .h_align(glyph_brush::HorizontalAlign::Center)
+                        .v_align(glyph_brush::VerticalAlign::Center),
+                )
+                .with_screen_position((
+                    ((px + 1.0) * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                    (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
+                )),
+        );
+        let image_pixels_to_view = Mat3::from_scale(Vec2::new(
+            VIEW_SIZE.width / texture.image_size().width,
+            VIEW_SIZE.height / texture.image_size().height,
+        ));
+        // rescale the font to a single pixel
+        let text_to_image = Mat3::from_scale(Vec2::new(
+            (1.0 / max_rows_cols) / (font_scale),
+            (1.0 / max_rows_cols) / (font_scale),
+        ));
+        let text_to_view = image_pixels_to_view * text_to_image;
+        log::debug!("image_pixels_to_view: {}", image_pixels_to_view);
+        log::debug!("text_to_image: {}", text_to_image);
+        log::debug!("view_projection: {}", view_projection);
+        rendering_data
+            .text_renderer
+            .render(&text_to_view, &view_projection);
     }
 }

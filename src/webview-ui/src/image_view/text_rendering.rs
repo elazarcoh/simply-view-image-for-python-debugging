@@ -1,6 +1,6 @@
 use std::{collections::HashMap, iter::FromIterator};
 
-use glam::Vec4;
+use glam::{Mat3, Vec4};
 use glyph_brush::{
     ab_glyph::FontArc,
     ab_glyph::{Font, Rect},
@@ -32,8 +32,8 @@ pub struct TextRenderer {
 #[derive(Copy, Clone)]
 #[repr(C)]
 struct SingleGlyphData {
-    positions: [f32; 8],
-    tex_coords: [f32; 8],
+    positions: [f32; 12],
+    tex_coords: [f32; 12],
 }
 
 struct GlyphsArrays {
@@ -43,17 +43,15 @@ struct GlyphsArrays {
 
 impl GlyphsArrays {
     fn from_glyphs(glyphs: &[SingleGlyphData]) -> Self {
-        let size = glyphs.len() * 8;
-        // let mut positions_vec = Vec::with_capacity(size);
-        // let mut tex_coords_vec = Vec::with_capacity(size);
+        let size = glyphs.len() * 6 * 2;
+        let mut positions_vec = Vec::with_capacity(size);
+        let mut tex_coords_vec = Vec::with_capacity(size);
 
-        // for glyph in glyphs {
-        //     positions_vec.extend_from_slice(&glyph.positions);
-        //     tex_coords_vec.extend_from_slice(&glyph.tex_coords);
-        // }
+        for glyph in glyphs {
+            positions_vec.extend_from_slice(&glyph.positions);
+            tex_coords_vec.extend_from_slice(&glyph.tex_coords);
+        }
 
-        let positions_vec = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
-        let tex_coords_vec = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
         log::debug!("Positions: {:?}", positions_vec);
         log::debug!("Tex coords: {:?}", tex_coords_vec);
 
@@ -90,10 +88,17 @@ impl GlyphsArrays {
     }
 }
 
-fn rect_to_positions(rect: Rect) -> [f32; 8] {
+fn rect_to_positions(rect: Rect) -> [f32; 12] {
     [
-        rect.min.x, rect.min.y, rect.max.x, rect.min.y, rect.min.x, rect.max.y, rect.max.x,
-        rect.max.y,
+        // Triangle 1
+        // TL
+        rect.min.x, rect.min.y, // TR
+        rect.max.x, rect.min.y, // BL
+        rect.min.x, rect.max.y, // Triangle 2
+        // BL
+        rect.min.x, rect.max.y, // TR
+        rect.max.x, rect.min.y, // BR
+        rect.max.x, rect.max.y,
     ]
 }
 
@@ -121,8 +126,6 @@ impl TextRenderer {
             WebGl2RenderingContext::R8 as _,
             size.width as _,
             size.height as _,
-            // 1,  
-            // 1,
             0,
             WebGl2RenderingContext::RED,
             WebGl2RenderingContext::UNSIGNED_BYTE,
@@ -192,7 +195,7 @@ impl TextRenderer {
         self.glyph_brush.queue(section);
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, image_coords_to_view_coord_mat: &Mat3, view_projection: &Mat3) {
         let gl = &self.gl;
         let program = &self.program;
         let texture = &self.texture;
@@ -223,7 +226,7 @@ impl TextRenderer {
                 let glyphs_arrays = GlyphsArrays::from_glyphs(&x);
                 let buffers = glyphs_arrays.into_buffers(gl).unwrap();
 
-                self.draw(&buffers);
+                self.draw(&buffers, image_coords_to_view_coord_mat, view_projection);
             }
 
             Ok(glyph_brush::BrushAction::ReDraw) => {}
@@ -232,8 +235,11 @@ impl TextRenderer {
         };
     }
 
-    fn draw(&self,
+    fn draw(
+        &self,
         buffers: &BufferInfo,
+        image_coords_to_view_coord_mat: &Mat3,
+        view_projection: &Mat3,
     ) {
         log::debug!("Drawing text");
         let gl = &self.gl;
@@ -247,6 +253,14 @@ impl TextRenderer {
                 (
                     "u_pixelColor",
                     UniformValue::Vec4(&Vec4::new(1.0, 0.0, 0.0, 1.0)),
+                ),
+                (
+                    "u_imageToScreenMatrix",
+                    UniformValue::Mat3(image_coords_to_view_coord_mat),
+                ),
+                (
+                    "u_projectionMatrix",
+                    UniformValue::Mat3(view_projection),
                 ),
             ]),
         );

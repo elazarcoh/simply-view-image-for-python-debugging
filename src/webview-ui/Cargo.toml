@@ -21,6 +21,7 @@ default = [
   # "wee_alloc",
   # If you uncomment this line, it will enable `console_error_panic_hook`:
   "console_error_panic_hook",
+  "console_log",
 ]
 
 [dependencies]
@@ -37,7 +38,9 @@ wee_alloc = { version = "0.4.5", optional = true }
 # in debug mode.
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
+cfg-if = "1.0.0"
 log = "0.4.20"
+console_log = { version = "1.0.0", optional = true, features = ["color"] }
 
 gloo = "0.8"
 js-sys = "0.3"

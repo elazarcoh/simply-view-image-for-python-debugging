@@ -1,9 +1,9 @@
 mod components;
 mod renderer;
 mod vscode;
-use log::{info, warn};
-
+use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
+use log::{info, warn};
 use std::rc::Rc;
 use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext};
 
@@ -16,6 +16,8 @@ use yew_hooks::prelude::*;
 
 use crate::components::GLProvider;
 use crate::components::GLView;
+use crate::renderer::InSingleViewName;
+use crate::renderer::InViewName;
 use crate::renderer::Renderer;
 
 // #[wasm_bindgen]
@@ -42,13 +44,23 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[function_component]
 fn App() -> Html {
-
     html! {
-            <GLProvider>
-                <div>{ "Hello World!" }</div>
-                <GLView />
-            </GLProvider>
+        <GLProvider>
+            <div>{ "Hello World!" }</div>
+            <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
+        </GLProvider>
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "console_log")] {
+        fn init_log() {
+            use log::Level;
+            console_log::init_with_level(Level::Trace).expect("error initializing log");
         }
+    } else {
+        fn init_log() {}
+    }
 }
 
 // Called by our JS entry point to run the example
@@ -58,6 +70,8 @@ fn run() -> Result<(), JsValue> {
     // It's disabled in release mode so it doesn't bloat up the file size.
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
+
+    init_log();
 
     console::clear();
 
@@ -81,9 +95,6 @@ fn run() -> Result<(), JsValue> {
     // ));
 
     console::log_1(&"Hello using web-sys".into());
-    
-    info!("Hello using log macro");
-    warn!("checking if warn works");
 
     yew::Renderer::<App>::new().render();
 

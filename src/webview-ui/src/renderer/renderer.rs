@@ -10,18 +10,18 @@ pub enum ViewsType {
     Quad,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InSingleViewName {
     Single,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InDualViewName {
     Left,
     Right,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InQuadViewName {
     TopLeft,
     TopRight,
@@ -29,6 +29,7 @@ pub enum InQuadViewName {
     BottomRight,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InViewName {
     Single(InSingleViewName),
     Dual(InDualViewName),
@@ -86,12 +87,13 @@ struct ViewHolder {
 
 #[derive(PartialEq)]
 pub struct Renderer {
-    gl: WebGlRenderingContext,
-    // view_holders: HashMap<ViewsType, HashMap<String, ViewHolder>>,
+    gl: Option<WebGlRenderingContext>,
+    view_holders: HashMap<ViewsType, HashMap<String, ViewHolder>>,
 }
 
+
 impl Renderer {
-    pub fn new(gl: WebGlRenderingContext) -> Self {
+    pub fn new() -> Self {
         let make_map = |vt: ViewsType| -> HashMap<String, ViewHolder> {
             HashMap::from_iter(views(vt).into_iter().map(|v| {
                 (
@@ -103,26 +105,37 @@ impl Renderer {
             }))
         };
         Self {
-            gl,
-            // view_holders: HashMap::from_iter(
-            //     vec![ViewsType::Single, ViewsType::Dual, ViewsType::Quad]
-            //         .into_iter()
-            //         .map(|vt| (vt, make_map(vt))),
-            // ),
+            gl: None,
+            view_holders: HashMap::from_iter(
+                vec![ViewsType::Single, ViewsType::Dual, ViewsType::Quad]
+                    .into_iter()
+                    .map(|vt| (vt, make_map(vt))),
+            ),
         }
     }
 
+    pub fn bind_gl(&mut self, gl: WebGlRenderingContext) {
+        log::debug!("Renderer::bind_gl");
+        self.gl = Some(gl);
+    }
+
+    pub fn unbind_gl(&mut self) {
+        log::debug!("Renderer::unbind_gl");
+        self.gl = None;
+    }
+
     pub fn register(&mut self, view_id: InViewName, node: NodeRef) {
+        log::debug!("Renderer::register({:?})", view_id);
         let view_id = match view_id {
             InViewName::Single(v) => (ViewsType::Single, v.to_string()),
             InViewName::Dual(v) => (ViewsType::Dual, v.to_string()),
             InViewName::Quad(v) => (ViewsType::Quad, v.to_string()),
         };
-        // self.view_holders
-        //     .get_mut(&view_id.0)
-        //     .unwrap()
-        //     .get_mut(&view_id.1)
-        //     .unwrap()
-        //     .node = node;
+        self.view_holders
+            .get_mut(&view_id.0)
+            .unwrap()
+            .get_mut(&view_id.1)
+            .unwrap()
+            .node = node;
     }
 }

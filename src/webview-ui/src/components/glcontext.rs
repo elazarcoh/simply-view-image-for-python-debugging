@@ -1,5 +1,4 @@
 use gloo_timers::callback::Interval;
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -174,7 +173,6 @@ use crate::renderer::Renderer;
 pub struct Message {
     pub inner: String,
     pub gl: Option<WebGlRenderingContext>,
-    pub renderer: Option<Renderer>,
 }
 
 impl Reducible for Message {
@@ -184,7 +182,6 @@ impl Reducible for Message {
         Message {
             inner: action.0,
             gl: action.1,
-            renderer: None,
         }
         .into()
     }
@@ -198,22 +195,33 @@ pub struct MessageProviderProps {
     pub children: Children,
 }
 
+#[derive(Clone, PartialEq)]
+pub struct RendererContext {
+    pub renderer: Rc<RefCell<Renderer>>,
+}
+
 // #[styled_component]
 #[function_component]
 pub fn GLProvider(props: &MessageProviderProps) -> Html {
+    let renderer_ctx = use_memo(
+        |_| RendererContext {
+            renderer: Rc::new(RefCell::new(Renderer::new())),
+        },
+        (),
+    );
     let canvas_ref = use_node_ref();
 
-    let msg = use_reducer(|| Message {
-        inner: "No message yet.".to_string(),
-        gl: None,
-        renderer: None,
-    });
+    // let msg = use_reducer(|| Message {
+    //     inner: "No message yet.".to_string(),
+    //     gl: None,
+    // });
 
     {
         let canvas_ref = canvas_ref.clone();
-        let msg = msg.clone();
+        let renderer_ctx = renderer_ctx.clone();
+        // let msg = msg.clone();
         use_effect_with_deps(
-            move |(msg, canvas_ref)| {
+            move |canvas_ref| {
                 let canvas = canvas_ref
                     .cast::<HtmlCanvasElement>()
                     .expect("canvas_ref not attached to a canvas element");
@@ -227,13 +235,13 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
 
                 console::log!("GL context created");
 
-                msg.dispatch((
-                    "GL context created".to_string(),
-                    None,
-                    // Some(Renderer::new(gl)),
-                ));
+                (*renderer_ctx.renderer).borrow_mut().bind_gl(gl);
+
+                move || {
+                    (*renderer_ctx.renderer).borrow_mut().unbind_gl();
+                }
             },
-            (msg, canvas_ref),
+            canvas_ref,
         );
     }
 
@@ -249,9 +257,9 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
     );
 
     html! {
-        <ContextProvider<MessageContext> context={msg}>
+        <ContextProvider<RendererContext> context={(*renderer_ctx).clone()}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
             {props.children.clone()}
-        </ContextProvider<MessageContext>>
+        </ContextProvider<RendererContext>>
     }
 }

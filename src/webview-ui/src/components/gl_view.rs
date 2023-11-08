@@ -1,19 +1,22 @@
 use gloo::console;
 use gloo_timers::callback::Interval;
-use std::{cell::RefCell, borrow::BorrowMut};
 use std::rc::Rc;
+use std::{cell::RefCell};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, HtmlElement, WebGlRenderingContext};
 use yew::prelude::*;
 use yew_hooks::use_raf;
 
+use crate::components::glcontext::RendererContext;
 use crate::renderer::{InSingleViewName, InViewName, Renderer};
 
 // use crate::components::glcontext::use_gl_context;
 // use crate::components::GL;
 
 #[derive(Properties, PartialEq)]
-pub struct Props {}
+pub struct Props {
+    pub view_name: InViewName,
+}
 
 #[function_component]
 pub fn GLView(props: &Props) -> Html {
@@ -22,6 +25,19 @@ pub fn GLView(props: &Props) -> Html {
 
     // let elapsedgc = use_raf(5000, 1000);
     let glctx = use_context::<crate::components::glcontext::MessageContext>();
+
+    let renderer_ctx = use_context::<RendererContext>();
+    if let Some(renderer_ctx) = renderer_ctx {
+        console::log!("GLView got renderer");
+        let renderer = renderer_ctx.renderer;
+        // *renderer.borrow_mut() += 1;
+        (*renderer.borrow_mut()).register(
+            props.view_name.clone(),
+            div_ref.clone(),
+        );
+    } else {
+        console::log!("GLView no renderer");
+    }
 
     if glctx.is_none() {
         html! {

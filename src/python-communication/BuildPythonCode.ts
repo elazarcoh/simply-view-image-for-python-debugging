@@ -3,7 +3,6 @@ import SOCKET_CLIENT from "../python/socket_client.py?raw";
 import Container from "typedi";
 import { AllViewables } from "../AllViewables";
 import { indent } from "../utils/Utils";
-import { ObjectType } from "../from-python-serialization/SocketSerialization";
 
 export const PYTHON_MODULE_NAME = "_python_view_image_mod";
 const SETUP_RESULT_VARIABLE_NAME = `${PYTHON_MODULE_NAME}_setup_result`;
@@ -183,9 +182,10 @@ export function constructOpenSendAndCloseCode(
     port: number,
     request_id: number,
     expression: string,
-    type: ObjectType,
+    // type: ObjectType,
 ): EvalCodePython<Except<PythonObjectShape>> {
     return convertExpressionIntoValueWrappedExpression(
-        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${type.valueOf()})`
+        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${0})`
+        // `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${type.valueOf()})`
     );
 }

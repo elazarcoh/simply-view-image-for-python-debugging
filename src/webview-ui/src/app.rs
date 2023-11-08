@@ -11,6 +11,7 @@ use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
+use crate::communication::websocket_client::try_websocket;
 use crate::components::main::Main;
 
 use crate::configurations;
@@ -217,28 +218,8 @@ pub fn App() -> Html {
     // });
 
     // TODO: remove this
-    let dispatch = Dispatch::<AppState>::new();
-    let onclick = dispatch.apply_callback(|_| {
-        StoreAction::UpdateImages(vec![
-            (
-                ImageId::generate(),
-                ImageData::new(ImageInfo {
-                    expression: "image1".to_string(),
-                    shape: vec![10, 10, 4],
-                    data_type: "uint8".to_string(),
-                    value_variable_kind: ValueVariableKind::Variable,
-                }),
-            ),
-            (
-                ImageId::generate(),
-                ImageData::new(ImageInfo {
-                    expression: "image2".to_string(),
-                    shape: vec![20, 20, 4],
-                    data_type: "np.float32".to_string(),
-                    value_variable_kind: ValueVariableKind::Variable,
-                }),
-            ),
-        ])
+    let onclick = Callback::from(|_| {
+        try_websocket();
     });
 
     let main_style = use_style!(

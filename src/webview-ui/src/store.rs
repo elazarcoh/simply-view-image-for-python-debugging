@@ -34,6 +34,7 @@ impl ImagesDrawingOptions {
         self.by_id.get(image_id).cloned().unwrap_or({
             DrawingOptions {
                 coloring: crate::image_view::types::Coloring::Default,
+                invert: false,
             }
         })
     }

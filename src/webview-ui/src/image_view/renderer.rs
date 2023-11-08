@@ -19,6 +19,7 @@ use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
+use super::color_matix::calculate_color_matrix;
 use super::constants::VIEW_SIZE;
 use super::pixel_text_rendering::{
     PixelLoc, PixelTextCache, PixelTextRenderer, PixelTextRenderingData, PixelValue,
@@ -342,7 +343,8 @@ impl Renderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
-        let color_multiplier = rendering_context.coloring_matrix(image_view_data.image_id.as_ref().unwrap());
+        let drawing_options = rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
+        let color_multiplier = calculate_color_matrix(&texture.image.info, &drawing_options);
 
         gl.use_program(Some(&program.program));
         set_uniforms(
@@ -353,6 +355,7 @@ impl Renderer {
                 ("u_enable_borders", UniformValue::Bool(&enable_borders)),
                 ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
                 ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
+                ("u_invert", UniformValue::Bool(&drawing_options.invert)),
             ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);

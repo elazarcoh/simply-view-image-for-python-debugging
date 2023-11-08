@@ -21,6 +21,7 @@ pub enum Coloring {
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DrawingOptions {
     pub coloring: Coloring,
+    pub invert: bool,
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

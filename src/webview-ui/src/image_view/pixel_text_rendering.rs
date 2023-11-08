@@ -103,40 +103,58 @@ impl PixelValue {
             .join("\n")
     }
 
-    fn as_rgb_f32(&self) -> glam::Vec3 {
-        let mut rgb = [0.0, 0.0, 0.0];
+    fn text_color(&self) -> Vec4 {
+        let multipliers: [f32; 3] = match self.num_channels {
+            1 => [1.0, 0.0, 0.0],
+            2 => [0.51, 0.49, 0.0],
+            3 | 4 => [0.299, 0.587, 0.114],
+            _ => panic!("Unsupported number of channels: {}", self.num_channels),
+        };
+        let mut gray = 0.0;
         let bytes_per_element = match self.datatype {
             Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
             Datatype::Uint16 | Datatype::Int16 => 2,
             Datatype::Float32 => 4,
         };
-        (0..3).for_each(|c| {
+        let cs = usize::min(self.num_channels as usize, 3);
+        #[rustfmt::skip]
+        (0..cs).for_each(|c| {
             let start = c * bytes_per_element;
             let end = start + bytes_per_element;
             let bytes = &self.bytes[start..end];
             match self.datatype {
-                Datatype::Uint8 => rgb[c] = u8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
-                Datatype::Int8 => rgb[c] = i8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
-                Datatype::Uint16 => {
-                    rgb[c] = u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0
-                }
-                Datatype::Int16 => {
-                    rgb[c] = i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0
-                }
-                Datatype::Float32 => {
-                    rgb[c] = f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
-                }
-                Datatype::Bool => rgb[c] = (bytes[0] != 0) as u8 as f32,
+                Datatype::Uint8 => gray += multipliers[c] * u8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
+                Datatype::Int8 => gray += multipliers[c] * i8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
+                Datatype::Uint16 =>  gray += multipliers[c] * u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+                Datatype::Int16 =>  gray += multipliers[c] * i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+                Datatype::Float32 =>  gray += multipliers[c] * f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                Datatype::Bool => gray += (bytes[0] != 0) as u8 as f32,
             }
         });
-        glam::Vec3::from(rgb)
-    }
 
-    fn text_color(&self) -> Vec4 {
-        let rgb_f32 = self.as_rgb_f32();
-        let gray = rgb_f32.x * 0.299 + rgb_f32.y * 0.587 + rgb_f32.z * 0.114;
-        let gray = 1.0 - f32::floor(gray + 0.5);
-        Vec4::new(gray, gray, gray, 1.0)
+        #[rustfmt::skip]
+        let alpha = if self.num_channels < 4 {
+            1.0
+        } else {
+            let start = 3 * bytes_per_element;
+            let end = start + bytes_per_element;
+            let bytes = &self.bytes[start..end];
+            match self.datatype {
+                Datatype::Uint8 => u8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
+                Datatype::Int8 => i8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
+                Datatype::Uint16 => u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+                Datatype::Int16 => i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+                Datatype::Float32 => f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                Datatype::Bool => (bytes[0] != 0) as u8 as f32,
+            }
+        };
+
+        if alpha < 0.5 {
+            Vec4::new(0.0, 0.0, 0.0, 1.0)
+        } else {
+            let text_color = 1.0 - f32::floor(gray + 0.5);
+            Vec4::new(text_color, text_color, text_color, 1.0)
+        }
     }
 }
 

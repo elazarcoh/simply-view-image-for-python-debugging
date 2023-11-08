@@ -22,6 +22,7 @@ use crate::image_view::renderer::Renderer;
 use crate::image_view::rendering_context::CameraContext;
 use crate::image_view::rendering_context::ImageViewData;
 use crate::image_view::rendering_context::RenderingContext;
+use crate::image_view::types::DrawingOptions;
 use crate::image_view::types::ImageId;
 use crate::image_view::types::TextureImage;
 use crate::image_view::types::ViewId;
@@ -84,17 +85,13 @@ fn rendering_context() -> impl RenderingContext {
             dispatch.get().configuration.rendering.clone()
         }
 
-        fn coloring_matrix(&self, image_id: &ImageId) -> glam::Mat4 {
+        fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions {
             let dispatch = Dispatch::<AppState>::new();
-            let drawing_options = dispatch
+            dispatch
                 .get()
                 .drawing_options
                 .borrow()
-                .get_or_default(image_id);
-            calculate_color_matrix(
-                dispatch.get().images.borrow().by_id.get(image_id).unwrap(),
-                &drawing_options,
-            )
+                .get_or_default(image_id)
         }
     }
 
@@ -215,7 +212,6 @@ pub fn App() -> Html {
             renderer
                 .borrow_mut()
                 .set_rendering_context(Rc::new(rendering_context()));
-
 
             // TODO: remove this
             crate::tmp_for_debug::set_debug_images(&gl);

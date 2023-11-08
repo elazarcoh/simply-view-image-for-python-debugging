@@ -6,7 +6,7 @@ use crate::configurations::RenderingConfiguration;
 
 use super::{
     camera::Camera,
-    types::{ImageId, ViewId, TextureImage},
+    types::{ImageId, ViewId, TextureImage, DrawingOptions},
 };
 
 pub struct ImageViewData {
@@ -21,7 +21,7 @@ pub trait RenderingContext {
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
-    fn coloring_matrix(&self, image_id: &ImageId) -> glam::Mat4;
+    fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions;
 }
 
 pub trait CameraContext {

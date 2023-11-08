@@ -15,7 +15,7 @@ use crate::{
 static_assertions::const_assert_eq!(Channels::COUNT, 4); // If this is failing, you need to update the code below
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct PixelValue {
+pub(crate) struct PixelValue {
     pub num_channels: Channels,
     pub datatype: Datatype,
     pub bytes: [u8; 32], // we need at most: 4 channels * 8 bytes per channel
@@ -47,7 +47,7 @@ impl Display for PixelValue {
 }
 
 impl PixelValue {
-    pub fn new(num_channels: Channels, datatype: Datatype) -> Self {
+    pub(crate) fn new(num_channels: Channels, datatype: Datatype) -> Self {
         Self {
             num_channels,
             datatype,
@@ -55,7 +55,7 @@ impl PixelValue {
         }
     }
 
-    pub fn from_image(image: &LocalImageData, pixel: &UVec2) -> Self {
+    pub(crate) fn from_image(image: &LocalImageData, pixel: &UVec2) -> Self {
         let c = image.info.channels;
         let pixel_index = (pixel.x + pixel.y * image.info.width) as usize;
         let bytes_per_element = image.info.datatype.num_bytes();
@@ -71,7 +71,7 @@ impl PixelValue {
         }
     }
 
-    pub fn get<T: Pod>(&self, channel: u32) -> &T {
+    pub(crate) fn get<T: Pod>(&self, channel: u32) -> &T {
         debug_assert!(channel < self.num_channels as u32);
         let bytes_per_element = self.datatype.num_bytes();
         let start = channel as usize * bytes_per_element;
@@ -80,7 +80,7 @@ impl PixelValue {
         bytemuck::from_bytes::<T>(bytes)
     }
 
-    pub fn get_mut<T: Pod>(&mut self, channel: u32) -> &mut T {
+    pub(crate) fn get_mut<T: Pod>(&mut self, channel: u32) -> &mut T {
         debug_assert!(channel < self.num_channels as u32);
         let bytes_per_element = self.datatype.num_bytes();
         let start = channel as usize * bytes_per_element;
@@ -89,7 +89,7 @@ impl PixelValue {
         bytemuck::from_bytes_mut::<T>(bytes)
     }
 
-    pub fn fill<T: Pod>(&mut self, value: T) {
+    pub(crate) fn fill<T: Pod>(&mut self, value: T) {
         for channel in 0..self.num_channels.into() {
             *self.get_mut::<T>(channel) = value;
         }
@@ -97,7 +97,7 @@ impl PixelValue {
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Coloring {
+pub(crate) enum Coloring {
     Default,
     Grayscale,
     R,
@@ -111,7 +111,7 @@ pub enum Coloring {
 #[derive(
     Builder, tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash,
 )]
-pub struct DrawingOptions {
+pub(crate) struct DrawingOptions {
     pub coloring: Coloring,
     pub invert: bool,
     pub high_contrast: bool,
@@ -130,7 +130,7 @@ impl Default for DrawingOptions {
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ImageId(String);
+pub(crate) struct ImageId(String);
 
 impl Display for ImageId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -139,28 +139,28 @@ impl Display for ImageId {
 }
 
 impl ImageId {
-    pub fn generate() -> Self {
+    pub(crate) fn generate() -> Self {
         let uuid = uuid::Uuid::new_v4();
         Self(uuid.to_string())
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum ViewId {
+pub(crate) enum ViewId {
     Primary,
 }
 
-pub fn all_views() -> Vec<ViewId> {
+pub(crate) fn all_views() -> Vec<ViewId> {
     vec![ViewId::Primary]
 }
 
-pub struct TextureImage {
+pub(crate) struct TextureImage {
     pub image: LocalImageData,
     pub texture: GLGuard<web_sys::WebGlTexture>,
 }
 
 impl TextureImage {
-    pub fn try_new(
+    pub(crate) fn try_new(
         image: crate::communication::incoming_messages::ImageData,
         gl: &web_sys::WebGl2RenderingContext,
     ) -> Result<Self, String> {
@@ -183,7 +183,7 @@ impl TextureImage {
         Ok(Self { image, texture })
     }
 
-    pub fn image_size(&self) -> Size {
+    pub(crate) fn image_size(&self) -> Size {
         Size {
             width: self.image.info.width as f32,
             height: self.image.info.height as f32,

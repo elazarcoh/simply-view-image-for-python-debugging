@@ -5,7 +5,6 @@ use glam::{Mat3, UVec2, Vec4};
 
 use glyph_brush_draw_cache::{DrawCache, Rectangle};
 use glyph_brush_layout::{GlyphPositioner, Layout, SectionGeometry, SectionText};
-use image::DynamicImage;
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
@@ -22,7 +21,7 @@ use crate::{
 
 use super::types::PixelValue;
 
-pub struct PixelTextRenderer {
+pub(crate) struct PixelTextRenderer {
     gl: WebGl2RenderingContext,
     font: FontArc,
     glyph_texture: GlyphTexture,
@@ -355,7 +354,7 @@ pub(super) struct PixelTextRenderingData<'a> {
 }
 
 impl PixelTextRenderer {
-    pub fn try_new(gl: &WebGl2RenderingContext) -> Result<Self, String> {
+    pub(crate) fn try_new(gl: &WebGl2RenderingContext) -> Result<Self, String> {
         let font =
             FontArc::try_from_slice(include_bytes!("../../assets/fonts/ChakraPetch-Regular.ttf"))
                 .map_err(|e| e.to_string())?;

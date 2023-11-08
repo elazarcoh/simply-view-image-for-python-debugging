@@ -229,7 +229,7 @@ fn create_attributes_setters(
     Ok(attrib_setters)
 }
 
-pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformValue>) {
+pub(crate) fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformValue>) {
     uniforms
         .iter()
         .for_each(|(name, value)| match program.uniform_setters.get(*name) {
@@ -241,7 +241,7 @@ pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformVal
         });
 }
 
-pub fn set_buffers_and_attributes<B>(program: &ProgramBundle, buffer_info: &BufferInfo<B>)
+pub(crate) fn set_buffers_and_attributes<B>(program: &ProgramBundle, buffer_info: &BufferInfo<B>)
 where
     B: GLBuffer,
 {
@@ -262,7 +262,7 @@ where
     }
 }
 
-pub fn create_program_bundle(
+pub(crate) fn create_program_bundle(
     gl: &GL,
     vertex_shader: &str,
     fragment_shader: &str,
@@ -332,7 +332,7 @@ pub fn create_program_bundle(
         error = "::derive_builder::UninitializedFieldError"
     )
 )]
-pub struct GLProgramBuilder<'a> {
+pub(crate) struct GLProgramBuilder<'a> {
     #[builder(setter(custom))]
     gl: &'a GL,
 
@@ -344,7 +344,7 @@ pub struct GLProgramBuilder<'a> {
 }
 
 impl<'a> GLProgramBuilder<'a> {
-    pub fn create(gl: &GL) -> GLProgramBuilderBuilder<'_> {
+    pub(crate) fn create(gl: &GL) -> GLProgramBuilderBuilder<'_> {
         GLProgramBuilderBuilder {
             gl: Some(gl),
             ..GLProgramBuilderBuilder::empty()
@@ -353,7 +353,7 @@ impl<'a> GLProgramBuilder<'a> {
 }
 
 impl<'a> GLProgramBuilderBuilder<'a> {
-    pub fn build(self) -> Result<ProgramBundle, String> {
+    pub(crate) fn build(self) -> Result<ProgramBundle, String> {
         self.fallible_build()
             .map_err(|e| format!("GLProgramBuilder error: {}", e))
             .and_then(|b| {

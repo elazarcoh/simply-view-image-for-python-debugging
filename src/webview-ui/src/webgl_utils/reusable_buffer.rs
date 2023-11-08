@@ -6,7 +6,7 @@ use crate::webgl_utils::BindingPoint;
 
 use super::{GLDrop, GLBuffer};
 
-pub struct ReusableBuffer {
+pub(crate) struct ReusableBuffer {
     gl: WebGl2RenderingContext,
     buf: WebGlBuffer,
     size: usize,
@@ -35,7 +35,7 @@ impl GLBuffer for ReusableBuffer {
 
 
 impl ReusableBuffer {
-    pub fn new(gl: WebGl2RenderingContext, size: usize) -> Result<Self, String> {
+    pub(crate) fn new(gl: WebGl2RenderingContext, size: usize) -> Result<Self, String> {
 
         let buf = gl.create_buffer().ok_or("Couldn't create buffer.")?;
         gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buf));
@@ -48,7 +48,7 @@ impl ReusableBuffer {
         Ok(Self { buf, gl, size })
     }
 
-    pub fn set_content(&mut self, content: &[u8], offset: usize) -> Result<(), String> {
+    pub(crate) fn set_content(&mut self, content: &[u8], offset: usize) -> Result<(), String> {
         if content.len() > self.size {
             self.gl.delete_buffer(Some(&self.buf));
 

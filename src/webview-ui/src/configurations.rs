@@ -3,7 +3,7 @@
 
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct RenderingConfiguration {
+pub(crate) struct RenderingConfiguration {
     pub minimum_size_to_render_pixel_border: usize,
     pub minimum_size_to_render_pixel_values: usize,
 }
@@ -17,7 +17,7 @@ impl Default for RenderingConfiguration {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct Configuration {
+pub(crate) struct Configuration {
     pub rendering: RenderingConfiguration,
 }
 
@@ -48,7 +48,7 @@ pub struct Configuration {
 // }
 
 // #[function_component]
-// pub fn ConfigurationProvider(props: &ConfigurationProviderProps) -> Html {
+// pub(crate) fn ConfigurationProvider(props: &ConfigurationProviderProps) -> Html {
 //     let msg = use_reducer(Configuration::default);
 
 //     html! {

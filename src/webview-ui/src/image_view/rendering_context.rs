@@ -9,13 +9,13 @@ use super::{
     types::{DrawingOptions, ImageId, TextureImage, ViewId},
 };
 
-pub struct ImageViewData {
+pub(crate) struct ImageViewData {
     pub html_element: HtmlElement,
     pub image_id: Option<ImageId>,
     pub camera: Camera,
 }
 
-pub trait RenderingContext {
+pub(crate) trait RenderingContext {
     fn gl(&self) -> WebGl2RenderingContext;
     fn visible_nodes(&self) -> Vec<ViewId>;
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
@@ -28,7 +28,7 @@ pub trait RenderingContext {
     ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>, String>;
 }
 
-pub trait ViewContext {
+pub(crate) trait ViewContext {
     fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size>;
     fn get_camera_for_view(&self, view_id: ViewId) -> Camera;
     fn set_camera_for_view(&self, view_id: ViewId, camera: Camera);

@@ -1,5 +1,5 @@
 
-pub fn projection(
+pub(crate) fn projection(
     width: f32,
     height: f32,
 ) -> glam::Mat3 {

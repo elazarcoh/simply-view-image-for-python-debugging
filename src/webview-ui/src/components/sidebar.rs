@@ -46,10 +46,10 @@ fn Toolbar(props: &ToolbarProps) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
-pub struct RefreshButtonProps {}
+pub(crate) struct RefreshButtonProps {}
 
 #[function_component]
-pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
+pub(crate) fn RefreshButton(props: &RefreshButtonProps) -> Html {
     let RefreshButtonProps {} = props;
 
     let is_loading = use_state(|| false);
@@ -71,10 +71,10 @@ pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
-pub struct SidebarProps {}
+pub(crate) struct SidebarProps {}
 
 #[function_component]
-pub fn Sidebar(props: &SidebarProps) -> Html {
+pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     let SidebarProps {} = props;
 
     let node_ref = use_node_ref();

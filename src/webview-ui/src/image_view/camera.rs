@@ -5,7 +5,7 @@ use crate::{common::Size, math_utils};
 use super::types::{all_views, ViewId};
 
 #[derive(Copy, Clone)]
-pub struct Camera {
+pub(crate) struct Camera {
     pub translation: glam::Vec2,
     pub zoom: f32,
 }
@@ -20,7 +20,7 @@ impl Default for Camera {
 }
 
 impl Camera {
-    pub fn as_matrix(&self) -> glam::Mat3 {
+    pub(crate) fn as_matrix(&self) -> glam::Mat3 {
         let zoom_scale = 1.0_f32 / self.zoom;
         glam::Mat3::from_scale_angle_translation(
             glam::Vec2::new(zoom_scale, zoom_scale),
@@ -30,20 +30,20 @@ impl Camera {
     }
 }
 
-pub struct ViewsCameras(HashMap<ViewId, Rc<RefCell<Camera>>>);
+pub(crate) struct ViewsCameras(HashMap<ViewId, Rc<RefCell<Camera>>>);
 
 impl ViewsCameras {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(all_views()
                 .into_iter()
                 .map(|v| (v, Rc::new(RefCell::new(Camera::default()))))
                 .collect())
     }
-    pub fn get(&self, view_id: ViewId) -> Camera {
+    pub(crate) fn get(&self, view_id: ViewId) -> Camera {
         self.0.get(&view_id).unwrap().borrow().to_owned()
     }
 
-    pub fn set(&mut self, view_id: ViewId, camera: Camera) {
+    pub(crate) fn set(&mut self, view_id: ViewId, camera: Camera) {
         self.0.get(&view_id).unwrap().replace(camera);
     }
 }
@@ -54,7 +54,7 @@ impl Default for ViewsCameras {
     }
 }
 
-pub fn calculate_view_projection(
+pub(crate) fn calculate_view_projection(
     canvas_size: &Size,
     view_size: &Size,
     camera: &Camera,

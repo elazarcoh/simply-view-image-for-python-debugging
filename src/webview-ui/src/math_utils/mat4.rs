@@ -1,7 +1,7 @@
 use glam::Mat4;
 
 #[rustfmt::skip]
-pub const fn transpose(mat: &Mat4) -> Mat4 {
+pub(crate) const fn transpose(mat: &Mat4) -> Mat4 {
     let as_array: [f32; 16] = mat.to_cols_array();
     Mat4::from_cols_array(&[
         as_array[0], as_array[4], as_array[8], as_array[12],

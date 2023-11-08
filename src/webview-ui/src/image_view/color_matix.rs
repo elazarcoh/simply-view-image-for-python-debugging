@@ -191,7 +191,7 @@ fn stretch_values_matrix(
 
 }
 
-pub fn calculate_color_matrix(
+pub(crate) fn calculate_color_matrix(
     image_info: &ImageInfo,
     image_computed_info: &ComputedInfo,
     drawing_options: &DrawingOptions,

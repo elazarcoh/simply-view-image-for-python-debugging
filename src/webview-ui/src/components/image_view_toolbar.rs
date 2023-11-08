@@ -2,10 +2,10 @@
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
-pub struct ImageViewToolbarProps {}
+pub(crate) struct ImageViewToolbarProps {}
 
 #[function_component]
-pub fn ImageViewToolbar(props: &ImageViewToolbarProps) -> Html {
+pub(crate) fn ImageViewToolbar(props: &ImageViewToolbarProps) -> Html {
     let ImageViewToolbarProps {} = props;
     html! {
         <div></div>

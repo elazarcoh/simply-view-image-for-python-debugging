@@ -17,7 +17,7 @@ pub(crate) struct ColorMap {
 }
 
 impl ColorMap {
-    pub const fn new(name: &'static str, kind: ColorMapKind, map: &'static [[f32; 3]]) -> Self {
+    pub(crate)const fn new(name: &'static str, kind: ColorMapKind, map: &'static [[f32; 3]]) -> Self {
         Self {
             name: Cow::Borrowed(name),
             kind,

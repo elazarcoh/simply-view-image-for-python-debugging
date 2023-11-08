@@ -1,3 +1,2 @@
-pub mod incoming_messages;
-pub mod server_requests;
-pub mod common;
+pub(crate) mod incoming_messages;
+pub(crate) mod common;

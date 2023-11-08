@@ -21,7 +21,7 @@ use super::types::{all_views, ImageId, ViewId};
 //     }
 // }
 
-pub struct ImageViews(HashMap<ViewId, (Option<ImageId>, NodeRef)>);
+pub(crate) struct ImageViews(HashMap<ViewId, (Option<ImageId>, NodeRef)>);
 
 impl ImageViews {
     fn new() -> Self {
@@ -33,7 +33,7 @@ impl ImageViews {
         ))
     }
 
-    pub fn is_visible(
+    pub(crate) fn is_visible(
         &self,
         _view_id: &ViewId,
         image_id: &Option<ImageId>,
@@ -43,7 +43,7 @@ impl ImageViews {
         node_ref.cast::<HtmlElement>().is_some() && image_id.is_some()
     }
 
-    pub fn visible_views(&self) -> Vec<ViewId> {
+    pub(crate) fn visible_views(&self) -> Vec<ViewId> {
         self.0
             .iter()
             .filter(|(v, (image_id, node_ref))| self.is_visible(v, image_id, node_ref))
@@ -51,15 +51,15 @@ impl ImageViews {
             .collect::<Vec<_>>()
     }
 
-    pub fn get_node_ref(&self, view_id: ViewId) -> NodeRef {
+    pub(crate) fn get_node_ref(&self, view_id: ViewId) -> NodeRef {
         self.0.get(&view_id).unwrap().1.clone()
     }
 
-    pub fn get_image_id(&self, view_id: ViewId) -> Option<ImageId> {
+    pub(crate) fn get_image_id(&self, view_id: ViewId) -> Option<ImageId> {
         self.0.get(&view_id).unwrap().0.clone()
     }
     
-    pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
+    pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
         view.0 = Some(image_id);
     }

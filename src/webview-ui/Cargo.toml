@@ -15,9 +15,7 @@ crate-type = ["cdylib"]
 lto = true
 
 [features]
-use-image = ["image"]
-
-default = ["console_error_panic_hook", "console_log", "use-image"]
+default = ["console_error_panic_hook", "console_log"]
 
 [dependencies]
 wasm-bindgen = "0.2.87"

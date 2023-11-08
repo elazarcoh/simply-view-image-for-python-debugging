@@ -1,12 +1,12 @@
 // based on twgl
-pub mod types;
-pub mod general;
-pub use types::*;
-pub mod constants;
-pub mod program;
-pub mod attributes;
-pub mod textures;
-pub mod draw;
-pub mod reusable_buffer;
-pub mod utils;
+pub(crate) mod types;
+pub(crate) mod general;
+pub(crate) use types::*;
+pub(crate) mod constants;
+pub(crate) mod program;
+pub(crate) mod attributes;
+pub(crate) mod textures;
+pub(crate) mod draw;
+pub(crate) mod reusable_buffer;
+pub(crate) mod utils;
 

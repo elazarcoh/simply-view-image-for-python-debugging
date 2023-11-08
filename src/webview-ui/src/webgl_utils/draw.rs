@@ -2,7 +2,7 @@ use web_sys::WebGl2RenderingContext as GL;
 
 use super::types::*;
 
-pub fn draw_buffer_info<B>(gl: &GL, buffer_info: &BufferInfo<B>, draw_mode: DrawMode)
+pub(crate) fn draw_buffer_info<B>(gl: &GL, buffer_info: &BufferInfo<B>, draw_mode: DrawMode)
 where
     B: GLBuffer,
 {

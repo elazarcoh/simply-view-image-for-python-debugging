@@ -9246,7 +9246,7 @@ fn matrix_4x4_with_scientific_nan_inf(gl: &WebGl2RenderingContext) -> TextureIma
 }
 
 #[cfg(debug_assertions)]
-pub fn set_debug_images(gl: &WebGl2RenderingContext) {
+pub(crate) fn set_debug_images(gl: &WebGl2RenderingContext) {
     let dispatch = Dispatch::<AppState>::new();
 
     log::debug!("creating debug image texture");

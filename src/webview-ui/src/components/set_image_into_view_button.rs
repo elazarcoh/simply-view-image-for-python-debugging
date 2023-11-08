@@ -2,12 +2,12 @@ use stylist::{yew::use_style, css};
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
-pub struct SetImageIntoViewButtonProps {
+pub(crate) struct SetImageIntoViewButtonProps {
     // on_click: Callback<()>,
 }
 
 #[function_component]
-pub fn SetImageIntoViewButton(props: &SetImageIntoViewButtonProps) -> Html {
+pub(crate) fn SetImageIntoViewButton(props: &SetImageIntoViewButtonProps) -> Html {
     let SetImageIntoViewButtonProps {} = props;
     let button_group_style = use_style!(
         r#"

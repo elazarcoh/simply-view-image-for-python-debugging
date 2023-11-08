@@ -5,7 +5,7 @@ use crate::{common::Size, image_view::constants::VIEW_SIZE};
 use super::ToHom;
 
 #[derive(Debug)]
-pub struct PixelsInformation {
+pub(crate) struct PixelsInformation {
     pub lower_x_px: i32,
     pub lower_y_px: i32,
     pub upper_x_px: i32,
@@ -14,7 +14,7 @@ pub struct PixelsInformation {
     pub image_pixel_size_device: i32, // assume square pixels
 }
 
-pub fn calculate_pixels_information(
+pub(crate) fn calculate_pixels_information(
     image_size: &Size,
     view_projection: &Mat3,
     rendered_area_size: &Size,

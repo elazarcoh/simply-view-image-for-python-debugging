@@ -11,10 +11,10 @@ use crate::{
 };
 
 #[derive(PartialEq, Properties)]
-pub struct ImageSelectionListProps {}
+pub(crate) struct ImageSelectionListProps {}
 
 #[function_component]
-pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
+pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let images_data = use_selector(|state: &AppState| state.images.clone());
 
     let ImageSelectionListProps {} = props;

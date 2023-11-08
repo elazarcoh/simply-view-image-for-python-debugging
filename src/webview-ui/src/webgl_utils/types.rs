@@ -10,15 +10,15 @@ use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
 
 use super::attributes::IntoJsArray;
-pub use super::constants::*;
+pub(crate) use super::constants::*;
 
-pub type GLConstant = u32;
+pub(crate) type GLConstant = u32;
 
-pub trait GLValue: GLVerifyType + GLSet {}
+pub(crate) trait GLValue: GLVerifyType + GLSet {}
 impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 
 #[enum_dispatch(GLVerifyType, GLSet)]
-pub enum UniformValue<'a> {
+pub(crate) enum UniformValue<'a> {
     Int(&'a i32),
     Float(&'a f32),
     Bool(&'a bool),
@@ -31,17 +31,17 @@ pub enum UniformValue<'a> {
     Mat4(&'a glam::Mat4),
 }
 
-pub type UniformSetter = Box<dyn Fn(&GL, &UniformValue)>;
-pub type AttributeSetterFunction = Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>;
+pub(crate) type UniformSetter = Box<dyn Fn(&GL, &UniformValue)>;
+pub(crate) type AttributeSetterFunction = Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>;
 
-pub struct AttributeSetter {
+pub(crate) struct AttributeSetter {
     pub index: u32,
     pub setter: AttributeSetterFunction,
 }
 
-pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
+pub(crate) type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
 
-pub trait ElementTypeFor {
+pub(crate) trait ElementTypeFor {
     const ELEMENT_TYPE: ElementType;
 }
 
@@ -69,7 +69,7 @@ impl<T: ElementTypeFor> ElementTypeFor for Vec<T> {
     const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
 }
 
-pub struct ArraySpec<T: IntoJsArray> {
+pub(crate) struct ArraySpec<T: IntoJsArray> {
     pub num_components: usize,
     pub name: String,
     pub data: T,
@@ -78,7 +78,7 @@ pub struct ArraySpec<T: IntoJsArray> {
     pub target: BindingPoint,
 }
 
-pub trait GLBuffer {
+pub(crate) trait GLBuffer {
     fn bind(&self, gl: &GL, target: BindingPoint);
 }
 
@@ -94,7 +94,7 @@ impl GLBuffer for GLGuard<WebGlBuffer> {
     }
 }
 
-pub struct AttribInfo {
+pub(crate) struct AttribInfo {
     pub name: String,
     pub num_components: usize,
     pub gl_type: ElementType,
@@ -104,7 +104,7 @@ pub struct AttribInfo {
     //  divisor:       array.divisor === undefined ? undefined : array.divisor,
     //  drawType:      array.drawType,
 }
-pub struct Attrib<B = GLGuard<WebGlBuffer>>
+pub(crate) struct Attrib<B = GLGuard<WebGlBuffer>>
 where
     B: GLBuffer,
 {
@@ -112,7 +112,7 @@ where
     pub info: AttribInfo,
 }
 
-pub struct BufferInfo<B = GLGuard<WebGlBuffer>>
+pub(crate) struct BufferInfo<B = GLGuard<WebGlBuffer>>
 where
     B: GLBuffer,
 {
@@ -126,17 +126,17 @@ where
     B: GLBuffer,
 {
     #[allow(dead_code)]
-    pub fn get_attrib(&self, name: &str) -> Option<&Attrib<B>> {
+    pub(crate) fn get_attrib(&self, name: &str) -> Option<&Attrib<B>> {
         self.attribs.iter().find(|attrib| attrib.info.name == name)
     }
-    pub fn get_attrib_mut(&mut self, name: &str) -> Option<&mut Attrib<B>> {
+    pub(crate) fn get_attrib_mut(&mut self, name: &str) -> Option<&mut Attrib<B>> {
         self.attribs
             .iter_mut()
             .find(|attrib| attrib.info.name == name)
     }
 }
 
-pub struct ProgramBundle {
+pub(crate) struct ProgramBundle {
     pub gl: GL,
     pub program: WebGlProgram,
     pub shaders: Vec<WebGlShader>,
@@ -153,7 +153,7 @@ impl Drop for ProgramBundle {
 
 #[derive(Debug, Builder)]
 #[builder(setter(into, strip_option))]
-pub struct CreateTextureParameters {
+pub(crate) struct CreateTextureParameters {
     #[builder(default)]
     pub mag_filter: Option<TextureMagFilter>,
     #[builder(default)]
@@ -164,7 +164,7 @@ pub struct CreateTextureParameters {
     pub wrap_t: Option<TextureWrap>,
 }
 
-pub trait GLDrop {
+pub(crate) trait GLDrop {
     fn drop(&self, gl: &GL);
 }
 
@@ -192,7 +192,7 @@ impl GLDrop for WebGlTexture {
     }
 }
 
-pub struct GLGuard<T: GLDrop> {
+pub(crate) struct GLGuard<T: GLDrop> {
     pub gl: GL,
     pub obj: T,
 }
@@ -217,19 +217,19 @@ impl<T: GLDrop> Deref for GLGuard<T> {
     }
 }
 
-pub fn gl_guarded<T: GLDrop, E>(
+pub(crate) fn gl_guarded<T: GLDrop, E>(
     gl: GL,
     f: impl FnOnce(&GL) -> Result<T, E>,
 ) -> Result<GLGuard<T>, E> {
     f(&gl).map(move |obj| GLGuard { gl, obj })
 }
 
-pub fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
+pub(crate) fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
     mem::replace(&mut guard.obj, JsCast::unchecked_into(JsValue::UNDEFINED))
 }
 
 // #[enum_dispatch]
-pub trait GLSet {
+pub(crate) trait GLSet {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation);
 }
 
@@ -282,7 +282,7 @@ impl GLSet for &glam::Mat4 {
 }
 
 // #[enum_dispatch]
-pub trait GLVerifyType {
+pub(crate) trait GLVerifyType {
     fn verify(&self, expected_type: GLConstant) -> Result<(), String>;
 }
 
@@ -354,43 +354,5 @@ impl GLVerifyType for &glam::Mat3 {
 impl GLVerifyType for &glam::Mat4 {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_MAT4, gl_type)
-    }
-}
-
-// image crate integration
-cfg_if! {
-    if #[cfg(feature = "image")]
-    {
-    use image;
-
-    impl<T: ElementTypeFor> ElementTypeFor for image::Rgb<T> {
-        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
-    }
-    impl<T: ElementTypeFor> ElementTypeFor for image::Rgba<T> {
-        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
-    }
-    impl<T: ElementTypeFor> ElementTypeFor for image::Luma<T> {
-        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
-    }
-    impl<T: ElementTypeFor> ElementTypeFor for image::LumaA<T> {
-        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
-    }
-
-    pub fn element_type_for_dynamic_image(img: &image::DynamicImage) -> ElementType {
-        match img {
-            image::DynamicImage::ImageLuma8(_) => ElementType::UnsignedByte,
-            image::DynamicImage::ImageLumaA8(_) => ElementType::UnsignedByte,
-            image::DynamicImage::ImageRgb8(_) => ElementType::UnsignedByte,
-            image::DynamicImage::ImageRgba8(_) => ElementType::UnsignedByte,
-            image::DynamicImage::ImageLuma16(_) => ElementType::UnsignedShort,
-            image::DynamicImage::ImageLumaA16(_) => ElementType::UnsignedShort,
-            image::DynamicImage::ImageRgb16(_) => ElementType::UnsignedShort,
-            image::DynamicImage::ImageRgba16(_) => ElementType::UnsignedShort,
-            image::DynamicImage::ImageRgb32F(_) => ElementType::Float,
-            image::DynamicImage::ImageRgba32F(_) => ElementType::Float,
-            _ => unimplemented!(),
-        }
-    }
-
     }
 }

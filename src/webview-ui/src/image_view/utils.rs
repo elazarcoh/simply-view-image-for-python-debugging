@@ -2,7 +2,7 @@ use crate::communication::incoming_messages::{Channels, Datatype};
 
 use super::types::PixelValue;
 
-pub fn image_minmax_on_bytes(
+pub(crate) fn image_minmax_on_bytes(
     bytes: &[u8],
     datatype: Datatype,
     channels: Channels,

@@ -23,7 +23,7 @@ use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer};
 //   setBufferFromTypedArray(gl, type, buffer, typedArray, drawType);
 //   return buffer;
 // }
-pub trait IntoJsArray {
+pub(crate) trait IntoJsArray {
     type JsArray: AsRef<js_sys::Object>;
     fn into_js_array(self) -> Self::JsArray;
 }
@@ -82,7 +82,7 @@ impl IntoJsArray for Vec<u8> {
     }
 }
 
-pub fn create_buffer_from_data<T: IntoJsArray>(
+pub(crate) fn create_buffer_from_data<T: IntoJsArray>(
     gl: &GL,
     data: T,
     buffer_type: BindingPoint,
@@ -99,7 +99,7 @@ pub fn create_buffer_from_data<T: IntoJsArray>(
     Ok(buffer)
 }
 
-pub fn create_attributes_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<Attrib, String>
+pub(crate) fn create_attributes_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<Attrib, String>
 where
     T: IntoJsArray + ElementTypeFor,
 {
@@ -122,7 +122,7 @@ where
     })
 }
 
-pub struct Arrays<TF32, TU8>
+pub(crate) struct Arrays<TF32, TU8>
 where
     TF32: IntoJsArray,
     TU8: IntoJsArray,
@@ -157,7 +157,7 @@ fn num_elements_from_attributes(gl: &GL, attribs: &[Attrib]) -> Result<usize, St
     }
 }
 
-pub fn create_buffer_info_from_arrays<TF32, TU8>(
+pub(crate) fn create_buffer_info_from_arrays<TF32, TU8>(
     gl: &GL,
     arrays: Arrays<TF32, TU8>,
     indices: Option<ArraySpec<&[u16]>>,

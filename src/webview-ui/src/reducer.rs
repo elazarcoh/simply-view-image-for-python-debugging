@@ -9,7 +9,7 @@ use crate::{
     store::AppState,
 };
 
-pub enum UpdateDrawingOptions {
+pub(crate) enum UpdateDrawingOptions {
     Reset,
     Coloring(Coloring),
     Invert(bool),
@@ -17,7 +17,7 @@ pub enum UpdateDrawingOptions {
     IgnoreAlpha(bool)
 }
 
-pub enum StoreAction {
+pub(crate) enum StoreAction {
     UpdateImages(Vec<(ImageId, ImageInfo)>), 
     SetImageToView(ImageId, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
@@ -67,7 +67,7 @@ impl Reducer<AppState> for StoreAction {
 }
 
 #[derive(Debug)]
-pub enum RequestAction {
+pub(crate) enum RequestAction {
     ImageDataById(ImageId),
     ImagesList,
 }

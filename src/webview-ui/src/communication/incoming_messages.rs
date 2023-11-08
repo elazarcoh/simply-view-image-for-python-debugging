@@ -7,7 +7,7 @@ use crate::image_view::{types::{ImageId, PixelValue}, utils::image_minmax_on_byt
 use super::common::MessageId;
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq)]
-pub enum ValueVariableKind {
+pub(crate) enum ValueVariableKind {
     #[serde(rename = "variable")]
     Variable,
     #[serde(rename = "expression")]
@@ -27,7 +27,7 @@ pub enum ValueVariableKind {
     EnumCount,
 )]
 #[repr(u32)]
-pub enum Channels {
+pub(crate) enum Channels {
     One = 1,
     Two = 2,
     Three = 3,
@@ -65,7 +65,7 @@ impl Display for Channels {
 
 // TODO: move Datatype to a more general place
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
-pub enum Datatype {
+pub(crate) enum Datatype {
     #[serde(rename = "uint8")]
     Uint8,
     #[serde(rename = "uint16")]
@@ -93,7 +93,7 @@ pub enum Datatype {
 }
 
 impl Datatype {
-    pub fn num_bytes(&self) -> usize {
+    pub(crate) fn num_bytes(&self) -> usize {
         match self {
             Datatype::Uint8 => 1,
             Datatype::Uint16 => 2,
@@ -110,7 +110,7 @@ impl Datatype {
         }
     }
 
-    pub fn is_floating(&self) -> bool {
+    pub(crate) fn is_floating(&self) -> bool {
         matches!(
             self,
             Datatype::Float32,
@@ -118,17 +118,17 @@ impl Datatype {
         )
     }
 
-    pub fn is_unsigned_integer(&self) -> bool {
+    pub(crate) fn is_unsigned_integer(&self) -> bool {
         matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
     }
 
-    pub fn is_signed_integer(&self) -> bool {
+    pub(crate) fn is_signed_integer(&self) -> bool {
         matches!(self, Datatype::Int8 | Datatype::Int16 | Datatype::Int32)
     }
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq)]
-pub struct ImageInfo {
+pub(crate) struct ImageInfo {
     pub image_id: ImageId,
     pub value_variable_kind: ValueVariableKind,
     pub expression: String,
@@ -141,13 +141,13 @@ pub struct ImageInfo {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ComputedInfo {
+pub(crate) struct ComputedInfo {
     pub min: PixelValue,
     pub max: PixelValue,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
-pub struct ImageData {
+pub(crate) struct ImageData {
     #[serde(flatten)]
     pub info: ImageInfo,
 
@@ -156,7 +156,7 @@ pub struct ImageData {
     pub bytes: Vec<u8>,
 }
 
-pub struct LocalImageData {
+pub(crate) struct LocalImageData {
     pub info: ImageInfo,
     pub computed_info: ComputedInfo,
     pub bytes: Vec<u8>,
@@ -176,20 +176,36 @@ impl From<ImageData> for LocalImageData {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
-pub struct ImageObjects {
+pub(crate) struct ImageObjects {
     pub variables: Vec<ImageInfo>,
     pub expressions: Vec<ImageInfo>,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 #[serde(tag = "type")]
-pub enum FromExtensionMessage {
+pub(crate) enum ExtensionResponse {
     ImageData(ImageData),
     ImageObjects(ImageObjects),
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
-pub struct FromExtensionMessageWithId {
+pub(crate) struct ShowImageOptions {}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
+pub(crate) enum ExtensionRequest {
+    ShowImage(ImageInfo, ShowImageOptions),
+    Invalidate(ImageObjects, HashMap<ImageId, ImageData>)
+}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
+#[serde(tag = "type")]
+pub(crate) enum FromExtensionMessage {
+    Response(ExtensionResponse),
+    Request(ExtensionRequest),
+}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
+pub(crate) struct FromExtensionMessageWithId {
     pub(crate) id: MessageId,
     pub(crate) message: FromExtensionMessage,
 }

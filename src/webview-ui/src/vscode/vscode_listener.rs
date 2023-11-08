@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose, Engine};
-use image::{DynamicImage, ImageBuffer};
 use js_sys::Reflect;
 use yewdux::prelude::Dispatch;
 
@@ -10,22 +9,22 @@ use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
 use crate::communication::common::MessageId;
-use crate::communication::incoming_messages::{self, FromExtensionMessageWithId};
+use crate::communication::incoming_messages::{
+    self, FromExtensionMessage, FromExtensionMessageWithId,
+};
 
 use crate::image_view::types::TextureImage;
 use crate::{
-    communication::incoming_messages::{FromExtensionMessage, ImageObjects},
+    communication::incoming_messages::{ExtensionResponse, ImageObjects},
     image_view::types::{ImageId, ViewId},
     reducer::StoreAction,
-    store::{AppState},
+    store::AppState,
 };
 
 pub(crate) struct VSCodeListener;
 
-use wasm_bindgen::prelude::*;
-
 impl VSCodeListener {
-    pub fn install_incoming_message_handler() -> EventListener {
+    pub(crate) fn install_incoming_message_handler() -> EventListener {
         let onmessage = Callback::from(move |event: web_sys::Event| {
             let data = event
                 .dyn_ref::<web_sys::MessageEvent>()
@@ -99,8 +98,14 @@ impl VSCodeListener {
         };
 
         match message {
-            FromExtensionMessage::ImageData(msg) => handle_set_image_message(msg),
-            FromExtensionMessage::ImageObjects(msg) => handle_images_response(msg),
+            FromExtensionMessage::Response(message) => match message {
+                ExtensionResponse::ImageData(msg) => handle_set_image_message(msg),
+                ExtensionResponse::ImageObjects(msg) => handle_images_response(msg),
+            },
+            FromExtensionMessage::Request(message) => {
+                log::debug!("Received request: {:?}", message);
+                todo!()
+            }
         }
     }
 }

@@ -18,22 +18,22 @@ use crate::{
 };
 
 #[derive(Default)]
-pub struct Images {
+pub(crate) struct Images {
     pub image_ids: Vec<ImageId>,
     pub by_id: HashMap<ImageId, crate::communication::incoming_messages::ImageInfo>,
 }
 
 #[derive(Default)]
-pub struct ImagesDrawingOptions {
+pub(crate) struct ImagesDrawingOptions {
     by_id: HashMap<ImageId, DrawingOptions>,
 }
 
 impl ImagesDrawingOptions {
-    pub fn set(&mut self, image_id: ImageId, drawing_options: DrawingOptions) {
+    pub(crate) fn set(&mut self, image_id: ImageId, drawing_options: DrawingOptions) {
         self.by_id.insert(image_id, drawing_options);
     }
 
-    pub fn get_or_default(&self, image_id: &ImageId) -> DrawingOptions {
+    pub(crate) fn get_or_default(&self, image_id: &ImageId) -> DrawingOptions {
         self.by_id
             .get(image_id)
             .cloned()
@@ -44,11 +44,11 @@ impl ImagesDrawingOptions {
 struct ColorMapTexturesCache(HashMap<String, Rc<GLGuard<web_sys::WebGlTexture>>>);
 
 impl ColorMapTexturesCache {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn get_or_create(
+    pub(crate) fn get_or_create(
         &mut self,
         gl: &WebGl2RenderingContext,
         colormap: &colormap::ColorMap,
@@ -72,15 +72,15 @@ impl Default for ColorMapTexturesCache {
 
 struct ColorMapRegistry(HashMap<String, Rc<colormap::ColorMap>>);
 impl ColorMapRegistry {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn get(&self, name: &str) -> Option<Rc<colormap::ColorMap>> {
+    pub(crate) fn get(&self, name: &str) -> Option<Rc<colormap::ColorMap>> {
         self.0.get(name).cloned()
     }
 
-    pub fn register(&mut self, colormap: colormap::ColorMap) {
+    pub(crate) fn register(&mut self, colormap: colormap::ColorMap) {
         self.0.insert(colormap.name.to_string(), Rc::new(colormap));
     }
 }
@@ -126,7 +126,7 @@ impl Listener for ImagesFetcher {
 
 #[derive(Store, Clone)]
 #[store(listener(ImagesFetcher))]
-pub struct AppState {
+pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
     pub images: Mrc<Images>,
@@ -144,17 +144,17 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn image_views(&self) -> Mrc<ImageViews> {
+    pub(crate) fn image_views(&self) -> Mrc<ImageViews> {
         self.image_views.clone()
     }
 
-    pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
+    pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
         self.image_views
             .borrow_mut()
             .set_image_to_view(image_id, view_id);
     }
 
-    pub fn get_color_map_texture(
+    pub(crate) fn get_color_map_texture(
         &self,
         name: &str,
     ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>, String> {

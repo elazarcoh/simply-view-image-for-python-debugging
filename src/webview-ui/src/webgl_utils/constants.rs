@@ -9,7 +9,7 @@ use super::types::*;
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum ElementType {
+pub(crate) enum ElementType {
     Byte = GL::BYTE,
     UnsignedByte = GL::UNSIGNED_BYTE,
     Short = GL::SHORT,
@@ -21,7 +21,7 @@ pub enum ElementType {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum GLPrimitive {
+pub(crate) enum GLPrimitive {
     Float = GL::FLOAT,
     FloatVec2 = GL::FLOAT_VEC2,
     FloatVec3 = GL::FLOAT_VEC3,
@@ -44,7 +44,7 @@ impl TryFrom<GLConstant> for GLPrimitive {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum Format {
+pub(crate) enum Format {
     Red = GL::RED,
     RedInteger = GL::RED_INTEGER,
     RG = GL::RG,
@@ -57,7 +57,7 @@ pub enum Format {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum InternalFormat {
+pub(crate) enum InternalFormat {
     // treated as Gray
     R16F = GL::R16F,
     R32F = GL::R32F,
@@ -98,21 +98,21 @@ pub enum InternalFormat {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum TextureTarget {
+pub(crate) enum TextureTarget {
     Texture2D = GL::TEXTURE_2D,
     TextureCubeMap = GL::TEXTURE_CUBE_MAP,
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum TextureMagFilter {
+pub(crate) enum TextureMagFilter {
     Nearest = GL::NEAREST,
     Linear = GL::LINEAR,
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum TextureMinFilter {
+pub(crate) enum TextureMinFilter {
     Nearest = GL::NEAREST,
     Linear = GL::LINEAR,
     NearestMipmapNearest = GL::NEAREST_MIPMAP_NEAREST,
@@ -123,7 +123,7 @@ pub enum TextureMinFilter {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum TextureWrap {
+pub(crate) enum TextureWrap {
     ClampToEdge = GL::CLAMP_TO_EDGE,
     MirroredRepeat = GL::MIRRORED_REPEAT,
     Repeat = GL::REPEAT,
@@ -132,7 +132,7 @@ pub enum TextureWrap {
 #[allow(clippy::enum_variant_names)]
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum BindingPoint {
+pub(crate) enum BindingPoint {
     ArrayBuffer = GL::ARRAY_BUFFER,
     ElementArrayBuffer = GL::ELEMENT_ARRAY_BUFFER,
     UniformBuffer = GL::UNIFORM_BUFFER,
@@ -145,7 +145,7 @@ pub enum BindingPoint {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum DrawMode {
+pub(crate) enum DrawMode {
     Points = GL::POINTS,
     LineStrip = GL::LINE_STRIP,
     LineLoop = GL::LINE_LOOP,
@@ -157,7 +157,7 @@ pub enum DrawMode {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
-pub enum Capability {
+pub(crate) enum Capability {
     DepthTest = GL::DEPTH_TEST,
     StencilTest = GL::STENCIL_TEST,
     Blend = GL::BLEND,
@@ -170,7 +170,7 @@ pub enum Capability {
 
 lazy_static! {
     // to_string for gl constants
-    pub static ref GL_CONSTANT_NAMES: HashMap<GLConstant, &'static str> = {
+    pub(crate)static ref GL_CONSTANT_NAMES: HashMap<GLConstant, &'static str> = {
         let mut m = HashMap::new();
         m.insert(WebGl2RenderingContext::FLOAT, "FLOAT");
         m.insert(WebGl2RenderingContext::FLOAT_VEC2, "FLOAT_VEC2");
@@ -221,7 +221,7 @@ fn int_attribute_setter(_gl: &GL, _index: u32) {}
 fn uint_attribute_setter(_gl: &GL, _index: u32) {}
 
 lazy_static! {
-    pub static ref GL_ATTRIBUTE_SETTER_FOR_TYPE: HashMap<GLPrimitive, AttributeSetterBuilder> = {
+    pub(crate) static ref GL_ATTRIBUTE_SETTER_FOR_TYPE: HashMap<GLPrimitive, AttributeSetterBuilder> = {
         let mut m = HashMap::<GLPrimitive, AttributeSetterBuilder>::new();
 
         m.insert(GLPrimitive::Float, float_attribute_setter);
@@ -234,7 +234,7 @@ lazy_static! {
 }
 
 lazy_static! {
-    pub static ref BYTES_FOR_ELEMENT_TYPE: HashMap<ElementType, usize> = {
+    pub(crate) static ref BYTES_FOR_ELEMENT_TYPE: HashMap<ElementType, usize> = {
         let mut m = HashMap::<ElementType, usize>::new();
 
         m.insert(ElementType::Byte, mem::size_of::<i8>());
@@ -251,7 +251,7 @@ lazy_static! {
 
 #[non_exhaustive]
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
-pub enum WebGlExtension {
+pub(crate) enum WebGlExtension {
     OesVertexArrayObject,
     OesTextureFloat,
     OesTextureFloatLinear,

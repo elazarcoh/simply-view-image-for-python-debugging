@@ -34,7 +34,7 @@ fn get_clip_space_mouse_position(e: MouseEvent, canvas: &web_sys::HtmlCanvasElem
     [clip_x, clip_y].into()
 }
 
-pub struct PanHandler {
+pub(crate) struct PanHandler {
     is_panning: bool,
     start_camera: Camera,
     start_in_view_projection_matrix: Mat3,
@@ -51,7 +51,7 @@ impl PanHandler {
         }
     }
 
-    pub fn install(
+    pub(crate) fn install(
         canvas_ref: NodeRef,
         view_id: ViewId,
         view_element: &web_sys::HtmlElement,
@@ -171,10 +171,10 @@ impl PanHandler {
     }
 }
 
-pub struct ZoomHandler {}
+pub(crate) struct ZoomHandler {}
 
 impl ZoomHandler {
-    pub fn install(
+    pub(crate) fn install(
         canvas_ref: NodeRef,
         view_id: ViewId,
         view_element: &web_sys::HtmlElement,

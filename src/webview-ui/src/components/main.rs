@@ -4,16 +4,16 @@ use yew::prelude::*;
 
 use crate::components::{main_toolbar::MainToolbar, sidebar::Sidebar, GLView};
 
-pub trait UIHandler {
+pub(crate) trait UIHandler {
 }
 
 #[derive(PartialEq, Properties)]
-pub struct MainProps {
+pub(crate) struct MainProps {
     pub gl_view_node_ref: NodeRef,
 }
 
 #[function_component]
-pub fn Main(props: &MainProps) -> Html {
+pub(crate) fn Main(props: &MainProps) -> Html {
     let MainProps { gl_view_node_ref } = props;
 
     let main_style = use_style!(

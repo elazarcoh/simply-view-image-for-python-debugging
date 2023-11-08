@@ -16,7 +16,7 @@ use crate::{
 use super::icon_button::IconButton;
 
 #[derive(PartialEq, Properties)]
-pub struct DisplayOptionProps {
+pub(crate) struct DisplayOptionProps {
     pub entry: ImageInfo,
 }
 
@@ -27,7 +27,7 @@ mod features {
 
     #[derive(EnumSetType, Debug)]
     #[allow(clippy::upper_case_acronyms)]
-    pub enum Feature {
+    pub(crate)enum Feature {
         HighContrast,
         Grayscale,
         SwapRgbBgr,
@@ -93,7 +93,7 @@ mod features {
 }
 
 #[function_component]
-pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
+pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     let DisplayOptionProps { entry } = props;
 
     let image_id = entry.image_id.clone();
@@ -335,13 +335,13 @@ fn shape_to_string(shape: &[u32]) -> String {
 }
 
 #[derive(PartialEq, Properties, Clone)]
-pub struct ImageListItemProps {
+pub(crate) struct ImageListItemProps {
     pub entry: ImageInfo,
     pub selected: bool,
 }
 
 #[function_component]
-pub fn ImageListItem(props: &ImageListItemProps) -> Html {
+pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     let ImageListItemProps { entry, selected } = props;
 
     let info_grid_style = use_style!(

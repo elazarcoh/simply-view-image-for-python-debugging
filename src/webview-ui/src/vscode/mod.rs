@@ -1,5 +1,5 @@
-pub mod vscode_requests;
-pub mod vscode_listener;
+pub(crate) mod vscode_requests;
+pub(crate) mod vscode_listener;
 
 use wasm_bindgen::prelude::*;
 
@@ -9,7 +9,7 @@ extern "C" {
     pub type WebviewApi;
 
     #[wasm_bindgen(js_name = "acquireVsCodeApi")]
-    pub fn acquire_vscode_api() -> WebviewApi;
+    pub(crate) fn acquire_vscode_api() -> WebviewApi;
 
     /**
      * Post a message to the owner of the webview.
@@ -17,5 +17,5 @@ extern "C" {
      * @param message Data to post. Must be JSON serializable.
      */
     #[wasm_bindgen(method, js_name = "postMessage")]
-    pub fn post_message(this: &WebviewApi, message: JsValue);
+    pub(crate) fn post_message(this: &WebviewApi, message: JsValue);
 }

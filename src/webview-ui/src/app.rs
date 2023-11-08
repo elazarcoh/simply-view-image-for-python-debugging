@@ -145,7 +145,7 @@ fn camera_context() -> impl ViewContext {
 }
 
 #[function_component]
-pub fn App() -> Html {
+pub(crate) fn App() -> Html {
     VSCodeRequests::init(vscode::acquire_vscode_api());
 
     let dispatch = Dispatch::<AppState>::new();

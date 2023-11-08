@@ -116,10 +116,10 @@ fn create_placeholder_texture(gl: &GL) -> Result<GLGuard<web_sys::WebGlTexture>,
     )
 }
 
-pub struct Renderer {}
+pub(crate) struct Renderer {}
 
 impl Renderer {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {}
     }
 
@@ -130,7 +130,7 @@ impl Renderer {
             .expect("should register `requestAnimationFrame` OK");
     }
 
-    pub fn set_rendering_context(&mut self, rendering_context: Rc<dyn RenderingContext>) {
+    pub(crate) fn set_rendering_context(&mut self, rendering_context: Rc<dyn RenderingContext>) {
         log::debug!("Renderer::set_rendering_context");
         Renderer::setup_rendering_callback_if_ready(rendering_context);
     }

@@ -70,12 +70,12 @@ impl VSCodeRequests {
 }
 
 impl VSCodeRequests {
-    pub fn request_images() -> MessageId {
+    pub(crate) fn request_images() -> MessageId {
         log::debug!("VSCodeRequests::requests_images");
         Self::send_message(FromWebviewMessage::RequestImages(RequestImages {}))
     }
 
-    pub fn request_image_data(image_id: ImageId, expression: String) -> MessageId {
+    pub(crate) fn request_image_data(image_id: ImageId, expression: String) -> MessageId {
         log::debug!("VSCodeRequests::request_image_data: {:?}", image_id);
         Self::send_message(FromWebviewMessage::RequestImageData(RequestImageData {
             image_id,
@@ -83,7 +83,7 @@ impl VSCodeRequests {
         }))
     }
 
-    pub fn webview_ready() -> MessageId {
+    pub(crate) fn webview_ready() -> MessageId {
         log::debug!("VSCodeRequests::webview_ready");
         Self::send_message(FromWebviewMessage::WebviewReady(WebviewReady {}))
     }

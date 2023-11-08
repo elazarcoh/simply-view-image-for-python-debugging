@@ -3,7 +3,7 @@ use stylist::yew::{styled_component, use_style};
 use yew::prelude::*;
 
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub enum ToggleState {
+pub(crate) enum ToggleState {
     On,
     Off,
 }
@@ -28,7 +28,7 @@ impl From<ToggleState> for bool {
 }
 
 #[derive(PartialEq, Properties, Default)]
-pub struct IconButtonProps {
+pub(crate) struct IconButtonProps {
     #[prop_or_default]
     pub class: Classes,
     #[prop_or_default]
@@ -43,7 +43,7 @@ pub struct IconButtonProps {
 }
 
 #[styled_component]
-pub fn IconButton(props: &IconButtonProps) -> Html {
+pub(crate) fn IconButton(props: &IconButtonProps) -> Html {
     let IconButtonProps {
         class,
         aria_label,
@@ -97,7 +97,7 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
-pub struct IconToggleButtonProps {
+pub(crate) struct IconToggleButtonProps {
     #[prop_or_default]
     pub aria_label: AttrValue,
     #[prop_or_default]
@@ -111,7 +111,7 @@ pub struct IconToggleButtonProps {
 }
 
 #[styled_component]
-pub fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
+pub(crate) fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
     let IconToggleButtonProps {
         aria_label,
         on_icon,

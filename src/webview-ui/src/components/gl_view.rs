@@ -3,12 +3,12 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct GLViewProps {
+pub(crate) struct GLViewProps {
     pub node_ref: NodeRef,
 }
 
 #[function_component]
-pub fn GLView(props: &GLViewProps) -> Html {
+pub(crate) fn GLView(props: &GLViewProps) -> Html {
     let GLViewProps { node_ref } = props;
 
     let image_view_style = use_style!(

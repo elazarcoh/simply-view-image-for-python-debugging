@@ -254,9 +254,9 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 
 struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
-    pub renderer: Rc<RefCell<Renderer>>,
+    pub renderer: RefCell<Renderer>,
     pub image_views_coordinator: ImageViewsCoordinator,
-    pub vscode_message_handler: Rc<VSCodeMessageHandler>,
+    pub vscode_message_handler: VSCodeMessageHandler,
 }
 
 impl RenderingContext for Coordinator {
@@ -285,9 +285,9 @@ fn App() -> Html {
             let image_cache = Rc::new(RefCell::new(ImageCache::new()));
             |_| Coordinator {
                 gl: RefCell::new(None),
-                renderer: Rc::new(RefCell::new(Renderer::new())),
+                renderer: RefCell::new(Renderer::new()),
                 image_views_coordinator: ImageViewsCoordinator::new(),
-                vscode_message_handler: Rc::new(VSCodeMessageHandler::new(vscode, image_cache)),
+                vscode_message_handler: VSCodeMessageHandler::new(vscode, image_cache),
             }
         },
         (),
@@ -354,7 +354,7 @@ fn App() -> Html {
 
                 log::debug!("GL context created");
 
-                // coordinator.gl.replace(Some(gl.clone()));
+                coordinator.gl.replace(Some(gl.clone()));
 
                 coordinator
                     .renderer
@@ -362,7 +362,7 @@ fn App() -> Html {
                     .set_rendering_context(coordinator.clone());
 
                 move || {
-                    // coordinator.gl.replace(None);
+                    coordinator.gl.replace(None);
                 }
             }
         },
@@ -370,11 +370,11 @@ fn App() -> Html {
     );
 
     let onclick_get_image = Callback::from({
-        let message_handler = coordinator.vscode_message_handler.clone();
+        let coordinator = Rc::clone(&coordinator);
         move |_| {
             let greeting = String::from("Hi there");
             log::debug!("Sending greeting: {}", greeting);
-            message_handler.send_message(
+            coordinator.vscode_message_handler.send_message(
                 JsValue::from_serde(&MyMessage {
                     message: greeting,
                     image_base64: String::from(""),
@@ -385,7 +385,7 @@ fn App() -> Html {
     });
 
     let onclick_view_image = Callback::from({
-        let renderer = coordinator.renderer.clone();
+        // let renderer = coordinator.renderer.clone();
         move |_| {
             // (*renderer.borrow_mut())
             //     .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")

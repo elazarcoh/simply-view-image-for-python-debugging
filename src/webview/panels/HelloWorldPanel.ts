@@ -7,8 +7,8 @@ import {
     Uri,
     ViewColumn,
 } from "vscode";
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
@@ -133,59 +133,62 @@ export class HelloWorldPanel {
         const nonce = getNonce();
 
         // Tip: Install the es6-string-html VS Code extension to enable code highlighting below
-    //     return /*html*/ `
-    //   <!DOCTYPE html>
-    //   <html lang="en">
-    //     <head>
-    //       <meta charset="UTF-8" />
-    //       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    //       <meta http-equiv="Content-Security-Policy" content="default-src https:; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-    //       <link rel="stylesheet" type="text/css" href="${stylesUri}">
-    //       <title>Hello World</title>
-    //     </head>
-    //     <body>
-    //       <div id="root"></div>
-    //       <div id="yew-app">Test</div>
-    //       <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-    //     </body>
-    //   </html>
-    // `;
+        //     return /*html*/ `
+        //   <!DOCTYPE html>
+        //   <html lang="en">
+        //     <head>
+        //       <meta charset="UTF-8" />
+        //       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        //       <meta http-equiv="Content-Security-Policy" content="default-src https:; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+        //       <link rel="stylesheet" type="text/css" href="${stylesUri}">
+        //       <title>Hello World</title>
+        //     </head>
+        //     <body>
+        //       <div id="root"></div>
+        //       <div id="yew-app">Test</div>
+        //       <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+        //     </body>
+        //   </html>
+        // `;
 
-                // <link rel="preload" nonce="${nonce}" href="${baseUri}/yew-app-987f331f08a3e6d1_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-                // <link rel="modulepreload" nonce="${nonce}" href="${baseUri}/yew-app-987f331f08a3e6d1.js"></head>
+        // <link rel="preload" nonce="${nonce}" href="${baseUri}/yew-app-987f331f08a3e6d1_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+        // <link rel="modulepreload" nonce="${nonce}" href="${baseUri}/yew-app-987f331f08a3e6d1.js"></head>
 
-                    //  <script type="module" nonce="${nonce}">import init from '${baseUri}/yew-app-987f331f08a3e6d1.js';init('${baseUri}/yew-app-987f331f08a3e6d1_bg.wasm');</script>
+        //  <script type="module" nonce="${nonce}">import init from '${baseUri}/yew-app-987f331f08a3e6d1.js';init('${baseUri}/yew-app-987f331f08a3e6d1_bg.wasm');</script>
 
-    // return /*html*/ `
-    //     <!DOCTYPE html><html><head>
-    //             <meta charset="utf-8">
-    //             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    //             <meta http-equiv="Content-Security-Policy" content="default-src https: ; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' 'unsafe-eval';">
-    //         <title>Yew App</title>
-            
-    //             <link rel="modulepreload" nonce="${nonce}" href="${baseUri}/webview.js"></head>
-    //     <body>
+        // return /*html*/ `
+        //     <!DOCTYPE html><html><head>
+        //             <meta charset="utf-8">
+        //             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        //             <meta http-equiv="Content-Security-Policy" content="default-src https: ; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' 'unsafe-eval';">
+        //         <title>Yew App</title>
 
-    //         <div id="root"></div>
-    //         <div id="yew-app">Test</div>
+        //             <link rel="modulepreload" nonce="${nonce}" href="${baseUri}/webview.js"></head>
+        //     <body>
 
-    //       <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+        //         <div id="root"></div>
+        //         <div id="yew-app">Test</div>
 
-    //     </body>
-    //     </html>
-    // `;
-        
+        //       <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+
+        //     </body>
+        //     </html>
+        // `;
+
         // fetch index.html from dist folder
-        const indexHtml = fs.readFileSync(path.join(extensionUri.fsPath, 'dist', 'index.html'), 'utf8');
+        const indexHtml = fs.readFileSync(
+            path.join(extensionUri.fsPath, "dist", "index.html"),
+            "utf8"
+        );
         // replace script with vscode-resource URIs
-        const htmlWithVscodeResourceUris = indexHtml
-            .replace(/<script defer src="webview.js"><\/script>/g, () => {
+        const htmlWithVscodeResourceUris = indexHtml.replace(
+            /<script defer src="webview.js"><\/script>/g,
+            () => {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
-            })
-            ;
-
+            }
+        );
         return htmlWithVscodeResourceUris;
-    }   
+    }
 
     /**
      * Sets up an event listener to listen for messages passed from the webview context and
@@ -200,18 +203,24 @@ export class HelloWorldPanel {
     ) {
         webview.onDidReceiveMessage(
             (message) => {
+                message = JSON.parse(message);
+
                 const { command, requestId, payload } = message;
 
-                if (command === "<command id>") {
-                    // Do something with the payload
-                    console.log(payload);
+                // Do something with the payload
+                console.log(payload);
 
-                    // Send a response back to the webview
-                    webview.postMessage({
-                        command,
-                        requestId, // The requestId is used to identify the response
-                        payload: `Hello from the extension!`,
-                    } as MessageHandlerData<string>);
+                switch (command) {
+                    case "hello":
+                        window.showInformationMessage(payload);
+                        return;
+                    default:
+                        // Send a response back to the webview
+                        return webview.postMessage({
+                            command,
+                            requestId, // The requestId is used to identify the response
+                            payload: `Hello from the extension!`,
+                        } as MessageHandlerData<string>);
                 }
             },
             undefined,

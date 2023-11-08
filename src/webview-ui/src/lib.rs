@@ -3,6 +3,20 @@ mod app;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
+#[wasm_bindgen()]
+extern "C" {
+    type WebviewApi;
+    fn acquireVsCodeApi() -> WebviewApi;
+
+    /**
+     * Post a message to the owner of the webview.
+     *
+     * @param message Data to post. Must be JSON serializable.
+     */
+    #[wasm_bindgen(method)]
+    fn postMessage(this: &WebviewApi, message: JsValue);
+}
+
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.
 //
@@ -19,6 +33,8 @@ fn run() -> Result<(), JsValue> {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 
+    let vscode = acquireVsCodeApi();
+
     // Use `web_sys`'s global `window` function to get a handle on the global
     // window object.
     let window = web_sys::window().expect("no global `window` exists");
@@ -30,6 +46,9 @@ fn run() -> Result<(), JsValue> {
     val.set_text_content(Some("Hello from Rust!"));
 
     body.append_child(&val)?;
+
+    vscode.postMessage(JsValue::from_str(r#"{ "command": "hello", "payload": "Hey there partner! 🤠", "requestId": 1 }"#));
+
 
     console::log_1(&"Hello using web-sys".into());
 

@@ -88,6 +88,12 @@ impl PixelValue {
         let bytes = &mut self.bytes[start..end];
         bytemuck::from_bytes_mut::<T>(bytes)
     }
+
+    pub fn fill<T: Pod>(&mut self, value: T) {
+        for channel in 0..self.num_channels.into() {
+            *self.get_mut::<T>(channel) = value;
+        }
+    }
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

@@ -8,7 +8,9 @@ pub fn image_minmax_on_bytes(
     channels: Channels,
 ) -> (PixelValue, PixelValue) {
     let mut min = PixelValue::new(channels, Datatype::Float32);
+    min.fill(f32::MAX);
     let mut max = PixelValue::new(channels, Datatype::Float32);
+    max.fill(f32::MIN);
 
     let num_channels = channels as usize;
     let bytes_per_element = datatype.num_bytes();

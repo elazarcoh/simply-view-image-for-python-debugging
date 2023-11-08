@@ -9,7 +9,7 @@ use web_sys::{
 };
 use yew::NodeRef;
 
-use crate::webgl_utils;
+use crate::image_view::camera;
 use crate::webgl_utils::attributes::{
     create_attributes_from_array, create_buffer_info_from_arrays, Arrays,
 };
@@ -17,9 +17,10 @@ use crate::webgl_utils::constants::*;
 use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
+use crate::{math_utils, webgl_utils};
 
-use super::image_view::ImageView;
-use super::rendering_context::RenderingContext;
+use super::camera::Camera;
+use super::rendering_context::{ImageViewData, RenderingContext};
 
 struct Programs {
     basic: ProgramBundle,
@@ -33,6 +34,9 @@ struct RenderingData {
     image_plane_buffer: BufferInfo,
 }
 
+const VIEW_WIDTH: f32 = 1.0;
+const VIEW_HEIGHT: f32 = 1.0;
+
 fn create_image_plane_attributes(
     gl: &GL,
     x: f32,
@@ -40,16 +44,14 @@ fn create_image_plane_attributes(
     width: f32,
     height: f32,
 ) -> Result<BufferInfo, String> {
-    let centered_x = x - width / 2.0;
-    let centered_y = y - height / 2.0;
     #[rustfmt::skip]
     let a_image_plane_position = ArraySpec {
         name: "vin_position".to_string(),
         data: (&[
-            centered_x, centered_y, // bottom left
-            centered_x, centered_y + height, // bottom right
-            centered_x + width, centered_y, // top left
-            centered_x + width, centered_y + height, // top right
+            x, y, // bottom left
+            x, y + height, // bottom right
+            x + width, y, // top left
+            x + width, y + height, // top right
         ] as &[f32]),
         num_components: 2,
         normalized: true,
@@ -115,7 +117,7 @@ impl Renderer {
         let programs = Renderer::create_programs(&gl).unwrap();
 
         let image_plane_attributes =
-            create_image_plane_attributes(&gl, 0.0, 0.0, 1.0, 1.0).unwrap();
+            create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_WIDTH, VIEW_HEIGHT).unwrap();
 
         let rendering_data = RenderingData {
             gl: gl.clone(),
@@ -167,6 +169,57 @@ impl Renderer {
         })
     }
 
+    fn calculate_view_projection(canvas: &HtmlCanvasElement, camera: &Camera) -> glam::Mat3 {
+        const VIEW_ASPECT_RATIO: f32 = VIEW_WIDTH / VIEW_HEIGHT;
+        let canvas_aspect_ratio = canvas.width() as f32 / canvas.height() as f32;
+        let scale = canvas_aspect_ratio / VIEW_ASPECT_RATIO;
+
+        let camera_matrix = camera.as_matrix();
+        let view_matrix = camera_matrix.inverse();
+
+        // make sure the view aspect ratio matches the canvas aspect ratio
+        let view_aspect_matrix = if scale > 1.0 {
+            glam::Mat3::from_scale(glam::Vec2::new(1.0 / scale, 1.0))
+        } else {
+            glam::Mat3::from_scale(glam::Vec2::new(1.0, scale))
+        };
+
+        let view_projection = math_utils::mat3::projection(VIEW_WIDTH, VIEW_HEIGHT);
+        let canvas_projection =
+            math_utils::mat3::projection(canvas.width() as f32, canvas.height() as f32);
+        let view_to_canvas = canvas_projection.inverse() * view_projection * view_aspect_matrix;
+
+        let view_size_in_canvas = view_to_canvas * glam::Vec3::new(VIEW_WIDTH, VIEW_HEIGHT, 1.0);
+        let view_width_in_canvas = view_size_in_canvas.x;
+        let view_height_in_canvas = view_size_in_canvas.y;
+
+        let center_in_canvas_matrix = if scale > 1.0 {
+            glam::Mat3::from_translation(glam::Vec2::new(
+                (canvas.width() as f32 - view_width_in_canvas) / 2.0,
+                0.0,
+            ))
+        } else {
+            glam::Mat3::from_translation(glam::Vec2::new(
+                0.0,
+                (canvas.height() as f32 - view_height_in_canvas) / 2.0,
+            ))
+        };
+
+        let view_projection_matrix =
+            canvas_projection * center_in_canvas_matrix * view_to_canvas * view_matrix;
+
+        view_projection_matrix
+    }
+
+    fn canvas(gl: &GL) -> HtmlCanvasElement {
+        let canvas = gl
+            .canvas()
+            .unwrap()
+            .dyn_into::<HtmlCanvasElement>()
+            .unwrap();
+        canvas
+    }
+
     fn render(
         gl: &WebGl2RenderingContext,
         rendering_data: &RenderingData,
@@ -175,34 +228,37 @@ impl Renderer {
         let render_result = rendering_context
             .visible_nodes()
             .iter()
-            .map(|(image_view, image_view_element)| {
-                Renderer::render_view(
-                    gl,
-                    rendering_data,
-                    image_view,
-                    image_view_element,
-                    rendering_context,
-                )
+            .map(|image_view| {
+                let view_data = rendering_context.view_data(*image_view);
+                Renderer::render_view(gl, rendering_data, &view_data, rendering_context)
             })
             .collect::<Result<Vec<_>, _>>();
+
         if let Err(e) = render_result {
             log::error!("Renderer::render: {}", e);
         }
     }
 
+    fn scissor_view(gl: &WebGl2RenderingContext, image_view_element: &HtmlElement) {
+        let canvas = Renderer::canvas(gl);
+
+        let rect = image_view_element.get_bounding_client_rect();
+        let width = rect.right() - rect.left();
+        let height = rect.bottom() - rect.top();
+        let left = rect.left();
+        let bottom = canvas.client_height() as f64 - rect.bottom();
+
+        gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
+        gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
+    }
+
     fn render_view(
         gl: &WebGl2RenderingContext,
         rendering_data: &RenderingData,
-        image_view: &ImageView,
-        image_view_element: &HtmlElement,
+        image_view_data: &ImageViewData,
         rendering_context: &dyn RenderingContext,
     ) -> Result<(), String> {
-        let canvas = gl
-            .canvas()
-            .unwrap()
-            .dyn_into::<HtmlCanvasElement>()
-            .unwrap();
-        let rect = image_view_element.get_bounding_client_rect();
+        let canvas = Renderer::canvas(gl);
 
         // The following two lines set the size (in CSS pixels) of
         // the drawing buffer to be identical to the size of the
@@ -210,21 +266,10 @@ impl Renderer {
         canvas.set_width(canvas.client_width() as u32);
         canvas.set_height(canvas.client_height() as u32);
 
-        let width = rect.right() - rect.left();
-        let height = rect.bottom() - rect.top();
-        let left = rect.left();
-        let bottom = gl
-            .canvas()
-            .unwrap()
-            .dyn_into::<HtmlCanvasElement>()
-            .unwrap()
-            .client_height() as f64
-            - rect.bottom();
+        Renderer::scissor_view(gl, &image_view_data.html_element);
 
-        gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
-        gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
         {
-            let [r, g, b, a] = image_view.model.bg_color.unwrap_or([0.0, 0.0, 0.0, 1.0]);
+            let [r, g, b, a] = [0.0, 0.0, 1.0, 1.0];
             gl.clear_color(r, g, b, a);
         };
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
@@ -276,25 +321,36 @@ impl Renderer {
         // // Attach the time as a uniform for the GL context.
         // gl.draw_arrays(GL::TRIANGLES, 0, 6);
 
-        let image_id = image_view.model.image_id.as_ref().ok_or(
+        let image_id = image_view_data.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
         let texture = rendering_context.texture_by_id(&image_id).ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
-        Renderer::render_image(rendering_data, &texture.texture);
+        Renderer::render_image(rendering_data, &texture.texture, image_view_data);
 
         Ok(())
     }
 
-    fn render_image(rendering_data: &RenderingData, texture: &WebGlTexture) {
+    fn render_image(
+        rendering_data: &RenderingData,
+        texture: &WebGlTexture,
+        image_view_data: &ImageViewData,
+    ) {
         let gl = &rendering_data.gl;
         let program = &rendering_data.programs.image;
+
+        let canvas = Renderer::canvas(gl);
+        let camera = &image_view_data.camera;
+        let view_projection = Renderer::calculate_view_projection(&canvas, camera);
 
         gl.use_program(Some(&program.program));
         set_uniforms(
             program,
-            &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
+            &HashMap::from([
+                ("u_texture", UniformValue::Texture(&texture)),
+                ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
+            ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         log::debug!("render_image: draw_buffer_info");

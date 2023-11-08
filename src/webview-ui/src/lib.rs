@@ -8,22 +8,21 @@ extern crate cfg_if;
 use base64::{engine::general_purpose, Engine as _};
 
 mod communication;
-mod math_utils;
 mod components;
 mod image_view;
+mod math_utils;
 mod mouse_events;
 mod vscode;
 mod webgl_utils;
 use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 
-use image_view::image_view::ImageView;
-use image_view::image_views_coordinator::ImageViewsCoordinator;
-use image_view::renderer;
+use image_view::camera::ViewsCameras;
+use image_view::image_views::ImageViews;
+use image_view::rendering_context::ImageViewData;
 use image_view::rendering_context::RenderingContext;
 use image_view::types::ImageId;
 use serde::{Deserialize, Serialize};
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
@@ -254,7 +253,8 @@ struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
     pub renderer: RefCell<Renderer>,
     pub texture_image_cache: RefCell<ImageCache>,
-    pub image_views_coordinator: RefCell<ImageViewsCoordinator>,
+    pub image_views: RefCell<ImageViews>,
+    views_cameras: RefCell<ViewsCameras>,
     pub vscode_message_handler: VSCodeMessageHandler,
 }
 
@@ -274,8 +274,21 @@ impl RenderingContext for Coordinator {
             .map(|x| Rc::clone(x))
     }
 
-    fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)> {
-        self.image_views_coordinator.borrow().visible_nodes()
+    fn visible_nodes(&self) -> Vec<InViewName> {
+        self.image_views.borrow().visible_views()
+    }
+
+    fn view_data(&self, view_id: InViewName) -> ImageViewData {
+        ImageViewData {
+            camera: self.views_cameras.borrow().get(view_id),
+            html_element: self
+                .image_views
+                .borrow()
+                .get_node_ref(view_id)
+                .cast::<HtmlElement>()
+                .expect(format!("Unable to cast node ref to HtmlElement for view {:?}", view_id).as_str()),
+            image_id: self.image_views.borrow().get_image_id(view_id),
+        }
     }
 }
 
@@ -288,7 +301,8 @@ fn App() -> Html {
                 gl: RefCell::new(None),
                 renderer: RefCell::new(Renderer::new()),
                 texture_image_cache: RefCell::new(ImageCache::new()),
-                image_views_coordinator: RefCell::new(ImageViewsCoordinator::new()),
+                image_views: RefCell::new(ImageViews::new()),
+                views_cameras: RefCell::new(ViewsCameras::new()),
                 vscode_message_handler: VSCodeMessageHandler::new(vscode),
             }
         },
@@ -299,10 +313,7 @@ fn App() -> Html {
 
     // TODO: move from here
     let view_id = InViewName::Single(InSingleViewName::Single);
-    let my_node_ref = coordinator
-        .image_views_coordinator
-        .borrow()
-        .get_node_ref(view_id);
+    let my_node_ref = coordinator.image_views.borrow().get_node_ref(view_id);
 
     use_effect({
         let window = window().unwrap();
@@ -370,15 +381,12 @@ fn App() -> Html {
                 if let Err(err) = create_image_for_view(&gl)
                     .map(|image| (&coordinator).texture_image_cache.borrow_mut().add(image))
                     .map(|id| {
-                        coordinator
-                            .image_views_coordinator
-                            .borrow_mut()
-                            .set_image_to_view(
-                                id,
-                                image_view::types::InViewName::Single(
-                                    image_view::types::InSingleViewName::Single,
-                                ),
-                            )
+                        coordinator.image_views.borrow_mut().set_image_to_view(
+                            id,
+                            image_view::types::InViewName::Single(
+                                image_view::types::InSingleViewName::Single,
+                            ),
+                        )
                     })
                 {
                     log::error!("Error creating image: {:?}", err);

@@ -42,6 +42,8 @@ fn run() -> Result<(), JsValue> {
 
     init_log();
 
+    web_sys::console::clear();
+
     yew::Renderer::<App>::new().render();
 
     Ok(())

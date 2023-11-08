@@ -25,6 +25,10 @@ use crate::communication::outgoing_messages::RequestImageMessage;
 
 use crate::components::GLView;
 
+use crate::components::image_list_item::ImageEntry;
+use crate::components::image_list_item::ImageInfo;
+use crate::components::image_list_item::ImageListItem;
+use crate::components::image_selection_list::ImageSelectionList;
 use crate::configurations;
 use crate::image_view;
 use crate::image_view::camera::ViewsCameras;
@@ -192,10 +196,7 @@ impl RenderingContext for Coordinator {
     }
 
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>> {
-        self.texture_image_cache
-            .borrow()
-            .get(id)
-            .map(Rc::clone)
+        self.texture_image_cache.borrow().get(id).map(Rc::clone)
     }
 
     fn visible_nodes(&self) -> Vec<InViewName> {
@@ -210,8 +211,12 @@ impl RenderingContext for Coordinator {
                 .borrow()
                 .get_node_ref(view_id)
                 .cast::<HtmlElement>()
-                .unwrap_or_else(|| panic!("Unable to cast node ref to HtmlElement for view {:?}",
-                        view_id)),
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Unable to cast node ref to HtmlElement for view {:?}",
+                        view_id
+                    )
+                }),
             image_id: self.image_views.borrow().get_image_id(view_id),
         }
     }
@@ -429,12 +434,42 @@ pub fn App() -> Html {
     "#,
     );
 
+    let num_entries = 2;
+    let entries = (0..num_entries)
+        .map(|i| ImageEntry {
+            name: format!("My image {}", i),
+            info: ImageInfo {
+                shape: vec![256, 256, 4],
+                data_type: "u8".to_string(),
+            },
+        })
+        .collect::<Vec<_>>();
+
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
             <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
             <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
+            <vscode-panels>
+                <vscode-panel-tab id="tab-1">
+                    {"PROBLEMS"}
+                </vscode-panel-tab>
+                <vscode-panel-tab id="tab-2">
+                    {"OUTPUT"}
+                </vscode-panel-tab>
+                <vscode-panel-tab id="tab-3">
+                    {"DEBUG CONSOLE"}
+                </vscode-panel-tab>
+                <vscode-panel-tab id="tab-4">
+                    {"TERMINAL"}
+                </vscode-panel-tab>
+                <vscode-panel-view id="view-1"> {"Problems Content"} </vscode-panel-view>
+                <vscode-panel-view id="view-2"> {"Output Content"} </vscode-panel-view>
+                <vscode-panel-view id="view-3"> {"Debug Console Content"} </vscode-panel-view>
+                <vscode-panel-view id="view-4"> {"Terminal Content"} </vscode-panel-view>
+            </vscode-panels>
             <div>{ "Hello World!" }</div>
+            <ImageSelectionList images={ entries }/>
             <div class={image_view_container_style}>
                 <GLView node_ref={my_node_ref} />
             </div>

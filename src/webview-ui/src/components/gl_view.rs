@@ -1,15 +1,6 @@
-
-
-
-
 use stylist::yew::use_style;
 
-
 use yew::prelude::*;
-
-
-// use crate::components::glcontext::use_gl_context;
-// use crate::components::GL;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {

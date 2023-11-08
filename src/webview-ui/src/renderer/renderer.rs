@@ -5,6 +5,7 @@ use image;
 use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
+    WebGlTexture,
 };
 use yew::NodeRef;
 
@@ -123,6 +124,42 @@ impl Renderer {
 
         let cb = Rc::new(RefCell::new(None));
 
+        let texture = {
+            let texture = gl
+                .create_texture()
+                .ok_or("failed to create texture")
+                .unwrap();
+            gl.bind_texture(GL::TEXTURE_2D, Some(&texture));
+
+            // Because images have to be downloaded over the internet
+            // they might take a moment until they are ready.
+            // Until then put a single pixel in the texture so we can
+            // use it immediately. When the image has finished downloading
+            // we'll update the texture with the contents of the image.
+            let level = 0;
+            let internalFormat = GL::RGBA as i32;
+            let width = 1;
+            let height = 1;
+            let border = 0;
+            let srcFormat = GL::RGBA;
+            let srcType = GL::UNSIGNED_BYTE;
+            let pixel = [0u8, 0, 255, 255]; // opaque blue
+            gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
+                GL::TEXTURE_2D,
+                level,
+                internalFormat,
+                width,
+                height,
+                border,
+                srcFormat,
+                srcType,
+                &pixel,
+                0,
+            ).map_err(|e| format!("failed to set pixel: {:?}", e)).unwrap();
+
+            Some(texture)
+        };
+
         *cb.borrow_mut() = Some(Closure::wrap(Box::new({
             let cb = cb.clone();
             let gl = gl.clone();
@@ -134,7 +171,7 @@ impl Renderer {
                     let _ = cb.borrow_mut().take();
                     return;
                 } else {
-                    Renderer::render(&gl, &view_holders);
+                    Renderer::render(&gl, &view_holders, texture.as_ref());
                     // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
@@ -172,12 +209,12 @@ impl Renderer {
             .image_id = Some(image_id.to_string());
     }
 
-    fn render(gl: &WebGl2RenderingContext, view_holders: &Rc<RefCell<ViewHolders>>) {
+    fn render(gl: &WebGl2RenderingContext, view_holders: &Rc<RefCell<ViewHolders>>, texture: Option<&WebGlTexture>) {
         let render_result = view_holders
             .borrow()
             .visible_nodes()
             .iter()
-            .map(|(v, e)| Renderer::render_view(gl, v, e))
+            .map(|(v, e)| Renderer::render_view(gl, v, e, texture))
             .collect::<Result<Vec<_>, _>>();
         if let Err(e) = render_result {
             log::error!("Renderer::render: {}", e);
@@ -188,6 +225,7 @@ impl Renderer {
         gl: &WebGl2RenderingContext,
         v: &ViewHolder,
         e: &HtmlElement,
+        texture: Option<&WebGlTexture>,
     ) -> Result<(), String> {
         let canvas = gl
             .canvas()
@@ -219,15 +257,22 @@ impl Renderer {
         gl.clear_color(1.0, 0.0, 0.0, 1.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
-        log::debug!("creating image...");
-        let solid_image_data =
-            image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
-        log::debug!("created buffer");
-        let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
-        log::debug!("created image. width: {}, height: {}", solid_image.width(), solid_image.height());
-        log::debug!("sample value [128, 128]: {:?}", solid_image.to_rgba8().get_pixel(128, 128));
-        let tex = create_texture_from_image(gl, &solid_image)?;
-        log::debug!("successfully created texture");
+        // log::debug!("creating image...");
+        // let solid_image_data =
+        //     image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
+        // log::debug!("created buffer");
+        // let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
+        // log::debug!(
+        //     "created image. width: {}, height: {}",
+        //     solid_image.width(),
+        //     solid_image.height()
+        // );
+        // log::debug!(
+        //     "sample value [128, 128]: {:?}",
+        //     solid_image.to_rgba8().get_pixel(128, 128)
+        // );
+        // let tex = create_texture_from_image(gl, &solid_image)?;
+        // log::debug!("successfully created texture");
 
         let vert_code = include_str!("../shaders/basic.vert");
         let frag_code = include_str!("../shaders/basic.frag");
@@ -260,8 +305,11 @@ impl Renderer {
             .setter)(&gl, &attr);
 
         shader_program.uniform_setters.get("u_time").unwrap()(&gl, &0.5);
-        let t = tex.deref();
-        shader_program.uniform_setters.get("u_texture").ok_or("could not find setter for u_texture")?(&gl, t);
+        let t = texture.ok_or("no texture")?;
+        shader_program
+            .uniform_setters
+            .get("u_texture")
+            .ok_or("could not find setter for u_texture")?(&gl, t);
 
         // Attach the time as a uniform for the GL context.
         gl.draw_arrays(GL::TRIANGLES, 0, 6);

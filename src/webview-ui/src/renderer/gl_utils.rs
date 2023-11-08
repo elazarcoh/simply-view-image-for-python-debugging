@@ -939,9 +939,83 @@ impl<'a> GLProgramBuilder<'a> {
 impl<'a> GLProgramBuilderBuilder<'a> {
     pub fn build(self) -> Result<GLGuard<WebGlProgram>, String> {
         self.fallible_build()
-            .map(|b| create_program(b.gl, b.vertex_shader, b.fragment_shader, Some(b.attributes)))
-            .expect("All required fields were initialized")
+            .map_err(|e| format!("GLProgramBuilder error: {}", e))
+            .and_then(|b| {
+                create_program(b.gl, b.vertex_shader, b.fragment_shader, Some(b.attributes))
+            })
     }
+}
+
+/**
+ * Creates setter functions for all uniforms of a shader
+ * program.
+ *
+ * @see {@link module:twgl.setUniforms}
+ *
+ * @param {WebGLProgram} program the program to create setters for.
+ * @returns {Object.<string, function>} an object with a setter by name for each uniform
+ * @memberOf module:twgl/programs
+ */
+fn createUniformSetters(gl: &GL, program: &WebGlProgram) {
+    // let textureUnit = 0;
+
+    // /**
+    //  * Creates a setter for a uniform of the given program with it's
+    //  * location embedded in the setter.
+    //  * @param {WebGLProgram} program
+    //  * @param {WebGLUniformInfo} uniformInfo
+    //  * @returns {function} the created setter.
+    //  */
+    // let s: HashMap<String, GLSetter> = HashMap::new();
+    // let createUniformSetter = |program, uniformInfo| {
+    //     //     let location = gl.get_uniform_location(program, uniformInfo.name);
+    //     //   var isArray = (uniformInfo.size > 1 && uniformInfo.name.substr(-3) === "[0]");
+    //     //   var type = uniformInfo.type;
+    //     //   var typeInfo = typeMap[type];
+    //     //   if (!typeInfo) {
+    //     //     throw ("unknown type: 0x" + type.toString(16)); // we should never get here.
+    //     //   }
+    //     //   if (typeInfo.bindPoint) {
+    //     //     // it's a sampler
+    //     //     var unit = textureUnit;
+    //     //     textureUnit += uniformInfo.size;
+
+    //     //     if (isArray) {
+    //     //       return typeInfo.arraySetter(gl, type, unit, location, uniformInfo.size);
+    //     //     } else {
+    //     //       return typeInfo.setter(gl, type, unit, location, uniformInfo.size);
+    //     //     }
+    //     //   } else {
+    //     //     if (typeInfo.arraySetter && isArray) {
+    //     //       return typeInfo.arraySetter(gl, location);
+    //     //     } else {
+    //     //       return typeInfo.setter(gl, location);
+    //     //     }
+    //     //   }
+    // };
+    // let uniformSetters: HashMap<String, fn()> = HashMap::new();
+    // let numUniforms = gl
+    //     .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
+    //     .as_f64()
+    //     .unwrap() as u32;
+
+    // for ii in 0..numUniforms {
+    //     let uniformInfo = gl
+    //         .get_active_uniform(program, ii)
+    //         .ok_or("Could not get uniform info")?;
+
+    //     let name = uniformInfo.name();
+    //     // remove the array suffix.
+    //     // - uniforms end with '[0]'
+    //     let name = if name.ends_with("[0]") {
+    //         &name[..name.len() - 3]
+    //     } else {
+    //         &name
+    //     };
+    //     let setter = createUniformSetter(program, uniformInfo);
+    //     uniformSetters[name] = setter;
+    // }
+    // // return uniformSetters;
 }
 
 // pub fn createProgramInfo(

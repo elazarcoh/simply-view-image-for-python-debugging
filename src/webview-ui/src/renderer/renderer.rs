@@ -169,16 +169,22 @@ impl Renderer {
     }
 
     fn render(gl: &WebGl2RenderingContext, view_holders: &Rc<RefCell<ViewHolders>>) {
-        view_holders
+        let render_result = view_holders
             .borrow()
             .visible_nodes()
             .iter()
-            .for_each(|(v, e)| {
-                Renderer::render_view(gl, v, e);
-            });
+            .map(|(v, e)| Renderer::render_view(gl, v, e))
+            .collect::<Result<Vec<_>, _>>();
+        if let Err(e) = render_result {
+            log::error!("Renderer::render: {}", e);
+        }
     }
 
-    fn render_view(gl: &WebGl2RenderingContext, v: &ViewHolder, e: &HtmlElement) -> Result<(), JsValue> {
+    fn render_view(
+        gl: &WebGl2RenderingContext,
+        v: &ViewHolder,
+        e: &HtmlElement,
+    ) -> Result<(), String> {
         let canvas = gl
             .canvas()
             .unwrap()
@@ -206,7 +212,7 @@ impl Renderer {
         gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
 
-        gl.clear_color(1.0, 0.0, 0.0, 1.0);
+        gl.clear_color(1.0, 1.0, 0.0, 1.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
         let vert_code = include_str!("../shaders/basic.vert");
@@ -224,28 +230,12 @@ impl Renderer {
         gl.bind_buffer(GL::ARRAY_BUFFER, Some(&vertex_buffer));
         gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &verts, GL::STATIC_DRAW);
 
-        // let program = gl_utils::ProgramBuilder::default()
-        //     .vertex_shader(vert_code);
-
         let shader_program = gl_utils::GLProgramBuilder::new(&gl)
             .vertex_shader(vert_code)
             .fragment_shader(frag_code)
             .attribute("a_position")
             .build()?;
-
-        // let vert_shader = gl.create_shader(GL::VERTEX_SHADER).unwrap();
-        // gl.shader_source(&vert_shader, vert_code);
-        // gl.compile_shader(&vert_shader);
-
-        // let frag_shader = gl.create_shader(GL::FRAGMENT_SHADER).unwrap();
-        // gl.shader_source(&frag_shader, frag_code);
-        // gl.compile_shader(&frag_shader);
-
-        // let shader_program = gl.create_program().unwrap();
-        // gl.attach_shader(&shader_program, &vert_shader);
-        // gl.attach_shader(&shader_program, &frag_shader);
-        // gl.link_program(&shader_program);
-
+            
         gl.use_program(Some(&shader_program));
 
         // Attach the position vector as an attribute for the GL context.

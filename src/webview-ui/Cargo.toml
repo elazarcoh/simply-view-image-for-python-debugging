@@ -76,6 +76,7 @@ features = [
   'WebGlShader',
   'WebGlUniformLocation',
   'WebGlTexture',
+  "WebGlActiveInfo",
   # 'WebSocket',
   "BinaryType",
   "Blob",

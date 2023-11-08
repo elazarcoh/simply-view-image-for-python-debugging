@@ -11,7 +11,6 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 const {
     VSCodeExtensionsPackageJsonGenerator,
 } = require("vscode-extensions-json-generator/webpack");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const path = require("path");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -75,60 +74,16 @@ const extensionConfig = {
     ],
 };
 
-// Config for webview source code (to be run in a web-based context)
+// Config for webview source code 
 /** @type WebpackConfig */
-const webviewConfig = {
-    ...baseConfig,
-    target: ["web", "es2020"],
-    entry: "./src/webview-ui/main.ts",
-    experiments: { outputModule: true },
-    resolve: {
-        extensions: [".ts", ".tsx", ".js", ".jsx", ".css"],
-    },
-    module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                use: [
-                    {
-                        loader: "ts-loader",
-                        options: {
-                            compilerOptions: {
-                                noEmit: false,
-                            },
-                        },
-                    },
-                ],
-                exclude: "/node_modules/",
-            },
-            {
-                test: /\.css$/,
-                use: [MiniCssExtractPlugin.loader, "css-loader"],
-            },
-        ],
-    },
-    plugins: [
-        new MiniCssExtractPlugin({
-            filename: "webview.css",
-        }),
-        // new ESLintPlugin({ extensions: ["ts", "tsx"], }),
-    ],
-    output: {
-        path: dist,
-        filename: "webview.js",
-        libraryTarget: "module",
-        chunkFormat: "module",
-    },
-};
-
-const rustWebviewConfig = {
+const WebviewConfig = {
     ...baseConfig,
     entry: {
         index: path.resolve(webviewPath, "index.js"),
     },
     output: {
         path: dist,
-        filename: "webview.js"
+        filename: "webview.js",
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -142,10 +97,9 @@ const rustWebviewConfig = {
         // Have this example work in Edge which doesn't ship `TextEncoder` or
         // `TextDecoder` at this time.
         new webpack.ProvidePlugin({
-          TextDecoder: ['text-encoding', 'TextDecoder'],
-          TextEncoder: ['text-encoding', 'TextEncoder']
-        })
-    ],
+            TextDecoder: ['text-encoding', 'TextDecoder'],
+            TextEncoder: ['text-encoding', 'TextEncoder']
+        })],
     experiments: {
         asyncWebAssembly: true,
         syncWebAssembly: true,
@@ -153,4 +107,4 @@ const rustWebviewConfig = {
 }
 
 
-module.exports = [extensionConfig, rustWebviewConfig];
+module.exports = [extensionConfig, WebviewConfig];

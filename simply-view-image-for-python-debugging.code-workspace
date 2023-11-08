@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "example-plugin"
+		},
+		{
+			"path": "webview-ui"
 		}
 	],
 	"settings": {

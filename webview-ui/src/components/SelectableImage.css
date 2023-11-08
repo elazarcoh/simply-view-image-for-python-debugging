@@ -1,0 +1,25 @@
+.svifpd-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-editor-foreground);
+    cursor: pointer;
+}
+
+.svifpd-image-frame {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: var(--vscode-editor-background);
+    cursor: pointer;
+    min-width: 100px;
+    min-height: 100px;
+    padding: 5px;
+}

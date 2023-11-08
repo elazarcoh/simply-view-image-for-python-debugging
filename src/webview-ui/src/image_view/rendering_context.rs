@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
 use super::{
@@ -8,5 +10,5 @@ use super::{
 pub trait RenderingContext {
     fn gl(&self) -> WebGl2RenderingContext;
     fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)>;
-    fn texture_by_id(&self, id: &ImageId) -> Option<&TextureImage>;
+    fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
 }

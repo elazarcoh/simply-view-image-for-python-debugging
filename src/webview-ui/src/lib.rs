@@ -70,15 +70,11 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 struct VSCodeMessageHandler {
     webview_api: vscode::WebviewApi,
-    image_cache: Rc<RefCell<ImageCache>>,
 }
 
 impl VSCodeMessageHandler {
-    pub fn new(webview_api: vscode::WebviewApi, image_cache: Rc<RefCell<ImageCache>>) -> Self {
-        Self {
-            webview_api,
-            image_cache,
-        }
+    pub fn new(webview_api: vscode::WebviewApi) -> Self {
+        Self { webview_api }
     }
 }
 
@@ -255,6 +251,7 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
     pub renderer: RefCell<Renderer>,
+    pub texture_image_cache: RefCell<ImageCache>,
     pub image_views_coordinator: RefCell<ImageViewsCoordinator>,
     pub vscode_message_handler: VSCodeMessageHandler,
 }
@@ -268,8 +265,11 @@ impl RenderingContext for Coordinator {
             .clone()
     }
 
-    fn texture_by_id(&self, id: &ImageId) -> Option<&TextureImage> {
-        self.image_views_coordinator.texture_image_by_id(id)
+    fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>> {
+        self.texture_image_cache
+            .borrow()
+            .get(id)
+            .map(|x| Rc::clone(x))
     }
 
     fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)> {
@@ -282,12 +282,12 @@ fn App() -> Html {
     let coordinator = use_memo(
         {
             let vscode = vscode::acquire_vscode_api();
-            let image_cache = Rc::new(RefCell::new(ImageCache::new()));
             |_| Coordinator {
                 gl: RefCell::new(None),
                 renderer: RefCell::new(Renderer::new()),
+                texture_image_cache: RefCell::new(ImageCache::new()),
                 image_views_coordinator: RefCell::new(ImageViewsCoordinator::new()),
-                vscode_message_handler: VSCodeMessageHandler::new(vscode, image_cache),
+                vscode_message_handler: VSCodeMessageHandler::new(vscode),
             }
         },
         (),
@@ -365,22 +365,22 @@ fn App() -> Html {
                     .set_rendering_context(coordinator.clone());
 
                 // TODO: remove. debug thing
-                let _ = {
-                    create_image_for_view(&gl).map(|image| {
-                        (&coordinator)
+                if let Err(err) = create_image_for_view(&gl)
+                    .map(|image| (&coordinator).texture_image_cache.borrow_mut().add(image))
+                    .map(|id| {
+                        coordinator
                             .image_views_coordinator
                             .borrow_mut()
-                            .add_image(image)
+                            .set_image_to_view(
+                                id,
+                                image_view::types::InViewName::Single(
+                                    image_view::types::InSingleViewName::Single,
+                                ),
+                            )
                     })
-                    // .map(|id| {
-                    //     coordinator.image_views_coordinator.set_image_to_view(
-                    //         id,
-                    //         image_view::types::InViewName::Single(
-                    //             image_view::types::InSingleViewName::Single,
-                    //         ),
-                    //     )
-                    // });
-                };
+                {
+                    log::error!("Error creating image: {:?}", err);
+                }
 
                 move || {
                     coordinator.gl.replace(None);

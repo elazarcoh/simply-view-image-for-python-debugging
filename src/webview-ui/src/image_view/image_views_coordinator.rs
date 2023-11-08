@@ -75,18 +75,15 @@ impl CameraProvider {
 pub struct ImageViewsCoordinator {
     camera_provider: CameraProvider,
     view_holders: ViewHolders,
-    pub image_cache: ImageCache,
 }
 
 impl ImageViewsCoordinator {
     pub fn new() -> Self {
         let camera_provider = CameraProvider::new();
         let view_holders = ViewHolders::new(&camera_provider);
-        let image_cache = ImageCache::new();
         Self {
             camera_provider,
             view_holders,
-            image_cache,
         }
     }
 
@@ -94,12 +91,7 @@ impl ImageViewsCoordinator {
         self.view_holders.0.get(&view_id).unwrap().node_ref.clone()
     }
 
-    pub fn add_image(&mut self, image: TextureImage) -> ImageId {
-        self.image_cache.add(image)
-    }
-
     pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: InViewName) {
-        let image = self.image_cache.get(&image_id).unwrap();
         let view = self.view_holders.0.get_mut(&view_id).unwrap();
         view.model.set_image_id(image_id);
     }
@@ -108,7 +100,4 @@ impl ImageViewsCoordinator {
         self.view_holders.visible_nodes()
     }
 
-    pub fn texture_image_by_id(&self, id: &ImageId) -> Option<&TextureImage> {
-        self.image_cache.get(id)
-    }
 }

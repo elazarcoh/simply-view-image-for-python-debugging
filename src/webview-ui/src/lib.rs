@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 use log::{info, warn};
 use std::rc::Rc;
-use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext};
+use web_sys::{window, HtmlCanvasElement, WebGl2RenderingContext};
 
 use gloo::events::EventListener;
 use wasm_bindgen::prelude::*;

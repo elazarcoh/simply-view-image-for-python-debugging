@@ -3,7 +3,7 @@ use gloo_timers::callback::Interval;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, HtmlElement, WebGlRenderingContext};
+use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext};
 use yew::prelude::*;
 use yew_hooks::use_raf;
 

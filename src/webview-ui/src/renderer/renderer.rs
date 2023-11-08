@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use wasm_bindgen::prelude::*;
-use web_sys::{HtmlElement, WebGlRenderingContext, HtmlCanvasElement};
+use web_sys::{HtmlElement, WebGl2RenderingContext, HtmlCanvasElement};
 use yew::NodeRef;
 
 use super::{InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
@@ -57,7 +57,7 @@ impl ViewHolders {
 
 #[derive(PartialEq)]
 pub struct Renderer {
-    gl: Option<WebGlRenderingContext>,
+    gl: Option<WebGl2RenderingContext>,
     view_holders: Rc<RefCell<ViewHolders>>,
 }
 
@@ -90,10 +90,10 @@ impl Renderer {
             .expect("should register `requestAnimationFrame` OK");
     }
 
-    pub fn bind_gl(&mut self, gl: WebGlRenderingContext) {
+    pub fn bind_gl(&mut self, gl: WebGl2RenderingContext) {
         log::debug!("Renderer::bind_gl");
 
-        gl.enable(WebGlRenderingContext::SCISSOR_TEST);
+        gl.enable(WebGl2RenderingContext::SCISSOR_TEST);
 
         // Gloo-render's request_animation_frame has this extra closure
         // wrapping logic running every frame, unnecessary cost.
@@ -132,7 +132,7 @@ impl Renderer {
         self.view_holders.borrow_mut().register(view_id, node);
     }
 
-    fn render(gl: &WebGlRenderingContext, view_holders: &Rc<RefCell<ViewHolders>>) {
+    fn render(gl: &WebGl2RenderingContext, view_holders: &Rc<RefCell<ViewHolders>>) {
         view_holders
             .borrow()
             .visible_nodes()
@@ -141,10 +141,10 @@ impl Renderer {
                 Renderer::render_view(gl, v, e);
             });
         // gl.clear_color(0.0, 1.0, 0.0, 1.0);
-        // gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+        // gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
-    fn render_view(gl: &WebGlRenderingContext, v: &ViewHolder, e: &HtmlElement) {
+    fn render_view(gl: &WebGl2RenderingContext, v: &ViewHolder, e: &HtmlElement) {
         let canvas = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
         let rect = e.get_bounding_client_rect();
 
@@ -163,7 +163,7 @@ impl Renderer {
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
 
         gl.clear_color(1.0, 0.0, 0.0, 1.0);
-        gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
 }

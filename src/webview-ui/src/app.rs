@@ -7,7 +7,7 @@ use wasm_bindgen::JsCast;
 use gloo::console;
 use gloo::events::EventListener;
 use js_sys::Date;
-use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext as GL, WebGlRenderingContext};
+use web_sys::{window, HtmlCanvasElement, WebGl2RenderingContext as GL, WebGl2RenderingContext};
 use yew::{html, Component, Context, Html, NodeRef};
 
 // Define the possible messages which can be sent to the component
@@ -31,7 +31,7 @@ impl App {
             .expect("should register `requestAnimationFrame` OK");
     }
 
-    fn render_gl(gl: WebGlRenderingContext) {
+    fn render_gl(gl: WebGl2RenderingContext) {
         // This should log only once -- not once per frame
 
         let mut timestamp = 0.0;
@@ -181,7 +181,7 @@ impl Component for App {
         // for making GL calls.
         let canvas = self.node_ref.cast::<HtmlCanvasElement>().unwrap();
         let gl: GL = canvas
-            .get_context("webgl")
+            .get_context("webgl2")
             .unwrap()
             .unwrap()
             .dyn_into()

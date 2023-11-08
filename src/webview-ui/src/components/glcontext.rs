@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 
 use stylist::yew::use_style;
-use web_sys::{window, Event, HtmlCanvasElement, HtmlElement, WebGlRenderingContext};
+use web_sys::{window, Event, HtmlCanvasElement, HtmlElement, WebGl2RenderingContext};
 use yew::prelude::*;
 use yew::{function_component, html, use_effect_with_deps, use_node_ref, Html};
 
@@ -15,9 +15,9 @@ use crate::renderer::Renderer;
 
 // #[derive(Debug, PartialEq, Clone)]
 // pub struct GL {
-//     pub gl: Option<WebGlRenderingContext>,
-//     // pub gl: <Option<WebGlRenderingContext>>,
-//     pub get_gl: Callback<(), Option<WebGlRenderingContext>>,
+//     pub gl: Option<WebGl2RenderingContext>,
+//     // pub gl: <Option<WebGl2RenderingContext>>,
+//     pub get_gl: Callback<(), Option<WebGl2RenderingContext>>,
 // }
 
 // #[derive(Properties, Debug, PartialEq)]
@@ -26,12 +26,12 @@ use crate::renderer::Renderer;
 //     pub children: Children,
 // }
 
-// type TTT = Box<dyn Fn((), NodeRef) -> WebGlRenderingContext>;
+// type TTT = Box<dyn Fn((), NodeRef) -> WebGl2RenderingContext>;
 
 // #[function_component]
 // pub fn GLProvider(props: &GLContextProps) -> Html {
 //     let canvas_ref = use_node_ref();
-//     let gll = use_memo(|_| RefCell::<Option<WebGlRenderingContext>>::new(None), ());
+//     let gll = use_memo(|_| RefCell::<Option<WebGl2RenderingContext>>::new(None), ());
 
 //     let callback = {
 //         let canvas_ref = canvas_ref.clone();
@@ -49,8 +49,8 @@ use crate::renderer::Renderer;
 //                 .cast::<HtmlCanvasElement>()
 //                 .expect("canvas_ref not attached to a canvas element");
 
-//             let gl: WebGlRenderingContext = canvas
-//                 .get_context("webgl")
+//             let gl: WebGl2RenderingContext = canvas
+//                 .get_context("webgl2")
 //                 .unwrap()
 //                 .unwrap()
 //                 .dyn_into()
@@ -72,8 +72,8 @@ use crate::renderer::Renderer;
 //     //                 .cast::<HtmlCanvasElement>()
 //     //                 .expect("canvas_ref not attached to a canvas element");
 
-//     //             let glctx: WebGlRenderingContext = canvas
-//     //                 .get_context("webgl")
+//     //             let glctx: WebGl2RenderingContext = canvas
+//     //                 .get_context("webgl2")
 //     //                 .unwrap()
 //     //                 .unwrap()
 //     //                 .dyn_into()
@@ -99,8 +99,8 @@ use crate::renderer::Renderer;
 //     //                 .cast::<HtmlCanvasElement>()
 //     //                 .expect("canvas_ref not attached to a canvas element");
 
-//     //             let gl: WebGlRenderingContext = canvas
-//     //                 .get_context("webgl")
+//     //             let gl: WebGl2RenderingContext = canvas
+//     //                 .get_context("webgl2")
 //     //                 .unwrap()
 //     //                 .unwrap()
 //     //                 .dyn_into()
@@ -142,8 +142,8 @@ use crate::renderer::Renderer;
 //     //                 .cast::<HtmlCanvasElement>()
 //     //                 .expect("canvas_ref not attached to a canvas element");
 
-//     //             let gl: webglrenderingcontext = canvas
-//     //                 .get_context("webgl")
+//     //             let gl: WebGl2RenderingContext = canvas
+//     //                 .get_context("webgl2")
 //     //                 .unwrap()
 //     //                 .unwrap()
 //     //                 .dyn_into()
@@ -172,11 +172,11 @@ use crate::renderer::Renderer;
 #[derive(PartialEq)]
 pub struct Message {
     pub inner: String,
-    pub gl: Option<WebGlRenderingContext>,
+    pub gl: Option<WebGl2RenderingContext>,
 }
 
 impl Reducible for Message {
-    type Action = (String, Option<WebGlRenderingContext>);
+    type Action = (String, Option<WebGl2RenderingContext>);
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
         Message {
@@ -226,8 +226,8 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
                     .cast::<HtmlCanvasElement>()
                     .expect("canvas_ref not attached to a canvas element");
 
-                let gl: WebGlRenderingContext = canvas
-                    .get_context("webgl")
+                let gl: WebGl2RenderingContext = canvas
+                    .get_context("webgl2")
                     .unwrap()
                     .unwrap()
                     .dyn_into()

@@ -19,6 +19,7 @@ mod vscode;
 mod webgl_utils;
 mod store;
 mod reducer;
+mod tmp_for_debug;
 use app::App;
 use cfg_if::cfg_if;
 use wasm_bindgen::prelude::*;

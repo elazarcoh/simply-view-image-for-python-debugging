@@ -1,5 +1,6 @@
 // based on twgl
 pub mod types;
+pub mod general;
 pub use types::*;
 pub mod constants;
 pub mod program;

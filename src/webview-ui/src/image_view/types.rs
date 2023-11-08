@@ -72,7 +72,7 @@ lazy_static! {
     static ref FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS: std::collections::HashMap<(Datatype, u32), (InternalFormat, Format, ElementType)> = {
         let mut m = std::collections::HashMap::new();
         // rustfmt 
-        m.insert((Datatype::Uint8, 1), (InternalFormat::R8, Format::Red, ElementType::UnsignedByte));
+        m.insert((Datatype::Uint8, 1), (InternalFormat::Luminance, Format::Luminance, ElementType::UnsignedByte));
         m.insert((Datatype::Uint8, 2), (InternalFormat::Rg8, Format::Rg, ElementType::UnsignedByte));
         m.insert((Datatype::Uint8, 3), (InternalFormat::Rgb8, Format::Rgb, ElementType::UnsignedByte));
         m.insert((Datatype::Uint8, 4), (InternalFormat::Rgba8, Format::Rgba, ElementType::UnsignedByte));
@@ -84,6 +84,23 @@ lazy_static! {
 
         m
     };
+}
+
+fn typed_array_from_bytes(
+    bytes: &[u8],
+    element_type: ElementType,
+) -> Result<js_sys::Object, String> {
+    let array_buffer = js_sys::Uint8Array::from(bytes).buffer();
+    let array = match element_type {
+        ElementType::Byte => js_sys::Int8Array::new(&array_buffer).into(),
+        ElementType::UnsignedByte => js_sys::Uint8Array::new(&array_buffer).into(),
+        ElementType::Short => js_sys::Int16Array::new(&array_buffer).into(),
+        ElementType::UnsignedShort => js_sys::Uint16Array::new(&array_buffer).into(),
+        ElementType::Int => js_sys::Int32Array::new(&array_buffer).into(),
+        ElementType::UnsignedInt => js_sys::Uint32Array::new(&array_buffer).into(),
+        ElementType::Float => js_sys::Float32Array::new(&array_buffer).into(),
+    };
+    Ok(array)
 }
 
 fn create_texture_from_image_data(
@@ -105,7 +122,7 @@ fn create_texture_from_image_data(
                 image.info.datatype, image.info.channels
             )
         })?;
-    gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
+    gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
         webgl_utils::TextureTarget::Texture2D as _,
         0,
         internal_format as _,
@@ -114,7 +131,7 @@ fn create_texture_from_image_data(
         0,
         format as _,
         type_ as _,
-        &image.bytes,
+        &typed_array_from_bytes(&image.bytes, type_)?,
         0,
     )
     .map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;

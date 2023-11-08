@@ -31,6 +31,7 @@ use crate::store::AppState;
 use crate::vscode;
 use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
+use crate::webgl_utils;
 
 fn rendering_context() -> impl RenderingContext {
     struct RenderingContextImpl {}
@@ -126,7 +127,7 @@ pub fn App() -> Html {
 
         move || {
             // send message to VSCode that the webview is ready
-            VSCodeRequests::webview_ready();
+            // VSCodeRequests::webview_ready();
 
             let message_listener = VSCodeListener::install_incoming_message_handler();
 
@@ -185,6 +186,13 @@ pub fn App() -> Html {
                 .dyn_into()
                 .unwrap();
 
+            [
+                webgl_utils::WebGlExtension::OesTextureFloat,
+                webgl_utils::WebGlExtension::OesTextureFloatLinear,
+                webgl_utils::WebGlExtension::ExtColorBufferFloat,
+            ]
+            .map(|ext| webgl_utils::general::enable_extension(&gl, ext).unwrap());
+
             let dispatch = Dispatch::<AppState>::new();
             dispatch.reduce_mut(|state| {
                 state.gl = Some(gl.clone());
@@ -193,6 +201,29 @@ pub fn App() -> Html {
             renderer
                 .borrow_mut()
                 .set_rendering_context(Rc::new(rendering_context()));
+
+            log::debug!("creating debug image texture");
+            // let image = crate::tmp_for_debug::image_texture_rgba_u8(&gl);
+            // let image = crate::tmp_for_debug::image_texture_rgb_u8(&gl);
+            // let image = crate::tmp_for_debug::image_texture_rg_u8(&gl);
+            // let image = crate::tmp_for_debug::image_texture_gray_u8(&gl);
+            // let image = crate::tmp_for_debug::image_texture_rgba_f32(&gl);
+            // let image = crate::tmp_for_debug::image_texture_rgb_f32(&gl);
+            let image = crate::tmp_for_debug::image_texture_gray_f32(&gl);
+            log::debug!(
+                "image created: w={:?}, h={:?}, c={:?}, dt={:?}, num_bytes={:?}",
+                image.image.info.width,
+                image.image.info.height,
+                image.image.info.channels,
+                image.image.info.datatype,
+                image.image.bytes.len(),
+            );
+            let image_id = image.image.info.image_id.clone();
+            log::debug!("adding image to store");
+            dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), image));
+            log::debug!("setting image to view");
+            let view_id = ViewId::Primary;
+            dispatch.apply(StoreAction::SetImageToView(image_id, view_id));
 
             move || {
                 dispatch.reduce_mut(|state| {

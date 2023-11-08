@@ -8,13 +8,15 @@ uniform vec2 u_time;
 uniform vec2 u_offset;
 
 uniform sampler2D u_texture;
+uniform mat4 u_color_multiplier;
 
 uniform vec2 u_buffer_dimension;
 uniform bool u_enable_borders;
 
 void main()
 {
-  vec4 color=texture(u_texture,vout_uv);
+  vec4 sampled = texture(u_texture,vout_uv);
+  vec4 color= vec4((u_color_multiplier*vec4(sampled.rgb,1.0)).rgb,sampled.a);
   
   vec2 buffer_position=vout_uv*u_buffer_dimension;
   if(u_enable_borders){

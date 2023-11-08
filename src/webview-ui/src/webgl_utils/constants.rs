@@ -244,3 +244,12 @@ lazy_static! {
         m
     };
 }
+
+#[non_exhaustive]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+pub enum WebGlExtension {
+    OesVertexArrayObject,
+    OesTextureFloat,
+    OesTextureFloatLinear,
+    ExtColorBufferFloat,
+}

@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use glam::{Mat3, Vec2, Vec3};
+use glam::{Mat3, Vec2, Vec3, Mat4};
 
 use wasm_bindgen::prelude::*;
 use web_sys::{
@@ -342,6 +342,8 @@ impl Renderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
+        let color_multiplier = Mat4::IDENTITY;
+
         gl.use_program(Some(&program.program));
         set_uniforms(
             program,
@@ -350,6 +352,7 @@ impl Renderer {
                 ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
                 ("u_enable_borders", UniformValue::Bool(&enable_borders)),
                 ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
+                ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
             ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);

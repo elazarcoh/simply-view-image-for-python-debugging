@@ -4,7 +4,8 @@ const heightMap = new WeakMap();
 
 export class ImageData {
     data: Uint8ClampedArray = new Uint8ClampedArray(0);
-    colorSpace: PredefinedColorSpace = "srgb";
+    colorSpace = "srgb";
+    // colorSpace: PredefinedColorSpace = "srgb";
 
     get width(): number {
         return widthMap.get(this) ?? 0;

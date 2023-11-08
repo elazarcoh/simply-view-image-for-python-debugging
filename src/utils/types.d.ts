@@ -15,3 +15,4 @@ type ExtractConstructorClass<Constructors extends unknown[]> = {
 };
 type TupleToUnion<T extends unknown[]> = T[number];
 type NonEmptyArray<T> = [T, ...T[]];
+type MessageEvent<T> = {data: T}

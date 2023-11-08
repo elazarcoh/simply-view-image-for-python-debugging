@@ -48,6 +48,12 @@ impl ViewsCameras {
     }
 }
 
+impl Default for ViewsCameras {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn calculate_view_projection(
     canvas_size: &Size,
     view_size: &Size,

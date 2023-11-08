@@ -71,10 +71,7 @@ export class HelloWorldPanel {
                     // Enable JavaScript in the webview
                     enableScripts: true,
                     // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
-                    localResourceRoots: [
-                        Uri.joinPath(extensionUri, "out"),
-                        Uri.joinPath(extensionUri, "webview-ui/build"),
-                    ],
+                    localResourceRoots: [Uri.joinPath(extensionUri, "dist")],
                 }
             );
 
@@ -115,20 +112,8 @@ export class HelloWorldPanel {
      * rendered within the webview panel
      */
     private _getWebviewContent(webview: Webview, extensionUri: Uri) {
-        // The CSS file from the React build output
-        const stylesUri = getUri(webview, extensionUri, [
-            "webview-ui",
-            "build",
-            "assets",
-            "index.css",
-        ]);
-        // The JS file from the React build output
-        const scriptUri = getUri(webview, extensionUri, [
-            "webview-ui",
-            "build",
-            "assets",
-            "index.js",
-        ]);
+        const stylesUri = getUri(webview, extensionUri, ["dist", "webview.css"]);
+        const scriptUri = getUri(webview, extensionUri, ["dist", "webview.js"]);
 
         const nonce = getNonce();
 

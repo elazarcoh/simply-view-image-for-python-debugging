@@ -12,6 +12,8 @@ const {
     VSCodeExtensionsPackageJsonGenerator,
 } = require("vscode-extensions-json-generator/webpack");
 
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+
 const path = require("path");
 
 /** @type WebpackConfig */
@@ -95,10 +97,16 @@ const webviewConfig = {
             },
             {
                 test: /\.css$/,
-                use: ["style-loader", "css-loader"],
+                use: [MiniCssExtractPlugin.loader, "css-loader"],
             },
         ],
     },
+    plugins: [
+        new MiniCssExtractPlugin({
+            filename: "webview.css",
+        }),
+        // new ESLintPlugin({ extensions: ["ts", "tsx"], }),
+    ],
     output: {
         path: path.resolve(__dirname, "dist"),
         filename: "webview.js",

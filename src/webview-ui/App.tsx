@@ -7,6 +7,7 @@ import React, { useEffect } from "react";
 import { messageHandlerInstance } from "./../utils/MessageHandler";
 import ImagesGridFlow from "./components/ImagesGrid";
 import { useMeasure } from "react-use";
+import Plot from "react-plotly.js";
 
 // enum GalleryStyle {
 //     Single,
@@ -127,7 +128,7 @@ function App() {
             )
             .then((images) =>
                 setImages([
-                    ...images,
+                    images[0],
                     // ...images,
                     // ...images,
                     // ...images,
@@ -148,99 +149,23 @@ function App() {
         });
     }
 
-    const mainRef = React.useRef<HTMLDivElement>(null);
-
     return (
-        <main className="main" ref={mainRef}>
-            {/* <h1>{label}</h1> */}
-            {/* <VSCodeButton onClick={handleHowdyClick}>Howdy!</VSCodeButton>
+        <div className="App">
+            <main className="main">
+                <h1>{label}</h1>
+                {/* <VSCodeButton onClick={handleHowdyClick}>Howdy!</VSCodeButton>
             <RadioButtonGroup defaultValue="b">
                 <VSCodeButton value="a">A</VSCodeButton>
                 <VSCodeButton value="b">B</VSCodeButton>
                 <VSCodeButton value="c">C</VSCodeButton>
             </RadioButtonGroup> */}
-            {/* <div className="container">
-                <div className="image-wrap">
-                    <img src="http://placehold.it/150x150" alt="" />
-                </div>
-            </div> */}
 
-            <ImagesGridFlow images={images} ref={mainRef} />
-
-            {/* <div className="my-container"> */}
-            {/* <p>My Container</p> */}
-            {/* <div className="image-container">
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-
-                    <img
-                        className="img"
-                        src="https://via.placeholder.com/1550"
-                        alt="Placeholder square image"
-                    />
-                </div> */}
-            {/* <p>My Container</p> */}
-            {/* </div> */}
-        </main>
+                <ImagesGridFlow images={images}  />
+            </main>
+            <aside className="sidebar">
+                <h2>Images</h2>
+            </aside>
+        </div>
     );
 }
 

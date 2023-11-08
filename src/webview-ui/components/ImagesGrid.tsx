@@ -2,7 +2,7 @@ import ImageView from "./ImageView";
 import "./ImagesGrid.css";
 import { useEffect, useLayoutEffect, useState } from "react";
 import React from "react";
-import { useMeasure } from "react-use";
+import useMeasure from "react-use-measure";
 
 export interface ImageGridFlowProps {
     images: ImageData[];
@@ -88,57 +88,64 @@ const safeParseInt = (str: string) => {
     return Number.isNaN(num) ? undefined : num;
 };
 
-const ImageGrid = React.forwardRef<HTMLDivElement, ImageGridFlowProps>(
+const ImageGridInner = React.forwardRef<HTMLDivElement, ImageGridFlowProps>(
     ({ images }, parentRef) => {
         const numImages = images.length;
 
-        // const [width, height] = useWindowSize();
-        const [setRef, { width, height }] = useMeasure();
-        useEffect(() => {
-            if (
-                parentRef != null &&
-                typeof parentRef !== "function" &&
-                parentRef.current != null
-            ) {
-                setRef(parentRef.current);
-            }
-        }, []);
+        const [ref, bounds] = useMeasure();
+        const width = bounds.width;
+        const height = bounds.height;
+        // const [setRef, { width, height }] = useMeasure();
+        // useEffect(() => {
+        //     if (
+        //         parentRef != null &&
+        //         typeof parentRef !== "function" &&
+        //         parentRef.current != null
+        //     ) {
+        //         setRef(parentRef.current);
+        //     }
+        // }, []);
 
         // ask css for the gap
-        const gap =
-            safeParseInt(
-                window
-                    .getComputedStyle(document.documentElement)
-                    .getPropertyValue("--image-grid-gap")
-            ) ?? 0;
+        // const gap =
+        //     safeParseInt(
+        //         window
+        //             .getComputedStyle(document.documentElement)
+        //             .getPropertyValue("--image-grid-gap")
+        //     ) ?? 0;
 
-        const { numRows, numColumns, sideSize } = findOptimalGrid(
-            numImages,
-            width,
-            height,
-            gap
-        );
-        console.log(
-            "numRows: %d, numColumns: %d, sideSize: %d",
-            numRows,
-            numColumns,
-            sideSize
-        );
+        // const { numRows, numColumns, sideSize } = findOptimalGrid(
+        //     numImages,
+        //     width,
+        //     height,
+        //     gap
+        // );
+
+        // console.log(
+        //     "numRows: %d, numColumns: %d, sideSize: %d, width: %d, height: %d",
+        //     numRows,
+        //     numColumns,
+        //     sideSize,
+        //     width,
+        //     height
+        // );
 
         const gridStyle = {
-            gridTemplateColumns: `repeat(${numColumns}, ${sideSize}px)`,
-            gridTemplateRows: `repeat(${numRows}, ${sideSize}px)`,
+            // gridTemplateColumns: `repeat(${numColumns}, ${sideSize}px)`,
+            // gridTemplateRows: `repeat(${numRows}, ${sideSize}px)`,
         };
         return (
-            <div className="image-grid">
-                <div className="image-grid-flow" style={gridStyle}>
-                    {images.map((image) => (
-                        <ImageView imageData={image} key={uuid()} />
-                    ))}
-                </div>
+            <div className="image-grid" style={gridStyle} ref={ref}>
+                {images.map((image) => (
+                    <ImageView imageData={image} key={uuid()} />
+                ))}
             </div>
         );
     }
 );
+
+const ImageGrid = (props: ImageGridFlowProps) => {
+    return <ImageGridInner {...props} />;
+};
 
 export default ImageGrid;

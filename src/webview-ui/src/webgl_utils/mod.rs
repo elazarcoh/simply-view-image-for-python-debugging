@@ -6,4 +6,5 @@ pub mod program;
 pub mod attributes;
 pub mod textures;
 pub mod draw;
+pub mod reusable_buffer;
 

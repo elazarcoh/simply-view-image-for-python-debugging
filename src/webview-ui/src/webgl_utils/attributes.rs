@@ -26,13 +26,26 @@ pub trait IntoJsArray {
     fn into_js_array(self) -> Self::JsArray;
 }
 
-impl IntoJsArray for &[f32] {
+impl<'a> IntoJsArray for &'a [f32] {
     type JsArray = js_sys::Float32Array;
     fn into_js_array(self) -> Self::JsArray {
         js_sys::Float32Array::from(self)
     }
 }
 
+impl<'a> IntoJsArray for &'a [u8] {
+    type JsArray = js_sys::Uint8Array;
+    fn into_js_array(self) -> Self::JsArray {
+        js_sys::Uint8Array::from(self)
+    }
+}
+
+impl<'a> IntoJsArray for &'a [u16] {
+    type JsArray = js_sys::Uint16Array;
+    fn into_js_array(self) -> Self::JsArray {
+        js_sys::Uint16Array::from(self)
+    }
+}
 impl<'a, T, const N: usize> IntoJsArray for &'a [T; N]
 where
     &'a [T]: IntoJsArray,
@@ -43,17 +56,27 @@ where
     }
 }
 
-impl IntoJsArray for &[u8] {
-    type JsArray = js_sys::Uint8Array;
+impl<'a, T: 'a> IntoJsArray for &'a Vec<T>
+where
+    &'a [T]: IntoJsArray,
+{
+    type JsArray = <&'a [T] as IntoJsArray>::JsArray;
     fn into_js_array(self) -> Self::JsArray {
-        js_sys::Uint8Array::from(self)
+        self.as_slice().into_js_array()
     }
 }
 
-impl IntoJsArray for &[u16] {
-    type JsArray = js_sys::Uint16Array;
+impl IntoJsArray for Vec<f32> {
+    type JsArray = js_sys::Float32Array;
     fn into_js_array(self) -> Self::JsArray {
-        js_sys::Uint16Array::from(self)
+        js_sys::Float32Array::from(self.as_slice())
+    }
+}
+
+impl IntoJsArray for Vec<u8> {
+    type JsArray = js_sys::Uint8Array;
+    fn into_js_array(self) -> Self::JsArray {
+        js_sys::Uint8Array::from(self.as_slice())
     }
 }
 
@@ -95,9 +118,13 @@ where
     })
 }
 
-pub struct Arrays<'a> {
-    pub f32_arrays: Vec<ArraySpec<&'a [f32]>>,
-    pub u8_arrays: Vec<ArraySpec<&'a [u8]>>,
+pub struct Arrays<TF32, TU8>
+where
+    TF32: IntoJsArray,
+    TU8: IntoJsArray,
+{
+    pub f32_arrays: Vec<ArraySpec<TF32>>,
+    pub u8_arrays: Vec<ArraySpec<TU8>>,
 }
 
 /**
@@ -126,11 +153,15 @@ fn num_elements_from_attributes(gl: &GL, attribs: &[AttribInfo]) -> Result<usize
     }
 }
 
-pub fn create_buffer_info_from_arrays(
+pub fn create_buffer_info_from_arrays<TF32, TU8>(
     gl: &GL,
-    arrays: Arrays,
+    arrays: Arrays<TF32, TU8>,
     indices: Option<ArraySpec<&[u16]>>,
-) -> Result<BufferInfo, String> {
+) -> Result<BufferInfo, String>
+where
+    TF32: IntoJsArray + ElementTypeFor,
+    TU8: IntoJsArray + ElementTypeFor,
+{
     let mut attribs = vec![];
     let mut indices_buffer = None;
     let num_elements;

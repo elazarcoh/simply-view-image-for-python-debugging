@@ -47,6 +47,22 @@ impl TryFrom<GLConstant> for GLPrimitive {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+pub enum Format {
+    Alpha = GL::ALPHA,
+    Rgb = GL::RGB,
+    Rgba = GL::RGBA,
+    Luminance = GL::LUMINANCE,
+    LuminanceAlpha = GL::LUMINANCE_ALPHA,
+    Red = GL::RED,
+    Rg = GL::RG,
+    RedInteger = GL::RED_INTEGER,
+    RgInteger = GL::RG_INTEGER,
+    RgbInteger = GL::RGB_INTEGER,
+    RgbaInteger = GL::RGBA_INTEGER,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
 pub enum TextureTarget {
     Texture2D = GL::TEXTURE_2D,
     TextureCubeMap = GL::TEXTURE_CUBE_MAP,

@@ -25,7 +25,7 @@ use crate::{math_utils, webgl_utils};
 use super::camera::Camera;
 use super::constants::VIEW_SIZE;
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::text_rendering::TextRendering;
+use super::text_rendering::TextRenderer;
 use super::types::TextureImage;
 
 struct Programs {
@@ -36,6 +36,7 @@ struct Programs {
 struct RenderingData {
     gl: GL,
     programs: Programs,
+    text_renderer: TextRenderer,
 
     image_plane_buffer: BufferInfo,
 }
@@ -96,7 +97,7 @@ fn create_image_plane_attributes(
         gl,
         Arrays {
             f32_arrays: vec![a_image_plane_position, a_texture_uv],
-            u8_arrays: vec![],
+            u8_arrays: vec![] as Vec<ArraySpec<Vec<u8>>>,
         },
         Some(indices),
     )
@@ -132,11 +133,12 @@ impl Renderer {
             create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
                 .unwrap();
 
-        let gylph_rendering = TextRendering::try_new(gl.clone()).unwrap();
+        let text_renderer = TextRenderer::try_new(gl.clone()).unwrap();
 
-        let rendering_data = RenderingData {
+        let mut rendering_data = RenderingData {
             gl: gl.clone(),
             programs,
+            text_renderer,
             image_plane_buffer: image_plane_attributes,
         };
 
@@ -154,8 +156,8 @@ impl Renderer {
                     let _ = cb.borrow_mut().take();
                     return;
                 } else {
-                    Renderer::render(&gl, &rendering_data, rendering_context.as_ref());
-                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                    Renderer::render(&gl, &mut rendering_data, rendering_context.as_ref());
+                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));
@@ -196,7 +198,7 @@ impl Renderer {
 
     fn render(
         gl: &WebGl2RenderingContext,
-        rendering_data: &RenderingData,
+        rendering_data: &mut RenderingData,
         rendering_context: &dyn RenderingContext,
     ) {
         let render_result = rendering_context
@@ -277,7 +279,7 @@ impl Renderer {
 
     fn render_view(
         gl: &WebGl2RenderingContext,
-        rendering_data: &RenderingData,
+        rendering_data: &mut RenderingData,
         image_view_data: &ImageViewData,
         rendering_context: &dyn RenderingContext,
     ) -> Result<(), String> {
@@ -356,7 +358,7 @@ impl Renderer {
     }
 
     fn render_image(
-        rendering_data: &RenderingData,
+        rendering_data: &mut RenderingData,
         texture: Rc<TextureImage>,
         image_view_data: &ImageViewData,
     ) {
@@ -387,6 +389,14 @@ impl Renderer {
             ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
-        draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+        // draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+
+        // render text
+        rendering_data.text_renderer.queue_section(
+            glyph_brush::Section::default()
+                .add_text(glyph_brush::Text::new("Hello glyph_brush"))
+                .with_screen_position((0.0, 0.0)),
+        );
+        rendering_data.text_renderer.render();
     }
 }

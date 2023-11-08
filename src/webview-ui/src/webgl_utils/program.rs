@@ -179,7 +179,6 @@ fn create_attributes_setters(
     }
 
     Ok(attrib_setters)
-    //   return attribSetters;
 }
 
 pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformValue>) {

@@ -131,6 +131,8 @@ impl Renderer {
             create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
                 .unwrap();
 
+        let gylph_rendering = webgl_utils::glyph::GlyphRendering::try_new(gl.clone()).unwrap();
+
         let rendering_data = RenderingData {
             gl: gl.clone(),
             programs,
@@ -164,13 +166,13 @@ impl Renderer {
         let vert_code = include_str!("../shaders/basic.vert");
         let frag_code = include_str!("../shaders/basic.frag");
 
-        let shader_program = webgl_utils::GLProgramBuilder::new(&gl)
+        let shader_program = webgl_utils::program::GLProgramBuilder::new(&gl)
             .vertex_shader(vert_code)
             .fragment_shader(frag_code)
             .attribute("a_position")
             .build()?;
 
-        let image_program = webgl_utils::GLProgramBuilder::new(&gl)
+        let image_program = webgl_utils::program::GLProgramBuilder::new(&gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
             .fragment_shader(include_str!("../shaders/image.frag"))
             .attribute("vin_position");

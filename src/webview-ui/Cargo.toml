@@ -63,6 +63,7 @@ lazy_static = "1.4.0"
 glam = "0.24.1"
 enum_dispatch = "0.3.12"
 uuid = { version = "1.4.1", features = ["v4"] }
+glyph_brush = "0.7.8"
 
 [dependencies.web-sys]
 version = "0.3.22"

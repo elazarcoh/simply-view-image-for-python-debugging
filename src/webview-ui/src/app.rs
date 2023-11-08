@@ -178,9 +178,9 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 }
 
 struct Coordinator {
-    pub gl: RefCell<Option<WebGl2RenderingContext>>,
+    // pub gl: RefCell<Option<WebGl2RenderingContext>>,
     // configuration: configurations::Configuration,
-    pub texture_image_cache: RefCell<ImageCache>,
+    // pub texture_image_cache: RefCell<ImageCache>,
     // pub image_views: RefCell<ImageViews>,
     views_cameras: RefCell<ViewsCameras>,
     vscode: WebviewApi,
@@ -188,11 +188,13 @@ struct Coordinator {
 
 impl RenderingContext for Coordinator {
     fn gl(&self) -> WebGl2RenderingContext {
-        self.gl
-            .borrow()
-            .as_ref()
-            .expect("GL context not set")
-            .clone()
+        let state = Dispatch::<AppState>::new().get();
+        state.gl.clone().unwrap()
+        // self.gl
+        //     .borrow()
+        //     .as_ref()
+        //     .expect("GL context not set")
+        //     .clone()
     }
 
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>> {
@@ -260,10 +262,10 @@ impl IncomeMessageHandler for Coordinator {
             // TODO: remove this
             let image = image::DynamicImage::ImageRgba8(image.to_rgba8());
 
-            let image = TextureImage::try_new(image, self.gl.borrow().as_ref().unwrap())
-                .expect("Unable to create texture image");
+            // let image = TextureImage::try_new(image, self.gl.borrow().as_ref().unwrap())
+            //     .expect("Unable to create texture image");
 
-            let image_id = self.texture_image_cache.borrow_mut().add(image);
+            // let image_id = self.texture_image_cache.borrow_mut().add(image);
 
             let view_id = ViewId::Primary;
 
@@ -289,9 +291,9 @@ impl OutgoingMessageSender for Coordinator {
 pub fn App() -> Html {
     let coordinator = use_memo((), {
         |_| Coordinator {
-            gl: RefCell::new(None),
+            // gl: RefCell::new(None),
             // configuration: configurations::Configuration::default(),
-            texture_image_cache: RefCell::new(ImageCache::new()),
+            // texture_image_cache: RefCell::new(ImageCache::new()),
             // image_views: RefCell::new(ImageViews::new()),
             views_cameras: RefCell::new(ViewsCameras::new()),
             vscode: vscode::acquire_vscode_api(),
@@ -365,11 +367,8 @@ pub fn App() -> Html {
                 .dyn_into()
                 .unwrap();
 
-            // log::debug!("GL context created");
-
-            coordinator.gl.replace(Some(gl.clone()));
-
-            Dispatch::<AppState>::new().reduce_mut(|state| {
+            let dispatch = Dispatch::<AppState>::new();
+            dispatch.reduce_mut(|state| {
                 state.gl = Some(gl.clone());
             });
 
@@ -378,7 +377,9 @@ pub fn App() -> Html {
                 .set_rendering_context(coordinator.clone());
 
             move || {
-                coordinator.gl.replace(None);
+                dispatch.reduce_mut(|state| {
+                    state.gl = None;
+                });
             }
         }
     });

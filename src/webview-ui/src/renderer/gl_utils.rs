@@ -759,6 +759,7 @@ type GLConstant = u32;
 pub struct ProgramBundle {
     pub program: WebGlProgram,
     pub shaders: Vec<WebGlShader>,
+    pub uniform_setters: HashMap<String, GLSetter>,
 }
 
 fn check_shader_status(
@@ -943,6 +944,7 @@ fn create_program_bundle(
                 take_into_owned(gl_vertex_shader),
                 take_into_owned(gl_fragment_shader),
             ],
+            uniform_setters: create_uniform_setters(gl, &program)?,
         },
     })
 }
@@ -988,6 +990,8 @@ impl<'a> GLProgramBuilderBuilder<'a> {
     }
 }
 
+type GLSetter = fn(&GL, &dyn GLSet);
+
 /**
  * Creates setter functions for all uniforms of a shader
  * program.
@@ -998,7 +1002,10 @@ impl<'a> GLProgramBuilderBuilder<'a> {
  * @returns {Object.<string, function>} an object with a setter by name for each uniform
  * @memberOf module:twgl/programs
  */
-fn create_uniform_setters(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
+fn create_uniform_setters(
+    gl: &GL,
+    program: &WebGlProgram,
+) -> Result<HashMap<String, GLSetter>, String> {
     // let textureUnit = 0;
 
     // /**
@@ -1043,6 +1050,7 @@ fn create_uniform_setters(gl: &GL, program: &WebGlProgram) -> Result<(), String>
 
     log::debug!("num_uniforms: {}", num_uniforms);
 
+    let mut uniform_setters: HashMap<String, GLSetter> = HashMap::new();
     for ii in 0..num_uniforms {
         let uniform_info = gl
             .get_active_uniform(program, ii)
@@ -1058,15 +1066,14 @@ fn create_uniform_setters(gl: &GL, program: &WebGlProgram) -> Result<(), String>
             &name
         };
         let gl_type = uniform_info.type_();
-        let setter = make_setter(gl_type);
-
-        log::debug!("name: {}", name);
-        //     let setter = createUniformSetter(program, uniformInfo);
-        //     uniformSetters[name] = setter;
+        if let Some(location) = gl.get_uniform_location(program, uniform_info.name().as_str()) {
+            let setter = make_setter(gl_type, location);
+            log::debug!("name: {}", name);
+            uniform_setters.insert(name.to_string(), setter);
+        }
     }
 
-    Ok(())
-    // return uniformSetters;
+    Ok(uniform_setters)
 }
 
 // pub fn createProgramInfo(
@@ -1120,12 +1127,15 @@ impl GLSet for f32 {
     }
 }
 
-fn make_setter(gl_type: GLConstant) -> impl Fn(&GL, &WebGlUniformLocation, &dyn GLValue) -> () {
-    move |gl: &GL, location: &WebGlUniformLocation, value: &dyn GLValue| {
+fn make_setter(
+    gl_type: GLConstant,
+    location: WebGlUniformLocation,
+) -> impl Fn(&GL, &dyn GLSet) -> () {
+    move |gl: &GL, value: &dyn GLValue| {
         if cfg!(debug_assertions) {
             value.verify(gl_type).unwrap();
         }
-        value.set(gl, location);
+        value.set(gl, &location);
     }
 }
 

@@ -238,6 +238,8 @@ impl Renderer {
             
         gl.use_program(Some(&shader_program.program));
 
+        shader_program.uniform_setters.get("u_time").unwrap()(&gl, 1.0);
+
         // Attach the position vector as an attribute for the GL context.
         let position = gl.get_attrib_location(&shader_program.program, "a_position") as u32;
         gl.vertex_attrib_pointer_with_i32(position, 2, GL::FLOAT, false, 0, 0);

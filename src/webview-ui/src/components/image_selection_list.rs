@@ -15,7 +15,6 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let ImageSelectionListProps { images } = props;
 
     let selected_entry = use_state::<Option<(usize, ImageEntry)>, _>(|| None);
-    let toggle = use_state::<bool, _>(|| false);
 
     let entry_style = use_style!(
         r#"
@@ -29,20 +28,19 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
         let onclick = {
             let selected_entry = selected_entry.clone();
             let entry = entry.clone();
-            let toggle = toggle.clone();
             Callback::from(move |_| {
                 selected_entry.set(Some((i, entry.clone())));
-                toggle.set(!*toggle);
             })
         };
 
         let is_selected = *selected_entry == Some((i, entry.clone()));
 
         html! {
-        <div class={entry_style.clone()}>
+        <div>
             <vscode-option
-                selected={*toggle}
+                aria-selected={if is_selected {"true"} else {"false"}}
                 {onclick}
+                class={entry_style.clone()}
             >
                 <ImageListItem entry={entry.clone()} />
             </vscode-option>

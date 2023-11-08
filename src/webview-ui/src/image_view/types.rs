@@ -27,22 +27,6 @@ pub struct DrawingOptions {
     pub high_contrast: bool,
 }
 
-// TODO: find better approach
-impl DrawingOptions {
-    fn replace(self) -> DrawingOptionsBuilder {
-        DrawingOptionsBuilder::from(self)
-    }
-}
-impl From<DrawingOptions> for DrawingOptionsBuilder {
-    fn from(drawing_options: DrawingOptions) -> Self {
-        DrawingOptionsBuilder::default()
-            .coloring(drawing_options.coloring)
-            .invert(drawing_options.invert)
-            .high_contrast(drawing_options.high_contrast)
-            .clone()
-    }
-}
-
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ImageId(String);
 

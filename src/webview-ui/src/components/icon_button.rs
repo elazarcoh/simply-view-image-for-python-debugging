@@ -18,6 +18,15 @@ impl From<bool> for ToggleState {
     }
 }
 
+impl From<ToggleState> for bool {
+    fn from(t: ToggleState) -> Self {
+        match t {
+            ToggleState::On => true,
+            ToggleState::Off => false,
+        }
+    }
+}
+
 #[derive(PartialEq, Properties, Default)]
 pub struct IconButtonProps {
     #[prop_or_default]

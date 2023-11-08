@@ -5,14 +5,21 @@ use yewdux::prelude::*;
 
 use crate::{
     communication::incoming_messages::ImageInfo,
-    image_view::types::{ImageId, TextureImage, ViewId},
+    image_view::types::{ImageId, TextureImage, ViewId, DrawingOptions, Coloring},
     store::AppState,
 };
 
+pub enum UpdateDrawingOptions {
+    SetColoring(Coloring),
+    SetInvert(bool),
+    SetHighContrast(bool),
+}
+
 pub enum StoreAction {
-    UpdateImages(Vec<(ImageId, ImageInfo)>),
+    UpdateImages(Vec<(ImageId, ImageInfo)>), 
     SetImageToView(ImageId, ViewId),
     AddTextureImage(ImageId, TextureImage),
+    UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -40,7 +47,16 @@ impl Reducer<AppState> for StoreAction {
                 log::debug!("AddTextureImage: {:?}", image_id);
                 state.image_cache.borrow_mut().set(&image_id, texture_image);
             }
-        };
+            StoreAction::UpdateDrawingOptions(image_id, update) => {
+                let current_drawing_options = state.drawing_options.borrow().get_or_default(&image_id).clone();
+                let new_drawing_option = match update {
+                    UpdateDrawingOptions::SetColoring(c) => DrawingOptions { coloring: c, ..current_drawing_options},
+                    UpdateDrawingOptions::SetInvert(i) => DrawingOptions { invert: i, ..current_drawing_options},
+                    UpdateDrawingOptions::SetHighContrast(hc) => DrawingOptions { high_contrast: hc, ..current_drawing_options},
+                };
+                state.drawing_options.borrow_mut().set(image_id, new_drawing_option);
+            }
+         };
 
         app_state
     }

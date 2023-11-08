@@ -6,6 +6,7 @@ use crate::{
     communication::incoming_messages::ImageInfo,
     components::icon_button::{IconToggleButton, ToggleState},
     image_view::types::DrawingOptionsBuilder,
+    reducer::{StoreAction, UpdateDrawingOptions},
     store::AppState,
 };
 
@@ -88,7 +89,11 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
             aria_label={"High Contrast"}
             off_icon={"svifpd-icons svifpd-icons-contrast"}
             initial_state={ToggleState::from(drawing_options.high_contrast)}
-
+            on_state_changed={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |(state, _): (ToggleState, _)| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::SetHighContrast(state == ToggleState::On))); }
+            }}
         />
     };
     let grayscale_button = html! {
@@ -128,9 +133,15 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
         />
     };
     let invert_button = html! {
-        <IconButton
+        <IconToggleButton
             aria_label={"Invert"}
-            icon={"svifpd-icons svifpd-icons-invert"}
+            off_icon={"codicon codicon-debug"}
+            initial_state={ToggleState::from(drawing_options.invert)}
+            on_state_changed={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |(state, _): (ToggleState, _)| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::SetInvert(state == ToggleState::On))); }
+            }}
         />
     };
     let transpose_button = html! {

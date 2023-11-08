@@ -131,7 +131,7 @@ impl Renderer {
                     return;
                 } else {
                     Renderer::render(&gl, &view_holders);
-                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));

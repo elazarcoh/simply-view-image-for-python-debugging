@@ -890,7 +890,7 @@ fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
     mem::replace(&mut guard.obj, JsCast::unchecked_into(JsValue::UNDEFINED))
 }
 
-fn create_program(
+fn create_program_bundle(
     gl: &GL,
     vertex_shader: &str,
     fragment_shader: &str,
@@ -932,6 +932,8 @@ fn create_program(
     gl.link_program(&program);
 
     validate_program(gl, &program)?;
+
+    create_uniform_setters(gl, &program);
 
     Ok(GLGuard {
         gl: gl.clone(),
@@ -981,7 +983,7 @@ impl<'a> GLProgramBuilderBuilder<'a> {
         self.fallible_build()
             .map_err(|e| format!("GLProgramBuilder error: {}", e))
             .and_then(|b| {
-                create_program(b.gl, b.vertex_shader, b.fragment_shader, Some(b.attributes))
+                create_program_bundle(b.gl, b.vertex_shader, b.fragment_shader, Some(b.attributes))
             })
     }
 }
@@ -996,7 +998,7 @@ impl<'a> GLProgramBuilderBuilder<'a> {
  * @returns {Object.<string, function>} an object with a setter by name for each uniform
  * @memberOf module:twgl/programs
  */
-fn createUniformSetters(gl: &GL, program: &WebGlProgram) {
+fn create_uniform_setters(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
     // let textureUnit = 0;
 
     // /**
@@ -1034,28 +1036,37 @@ fn createUniformSetters(gl: &GL, program: &WebGlProgram) {
     //     //   }
     // };
     // let uniformSetters: HashMap<String, fn()> = HashMap::new();
-    // let numUniforms = gl
-    //     .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
-    //     .as_f64()
-    //     .unwrap() as u32;
+    let num_uniforms = gl
+        .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
+        .as_f64()
+        .unwrap() as u32;
 
-    // for ii in 0..numUniforms {
-    //     let uniformInfo = gl
-    //         .get_active_uniform(program, ii)
-    //         .ok_or("Could not get uniform info")?;
+    log::debug!("num_uniforms: {}", num_uniforms);
 
-    //     let name = uniformInfo.name();
-    //     // remove the array suffix.
-    //     // - uniforms end with '[0]'
-    //     let name = if name.ends_with("[0]") {
-    //         &name[..name.len() - 3]
-    //     } else {
-    //         &name
-    //     };
-    //     let setter = createUniformSetter(program, uniformInfo);
-    //     uniformSetters[name] = setter;
-    // }
-    // // return uniformSetters;
+    for ii in 0..num_uniforms {
+        let uniform_info = gl
+            .get_active_uniform(program, ii)
+            .ok_or("Could not get uniform info")?;
+
+        let name = uniform_info.name();
+        // remove the array suffix.
+        // - uniforms end with '[0]'
+        let is_array = name.ends_with("[0]");
+        let name = if is_array {
+            &name[..name.len() - 3]
+        } else {
+            &name
+        };
+        let gl_type = uniform_info.type_();
+        let setter = make_setter(gl_type);
+
+        log::debug!("name: {}", name);
+        //     let setter = createUniformSetter(program, uniformInfo);
+        //     uniformSetters[name] = setter;
+    }
+
+    Ok(())
+    // return uniformSetters;
 }
 
 // pub fn createProgramInfo(
@@ -1098,3 +1109,82 @@ fn createUniformSetters(gl: &GL, program: &WebGlProgram) {
 
 //     //   return createProgramInfoFromProgram(gl, program);
 // }
+
+trait GLSet {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> ();
+}
+
+impl GLSet for f32 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform1f(Some(location), *self);
+    }
+}
+
+fn make_setter(gl_type: GLConstant) -> impl Fn(&GL, &WebGlUniformLocation, &dyn GLValue) -> () {
+    move |gl: &GL, location: &WebGlUniformLocation, value: &dyn GLValue| {
+        if cfg!(debug_assertions) {
+            value.verify(gl_type).unwrap();
+        }
+        value.set(gl, location);
+    }
+}
+
+trait GLVerifyType {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String>;
+}
+
+lazy_static! {
+    // to_string for gl constants
+    static ref GL_CONSTANT_NAMES: HashMap<GLConstant, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert(WebGl2RenderingContext::FLOAT, "FLOAT");
+        m.insert(WebGl2RenderingContext::FLOAT_VEC2, "FLOAT_VEC2");
+        m.insert(WebGl2RenderingContext::FLOAT_VEC3, "FLOAT_VEC3");
+        m.insert(WebGl2RenderingContext::FLOAT_VEC4, "FLOAT_VEC4");
+        m.insert(WebGl2RenderingContext::INT, "INT");
+        m.insert(WebGl2RenderingContext::INT_VEC2, "INT_VEC2");
+        m.insert(WebGl2RenderingContext::INT_VEC3, "INT_VEC3");
+        m.insert(WebGl2RenderingContext::INT_VEC4, "INT_VEC4");
+        m.insert(WebGl2RenderingContext::UNSIGNED_INT, "UNSIGNED_INT");
+        m.insert(WebGl2RenderingContext::UNSIGNED_INT_VEC2, "UNSIGNED_INT_VEC2");
+        m.insert(WebGl2RenderingContext::UNSIGNED_INT_VEC3, "UNSIGNED_INT_VEC3");
+        m.insert(WebGl2RenderingContext::UNSIGNED_INT_VEC4, "UNSIGNED_INT_VEC4");
+        m.insert(WebGl2RenderingContext::BOOL, "BOOL");
+        m.insert(WebGl2RenderingContext::BOOL_VEC2, "BOOL_VEC2");
+        m.insert(WebGl2RenderingContext::BOOL_VEC3, "BOOL_VEC3");
+        m.insert(WebGl2RenderingContext::BOOL_VEC4, "BOOL_VEC4");
+        m.insert(WebGl2RenderingContext::FLOAT_MAT2, "FLOAT_MAT2");
+        m.insert(WebGl2RenderingContext::FLOAT_MAT3, "FLOAT_MAT3");
+        m.insert(WebGl2RenderingContext::FLOAT_MAT4, "FLOAT_MAT4");
+        m.insert(WebGl2RenderingContext::SAMPLER_2D, "SAMPLER_2D");
+        m.insert(WebGl2RenderingContext::SAMPLER_CUBE, "SAMPLER_CUBE");
+
+        m // return
+    };
+}
+
+fn impl_gl_verify_type<T: GLVerifyType>(
+    expected_gl_type: GLConstant,
+    actual_gl_type: GLConstant,
+) -> Result<(), String> {
+    if expected_gl_type != actual_gl_type {
+        Err(format!(
+            "expected type: {}, actual type: {}",
+            GL_CONSTANT_NAMES
+                .get(&expected_gl_type)
+                .unwrap_or(&"unknown"),
+            GL_CONSTANT_NAMES.get(&actual_gl_type).unwrap_or(&"unknown")
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+impl GLVerifyType for f32 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type::<f32>(WebGl2RenderingContext::FLOAT, gl_type)
+    }
+}
+
+trait GLValue: GLVerifyType + GLSet {}
+impl<T: GLVerifyType + GLSet> GLValue for T {}

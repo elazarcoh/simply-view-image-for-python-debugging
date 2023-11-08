@@ -165,10 +165,8 @@ fn App() -> Html {
     let onclick_view_image = Callback::from({
         let renderer = coordinator.renderer.clone();
         move |_| {
-            (*renderer.borrow_mut()).put_image_to_view(
-                InViewName::Single(InSingleViewName::Single),
-                "test"
-            )
+            (*renderer.borrow_mut())
+                .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
         }
     });
 

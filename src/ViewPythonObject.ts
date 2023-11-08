@@ -14,7 +14,7 @@ import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSer
 import { getConfiguration } from "./config";
 import { serializePythonObjectUsingSocketServer } from "./from-python-serialization/SocketSerialization";
 import { logDebug } from "./Logging";
-import { parseMessage } from "./webview/communication/protocol";
+import { parseMessage } from "./python-communication/socket-based/protocol";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 
 export async function viewObject(
@@ -47,21 +47,19 @@ export async function viewObject(
             // @ts-expect-error  // TODO: fix this
             const channels: 1 | 2 | 3 | 4 = arrayInfo.dimensions[2] ?? 1;
             const webviewClient = Container.get(WebviewClient);
-            webviewClient.sendToWebview({
-                id: "foobar-id",
-                message: {
-                    type: "ImageData",
-                    width: arrayInfo.dimensions[1],
-                    height: arrayInfo.dimensions[0],
-                    channels,
-                    // TODO: variable or expression?
-                    value_variable_kind: "variable",
-                    image_id: "foobar-id",
-                    expression: "foobar-expression",
-                    datatype: "float32",
-                    bytes: arrayBuffer,
-                    additional_info: {},
-                },
+            webviewClient.reveal();
+            webviewClient.sendResponse("foobar-id", {
+                type: "ImageData",
+                width: arrayInfo.dimensions[1],
+                height: arrayInfo.dimensions[0],
+                channels,
+                // TODO: variable or expression?
+                value_variable_kind: "variable",
+                image_id: "foobar-id",
+                expression: "foobar-expression",
+                datatype: "float32",
+                bytes: arrayBuffer,
+                additional_info: {},
             });
         }
     } else {

@@ -274,6 +274,10 @@ impl Renderer {
 
         Renderer::scissor_view(gl, &image_view_data.html_element);
 
+        // Clean the canvas
+        gl.clear_color(0.0, 0.0, 0.0, 0.0);
+        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+
         let image_id = image_view_data.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;

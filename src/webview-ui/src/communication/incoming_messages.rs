@@ -199,7 +199,7 @@ pub(crate) enum ExtensionRequest {
         info: ImageInfo,
         options: ShowImageOptions,
     },
-    Invalidate {
+    ReplaceData {
         replacement_images: ImageObjects,
         replacement_data: HashMap<ImageId, ImageData>,
     },

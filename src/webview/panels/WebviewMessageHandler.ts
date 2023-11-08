@@ -9,9 +9,12 @@ import { findExpressionViewables } from "../../PythonObjectInfo";
 import { Except } from "../../utils/Except";
 import { serializePythonObjectToDisk } from "../../from-python-serialization/DiskSerialization";
 import { logDebug } from "../../Logging";
+import { serializePythonObjectUsingSocketServer } from "../../from-python-serialization/SocketSerialization";
+import { parseMessage } from "../../python-communication/socket-based/protocol";
+import Container from "typedi";
+import { WebviewClient } from "../communication/WebviewClient";
 
 export class WebviewMessageHandler {
-
     handleImagesRequest(_id: MessageId) {
         // const validVariables: ImageInfo[] =
         //     activeDebugSessionData()
@@ -52,26 +55,43 @@ export class WebviewMessageHandler {
             return undefined;
         }
 
-        // TODO: currently using disk-serialization. should improve this (socket?). Anyway, need to be configurable.
-        const path = await serializePythonObjectToDisk(
+        const response = await serializePythonObjectUsingSocketServer(
             { expression: args.expression },
             objectViewables.result[0],
             debugSession
         );
-        if (path === undefined) {
-            return undefined;
-        }
+        if (response !== undefined) {
+            // parse response
+            const { header, data } = response;
+            const message = parseMessage(header, data);
+            logDebug("Parsed message from client", message);
+            if (Except.isError(message)) {
+                throw new Error("Error parsing message from client");
+            }
+            const arrayInfo = message.result;
+            const len = arrayInfo.dimensions.reduce((a, b) => a * b, 1) * 4;
+            const arrayBuffer = new ArrayBuffer(len);
+            const arrayData = new Uint8Array(arrayBuffer);
+            arrayData.set(arrayInfo.data);
 
-        // load image from disk
-        // const contents = await fs.readFile(path, { encoding: "base64" });
-        // await this.sendToWebview({
-        //     id,
-        //     message: {
-        //         type: "ImageData",
-        //         image_id: args.image_id,
-        //         base64: contents,
-        //     },
-        // });
+            // @ts-expect-error  // TODO: fix this
+            const channels: 1 | 2 | 3 | 4 = arrayInfo.dimensions[2] ?? 1;
+            const webviewClient = Container.get(WebviewClient);
+            webviewClient.reveal();
+            webviewClient.sendResponse(id, {
+                type: "ImageData",
+                width: arrayInfo.dimensions[1],
+                height: arrayInfo.dimensions[0],
+                channels,
+                // TODO: variable or expression?
+                value_variable_kind: "variable",
+                image_id: args.image_id,
+                expression: args.expression,
+                datatype: "float32",
+                bytes: arrayBuffer,
+                additional_info: {},
+            });
+        }
     }
 
     async handleWebviewReady(id: MessageId) {

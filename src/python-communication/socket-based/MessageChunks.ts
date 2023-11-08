@@ -1,4 +1,4 @@
-import { HEADER_LENGTH, MessageChunkHeader } from "./protocol";
+import { MessageChunkHeader } from "./protocol";
 
 export class MessageChunks {
     private messageChunks: (Buffer | null)[];
@@ -12,7 +12,12 @@ export class MessageChunks {
     }
 
     addChunk(header: MessageChunkHeader, chunk: Buffer) {
-        const { chunkNumber, chunkCount, chunkLength, messageLength: totalLength } = header;
+        const {
+            chunkNumber,
+            chunkCount,
+            chunkLength,
+            messageLength: totalLength,
+        } = header;
         if (chunkCount !== this.expectedChunkCount) {
             throw new Error(
                 `Expected chunk count ${this.expectedChunkCount} but got ${chunkCount}`

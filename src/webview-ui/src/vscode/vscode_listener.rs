@@ -56,10 +56,10 @@ impl VSCodeListener {
                 incoming_messages::ExtensionRequest::ShowImage { info, options } => {
                     Self::handle_show_image_request(info, options)
                 }
-                incoming_messages::ExtensionRequest::Invalidate {
+                incoming_messages::ExtensionRequest::ReplaceData {
                     replacement_images,
                     replacement_data,
-                } => Self::handle_invalidate_request(replacement_images, replacement_data),
+                } => Self::handle_replace_data_request(replacement_images, replacement_data),
             },
         }
     }
@@ -111,12 +111,12 @@ impl VSCodeListener {
         todo!()
     }
 
-    fn handle_invalidate_request(
+    fn handle_replace_data_request(
         replacement_images: ImageObjects,
         replacement_data: HashMap<ImageId, ImageData>,
     ) {
         let dispatch = Dispatch::<AppState>::new();
-        dispatch.apply(StoreAction::Invalidate {
+        dispatch.apply(StoreAction::ReplaceData {
             replacement_images,
             replacement_data,
         });

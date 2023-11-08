@@ -16,14 +16,13 @@ import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
-import { ImageViewPanel } from "./webview/panels/ImageViewPanel";
 import { HoverProvider } from "./HoverProvider";
-import { SocketServer } from "./webview/communication/Server";
+import { SocketServer } from "./python-communication/socket-based/Server";
+import { WebviewClient } from "./webview/communication/WebviewClient";
 
 function onConfigChange(): void {
     initLog();
 }
-
 
 // ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext) {
@@ -34,6 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
     setupPluginManager(context);
 
     setSaveLocation(context);
+
+    Container.set(WebviewClient, new WebviewClient(context));
 
     vscode.workspace.onDidChangeConfiguration((config) => {
         if (config.affectsConfiguration(EXTENSION_CONFIG_SECTION)) {
@@ -117,7 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand("svifpd.open-settings", async () => {
-            ImageViewPanel.render(context);
+            Container.get(WebviewClient).reveal();
         })
     );
 }

@@ -6,10 +6,13 @@ import {
     FromExtensionMessageWithId,
     MessageId,
 } from "../webview";
+import { ImageViewPanel } from "../panels/ImageViewPanel";
 
 @Service()
 export class WebviewClient {
     webview?: vscode.Webview;
+
+    constructor(private readonly context: vscode.ExtensionContext) {}
 
     static randomMessageId(): MessageId {
         return Math.random().toString(36).substring(2, 15);
@@ -17,6 +20,10 @@ export class WebviewClient {
 
     setWebview(webview: vscode.Webview) {
         this.webview = webview;
+    }
+
+    reveal() {
+        ImageViewPanel.render(this.context);
     }
 
     private sendToWebview(message: FromExtensionMessageWithId) {

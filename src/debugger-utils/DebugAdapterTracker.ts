@@ -9,6 +9,8 @@ import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects"
 import { getConfiguration } from "../config";
 import { patchDebugVariableContext } from "./DebugRelatedCommands";
 import { runSetup } from "../python-communication/Setup";
+import { WebviewClient } from "../webview/communication/WebviewClient";
+import { WebviewRequests } from "../webview/communication/createMessages";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -47,9 +49,14 @@ export const createDebugAdapterTracker = (
         return saveAllTrackedObjects(trackedPythonObjects.allTracked, session);
     };
 
+    const updateWebview = async () => {
+        const webviewClient = Container.get(WebviewClient);
+        webviewClient.sendRequest(WebviewRequests.replaceDataMessage());
+    };
+
     const onScopeChange = debounce(async () => {
         await updateWatchTree();
-        await saveTracked();
+        await Promise.all([updateWebview(), saveTracked()]);
     }, 500);
 
     let isSetupRunning = false;

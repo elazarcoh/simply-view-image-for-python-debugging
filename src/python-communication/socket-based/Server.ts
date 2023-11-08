@@ -1,10 +1,9 @@
 import { Service } from "typedi";
 import * as net from "net";
 import { RequestsManager } from "./RequestsManager";
-import { MessageChunkHeader, parseMessage, splitHeaderContentRest } from "./protocol";
+import { MessageChunkHeader, splitHeaderContentRest } from "./protocol";
 import { MessageChunks } from "./MessageChunks";
-// import { setDefault } from "../../utils/Utils";
-// import { logDebug } from "../../Logging";
+import { logDebug } from "../../Logging";
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -55,7 +54,6 @@ export class SocketServer {
 
     onClientConnected(socket: net.Socket): void {
         const outgoingRequestsManager = this.outgoingRequestsManager;
-        logDebug("Client connected");
         // const helloReqId = RequestsManager.randomRequestId();
         // const helloMessage = composeHelloMessage(helloReqId, Sender.Server);
         // logDebug(`Sending hello message to client with reqId ${helloReqId}`);
@@ -148,7 +146,7 @@ export class SocketServer {
                     logDebug(err);
                 }
             };
-        }
+        };
 
         socket.on("data", makeSafe(handleData));
         socket.on("close", () => {
@@ -172,14 +170,6 @@ export class SocketServer {
             this.outgoingRequestsManager.unsubscribeRequest(requestId);
         };
     }
-}
-
-// TODO: Remove this
-function logInfo(...obj: any[]): void {
-    console.log(...obj);
-}
-function logDebug(...obj: any[]): void {
-    console.log(...obj);
 }
 
 export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {

@@ -2,13 +2,13 @@ use std::fmt::Display;
 
 use crate::communication::incoming_messages::{Datatype, LocalImageData};
 use bytemuck::Pod;
-use glam::{UVec2};
+use glam::UVec2;
 use strum::EnumCount;
 use webgl_utils::types::{ElementType, Format, InternalFormat};
 
 use crate::{
     common::Size,
-    communication::incoming_messages::{Channels},
+    communication::incoming_messages::Channels,
     webgl_utils::{self, types::GLGuard},
 };
 
@@ -197,7 +197,7 @@ impl TextureImage {
 // lazy_static! {
 //     static ref FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS: std::collections::HashMap<(Datatype, u32), (InternalFormat, Format, ElementType)> = {
 //         let mut m = std::collections::HashMap::new();
-//         // rustfmt 
+//         // rustfmt
 //         m.insert((Datatype::Uint8, 1), (InternalFormat::R8UI, Format::RedInteger, ElementType::UnsignedByte));
 //         m.insert((Datatype::Uint8, 2), (InternalFormat::RG8UI, Format::RgInteger, ElementType::UnsignedByte));
 //         m.insert((Datatype::Uint8, 3), (InternalFormat::RGB8UI, Format::RgbInteger, ElementType::UnsignedByte));

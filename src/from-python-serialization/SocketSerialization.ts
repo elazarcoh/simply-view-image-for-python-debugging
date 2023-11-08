@@ -6,9 +6,9 @@ import { constructOpenSendAndCloseCode } from "../python-communication/BuildPyth
 import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { Except } from "../utils/Except";
 import Container from "typedi";
-import { SocketServer } from "../webview/communication/Server";
-import { RequestsManager } from "../webview/communication/RequestsManager";
-import { MessageChunkHeader } from "../webview/communication/protocol";
+import { SocketServer } from "../python-communication/socket-based/Server";
+import { RequestsManager } from "../python-communication/socket-based/RequestsManager";
+import { MessageChunkHeader } from "../python-communication/socket-based/protocol";
 
 export async function serializePythonObjectUsingSocketServer(
     obj: PythonObjectRepresentation,

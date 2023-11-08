@@ -24,7 +24,7 @@ pub(crate) enum StoreAction {
     SetImageToView(ImageId, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
-    Invalidate {
+    ReplaceData {
         replacement_images: ImageObjects,
         replacement_data: HashMap<ImageId, ImageData>,
     },
@@ -85,18 +85,18 @@ impl Reducer<AppState> for StoreAction {
                     .set(image_id, new_drawing_option);
             }
 
-            StoreAction::Invalidate {
+            StoreAction::ReplaceData {
                 replacement_images,
                 mut replacement_data,
             } => {
-                log::debug!("Invalidate");
+                log::debug!("ReplaceData");
                 state.image_cache.borrow_mut().clear();
                 state.images.borrow_mut().clear();
 
                 let images = replacement_images
                     .objects
                     .iter()
-                    .map(|info| (ImageId::generate(), info.clone()))
+                    .map(|info| (info.image_id.clone(), info.clone()))
                     .collect();
                 state.images.borrow_mut().update(images);
 

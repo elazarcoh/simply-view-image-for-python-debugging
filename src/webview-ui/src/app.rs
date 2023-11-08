@@ -29,6 +29,7 @@ use crate::components::image_list_item::ImageEntry;
 use crate::components::image_list_item::ImageInfo;
 use crate::components::image_list_item::ImageListItem;
 use crate::components::image_selection_list::ImageSelectionList;
+use crate::components::main::Main;
 use crate::components::set_image_into_view_button::SetImageIntoViewButton;
 use crate::configurations;
 use crate::image_view;
@@ -385,20 +386,20 @@ pub fn App() -> Html {
         }
     });
 
-    let onclick_get_image = Callback::from({
-        let coordinator = Rc::clone(&coordinator);
-        move |_| {
-            coordinator.send_message(OutgoingMessage::RequestImageMessage(RequestImageMessage {}));
-        }
-    });
+    // let onclick_get_image = Callback::from({
+    //     let coordinator = Rc::clone(&coordinator);
+    //     move |_| {
+    //         coordinator.send_message(OutgoingMessage::RequestImageMessage(RequestImageMessage {}));
+    //     }
+    // });
 
-    let onclick_view_image = Callback::from({
-        // let renderer = coordinator.renderer.clone();
-        move |_| {
-            // (*renderer.borrow_mut())
-            //     .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
-        }
-    });
+    // let onclick_view_image = Callback::from({
+    //     // let renderer = coordinator.renderer.clone();
+    //     move |_| {
+    //         // (*renderer.borrow_mut())
+    //         //     .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
+    //     }
+    // });
 
     let main_style = use_style!(
         r#"
@@ -449,28 +450,29 @@ pub fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-            <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
-            <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
-            <vscode-panels>
-                <vscode-panel-tab id="tab-1">
-                    {"PROBLEMS"}
-                </vscode-panel-tab>
-                <vscode-panel-tab id="tab-2">
-                    {"OUTPUT"}
-                </vscode-panel-tab>
-                <vscode-panel-tab id="tab-3">
-                    {"DEBUG CONSOLE"}
-                </vscode-panel-tab>
-                <vscode-panel-tab id="tab-4">
-                    {"TERMINAL"}
-                </vscode-panel-tab>
-                <vscode-panel-view id="view-1"> {"Problems Content"} </vscode-panel-view>
-                <vscode-panel-view id="view-2"> {"Output Content"} </vscode-panel-view>
-                <vscode-panel-view id="view-3"> {"Debug Console Content"} </vscode-panel-view>
-                <vscode-panel-view id="view-4"> {"Terminal Content"} </vscode-panel-view>
-            </vscode-panels>
-            <div>{ "Hello World!" }</div>
-            <ImageSelectionList images={ entries }/>
+            <Main />
+            // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
+            // <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
+            // <vscode-panels>
+            //     <vscode-panel-tab id="tab-1">
+            //         {"PROBLEMS"}
+            //     </vscode-panel-tab>
+            //     <vscode-panel-tab id="tab-2">
+            //         {"OUTPUT"}
+            //     </vscode-panel-tab>
+            //     <vscode-panel-tab id="tab-3">
+            //         {"DEBUG CONSOLE"}
+            //     </vscode-panel-tab>
+            //     <vscode-panel-tab id="tab-4">
+            //         {"TERMINAL"}
+            //     </vscode-panel-tab>
+            //     <vscode-panel-view id="view-1"> {"Problems Content"} </vscode-panel-view>
+            //     <vscode-panel-view id="view-2"> {"Output Content"} </vscode-panel-view>
+            //     <vscode-panel-view id="view-3"> {"Debug Console Content"} </vscode-panel-view>
+            //     <vscode-panel-view id="view-4"> {"Terminal Content"} </vscode-panel-view>
+            // </vscode-panels>
+            // <div>{ "Hello World!" }</div>
+            // <ImageSelectionList images={ entries }/>
             <div class={image_view_container_style}>
                 <GLView node_ref={my_node_ref} />
             </div>

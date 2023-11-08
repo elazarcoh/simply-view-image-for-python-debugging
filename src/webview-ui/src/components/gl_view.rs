@@ -7,7 +7,7 @@ use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext};
 use yew::prelude::*;
 use yew_hooks::use_raf;
 
-use crate::components::glcontext::RendererContext;
+use crate::components::renderer_context::RendererContext;
 use crate::renderer::{InSingleViewName, InViewName, Renderer};
 
 // use crate::components::glcontext::use_gl_context;

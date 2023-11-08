@@ -1,9 +1,11 @@
+mod communication;
 mod components;
 mod renderer;
 mod vscode;
 use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 use log::{info, warn};
+use std::cell::RefCell;
 use std::rc::Rc;
 use web_sys::{window, HtmlCanvasElement, WebGl2RenderingContext};
 
@@ -14,8 +16,8 @@ use web_sys::HtmlElement;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
-use crate::components::GLProvider;
 use crate::components::GLView;
+use crate::components::RendererProvider;
 use crate::renderer::InSingleViewName;
 use crate::renderer::InViewName;
 use crate::renderer::Renderer;
@@ -42,13 +44,66 @@ use crate::renderer::Renderer;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+struct VSCodeMessageHandler {}
+
+impl VSCodeMessageHandler {
+    fn handle_message(&self, message: JsValue) {
+        log::debug!("Received message: {:?}", message);
+        // let message = message.into_serde().unwrap();
+        // match message.command.as_str() {
+        //     "hello" => {
+        //         info!("Received hello message: {}", message.payload);
+        //     }
+        //     "warn" => {
+        //         warn!("Received warn message: {}", message.payload);
+        //     }
+        //     _ => {
+        //         warn!("Received unknown message: {}", message.command);
+        //     }
+        // }
+    }
+}
+
+struct Coordinator {
+    renderer: Rc<RefCell<Renderer>>,
+    vscode_message_handler: Rc<VSCodeMessageHandler>,
+}
+
 #[function_component]
 fn App() -> Html {
+    let coordinator = use_memo(
+        |_| Coordinator {
+            renderer: Rc::new(RefCell::new(Renderer::new())),
+            vscode_message_handler: Rc::new(VSCodeMessageHandler {}),
+        },
+        (),
+    );
+
+    use_effect({
+        let window = window().unwrap();
+        let coordinator = coordinator.clone();
+
+        move || {
+
+            let onmessage = Callback::from(move |event: Event| {
+                let data = event
+                    .dyn_ref::<web_sys::MessageEvent>()
+                    .expect("Unable to cast event to MessageEvent")
+                    .data();
+                coordinator.vscode_message_handler.handle_message(data);
+            });
+            let message_listener =
+                EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()));
+
+            move || drop(message_listener)
+        }
+    });
+
     html! {
-        <GLProvider>
+        <RendererProvider renderer={coordinator.renderer.clone()}>
             <div>{ "Hello World!" }</div>
             <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
-        </GLProvider>
+        </RendererProvider>
     }
 }
 

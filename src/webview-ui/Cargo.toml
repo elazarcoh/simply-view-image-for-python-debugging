@@ -53,6 +53,8 @@ tsify = "0.4.5"
 yew-hooks = "0.2.0"
 stylist = { version = "0.12.1", features = ["yew_integration"] }
 
+base64 = "0.21.2"
+
 [dependencies.web-sys]
 version = "0.3.22"
 features = [
@@ -69,4 +71,11 @@ features = [
   'WebGl2RenderingContext',
   'WebGlShader',
   'WebGlUniformLocation',
+  'WebSocket',
+  "BinaryType",
+  "Blob",
+  "ErrorEvent",
+  "FileReader",
+  "MessageEvent",
+  "ProgressEvent",
 ]

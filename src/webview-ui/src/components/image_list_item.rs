@@ -30,8 +30,7 @@ mod features {
     pub enum Feature {
         HighContrast,
         Grayscale,
-        RGB,
-        BGR,
+        SwapRgbBgr,
         R,
         G,
         B,
@@ -39,15 +38,18 @@ mod features {
         Transpose,
         Segmentation,
         Heatmap,
-        NoAlpha,
+        IgnoreAlpha,
     }
 
     #[rustfmt::skip]
     pub(crate) fn list_features(datatype: Datatype, channels: Channels) -> EnumSet<Feature> {
         let for_all = EnumSet::from(Feature::Invert);
-        let rgb_features = Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Grayscale | Feature::NoAlpha;
-        let gray_alpha_features = Feature::NoAlpha | Feature::HighContrast;
-        let gray_features = Feature::HighContrast | Feature::Heatmap | Feature::NoAlpha;
+        let rgb_features =  Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B | Feature::Grayscale ;
+        let bool_rgb_features =  Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B ;
+        let alpha_features = Feature::IgnoreAlpha;
+        let rgba_features =  rgb_features | alpha_features;
+        let gray_alpha_features = Feature::HighContrast | alpha_features;
+        let gray_features = Feature::HighContrast | Feature::Heatmap | alpha_features;
         let integer_gray_features = Feature::Segmentation | gray_features;
         let no_additional_features = EnumSet::empty();
 
@@ -75,15 +77,15 @@ mod features {
             (Channels::Three, Datatype::Int8) => rgb_features,
             (Channels::Three, Datatype::Int16) => rgb_features,
             (Channels::Three, Datatype::Int32) => rgb_features,
-            (Channels::Three, Datatype::Bool) => no_additional_features,
-            (Channels::Four, Datatype::Uint8) => rgb_features,
-            (Channels::Four, Datatype::Uint16) => rgb_features,
-            (Channels::Four, Datatype::Uint32) => rgb_features,
-            (Channels::Four, Datatype::Float32) => rgb_features,
-            (Channels::Four, Datatype::Int8) => rgb_features,
-            (Channels::Four, Datatype::Int16) => rgb_features,
-            (Channels::Four, Datatype::Int32) => rgb_features,
-            (Channels::Four, Datatype::Bool) => no_additional_features,
+            (Channels::Three, Datatype::Bool) => bool_rgb_features,
+            (Channels::Four, Datatype::Uint8) => rgba_features,
+            (Channels::Four, Datatype::Uint16) => rgba_features,
+            (Channels::Four, Datatype::Uint32) => rgba_features,
+            (Channels::Four, Datatype::Float32) => rgba_features,
+            (Channels::Four, Datatype::Int8) => rgba_features,
+            (Channels::Four, Datatype::Int16) => rgba_features,
+            (Channels::Four, Datatype::Int32) => rgba_features,
+            (Channels::Four, Datatype::Bool) => bool_rgb_features,
             
         }
 
@@ -109,6 +111,19 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     let default_style = use_style!(r#" "#);
 
     let image_id = entry.image_id.clone();
+
+    let reset_button = html! {
+        <IconButton
+            aria_label={"Reset"}
+            title={"Reset"}
+            icon={"codicon codicon-discard"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Reset)); }
+            }}
+        />
+    };
     let high_contrast_button = html! {
         <IconButton
             class={if drawing_options.high_contrast { currently_selected_style.clone() } else { default_style.clone() }}
@@ -136,29 +151,16 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
-    let rgb_button = html! {
+    let swap_rgb_bgr_button = html! {
         <IconButton
-            class={if drawing_options.coloring == Coloring::Rgb { currently_selected_style.clone() } else { default_style.clone() }}
-            aria_label={"RGB"}
-            title={"RGB"}
-            icon={"svifpd-icons svifpd-icons-RGB"}
-            onclick={{
-                let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
-                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Rgb))); }
-            }}
-        />
-    };
-    let bgr_button = html! {
-        <IconButton
-            class={if drawing_options.coloring == Coloring::Bgr { currently_selected_style.clone() } else { default_style.clone() }}
-            aria_label={"BGR"}
-            title={"BGR"}
+            class={if drawing_options.coloring == Coloring::SwapRgbBgr { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Swap RGB/BGR"}
+            title={"Swap RGB/BGR"}
             icon={"svifpd-icons svifpd-icons-BGR"}
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
-                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Bgr))); }
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::SwapRgbBgr))); }
             }}
         />
     };
@@ -215,6 +217,19 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
+    let ignore_alpha_button = html! {
+        <IconButton
+            class={if drawing_options.ignore_alpha { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Ignore Alpha"}
+            title={"Ignore Alpha"}
+            icon={"codicon codicon-filter-filled"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::IgnoreAlpha(!drawing_options.ignore_alpha))); }
+            }}
+        />
+    };
     // let transpose_button = html! {
     //     <IconButton
     //         aria_label={"Transpose"}
@@ -230,11 +245,8 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     if features.contains(features::Feature::Grayscale) {
         buttons.push(grayscale_button);
     }
-    if features.contains(features::Feature::RGB) {
-        buttons.push(rgb_button);
-    }
-    if features.contains(features::Feature::BGR) {
-        buttons.push(bgr_button);
+    if features.contains(features::Feature::SwapRgbBgr) {
+        buttons.push(swap_rgb_bgr_button);
     }
     if features.contains(features::Feature::R) {
         buttons.push(r_button);
@@ -248,9 +260,16 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     if features.contains(features::Feature::Invert) {
         buttons.push(invert_button);
     }
+    if features.contains(features::Feature::IgnoreAlpha) {
+        buttons.push(ignore_alpha_button);
+    }
     // if features.contains(features::Feature::Transpose) {
     //     buttons.push(transpose_button);
     // }
+
+    if !buttons.is_empty() {
+        buttons.insert(0, reset_button);
+    }
 
     let style = use_style!(
         r#"

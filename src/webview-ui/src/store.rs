@@ -9,7 +9,7 @@ use crate::{
         camera::ViewsCameras,
         image_cache::ImageCache,
         image_views::ImageViews,
-        types::{ImageId, ViewId, DrawingOptions},
+        types::{DrawingOptions, ImageId, ViewId},
     },
     vscode::vscode_requests::VSCodeRequests,
 };
@@ -30,14 +30,11 @@ impl ImagesDrawingOptions {
         self.by_id.insert(image_id, drawing_options);
     }
 
-    pub fn get_or_default(&self, image_id: &ImageId) ->DrawingOptions {
-        self.by_id.get(image_id).cloned().unwrap_or({
-            DrawingOptions {
-                coloring: crate::image_view::types::Coloring::Default,
-                invert: false,
-                high_contrast: false,
-            }
-        })
+    pub fn get_or_default(&self, image_id: &ImageId) -> DrawingOptions {
+        self.by_id
+            .get(image_id)
+            .cloned()
+            .unwrap_or(DrawingOptions::default())
     }
 }
 
@@ -64,10 +61,7 @@ impl Listener for ImagesFetcher {
                 log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
                 if let Some(image_info) = state.images.borrow().by_id.get(&image_id) {
                     log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                    VSCodeRequests::request_image_data(
-                        image_id,
-                        image_info.expression.clone(),
-                    );
+                    VSCodeRequests::request_image_data(image_id, image_info.expression.clone());
                 }
             }
         }

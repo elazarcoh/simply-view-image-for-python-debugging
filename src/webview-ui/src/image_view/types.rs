@@ -14,8 +14,7 @@ pub enum Coloring {
     R,
     G,
     B,
-    Bgr,
-    Rgb,
+    SwapRgbBgr,
     Segmentation,
 }
 
@@ -26,6 +25,18 @@ pub struct DrawingOptions {
     pub coloring: Coloring,
     pub invert: bool,
     pub high_contrast: bool,
+    pub ignore_alpha: bool,
+}
+
+impl Default for DrawingOptions {
+    fn default() -> Self {
+        Self {
+            coloring: Coloring::Default,
+            invert: false,
+            high_contrast: false,
+            ignore_alpha: false,
+        }
+    }
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -70,6 +81,8 @@ impl TextureImage {
             webgl_utils::types::CreateTextureParametersBuilder::default()
                 .mag_filter(webgl_utils::constants::TextureMagFilter::Nearest)
                 .min_filter(webgl_utils::constants::TextureMinFilter::Nearest)
+                .wrap_s(webgl_utils::constants::TextureWrap::ClampToEdge)
+                .wrap_t(webgl_utils::constants::TextureWrap::ClampToEdge)
                 .build()
                 .unwrap(),
         )?;

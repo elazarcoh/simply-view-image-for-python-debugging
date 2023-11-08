@@ -98,7 +98,7 @@ impl PixelValue {
             .join("\n")
     }
 
-    fn text_color(&self, invert: bool) -> Vec4 {
+    fn text_color(&self, invert: bool, ignoring_alpha: bool) -> Vec4 {
         let multipliers: [f32; 3] = match self.num_channels {
             Channels::One => [1.0, 0.0, 0.0],
             Channels::Two => [0.51, 0.49, 0.0],
@@ -125,7 +125,7 @@ impl PixelValue {
         });
 
         #[rustfmt::skip]
-        let alpha = if self.num_channels < Channels::Four {
+        let alpha = if self.num_channels < Channels::Four || ignoring_alpha {
             1.0
         } else {
             let start = 3 * bytes_per_element;
@@ -375,7 +375,9 @@ pub(super) struct PixelTextRenderingData<'a> {
     pub pixel_value: &'a PixelValue,
     pub image_coords_to_view_coord_mat: &'a Mat3,
     pub view_projection: &'a Mat3,
+    // data from DrawingOptions
     pub invert: bool,
+    pub ignoring_alpha: bool,
 }
 
 impl PixelTextRenderer {
@@ -523,7 +525,7 @@ impl PixelTextRenderer {
                 ),
                 (
                     "u_textColor",
-                    UniformValue::Vec4(&data.pixel_value.text_color(data.invert)),
+                    UniformValue::Vec4(&data.pixel_value.text_color(data.invert, data.ignoring_alpha)),
                 ),
                 (
                     "u_imageToScreenMatrix",

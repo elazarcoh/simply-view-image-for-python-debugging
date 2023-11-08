@@ -407,6 +407,7 @@ impl Renderer {
                         image_coords_to_view_coord_mat: &image_pixels_to_view,
                         view_projection: &view_projection,
                         invert: drawing_options.invert,
+                        ignoring_alpha: drawing_options.ignore_alpha,
                     });
                 }
             }

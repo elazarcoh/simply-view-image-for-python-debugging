@@ -10,9 +10,11 @@ use crate::{
 };
 
 pub enum UpdateDrawingOptions {
+    Reset,
     Coloring(Coloring),
     Invert(bool),
     HighContrast(bool),
+    IgnoreAlpha(bool)
 }
 
 pub enum StoreAction {
@@ -50,9 +52,11 @@ impl Reducer<AppState> for StoreAction {
             StoreAction::UpdateDrawingOptions(image_id, update) => {
                 let current_drawing_options = state.drawing_options.borrow().get_or_default(&image_id).clone();
                 let new_drawing_option = match update {
+                    UpdateDrawingOptions::Reset => DrawingOptions::default(),
                     UpdateDrawingOptions::Coloring(c) => DrawingOptions { coloring: c, ..current_drawing_options},
                     UpdateDrawingOptions::Invert(i) => DrawingOptions { invert: i, ..current_drawing_options},
                     UpdateDrawingOptions::HighContrast(hc) => DrawingOptions { high_contrast: hc, ..current_drawing_options},
+                    UpdateDrawingOptions::IgnoreAlpha(ia) => DrawingOptions { ignore_alpha: ia, ..current_drawing_options},
                 };
                 state.drawing_options.borrow_mut().set(image_id, new_drawing_option);
             }

@@ -239,6 +239,7 @@ impl TextRenderer {
         let texture = &self.texture;
 
         let update_texture = move |rect: Rectangle<u32>, tex_data: &[u8]| {
+            log::debug!("Updating texture");
             gl.bind_texture(TextureTarget::Texture2D as _, Some(&texture));
 
             gl.tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_opt_u8_array(
@@ -260,6 +261,7 @@ impl TextRenderer {
             .process_queued(update_texture, SingleGlyphData::from_brush_vertex)
         {
             Ok(glyph_brush::BrushAction::Draw(glyphs)) => {
+                log::debug!("new text");
                 let mut offset = 0;
                 let mut num_elements = 0;
                 for glyph in &glyphs {
@@ -279,7 +281,9 @@ impl TextRenderer {
                 self.draw(image_coords_to_view_coord_mat, view_projection);
             }
 
-            Ok(glyph_brush::BrushAction::ReDraw) => {}
+            Ok(glyph_brush::BrushAction::ReDraw) => {
+                self.draw(image_coords_to_view_coord_mat, view_projection);
+            }
 
             Err(e) => {
                 log::error!("Error drawing text: {:?}", e);
@@ -288,7 +292,6 @@ impl TextRenderer {
     }
 
     fn draw(&self, image_coords_to_view_coord_mat: &Mat3, view_projection: &Mat3) {
-        log::debug!("Drawing text");
         let gl = &self.gl;
         let program = &self.program;
 
@@ -297,10 +300,10 @@ impl TextRenderer {
             program,
             &HashMap::from([
                 ("u_gylphTexture", UniformValue::Texture(&self.texture)),
-                (
-                    "u_pixelColor",
-                    UniformValue::Vec4(&Vec4::new(1.0, 0.0, 0.0, 1.0)),
-                ),
+                // (
+                //     "u_pixelColor",
+                //     UniformValue::Vec4(&Vec4::new(1.0, 0.0, 0.0, 1.0)),
+                // ),
                 (
                     "u_imageToScreenMatrix",
                     UniformValue::Mat3(image_coords_to_view_coord_mat),

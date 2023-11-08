@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use glam::{Mat3, Vec2, Vec3};
 use glyph_brush::Section;
-use image;
+use image::{self, DynamicImage};
 use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
@@ -107,22 +107,30 @@ fn create_image_plane_attributes(
 
 struct PixelValueFormatter {}
 
-struct FormattedPixelValue<'a> {
-    section: glyph_brush::Section<'a>,
+struct FormattedPixelValue {
+    section: glyph_brush::OwnedSection,
     text_to_image: Mat3,
 }
 
 impl PixelValueFormatter {
     fn format_pixel_value(image: &image::DynamicImage, x: i32, y: i32) -> FormattedPixelValue {
         let font_scale = 100.0;
-        let num_rows = 3_f32;
-        let num_cols = 5_f32;
-        let max_rows_cols = f32::max(num_rows, num_cols);
+        let max_rows = 3_f32;
+        let max_cols = 5_f32;
+        let max_rows_cols = f32::max(max_rows, max_cols);
         let letters_offset_inside_pixel = max_rows_cols / 2.0;
         let pixel_offset = max_rows_cols;
         let px = 0.0;
         let py = 0.0;
-        let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
+
+        // let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
+        let text = match image {
+            DynamicImage::ImageRgba8(image)=> {
+                let pixel = image.get_pixel(x as u32, y as u32);
+                format!("{:.5}\n{:.5}\n{:.5}\n{:.5}", pixel[0], pixel[1], pixel[2], pixel[3])
+            },
+            _ => "Not RGBA".to_string(),
+        };
 
         let text_to_image = Mat3::from_scale(Vec2::new(
             (1.0 / max_rows_cols) / (font_scale),
@@ -130,7 +138,7 @@ impl PixelValueFormatter {
         ));
 
         let section = glyph_brush::Section::default()
-            .add_text(glyph_brush::Text::new("M").with_scale(font_scale))
+            .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
             .with_layout(
                 glyph_brush::Layout::default()
                     .h_align(glyph_brush::HorizontalAlign::Center)
@@ -139,7 +147,7 @@ impl PixelValueFormatter {
             .with_screen_position((
                 ((x as f32 + px) * pixel_offset + letters_offset_inside_pixel) * font_scale,
                 ((y as f32 + py) * pixel_offset + letters_offset_inside_pixel) * font_scale,
-            ));
+            )).to_owned();
 
         FormattedPixelValue {
             section,
@@ -202,7 +210,7 @@ impl Renderer {
                     return;
                 } else {
                     Renderer::render(&gl, &mut rendering_data, rendering_context.as_ref());
-                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));
@@ -421,7 +429,6 @@ impl Renderer {
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
         let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
-        log::debug!("pixels_info: {:?}", pixels_info);
         let enable_borders = pixels_info.image_pixel_size_device > 30; // TODO: make this configurable/constant
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
@@ -446,7 +453,7 @@ impl Renderer {
 
                 rendering_data
                     .text_renderer
-                    .queue_section(formatted_pixel_value.section);
+                    .queue_section(formatted_pixel_value.section.to_borrowed());
                 let image_pixels_to_view = Mat3::from_scale(Vec2::new(
                     VIEW_SIZE.width / texture.image_size().width,
                     VIEW_SIZE.height / texture.image_size().height,

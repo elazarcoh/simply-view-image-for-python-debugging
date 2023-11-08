@@ -1,6 +1,8 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
 
+use crate::components::set_image_into_view_button::SetImageIntoViewButton;
+
 #[derive(PartialEq, Properties, Clone)]
 pub struct ImageInfo {
     pub shape: Vec<u32>,
@@ -33,6 +35,15 @@ pub struct ImageListItemProps {
 pub fn ImageListItem(props: &ImageListItemProps) -> Html {
     let ImageListItemProps { entry } = props;
 
+    let container_style = use_style!(
+        r#"
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: left;
+    "#
+    );
+
     let info_grid_style = use_style!(
         r#"
         user-select: none;
@@ -48,18 +59,20 @@ pub fn ImageListItem(props: &ImageListItemProps) -> Html {
     );
 
     html! {
-        <div>
-        <label>{&entry.name}</label>
-        <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
-            <vscode-data-grid-row>
-                <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
-                <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.info.shape)}</vscode-data-grid-cell>
-            </vscode-data-grid-row>
-            <vscode-data-grid-row>
-                <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
-                <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.info.data_type}</vscode-data-grid-cell>
-            </vscode-data-grid-row>
-        </vscode-data-grid>
+        <div class={container_style.clone()}>
+            <div>
+                <label>{&entry.name}</label>
+                <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
+                    <vscode-data-grid-row>
+                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
+                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.info.shape)}</vscode-data-grid-cell>
+                    </vscode-data-grid-row>
+                    <vscode-data-grid-row>
+                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
+                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.info.data_type}</vscode-data-grid-cell>
+                    </vscode-data-grid-row>
+                </vscode-data-grid>
+            </div>
         </div>
     }
 }

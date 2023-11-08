@@ -29,6 +29,7 @@ use crate::components::image_list_item::ImageEntry;
 use crate::components::image_list_item::ImageInfo;
 use crate::components::image_list_item::ImageListItem;
 use crate::components::image_selection_list::ImageSelectionList;
+use crate::components::set_image_into_view_button::SetImageIntoViewButton;
 use crate::configurations;
 use crate::image_view;
 use crate::image_view::camera::ViewsCameras;

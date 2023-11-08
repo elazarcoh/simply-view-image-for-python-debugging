@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["The wasm-bindgen Developers"]
 edition = "2018"
 rust-version = "1.56"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib"]
@@ -45,6 +46,7 @@ gloo-events = "0.2"
 gloo-timers = "0.3.0"
 tsify = "0.4.5"
 yew-hooks = "0.2.0"
+stylist = { version = "0.12.1", features = ["yew_integration"] }
 
 [dependencies.web-sys]
 version = "0.3.22"

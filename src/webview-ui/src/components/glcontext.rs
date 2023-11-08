@@ -10,6 +10,8 @@ use wasm_bindgen::JsCast;
 use web_sys::{window, Event, HtmlCanvasElement, HtmlElement, WebGlRenderingContext};
 use yew::prelude::*;
 use yew::{function_component, html, use_effect_with_deps, use_node_ref, Html};
+use stylist::yew::use_style;
+
 
 // #[derive(Debug, PartialEq, Clone)]
 // pub struct GL {
@@ -193,6 +195,7 @@ pub struct MessageProviderProps {
     pub children: Children,
 }
 
+// #[styled_component]
 #[function_component]
 pub fn GLProvider(props: &MessageProviderProps) -> Html {
     let canvas_ref = use_node_ref();
@@ -226,16 +229,18 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
         );
     }
 
+    let canvas_style = use_style!(r#"
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        display: block;
+    "#,);
+
     html! {
           <ContextProvider<MessageContext> context={msg}>
-              <canvas id="gl-canvas" ref={canvas_ref}
-                position="absolute"
-                top="0"
-                width="100%"
-                height="100%"
-                z-index="-1"
-                display="block"
-               ></canvas>
+              <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
               {props.children.clone()}
           </ContextProvider<MessageContext>>
       }

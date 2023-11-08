@@ -2,9 +2,10 @@ use gloo::console;
 use gloo_timers::callback::Interval;
 use std::cell::RefCell;
 use std::rc::Rc;
-use web_sys::{HtmlElement, WebGlRenderingContext};
+use web_sys::{HtmlElement, WebGlRenderingContext, HtmlCanvasElement};
 use yew::prelude::*;
 use yew_hooks::use_raf;
+use wasm_bindgen::JsCast;
 
 // use crate::components::glcontext::use_gl_context;
 // use crate::components::GL;
@@ -36,19 +37,32 @@ pub fn GLView(props: &Props) -> Html {
             gl.enable(WebGlRenderingContext::SCISSOR_TEST);
             div_ref.cast::<HtmlElement>().map(|elem| {
                 console::log!("div_ref cast to HtmlElement");
-                let bbox = elem.get_bounding_client_rect();
-                console::log!("bbox: {:?}", &bbox);
+                let rect = elem.get_bounding_client_rect();
+
+                if (rect.bottom() < 0.0 || rect.top()  > gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64) ||
+                     (rect.right()  < 0.0 || rect.left() > gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_width() as f64) {
+                    console::log!("GLView div_ref not visible");
+                        
+                }
+            
+                let width  = rect.right() - rect.left();
+                let height = rect.bottom() - rect.top();
+                let left   = rect.left();
+                // let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
+                let bottom = 100;
+                
+                console::log!("width: {}, height: {}, left: {}, bottom: {}", width, height, left, bottom);
                 gl.viewport(
-                    bbox.x() as i32,
-                    bbox.y() as i32,
-                    bbox.width() as i32,
-                    bbox.height() as i32,
+                    left as i32,
+                    bottom as i32,
+                    width as i32,
+                    height as i32,
                 );
                 gl.scissor(
-                    bbox.x() as i32,
-                    bbox.y() as i32,
-                    bbox.width() as i32,
-                    bbox.height() as i32,
+                    left as i32,
+                    bottom as i32,
+                    width as i32,
+                    height as i32,
                 );
 
                 gl.clear_color(1.0, 0.0, 0.0, 1.0);

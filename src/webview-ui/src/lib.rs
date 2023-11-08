@@ -15,11 +15,13 @@ use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 
 use serde::{Deserialize, Serialize};
+use web_sys::AddEventListenerOptions;
 use std::cell::RefCell;
 use std::rc::Rc;
+use stylist::yew::use_style;
 use web_sys::window;
 
-use gloo::events::EventListener;
+use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 use yew::prelude::*;
@@ -145,7 +147,26 @@ fn App() -> Html {
             let message_listener =
                 EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()));
 
-            move || drop(message_listener)
+            let onwheel = Callback::from(move |event: Event| {
+                let data = event
+                    .dyn_ref::<web_sys::WheelEvent>()
+                    .expect("Unable to cast event to WheelEvent")
+                    .delta_y();
+                log::debug!("WheelEvent: {:?}", data);
+                event.prevent_default();
+            });
+            let options = EventListenerOptions::enable_prevent_default();
+            let wheel_listener = EventListener::new_with_options(
+                &window,
+                "wheel",
+                options,
+                move |e| onwheel.emit(e.clone()),
+            );
+
+            move || {
+                drop(message_listener);
+                drop(wheel_listener);
+            }
         }
     });
 
@@ -172,13 +193,42 @@ fn App() -> Html {
         }
     });
 
+
+    let main_style = use_style!(
+        r#"
+        /* make sure we don't overflow, so no scroll bar.
+         TODO: find the best value for this, or a better way to do this
+         */
+        width: 95vw;
+        height: 90vh;
+        margin: 0;
+        padding: 0;
+    "#,
+    );
+    let image_view_container_style = use_style!(
+        r#"
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+    "#,
+    );
+
     html! {
-        <RendererProvider renderer={coordinator.renderer.clone()}>
-            <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
-            <vscode-image onclick={onclick_view_image} > {"View image"} </vscode-image>
-            <div>{ "Hello World!" }</div>
-            <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
-        </RendererProvider>
+        <div class={main_style}>
+            <RendererProvider renderer={coordinator.renderer.clone()}>
+                <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
+                <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
+                <div>{ "Hello World!" }</div>
+                <div class={image_view_container_style}>
+                    <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
+                </div>
+            </RendererProvider>
+        </div>
     }
 }
 

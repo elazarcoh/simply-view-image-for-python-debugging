@@ -1,5 +1,6 @@
 use gloo::console;
 use gloo_timers::callback::Interval;
+use stylist::yew::use_style;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
@@ -31,14 +32,17 @@ pub fn GLView(props: &Props) -> Html {
         log::error!("GLView no renderer");
     }
 
+    let image_view_style = use_style!(
+        r#"
+        height: 100%;
+        width: 100%;
+        border: 1px solid #0000ff;
+    "#,
+    );
+
+
     html! {
-        <div>
-            <p>{ "Above" }</p>
-            <div ref={div_ref}>
-                <p>{ "Placeholder: " }</p>
-            </div>
-            <p>{ "Below" }</p>
-        </div>
+        <div ref={div_ref} class={image_view_style} />
     }
     // if glctx.is_none() {
     //     console::log!("GLView got no context");

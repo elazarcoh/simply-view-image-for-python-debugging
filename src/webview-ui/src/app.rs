@@ -61,6 +61,10 @@ impl Component for App {
                     { self.value }
                 </p>
 
+                <div>
+                    <vscode-button id="howdy">{"Howdy!"}</vscode-button>
+                </div>
+
                 // Display the current date and time the page was rendered
                 <p class="footer">
                     { "Rendered: " }

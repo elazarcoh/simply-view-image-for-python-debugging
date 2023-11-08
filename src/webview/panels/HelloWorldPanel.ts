@@ -180,7 +180,7 @@ export class HelloWorldPanel {
         // replace script with vscode-resource URIs
         const htmlWithVscodeResourceUris = indexHtml
             .replace(/<script defer src="webview.js"><\/script>/g, () => {
-                return `<script defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
+                return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
             })
             ;
 

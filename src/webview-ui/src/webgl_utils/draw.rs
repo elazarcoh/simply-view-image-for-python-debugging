@@ -2,7 +2,10 @@ use web_sys::WebGl2RenderingContext as GL;
 
 use super::types::*;
 
-pub fn draw_buffer_info(gl: &GL, buffer_info: &BufferInfo, draw_mode: DrawMode) {
+pub fn draw_buffer_info<B>(gl: &GL, buffer_info: &BufferInfo<B>, draw_mode: DrawMode)
+where
+    B: GLBuffer,
+{
     if let Some(_indices) = buffer_info.indices.as_ref() {
         gl.draw_elements_with_i32(
             draw_mode as _,

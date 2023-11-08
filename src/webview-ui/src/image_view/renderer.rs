@@ -41,6 +41,7 @@ struct RenderingData {
     image_plane_buffer: BufferInfo,
 }
 
+#[derive(Debug)]
 struct PixelsInformation {
     lower_x_px: i32,
     lower_y_px: i32,
@@ -242,7 +243,11 @@ impl Renderer {
         let br_ndc: Vec3 = Vec2::new(1.0, -1.0).to_hom();
 
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
-        let view_projection_inv = view_projection.inverse();
+        let image_pixels_to_view = Mat3::from_scale(Vec2::new(
+            VIEW_SIZE.width / image_size.width,
+            VIEW_SIZE.height / image_size.height,
+        ));
+        let view_projection_inv = (view_projection * image_pixels_to_view).inverse();
 
         let tl_world = view_projection_inv * tl_ndc;
         let br_world = view_projection_inv * br_ndc;
@@ -371,13 +376,14 @@ impl Renderer {
             height: canvas.height() as f32,
         };
         let camera = &image_view_data.camera;
-        let camera = &Camera {
-            zoom: 6.0,
-            translation: Vec2::new(-50.0, 0.0),
-        };
+        // let camera = &Camera {
+        //     zoom: 6.0,
+        //     translation: Vec2::new(-50.0, 0.0),
+        // };
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
         let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
+        log::debug!("pixels_info: {:?}", pixels_info);
         let enable_borders = pixels_info.image_pixel_size_device > 30; // TODO: make this configurable/constant
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
@@ -419,20 +425,20 @@ impl Renderer {
                     (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
                 )),
         );
-        rendering_data.text_renderer.queue_section(
-            glyph_brush::Section::default()
-                .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
-                // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
-                .with_layout(
-                    glyph_brush::Layout::default()
-                        .h_align(glyph_brush::HorizontalAlign::Center)
-                        .v_align(glyph_brush::VerticalAlign::Center),
-                )
-                .with_screen_position((
-                    ((px + 1.0) * pixel_offset + letters_offset_inside_pixel) * font_scale,
-                    (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
-                )),
-        );
+        // rendering_data.text_renderer.queue_section(
+        //     glyph_brush::Section::default()
+        //         .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
+        //         // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
+        //         .with_layout(
+        //             glyph_brush::Layout::default()
+        //                 .h_align(glyph_brush::HorizontalAlign::Center)
+        //                 .v_align(glyph_brush::VerticalAlign::Center),
+        //         )
+        //         .with_screen_position((
+        //             ((px + 1.0) * pixel_offset + letters_offset_inside_pixel) * font_scale,
+        //             (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
+        //         )),
+        // );
         let image_pixels_to_view = Mat3::from_scale(Vec2::new(
             VIEW_SIZE.width / texture.image_size().width,
             VIEW_SIZE.height / texture.image_size().height,

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ops::Deref;
@@ -114,7 +113,6 @@ fn create_uniform_setters(
         .as_f64()
         .unwrap() as u32;
 
-
     let mut uniform_setters: HashMap<String, UniformSetter> = HashMap::new();
     for ii in 0..num_uniforms {
         let uniform_info = gl
@@ -193,21 +191,24 @@ pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformVal
         });
 }
 
-pub fn set_buffers_and_attributes(program: &ProgramBundle, buffer_info: &BufferInfo) {
-    buffer_info.attribs.iter().for_each(|(info)| {
-        if let Some(attr_setter) = program.attribute_setters.get(info.name.as_str()) {
-            (attr_setter.setter)(&program.gl, &info);
+pub fn set_buffers_and_attributes<B>(program: &ProgramBundle, buffer_info: &BufferInfo<B>)
+where
+    B: GLBuffer,
+     {
+    buffer_info.attribs.iter().for_each(|(attrib)| {
+        if let Some(attr_setter) = program.attribute_setters.get(attrib.info.name.as_str()) {
+            (attr_setter.setter)(&program.gl, &attrib.info, &attrib.buffer);
         } else {
             log::warn!(
                 "Could not find attribute setter for: {}. Maybe it is unused?",
-                info.name
+                attrib.info.name
             );
         }
     });
 
     if let Some(indices) = &buffer_info.indices {
         let gl = &program.gl;
-        gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&indices));
+        indices.bind(gl, BindingPoint::ElementArrayBuffer);
     }
 }
 

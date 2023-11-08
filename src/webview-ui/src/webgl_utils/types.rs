@@ -34,7 +34,7 @@ pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
 
 pub struct AttributeSetter {
     pub index: u32,
-    pub setter: Box<dyn Fn(&GL, &AttribInfo)>,
+    pub setter: Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>,
 }
 
 pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
@@ -76,10 +76,25 @@ pub struct ArraySpec<T: IntoJsArray> {
     pub target: BindingPoint,
 }
 
+pub trait GLBuffer {
+    fn bind(&self, gl: &GL, target: BindingPoint);
+}
+
+impl GLBuffer for WebGlBuffer {
+    fn bind(&self, gl: &GL, target: BindingPoint) {
+        gl.bind_buffer(target as _, Some(self));
+    }
+}
+
+impl GLBuffer for GLGuard<WebGlBuffer> {
+    fn bind(&self, gl: &GL, target: BindingPoint) {
+        self.obj.bind(gl, target);
+    }
+}
+
 pub struct AttribInfo {
     pub name: String,
     pub num_components: usize,
-    pub buffer: GLGuard<WebGlBuffer>,
     pub gl_type: ElementType,
     pub normalized: bool,
     pub stride: i32,
@@ -87,21 +102,35 @@ pub struct AttribInfo {
     //  divisor:       array.divisor === undefined ? undefined : array.divisor,
     //  drawType:      array.drawType,
 }
-
-impl AttribInfo {
-    pub fn renamed(self, new_name: &str) -> AttribInfo {
-        AttribInfo {
-            name: new_name.to_string(),
-            ..self
-        }
-    }
+pub struct Attrib<B = GLGuard<WebGlBuffer>>
+where
+    B: GLBuffer,
+{
+    pub buffer: B,
+    pub info: AttribInfo,
 }
 
-pub struct BufferInfo {
+pub struct BufferInfo<B = GLGuard<WebGlBuffer>>
+where
+    B: GLBuffer,
+{
     pub num_elements: usize,
-    // pub element_type: ElementType,
-    pub indices: Option<GLGuard<WebGlBuffer>>,
-    pub attribs: Vec<AttribInfo>,
+    pub indices: Option<B>,
+    pub attribs: Vec<Attrib<B>>,
+}
+
+impl<B> BufferInfo<B>
+where
+    B: GLBuffer,
+{
+    pub fn get_attrib(&self, name: &str) -> Option<&Attrib<B>> {
+        self.attribs.iter().find(|attrib| attrib.info.name == name)
+    }
+    pub fn get_attrib_mut(&mut self, name: &str) -> Option<&mut Attrib<B>> {
+        self.attribs
+            .iter_mut()
+            .find(|attrib| attrib.info.name == name)
+    }
 }
 
 pub struct ProgramBundle {

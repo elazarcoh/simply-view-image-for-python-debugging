@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use super::{constants::*, types::*};
 
 use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer, WebGlProgram};
@@ -97,7 +99,7 @@ pub fn create_buffer_from_data<T: IntoJsArray>(
     Ok(buffer)
 }
 
-pub fn create_attributes_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<AttribInfo, String>
+pub fn create_attributes_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<Attrib, String>
 where
     T: IntoJsArray + ElementTypeFor,
 {
@@ -108,13 +110,15 @@ where
     let normalized = array.normalized;
     let stride = array.stride.unwrap_or(0);
 
-    Ok(AttribInfo {
-        name: attrib_name,
-        num_components,
+    Ok(Attrib {
         buffer,
-        gl_type,
-        normalized,
-        stride,
+        info: AttribInfo {
+            name: attrib_name,
+            num_components,
+            gl_type,
+            normalized,
+            stride,
+        },
     })
 }
 
@@ -130,7 +134,7 @@ where
 /**
   Heuristically guess the number of elements based on the length of the arrays
 */
-fn num_elements_from_attributes(gl: &GL, attribs: &[AttribInfo]) -> Result<usize, String> {
+fn num_elements_from_attributes(gl: &GL, attribs: &[Attrib]) -> Result<usize, String> {
     let attrib = &attribs[0];
     gl.bind_buffer(GL::ARRAY_BUFFER, Some(&attrib.buffer));
     let num_bytes = gl
@@ -139,9 +143,9 @@ fn num_elements_from_attributes(gl: &GL, attribs: &[AttribInfo]) -> Result<usize
         .unwrap() as usize;
     gl.bind_buffer(GL::ARRAY_BUFFER, None);
 
-    let bytes_per_element = BYTES_FOR_ELEMENT_TYPE.get(&attrib.gl_type).unwrap();
+    let bytes_per_element = BYTES_FOR_ELEMENT_TYPE.get(&attrib.info.gl_type).unwrap();
     let total_elements = num_bytes / bytes_per_element;
-    let num_elements = total_elements as f32 / attrib.num_components as f32;
+    let num_elements = total_elements as f32 / attrib.info.num_components as f32;
     // check if integer, if so return total elements
     if num_elements.floor() == num_elements {
         Ok(num_elements as usize)
@@ -163,7 +167,7 @@ where
     TU8: IntoJsArray + ElementTypeFor,
 {
     let mut attribs = vec![];
-    let mut indices_buffer = None;
+    let mut indices_buffer: Option<GLGuard<WebGlBuffer>> = None;
     let num_elements;
     for array in arrays.f32_arrays {
         attribs.push(create_attributes_from_array(gl, array)?);

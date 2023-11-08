@@ -7,4 +7,5 @@ pub mod attributes;
 pub mod textures;
 pub mod draw;
 pub mod reusable_buffer;
+pub mod utils;
 

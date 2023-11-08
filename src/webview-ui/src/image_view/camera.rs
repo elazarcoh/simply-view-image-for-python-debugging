@@ -14,7 +14,7 @@ impl Default for Camera {
     fn default() -> Self {
         Self {
             translation: glam::Vec2::ZERO,
-            zoom: 1.0,
+            zoom: 6.0,
         }
     }
 }

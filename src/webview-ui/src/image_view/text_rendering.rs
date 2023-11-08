@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::FromIterator};
+use std::{collections::HashMap, iter::FromIterator, ops::Deref, rc::Rc};
 
 use glam::{Mat3, Vec4};
 use glyph_brush::{
@@ -6,7 +6,7 @@ use glyph_brush::{
     ab_glyph::{Font, Rect},
     GlyphBrush, GlyphBrushBuilder, Rectangle,
 };
-use web_sys::{WebGl2RenderingContext, WebGlTexture};
+use web_sys::{WebGl2RenderingContext, WebGlBuffer, WebGlTexture};
 
 use crate::{
     common::Size,
@@ -20,13 +20,25 @@ use crate::{
     },
 };
 
+struct Buffers {
+    buffers: BufferInfo<ReusableBuffer>,
+}
+
+impl Buffers {
+    fn uv_buffer(&mut self) -> &mut ReusableBuffer {
+        &mut self.buffers.get_attrib_mut("uv").unwrap().buffer
+    }
+    fn position_buffer(&mut self) -> &mut ReusableBuffer {
+        &mut self.buffers.get_attrib_mut("vin_position").unwrap().buffer
+    }
+}
+
 pub struct TextRenderer {
     gl: WebGl2RenderingContext,
     glyph_brush: GlyphBrush<SingleGlyphData>,
     program: ProgramBundle,
     texture: GLGuard<WebGlTexture>,
-    uv_buffer: ReusableBuffer,
-    position_buffer: ReusableBuffer,
+    buffers: Buffers,
 }
 
 #[derive(Copy, Clone)]
@@ -36,57 +48,57 @@ struct SingleGlyphData {
     tex_coords: [f32; 12],
 }
 
-struct GlyphsArrays {
-    positions: ArraySpec<Vec<f32>>,
-    tex_coords: ArraySpec<Vec<f32>>,
-}
+// struct GlyphsArrays {
+//     positions: ArraySpec<Vec<f32>>,
+//     tex_coords: ArraySpec<Vec<f32>>,
+// }
 
-impl GlyphsArrays {
-    fn from_glyphs(glyphs: &[SingleGlyphData]) -> Self {
-        let size = glyphs.len() * 6 * 2;
-        let mut positions_vec = Vec::with_capacity(size);
-        let mut tex_coords_vec = Vec::with_capacity(size);
+// impl GlyphsArrays {
+//     fn from_glyphs(glyphs: &[SingleGlyphData]) -> Self {
+//         let size = glyphs.len() * 6 * 2;
+//         let mut positions_vec = Vec::with_capacity(size);
+//         let mut tex_coords_vec = Vec::with_capacity(size);
 
-        for glyph in glyphs {
-            positions_vec.extend_from_slice(&glyph.positions);
-            tex_coords_vec.extend_from_slice(&glyph.tex_coords);
-        }
+//         for glyph in glyphs {
+//             positions_vec.extend_from_slice(&glyph.positions);
+//             tex_coords_vec.extend_from_slice(&glyph.tex_coords);
+//         }
 
-        log::debug!("Positions: {:?}", positions_vec);
-        log::debug!("Tex coords: {:?}", tex_coords_vec);
+//         log::debug!("Positions: {:?}", positions_vec);
+//         log::debug!("Tex coords: {:?}", tex_coords_vec);
 
-        let positions = ArraySpec {
-            data: positions_vec,
-            num_components: 2,
-            name: "vin_position".to_string(),
-            normalized: false,
-            stride: None,
-            target: BindingPoint::ArrayBuffer,
-        };
+//         let positions = ArraySpec {
+//             data: positions_vec,
+//             num_components: 2,
+//             name: "vin_position".to_string(),
+//             normalized: false,
+//             stride: None,
+//             target: BindingPoint::ArrayBuffer,
+//         };
 
-        let tex_coords = ArraySpec {
-            data: tex_coords_vec,
-            num_components: 2,
-            name: "uv".to_string(),
-            normalized: false,
-            stride: None,
-            target: BindingPoint::ArrayBuffer,
-        };
+//         let tex_coords = ArraySpec {
+//             data: tex_coords_vec,
+//             num_components: 2,
+//             name: "uv".to_string(),
+//             normalized: false,
+//             stride: None,
+//             target: BindingPoint::ArrayBuffer,
+//         };
 
-        Self {
-            positions,
-            tex_coords,
-        }
-    }
+//         Self {
+//             positions,
+//             tex_coords,
+//         }
+//     }
 
-    fn into_buffers(self, gl: &WebGl2RenderingContext) -> Result<BufferInfo, String> {
-        let arrays = Arrays {
-            f32_arrays: vec![self.positions, self.tex_coords],
-            u8_arrays: vec![] as Vec<ArraySpec<Vec<u8>>>,
-        };
-        create_buffer_info_from_arrays(gl, arrays, None)
-    }
-}
+//     fn into_buffers(self, gl: &WebGl2RenderingContext) -> Result<BufferInfo, String> {
+//         let arrays = Arrays {
+//             f32_arrays: vec![self.positions, self.tex_coords],
+//             u8_arrays: vec![] as Vec<ArraySpec<Vec<u8>>>,
+//         };
+//         create_buffer_info_from_arrays(gl, arrays, None)
+//     }
+// }
 
 fn rect_to_positions(rect: Rect) -> [f32; 12] {
     [
@@ -180,14 +192,41 @@ impl TextRenderer {
 
         let uv_buffer = ReusableBuffer::new(gl.clone(), 1024)?;
         let position_buffer = ReusableBuffer::new(gl.clone(), 1024)?;
+        let buffers = BufferInfo::<ReusableBuffer> {
+            num_elements: 0,
+            attribs: vec![
+                Attrib {
+                    buffer: uv_buffer,
+                    info: AttribInfo {
+                        name: "vin_position".to_string(),
+                        num_components: 2,
+                        gl_type: ElementType::Float,
+                        normalized: false,
+                        stride: 0,
+                    },
+                },
+                Attrib {
+                    buffer: position_buffer,
+                    info: AttribInfo {
+                        name: "uv".to_string(),
+                        num_components: 2,
+                        gl_type: ElementType::Float,
+                        normalized: false,
+                        stride: 0,
+                    },
+                },
+            ],
+            indices: None,
+        };
+
+        let buffers = Buffers { buffers };
 
         Ok(Self {
             gl,
             glyph_brush,
             program: text_program,
             texture,
-            uv_buffer,
-            position_buffer,
+            buffers,
         })
     }
 
@@ -197,7 +236,6 @@ impl TextRenderer {
 
     pub fn render(&mut self, image_coords_to_view_coord_mat: &Mat3, view_projection: &Mat3) {
         let gl = &self.gl;
-        let program = &self.program;
         let texture = &self.texture;
 
         let update_texture = move |rect: Rectangle<u32>, tex_data: &[u8]| {
@@ -221,26 +259,35 @@ impl TextRenderer {
             .glyph_brush
             .process_queued(update_texture, SingleGlyphData::from_brush_vertex)
         {
-            Ok(glyph_brush::BrushAction::Draw(x)) => {
-                log::debug!("Drawing {} glyphs", x.len());
-                let glyphs_arrays = GlyphsArrays::from_glyphs(&x);
-                let buffers = glyphs_arrays.into_buffers(gl).unwrap();
+            Ok(glyph_brush::BrushAction::Draw(glyphs)) => {
+                let mut offset = 0;
+                let mut num_elements = 0;
+                for glyph in &glyphs {
+                    self.buffers
+                        .uv_buffer()
+                        .set_content(&bytemuck::cast_slice(&glyph.tex_coords), offset)
+                        .unwrap();
+                    self.buffers
+                        .position_buffer()
+                        .set_content(&bytemuck::cast_slice(&glyph.positions), offset)
+                        .unwrap();
+                    offset += 12 * std::mem::size_of::<f32>();
+                    num_elements += 6;
+                }
+                self.buffers.buffers.num_elements = num_elements;
 
-                self.draw(&buffers, image_coords_to_view_coord_mat, view_projection);
+                self.draw(image_coords_to_view_coord_mat, view_projection);
             }
 
             Ok(glyph_brush::BrushAction::ReDraw) => {}
 
-            Err(e) => {}
+            Err(e) => {
+                log::error!("Error drawing text: {:?}", e);
+            }
         };
     }
 
-    fn draw(
-        &self,
-        buffers: &BufferInfo,
-        image_coords_to_view_coord_mat: &Mat3,
-        view_projection: &Mat3,
-    ) {
+    fn draw(&self, image_coords_to_view_coord_mat: &Mat3, view_projection: &Mat3) {
         log::debug!("Drawing text");
         let gl = &self.gl;
         let program = &self.program;
@@ -258,13 +305,10 @@ impl TextRenderer {
                     "u_imageToScreenMatrix",
                     UniformValue::Mat3(image_coords_to_view_coord_mat),
                 ),
-                (
-                    "u_projectionMatrix",
-                    UniformValue::Mat3(view_projection),
-                ),
+                ("u_projectionMatrix", UniformValue::Mat3(view_projection)),
             ]),
         );
-        set_buffers_and_attributes(&self.program, &buffers);
-        draw_buffer_info(gl, buffers, DrawMode::Triangles);
+        set_buffers_and_attributes(&self.program, &self.buffers.buffers);
+        draw_buffer_info(gl, &self.buffers.buffers, DrawMode::Triangles);
     }
 }

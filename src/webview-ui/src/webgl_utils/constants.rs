@@ -165,8 +165,8 @@ lazy_static! {
 fn float_attribute_setter(index: u32) -> AttributeSetter {
     AttributeSetter {
         index,
-        setter: Box::new(move |gl: &GL, attr: &AttribInfo| {
-            gl.bind_buffer(GL::ARRAY_BUFFER, Some(&attr.buffer));
+        setter: Box::new(move |gl: &GL, attr: &AttribInfo, buffer: &dyn GLBuffer| {
+            buffer.bind(gl, BindingPoint::ArrayBuffer);
             gl.enable_vertex_attrib_array(index);
             gl.vertex_attrib_pointer_with_i32(
                 index,

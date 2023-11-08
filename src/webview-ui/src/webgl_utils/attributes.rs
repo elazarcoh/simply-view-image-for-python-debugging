@@ -1,4 +1,5 @@
 use super::types::*;
+
 use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer, WebGlProgram};
 /**
  * Given typed array creates a WebGLBuffer and copies the typed array
@@ -37,8 +38,10 @@ pub fn create_buffer_from_data<T: IntoJsArray>(
     data: T,
     buffer_type: Option<GLConstant>,
     draw_type: Option<GLConstant>,
-) -> Result<WebGlBuffer, String> {
-    let buffer = gl.create_buffer().ok_or("Could not create buffer")?;
+) -> Result<GLGuard<WebGlBuffer>, String> {
+    let buffer = gl_guarded(gl.clone(), |gl| {
+        gl.create_buffer().ok_or("Could not create buffer")
+    })?;
     let buffer_type_ = buffer_type.unwrap_or(GL::ARRAY_BUFFER);
     let draw_type_ = draw_type.unwrap_or(GL::STATIC_DRAW);
     gl.bind_buffer(buffer_type_, Some(&buffer));

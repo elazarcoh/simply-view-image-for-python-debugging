@@ -1,6 +1,12 @@
+// #version 300 es
+
 precision mediump float;
 
+out vec4 fout_color;
+
 uniform float u_time;
+// uniform sampler2D u_texture;
+
 
 void main() {
 

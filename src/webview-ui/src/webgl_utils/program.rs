@@ -165,18 +165,17 @@ fn create_attributes_setters(
         if is_built_in(&attrib_info) {
             continue;
         }
-        //     const index = gl.getAttribLocation(program, attribInfo.name);
         let index = gl.get_attrib_location(program, attrib_info.name().as_str());
-        //     const typeInfo = attrTypeMap[attribInfo.type];
-        let gl_type: Result<ElementType, _> = attrib_info.type_().try_into();
+        let gl_type: Result<GLPrimitive, _> = attrib_info.type_().try_into();
         if let Ok(gl_type) = gl_type {
-            log::debug!("gl_type: {:?}", gl_type);
-            //     const setter = typeInfo.setter(gl, index, typeInfo);
-            if let Ok(setter) = GL_ATTRIBUTE_SETTER_FOR_TYPE.get(&gl_type).ok_or(format!(
-                "Could not find attribute setter for type: {:?}",
-                &gl_type
-            )) {
+            if let Some(setter) = GL_ATTRIBUTE_SETTER_FOR_TYPE.get(&gl_type) {
                 attrib_setters.insert(attrib_info.name().to_string(), setter(index as u32));
+            } else {
+                log::error!(
+                    "Could not find attribute setter for type: {:?}. Required for attribute: {}",
+                    gl_type,
+                    attrib_info.name()
+                );
             }
         }
     }

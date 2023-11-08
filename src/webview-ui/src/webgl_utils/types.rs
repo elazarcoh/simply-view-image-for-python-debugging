@@ -12,6 +12,30 @@ use web_sys::*;
 use super::attributes::IntoJsArray;
 use super::constants::GL_CONSTANT_NAMES;
 
+// pub struct MoveOnly<T> {
+//     obj: T,
+// }
+
+// impl<T> MoveOnly<T> {
+//     pub fn new(obj: T) -> Self {
+//         Self { obj }
+//     }
+// }
+
+// impl<T> Deref for MoveOnly<T> {
+//     type Target = T;
+
+//     fn deref(&self) -> &Self::Target {
+//         &self.obj
+//     }
+// }
+
+// impl<T: GLDrop> GLDrop for MoveOnly<T> {
+//     fn drop(&self, gl: &GL) {
+//         self.obj.drop(gl);
+//     }
+// }
+
 pub type GLConstant = u32;
 
 pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
@@ -26,45 +50,33 @@ pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
 pub enum ElementType {
+    Byte = GL::BYTE,
+    UnsignedByte = GL::UNSIGNED_BYTE,
+    Short = GL::SHORT,
+    UnsignedShort = GL::UNSIGNED_SHORT,
     Int = GL::INT,
-    IntVec2 = GL::INT_VEC2,
-    IntVec3 = GL::INT_VEC3,
-    IntVec4 = GL::INT_VEC4,
     UnsignedInt = GL::UNSIGNED_INT,
-    UnsignedIntVec2 = GL::UNSIGNED_INT_VEC2,
-    UnsignedIntVec3 = GL::UNSIGNED_INT_VEC3,
-    UnsignedIntVec4 = GL::UNSIGNED_INT_VEC4,
+    Float = GL::FLOAT,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum GLPrimitive {
     Float = GL::FLOAT,
     FloatVec2 = GL::FLOAT_VEC2,
     FloatVec3 = GL::FLOAT_VEC3,
     FloatVec4 = GL::FLOAT_VEC4,
-    Bool = GL::BOOL,
-    BoolVec2 = GL::BOOL_VEC2,
-    BoolVec3 = GL::BOOL_VEC3,
-    BoolVec4 = GL::BOOL_VEC4,
 }
 
-impl TryFrom<GLConstant> for ElementType {
+impl TryFrom<GLConstant> for GLPrimitive {
     type Error = String;
 
     fn try_from(value: GLConstant) -> Result<Self, Self::Error> {
         match value {
-            GL::FLOAT => Ok(ElementType::Float),
-            GL::FLOAT_VEC2 => Ok(ElementType::FloatVec2),
-            GL::FLOAT_VEC3 => Ok(ElementType::FloatVec3),
-            GL::FLOAT_VEC4 => Ok(ElementType::FloatVec4),
-            GL::INT => Ok(ElementType::Int),
-            GL::INT_VEC2 => Ok(ElementType::IntVec2),
-            GL::INT_VEC3 => Ok(ElementType::IntVec3),
-            GL::INT_VEC4 => Ok(ElementType::IntVec4),
-            GL::UNSIGNED_INT => Ok(ElementType::UnsignedInt),
-            GL::UNSIGNED_INT_VEC2 => Ok(ElementType::UnsignedIntVec2),
-            GL::UNSIGNED_INT_VEC3 => Ok(ElementType::UnsignedIntVec3),
-            GL::UNSIGNED_INT_VEC4 => Ok(ElementType::UnsignedIntVec4),
-            GL::BOOL => Ok(ElementType::Bool),
-            GL::BOOL_VEC2 => Ok(ElementType::BoolVec2),
-            GL::BOOL_VEC3 => Ok(ElementType::BoolVec3),
-            GL::BOOL_VEC4 => Ok(ElementType::BoolVec4),
+            GL::FLOAT => Ok(GLPrimitive::Float),
+            GL::FLOAT_VEC2 => Ok(GLPrimitive::FloatVec2),
+            GL::FLOAT_VEC3 => Ok(GLPrimitive::FloatVec3),
+            GL::FLOAT_VEC4 => Ok(GLPrimitive::FloatVec4),
             _ => Err(format!("unknown element type: {}", value)),
         }
     }
@@ -108,7 +120,7 @@ pub struct ArraySpec<T: IntoJsArray> {
 pub struct AttribInfo {
     pub name: String,
     pub num_components: usize,
-    pub buffer: WebGlBuffer,
+    pub buffer: GLGuard<WebGlBuffer>,
     pub gl_type: ElementType,
     pub normalized: bool,
     pub stride: i32,
@@ -157,6 +169,12 @@ impl GLDrop for ProgramBundle {
     fn drop(&self, gl: &GL) {
         self.program.drop(gl);
         self.shaders.iter().for_each(|shader| shader.drop(gl));
+    }
+}
+
+impl GLDrop for WebGlTexture {
+    fn drop(&self, gl: &GL) {
+        gl.delete_texture(Some(self));
     }
 }
 
@@ -227,5 +245,43 @@ fn impl_gl_verify_type<T: GLVerifyType>(
 impl GLVerifyType for f32 {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
         impl_gl_verify_type::<f32>(WebGl2RenderingContext::FLOAT, gl_type)
+    }
+}
+
+// image crate integration
+cfg_if! {
+    if #[cfg(feature = "image")]
+    {
+    use image;
+
+    impl<T: ElementTypeFor> ElementTypeFor for image::Rgb<T> {
+        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+    }
+    impl<T: ElementTypeFor> ElementTypeFor for image::Rgba<T> {
+        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+    }
+    impl<T: ElementTypeFor> ElementTypeFor for image::Luma<T> {
+        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+    }
+    impl<T: ElementTypeFor> ElementTypeFor for image::LumaA<T> {
+        const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+    }
+
+    pub fn element_type_for_dynamic_image(img: &image::DynamicImage) -> ElementType {
+        match img {
+            image::DynamicImage::ImageLuma8(_) => ElementType::UnsignedByte,
+            image::DynamicImage::ImageLumaA8(_) => ElementType::UnsignedByte,
+            image::DynamicImage::ImageRgb8(_) => ElementType::UnsignedByte,
+            image::DynamicImage::ImageRgba8(_) => ElementType::UnsignedByte,
+            image::DynamicImage::ImageLuma16(_) => ElementType::UnsignedShort,
+            image::DynamicImage::ImageLumaA16(_) => ElementType::UnsignedShort,
+            image::DynamicImage::ImageRgb16(_) => ElementType::UnsignedShort,
+            image::DynamicImage::ImageRgba16(_) => ElementType::UnsignedShort,
+            image::DynamicImage::ImageRgb32F(_) => ElementType::Float,
+            image::DynamicImage::ImageRgba32F(_) => ElementType::Float,
+            _ => unimplemented!(),
+        }
+    }
+
     }
 }

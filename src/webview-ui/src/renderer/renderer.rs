@@ -1,5 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
+use image;
 use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
@@ -8,6 +9,7 @@ use yew::NodeRef;
 
 use super::{ImageCache, InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
 use crate::webgl_utils;
+use crate::webgl_utils::textures::create_texture_from_image;
 use crate::webgl_utils::types::{ArrayData, ArraySpec};
 
 fn views(vt: ViewsType) -> Vec<String> {
@@ -216,9 +218,18 @@ impl Renderer {
         gl.clear_color(1.0, 0.0, 0.0, 1.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
+        log::debug!("creating image...");
+        let solid_image_data =
+            image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
+        log::debug!("created buffer");
+        let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
+        log::debug!("created image");
+        let tex = create_texture_from_image(gl, &solid_image)?;
+        log::debug!("successfully created texture");
+
         let vert_code = include_str!("../shaders/basic.vert");
         let frag_code = include_str!("../shaders/basic.frag");
-            
+
         let array_info: ArraySpec<&[f32]> = ArraySpec {
             name: "a_position".to_string(),
             data: ArrayData::Slice(&[
@@ -232,19 +243,6 @@ impl Renderer {
         };
         let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
 
-        // triangle at the center of the screen
-        // let vertices: Vec<f32> = vec![
-        //     -0.5, -0.5, // bottom left
-        //     0.5, -0.5, // bottom right
-        //     0.0, 0.5, // top
-        // ];
-        // let vertex_buffer = gl.create_buffer().unwrap();
-        // let verts = js_sys::Float32Array::from(vertices.as_slice());
-
-        // gl.bind_buffer(GL::ARRAY_BUFFER, Some(&vertex_buffer));
-        // gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &verts, GL::STATIC_DRAW);
-        log::warn!("attr: {:?}", attr.name);
-
         let shader_program = webgl_utils::GLProgramBuilder::new(&gl)
             .vertex_shader(vert_code)
             .fragment_shader(frag_code)
@@ -253,17 +251,14 @@ impl Renderer {
 
         gl.use_program(Some(&shader_program.program));
 
-        (shader_program.attribute_setters.get("a_position").unwrap().setter)(
-            &gl,
-            &attr,
-        );
+        (shader_program
+            .attribute_setters
+            .get("a_position")
+            .ok_or("Could not find attribute setter for a_position")?
+            .setter)(&gl, &attr);
 
         shader_program.uniform_setters.get("u_time").unwrap()(&gl, &0.0);
-
-        // Attach the position vector as an attribute for the GL context.
-        // let position = gl.get_attrib_location(&shader_program.program, "a_position") as u32;
-        // gl.vertex_attrib_pointer_with_i32(position, 2, GL::FLOAT, false, 0, 0);
-        // gl.enable_vertex_attrib_array(position);
+        // shader_program.uniform_setters.get("u_texture").unwrap()(&gl, &tex);
 
         // Attach the time as a uniform for the GL context.
         gl.draw_arrays(GL::TRIANGLES, 0, 6);

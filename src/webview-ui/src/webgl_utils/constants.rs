@@ -62,13 +62,13 @@ fn int_attribute_setter(gl: &GL, index: u32) {}
 fn uint_attribute_setter(gl: &GL, index: u32) {}
 
 lazy_static! {
-    pub static ref GL_ATTRIBUTE_SETTER_FOR_TYPE: HashMap<ElementType, AttributeSetterBuilder> = {
-        let mut m = HashMap::<ElementType, AttributeSetterBuilder>::new();
+    pub static ref GL_ATTRIBUTE_SETTER_FOR_TYPE: HashMap<GLPrimitive, AttributeSetterBuilder> = {
+        let mut m = HashMap::<GLPrimitive, AttributeSetterBuilder>::new();
 
-        m.insert(ElementType::Float, float_attribute_setter);
-        m.insert(ElementType::FloatVec2, float_attribute_setter);
-        m.insert(ElementType::FloatVec3, float_attribute_setter);
-        m.insert(ElementType::FloatVec4, float_attribute_setter);
+        m.insert(GLPrimitive::Float, float_attribute_setter);
+        m.insert(GLPrimitive::FloatVec2, float_attribute_setter);
+        m.insert(GLPrimitive::FloatVec3, float_attribute_setter);
+        m.insert(GLPrimitive::FloatVec4, float_attribute_setter);
 
         m
     };

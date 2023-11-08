@@ -15,13 +15,15 @@ crate-type = ["cdylib"]
 lto = true
 
 [features]
-# If you uncomment this line, it will enable `wee_alloc`:
+use-image = ["image"]
+
 default = [
   # If you uncomment this line, it will enable `wee_alloc`:
   # "wee_alloc",
   # If you uncomment this line, it will enable `console_error_panic_hook`:
   "console_error_panic_hook",
   "console_log",
+  "use-image"
 ]
 
 [dependencies]
@@ -54,7 +56,7 @@ yew-hooks = "0.2.0"
 stylist = { version = "0.12.1", features = ["yew_integration"] }
 
 base64 = "0.21.2"
-image = "0.24.7"
+image = {version = "0.24.7", optional = true}
 derive_builder = "0.12.0"
 do-notation = "0.1.3"
 lazy_static = "1.4.0"

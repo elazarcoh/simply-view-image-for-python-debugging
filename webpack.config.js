@@ -14,6 +14,7 @@ const {
 const path = require("path");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 
 const dist = path.resolve(__dirname, "dist");
@@ -99,6 +100,21 @@ const WebviewConfig = {
         new webpack.ProvidePlugin({
             TextDecoder: ['text-encoding', 'TextDecoder'],
             TextEncoder: ['text-encoding', 'TextEncoder']
+        }),
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: path.posix.join(
+                        __dirname.replace(/\\/g, '/'),
+                        'node_modules',
+                        '@vscode',
+                        'codicons',
+                        'dist',
+                        'codicon.{ttf,css}',
+                    ),
+                    to: path.posix.join(__dirname.replace(/\\/g, '/'), 'dist', "[name][ext]"),
+                },
+            ],
         })],
     experiments: {
         asyncWebAssembly: true,

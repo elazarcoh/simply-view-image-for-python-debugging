@@ -12,7 +12,6 @@ import * as path from "path";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
-import { MessageHandlerData } from "../../utils/MessageHandlerData";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
 
 /**
@@ -191,7 +190,11 @@ export class HelloWorldPanel {
             "utf8"
         );
         // replace script with vscode-resource URIs
-        const htmlWithVscodeResourceUris = indexHtml.replace(
+        const htmlWithVscodeResourceUris = indexHtml
+        .replaceAll( /\${nonce}/g, nonce)
+        .replaceAll( /\${webviewCspSource}/g, webview.cspSource)
+        .replaceAll( /\${baseUri}/g, baseUri.toString())
+            .replace(
             /<script defer src="webview.js"><\/script>/g,
             () => {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
@@ -201,7 +204,7 @@ export class HelloWorldPanel {
     }
 
     public postMessage(
-        message: any
+        message: object
     ) {
         this._webviewMessageHandler.sendToWebview(message);
     }

@@ -33,24 +33,31 @@ pub struct ImageListItemProps {
 pub fn ImageListItem(props: &ImageListItemProps) -> Html {
     let ImageListItemProps { entry } = props;
 
-    let info_style = use_style!(
+    let info_grid_style = use_style!(
         r#"
         user-select: none;
         pointer-events: none;
     "#,
     );
 
+    let info_grid_cell_style = use_style!(
+        r#"
+        padding-top: 1px;
+        padding-bottom: 1px;
+    "#,
+    );
+
     html! {
         <div>
         <label>{&entry.name}</label>
-        <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_style.clone()}>
+        <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
             <vscode-data-grid-row>
-                <vscode-data-grid-cell class={info_style} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
-                <vscode-data-grid-cell grid-column="2">{shape_to_string(&entry.info.shape)}</vscode-data-grid-cell>
+                <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
+                <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.info.shape)}</vscode-data-grid-cell>
             </vscode-data-grid-row>
             <vscode-data-grid-row>
-                <vscode-data-grid-cell cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
-                <vscode-data-grid-cell grid-column="2">{&entry.info.data_type}</vscode-data-grid-cell>
+                <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
+                <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.info.data_type}</vscode-data-grid-cell>
             </vscode-data-grid-row>
         </vscode-data-grid>
         </div>

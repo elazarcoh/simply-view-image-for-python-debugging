@@ -9,18 +9,23 @@ mod communication;
 use base64::{engine::general_purpose, Engine as _};
 mod components;
 mod image_view;
+mod mouse_events;
 mod vscode;
 mod webgl_utils;
 use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 
 use image_view::image_views_coordinator::ImageViewsCoordinator;
+use image_view::renderer;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
 use web_sys::window;
 use web_sys::AddEventListenerOptions;
+use web_sys::HtmlCanvasElement;
+use web_sys::Node;
+use web_sys::WebGl2RenderingContext;
 
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::prelude::*;
@@ -29,12 +34,12 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use crate::components::GLView;
-use crate::components::RendererProvider;
 use crate::image_view::image_cache::ImageCache;
 use crate::image_view::renderer::Renderer;
 use crate::image_view::types::Image;
 use crate::image_view::types::InSingleViewName;
 use crate::image_view::types::InViewName;
+use mouse_events::on_wheel;
 
 // #[wasm_bindgen]
 // pub fn send_example_to_js() -> JsValue {
@@ -141,6 +146,8 @@ fn App() -> Html {
             &coordinator.image_views_coordinator.borrow().view_holders,
         ));
 
+    let canvas_ref = use_node_ref();
+
     // TODO: move from here
     let view_id = InViewName::Single(InSingleViewName::Single);
     let my_node_ref = coordinator
@@ -164,12 +171,10 @@ fn App() -> Html {
                 EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()));
 
             let onwheel = Callback::from(move |event: Event| {
-                let data = event
+                let event = event
                     .dyn_ref::<web_sys::WheelEvent>()
-                    .expect("Unable to cast event to WheelEvent")
-                    .delta_y();
-                log::debug!("WheelEvent: {:?}", data);
-                event.prevent_default();
+                    .expect("Unable to cast event to WheelEvent");
+                on_wheel(event)
             });
             let options = EventListenerOptions::enable_prevent_default();
             let wheel_listener =
@@ -183,6 +188,33 @@ fn App() -> Html {
             }
         }
     });
+
+    use_effect_with_deps(
+        {
+            let renderer = Rc::clone(&coordinator.renderer);
+            move |canvas_ref: &NodeRef| {
+                let canvas = canvas_ref
+                    .cast::<HtmlCanvasElement>()
+                    .expect("canvas_ref not attached to a canvas element");
+
+                let gl: WebGl2RenderingContext = canvas
+                    .get_context("webgl2")
+                    .unwrap()
+                    .unwrap()
+                    .dyn_into()
+                    .unwrap();
+
+                log::debug!("GL context created");
+
+                (*renderer).borrow_mut().bind_gl(gl);
+
+                move || {
+                    (*renderer).borrow_mut().unbind_gl();
+                }
+            }
+        },
+        canvas_ref.clone(),
+    );
 
     let onclick_get_image = Callback::from({
         let message_handler = coordinator.vscode_message_handler.clone();
@@ -218,6 +250,17 @@ fn App() -> Html {
         padding: 0;
     "#,
     );
+    let canvas_style = use_style!(
+        r#"
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    "#,
+    );
+
     let image_view_container_style = use_style!(
         r#"
         display: flex;
@@ -233,14 +276,15 @@ fn App() -> Html {
 
     html! {
         <div class={main_style}>
-            <RendererProvider renderer={coordinator.renderer.clone()}>
+            // <RendererProvider renderer={coordinator.renderer.clone()}>
+                <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
                 <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
                 <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
                 <div>{ "Hello World!" }</div>
                 <div class={image_view_container_style}>
                     <GLView node_ref={my_node_ref} />
                 </div>
-            </RendererProvider>
+            // </RendererProvider>
         </div>
     }
 }

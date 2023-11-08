@@ -4,6 +4,7 @@ pub mod constants;
 pub mod program;
 pub mod attributes;
 pub mod textures;
+pub mod draw;
 
 pub use program::GLProgramBuilder;
 

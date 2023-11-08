@@ -14,6 +14,7 @@ use crate::webgl_utils::attributes::{
     create_attributes_from_array, create_buffer_info_from_arrays, Arrays,
 };
 use crate::webgl_utils::constants::*;
+use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
@@ -39,17 +40,16 @@ fn create_image_plane_attributes(
     width: f32,
     height: f32,
 ) -> Result<BufferInfo, String> {
+    let centered_x = x - width / 2.0;
+    let centered_y = y - height / 2.0;
+    #[rustfmt::skip]
     let a_image_plane_position = ArraySpec {
         name: "vin_position".to_string(),
         data: (&[
-            x,
-            y, // bottom left
-            x + width,
-            y, // bottom right
-            x,
-            y + height, // top left
-            x + width,
-            y + height, // top right
+            centered_x, centered_y, // bottom left
+            centered_x, centered_y + height, // bottom right
+            centered_x + width, centered_y, // top left
+            centered_x + width, centered_y + height, // top right
         ] as &[f32]),
         num_components: 2,
         normalized: true,
@@ -229,52 +229,52 @@ impl Renderer {
         };
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
-        let basic_program = &rendering_data.programs.basic;
-        gl.use_program(Some(&basic_program.program));
+        // let basic_program = &rendering_data.programs.basic;
+        // gl.use_program(Some(&basic_program.program));
 
-        let mut mat = glam::Mat4::IDENTITY;
-        *mat.col_mut(0).index_mut(0) = 0.5;
+        // let mut mat = glam::Mat4::IDENTITY;
+        // *mat.col_mut(0).index_mut(0) = 0.5;
 
-        set_uniforms(
-            &basic_program,
-            &HashMap::from([
-                ("u_time", UniformValue::Float(&0.5)),
-                ("u_transform", UniformValue::Mat4(&mat)),
-            ]),
-        );
+        // set_uniforms(
+        //     &basic_program,
+        //     &HashMap::from([
+        //         ("u_time", UniformValue::Float(&0.5)),
+        //         ("u_transform", UniformValue::Mat4(&mat)),
+        //     ]),
+        // );
 
-        if let Some(image_id) = &image_view.model.image_id {
-            let t = rendering_context.texture_by_id(&image_id).ok_or(
-                "Could not find texture for image_id. This should not happen, please report a bug.",
-            )?;
-            let texture = &t.texture;
-            set_uniforms(
-                &basic_program,
-                &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
-            );
-        }
+        // if let Some(image_id) = &image_view.model.image_id {
+        //     let t = rendering_context.texture_by_id(&image_id).ok_or(
+        //         "Could not find texture for image_id. This should not happen, please report a bug.",
+        //     )?;
+        //     let texture = &t.texture;
+        //     set_uniforms(
+        //         &basic_program,
+        //         &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
+        //     );
+        // }
 
-        let array_info: ArraySpec<&[f32]> = ArraySpec {
-            name: "a_position".to_string(),
-            data: (&[
-                -0.5_f32, -0.5, // bottom left
-                0.5, -0.5, // bottom right
-                0.0, 0.5, // top
-            ]),
-            num_components: 2,
-            normalized: true,
-            stride: None,
-            target: BindingPoint::ArrayBuffer,
-        };
-        let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
-        (basic_program
-            .attribute_setters
-            .get("a_position")
-            .ok_or("Could not find attribute setter for a_position")?
-            .setter)(&gl, &attr);
+        // let array_info: ArraySpec<&[f32]> = ArraySpec {
+        //     name: "a_position".to_string(),
+        //     data: (&[
+        //         -0.5_f32, -0.5, // bottom left
+        //         0.5, -0.5, // bottom right
+        //         0.0, 0.5, // top
+        //     ]),
+        //     num_components: 2,
+        //     normalized: true,
+        //     stride: None,
+        //     target: BindingPoint::ArrayBuffer,
+        // };
+        // let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
+        // (basic_program
+        //     .attribute_setters
+        //     .get("a_position")
+        //     .ok_or("Could not find attribute setter for a_position")?
+        //     .setter)(&gl, &attr);
 
-        // Attach the time as a uniform for the GL context.
-        gl.draw_arrays(GL::TRIANGLES, 0, 6);
+        // // Attach the time as a uniform for the GL context.
+        // gl.draw_arrays(GL::TRIANGLES, 0, 6);
 
         let image_id = image_view.model.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
@@ -296,9 +296,8 @@ impl Renderer {
             program,
             &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
         );
-        set_buffers_and_attributes(
-            program,
-            &rendering_data.image_plane_buffer,
-        );
+        set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
+        log::debug!("render_image: draw_buffer_info");
+        draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
     }
 }

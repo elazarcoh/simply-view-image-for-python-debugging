@@ -84,6 +84,18 @@ pub enum BindingPoint {
     TransformFeedbackBuffer = GL::TRANSFORM_FEEDBACK_BUFFER,
 }
 
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum DrawMode {
+    Points = GL::POINTS,
+    LineStrip = GL::LINE_STRIP,
+    LineLoop = GL::LINE_LOOP,
+    Lines = GL::LINES,
+    TriangleStrip = GL::TRIANGLE_STRIP,
+    TriangleFan = GL::TRIANGLE_FAN,
+    Triangles = GL::TRIANGLES,
+}
+
 lazy_static! {
     // to_string for gl constants
     pub static ref GL_CONSTANT_NAMES: HashMap<GLConstant, &'static str> = {
@@ -144,6 +156,22 @@ lazy_static! {
         m.insert(GLPrimitive::FloatVec2, float_attribute_setter);
         m.insert(GLPrimitive::FloatVec3, float_attribute_setter);
         m.insert(GLPrimitive::FloatVec4, float_attribute_setter);
+
+        m
+    };
+}
+
+lazy_static! {
+    pub static ref BYTES_FOR_ELEMENT_TYPE: HashMap<ElementType, usize> = {
+        let mut m = HashMap::<ElementType, usize>::new();
+
+        m.insert(ElementType::Byte, mem::size_of::<i8>());
+        m.insert(ElementType::UnsignedByte, mem::size_of::<u8>());
+        m.insert(ElementType::Short, mem::size_of::<i16>());
+        m.insert(ElementType::UnsignedShort, mem::size_of::<u16>());
+        m.insert(ElementType::Int, mem::size_of::<i32>());
+        m.insert(ElementType::UnsignedInt, mem::size_of::<u32>());
+        m.insert(ElementType::Float, mem::size_of::<f32>());
 
         m
     };

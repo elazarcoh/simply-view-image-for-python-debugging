@@ -2,7 +2,7 @@
 precision mediump float;
 
 in vec2 vout_uv;
-out vec4 fout_color;
+layout(location = 0) out vec4 fout_color;
 
 uniform vec2 u_time;
 uniform vec2 u_offset;

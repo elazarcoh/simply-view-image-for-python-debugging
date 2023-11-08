@@ -100,6 +100,32 @@ pub struct Arrays<'a> {
     pub u8_arrays: Vec<ArraySpec<&'a [u8]>>,
 }
 
+/**
+  Heuristically guess the number of elements based on the length of the arrays
+*/
+fn num_elements_from_attributes(gl: &GL, attribs: &[AttribInfo]) -> Result<usize, String> {
+    let attrib = &attribs[0];
+    gl.bind_buffer(GL::ARRAY_BUFFER, Some(&attrib.buffer));
+    let num_bytes = gl
+        .get_buffer_parameter(GL::ARRAY_BUFFER, GL::BUFFER_SIZE)
+        .as_f64()
+        .unwrap() as usize;
+    gl.bind_buffer(GL::ARRAY_BUFFER, None);
+
+    let bytes_per_element = BYTES_FOR_ELEMENT_TYPE.get(&attrib.gl_type).unwrap();
+    let total_elements = num_bytes / bytes_per_element;
+    let num_elements = total_elements as f32 / attrib.num_components as f32;
+    // check if integer, if so return total elements
+    if num_elements.floor() == num_elements {
+        Ok(num_elements as usize)
+    } else {
+        Err(format!(
+            "Got non-integer number of elements. bytes_per_element: {}, num_bytes: {}, num_elements: {}",
+            bytes_per_element, num_bytes, num_elements
+        ))
+    }
+}
+
 pub fn create_buffer_info_from_arrays(
     gl: &GL,
     arrays: Arrays,
@@ -107,6 +133,7 @@ pub fn create_buffer_info_from_arrays(
 ) -> Result<BufferInfo, String> {
     let mut attribs = vec![];
     let mut indices_buffer = None;
+    let num_elements;
     for array in arrays.f32_arrays {
         attribs.push(create_attributes_from_array(gl, array)?);
     }
@@ -116,8 +143,12 @@ pub fn create_buffer_info_from_arrays(
     if let Some(indices) = indices {
         let buffer = create_buffer_from_data(gl, indices.data, indices.target, None).unwrap();
         indices_buffer = Some(buffer);
-    };
+        num_elements = indices.data.len();
+    } else {
+        num_elements = num_elements_from_attributes(gl, &attribs)?;
+    }
     Ok(BufferInfo {
+        num_elements,
         attribs,
         indices: indices_buffer,
     })

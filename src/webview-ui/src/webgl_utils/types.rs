@@ -98,8 +98,8 @@ impl AttribInfo {
 }
 
 pub struct BufferInfo {
-    // num_elements: usize,
-    // element_type: ElementType,
+    pub num_elements: usize,
+    // pub element_type: ElementType,
     pub indices: Option<GLGuard<WebGlBuffer>>,
     pub attribs: Vec<AttribInfo>,
 }

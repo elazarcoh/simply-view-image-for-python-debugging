@@ -1,5 +1,5 @@
 use gloo::timers::callback::Timeout;
-use stylist::yew::styled_component;
+use stylist::yew::{styled_component, use_style};
 use yew::prelude::*;
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -10,9 +10,13 @@ pub enum ToggleState {
 
 #[derive(PartialEq, Properties, Default)]
 pub struct IconButtonProps {
-    aria_label: Option<AttrValue>,
-    icon: Option<AttrValue>,
-    onclick: Option<Callback<MouseEvent>>,
+    #[prop_or_default]
+    pub aria_label: Option<AttrValue>,
+    pub icon: AttrValue,
+    #[prop_or_default]
+    pub onclick: Option<Callback<MouseEvent>>,
+    #[prop_or_default]
+    pub spin: Option<bool>,
 }
 
 #[styled_component]
@@ -21,6 +25,7 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
         aria_label,
         icon,
         onclick,
+        spin,
     } = props;
 
     let node_ref = use_node_ref();
@@ -43,18 +48,34 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
         });
     }
 
+    let spin_style = use_style!(
+        r#"
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(359deg);
+            }
+        }
+        &.spin {
+            animation: spin 1s infinite linear;
+        }
+        "#
+    );
+
     html! {
         <vscode-button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={css!("visibility: hidden;")}>
-            <span class={icon}></span>
+            <span class={classes!(icon, spin_style, spin.map(|v| if v { "spin" } else { "" }))}></span>
         </vscode-button>
     }
 }
 
 #[derive(PartialEq, Properties)]
 pub struct IconToggleButtonProps {
-    pub aria_label: String,
-    pub on_icon: String,
-    pub off_icon: String,
+    pub aria_label: AttrValue,
+    pub on_icon: AttrValue,
+    pub off_icon: AttrValue,
     pub initial_state: ToggleState,
     pub on_state_changed: Callback<(ToggleState, MouseEvent)>,
 }
@@ -92,11 +113,11 @@ pub fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
                     background-color: var(--vscode-checkbox-background);
                 }
                 "#)}>
-                <IconButton aria_label={Some(aria_label.clone())} icon={Some(on_icon.clone())} onclick={Some(onclick.clone())} />
+                <IconButton aria_label={Some(aria_label.clone())} icon={on_icon.clone()} onclick={Some(onclick.clone())} />
             </div>
         } else {
             <div >
-                <IconButton aria_label={Some(aria_label.clone())} icon={Some(off_icon.clone())} onclick={Some(onclick.clone())} />
+                <IconButton aria_label={Some(aria_label.clone())} icon={off_icon.clone()} onclick={Some(onclick.clone())} />
             </div>
         }
     }

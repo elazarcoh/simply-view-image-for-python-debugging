@@ -4,7 +4,6 @@ use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
 
 use crate::{
-    communication::message_handler::OutgoingMessageSender,
     configurations,
     image_view::{
         camera::ViewsCameras,
@@ -56,7 +55,7 @@ pub struct AppState {
 
     pub view_cameras: Mrc<ViewsCameras>,
 
-    pub message_service: Option<Rc<dyn OutgoingMessageSender>>,
+    // pub message_service: Option<Rc<dyn OutgoingMessageSender>>,
 
     pub configuration: configurations::Configuration,
 }
@@ -82,7 +81,7 @@ impl Default for AppState {
             image_views: Default::default(),
             image_cache: Default::default(),
             view_cameras: Default::default(),
-            message_service: Default::default(),
+            // message_service: Default::default(),
             configuration: Default::default(),
         }
     }
@@ -95,13 +94,13 @@ impl PartialEq for AppState {
             && self.image_cache == other.image_cache
             && self.view_cameras == other.view_cameras
             && self.configuration == other.configuration
-            && (self.message_service.is_none() && other.message_service.is_none()
-                || (self.message_service.is_some()
-                    && other.message_service.is_some()
-                    && Rc::ptr_eq(
-                        self.message_service.as_ref().unwrap(),
-                        other.message_service.as_ref().unwrap(),
-                    )))
+            // && (self.message_service.is_none() && other.message_service.is_none()
+            //     || (self.message_service.is_some()
+            //         && other.message_service.is_some()
+            //         && Rc::ptr_eq(
+            //             self.message_service.as_ref().unwrap(),
+            //             other.message_service.as_ref().unwrap(),
+            //         )))
             && self.gl == other.gl
     }
 }

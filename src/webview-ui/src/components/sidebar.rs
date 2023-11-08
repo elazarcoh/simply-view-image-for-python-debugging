@@ -1,12 +1,14 @@
 use gloo::events::EventListener;
 use stylist::yew::use_style;
 use wasm_bindgen::JsCast;
+use web_sys::HtmlElement;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
+    communication::server_requests::ServerRequestsContext,
     components::{
-        icon_button::{IconToggleButton, ToggleState},
+        icon_button::{IconButton, IconToggleButton, ToggleState},
         image_list_item::ImageListItem,
     },
     image_view::types::{ImageId, ViewId},
@@ -33,19 +35,47 @@ fn Toolbar(props: &ToolbarProps) -> Html {
     let toolbar_style = use_style!(
         r#"
         width: 100%;
-        display: flex;
+        display: inline-flex;
         flex-direction: row;
         align-items: center;
         justify-content: flex-end;
         align-content: center;
         flex-wrap: nowrap;
+        column-gap: 4px;
         "#,
     );
 
     html! {
         <div class={toolbar_style}>
-            {children.clone()}
+           {children.clone()}
         </div>
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct RefreshButtonProps {}
+
+#[function_component]
+pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
+    let RefreshButtonProps {} = props;
+
+    let server_requests_ctx = use_context::<ServerRequestsContext>().unwrap();
+
+    let is_loading = use_state(|| false);
+
+    html! {
+        <IconButton
+            aria_label={"Refresh"}
+            icon={"codicon codicon-refresh"}
+            onclick={Callback::from({
+                let server_requests_ctx = server_requests_ctx.clone();
+                let is_loading = is_loading.clone();
+                move |_| {
+                    let id = server_requests_ctx.requests_images();
+                    is_loading.set(true);
+                }})}
+            spin={*is_loading}
+            />
     }
 }
 
@@ -102,25 +132,32 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
 
     let pin_toggle_button = html! {
         <IconToggleButton
-            aria_label={"Toggle sidebar".to_string()}
-            on_icon={"codicon codicon-pinned".to_string()}
-            off_icon={"codicon codicon-pin".to_string()}
+            aria_label={"Toggle sidebar"}
+            on_icon={"codicon codicon-pinned"}
+            off_icon={"codicon codicon-pin"}
             initial_state={if *pinned {ToggleState::On} else {ToggleState::Off}}
             on_state_changed={
                 let pinned = pinned.clone();
-                Callback::from(move |(state, _)| pinned.set(state == ToggleState::On))
+                Callback::from(move |(state, e): (_, MouseEvent)| {
+
+                    pinned.set(state == ToggleState::On)
+                })
             } />
     };
+
     let collapse_toggle_button = html! {
         <IconToggleButton
-            aria_label={"Toggle sidebar".to_string()}
-            on_icon={"codicon codicon-chevron-right".to_string()}
-            off_icon={"codicon codicon-chevron-left".to_string()}
+            aria_label={"Toggle sidebar"}
+            on_icon={"codicon codicon-chevron-right"}
+            off_icon={"codicon codicon-chevron-left"}
             initial_state={if *collapsed {ToggleState::On} else {ToggleState::Off}}
             on_state_changed={
                 let collapsed = collapsed.clone();
                 Callback::from(move |(state, _)| collapsed.set(state == ToggleState::On))
             } />
+    };
+    let refresh_button = html! {
+        <RefreshButton />
     };
 
     /* Expanded sidebar */
@@ -165,6 +202,7 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
                     else {classes!(sidebar_style.clone(), sidebar_unpinned_style.clone(), not_dragging_style.clone())}
         }>
             <Toolbar>
+                {refresh_button}
                 {pin_toggle_button}
                 {collapse_toggle_button}
             </Toolbar>

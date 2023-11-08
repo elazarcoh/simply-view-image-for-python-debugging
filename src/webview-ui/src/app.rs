@@ -16,13 +16,14 @@ use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
-use crate::communication::incoming_messages::IncomingMessage;
-use crate::communication::incoming_messages::SetImageMessage;
+use crate::communication::incoming_messages::FromExtensionMessage;
+use crate::communication::incoming_messages::ImageObjects;
+use crate::communication::incoming_messages::ShowImage;
 use crate::communication::message_handler::install_incoming_message_handler;
 use crate::communication::message_handler::IncomeMessageHandler;
-use crate::communication::message_handler::OutgoingMessageSender;
-use crate::communication::outgoing_messages::OutgoingMessage;
 
+use crate::communication::server_requests::ServerRequests;
+use crate::communication::server_requests::ServerRequestsProvider;
 use crate::components::main::Main;
 
 use crate::configurations;
@@ -43,6 +44,7 @@ use crate::store::ImageData;
 use crate::store::ImageInfo;
 use crate::store::ValueVariableKind;
 use crate::vscode;
+use crate::vscode::vscode_requests::VSCodeRequests;
 
 fn rendering_context() -> impl RenderingContext {
     struct RenderingContextImpl {}
@@ -123,8 +125,8 @@ fn camera_context() -> impl CameraContext {
 fn income_message_handler() -> impl IncomeMessageHandler {
     struct IncomeMessageHandlerImpl {}
     impl IncomeMessageHandler for IncomeMessageHandlerImpl {
-        fn handle_incoming_message(&self, message: IncomingMessage) {
-            let handle_set_image_message = |message: SetImageMessage| {
+        fn handle_incoming_message(&self, message: FromExtensionMessage) {
+            let handle_set_image_message = |message: ShowImage| {
                 let bytes = general_purpose::STANDARD
                     .decode(message.image_base64)
                     .unwrap();
@@ -149,8 +151,30 @@ fn income_message_handler() -> impl IncomeMessageHandler {
                 //     .set_image_to_view(image_id, view_id);
             };
 
+            let handle_images_response = |message: ImageObjects| {
+                log::debug!("Received images response: {:?}", message);
+                let dispatch = Dispatch::<AppState>::new();
+                let images = message
+                    .variables
+                    .into_iter()
+                    .map(|info| {
+                        (
+                            ImageId::generate(),
+                            ImageData::new(ImageInfo {
+                                expression: info.name,
+                                shape: vec![10, 10, 4],
+                                data_type: "uint8".to_string(),
+                                value_variable_kind: ValueVariableKind::Variable,
+                            }),
+                        )
+                    })
+                    .collect();
+                dispatch.apply(StoreAction::UpdateImages(images));
+            };
+
             match message {
-                IncomingMessage::SetImageMessage(msg) => handle_set_image_message(msg),
+                FromExtensionMessage::ShowImageMessage(msg) => handle_set_image_message(msg),
+                FromExtensionMessage::ImageObjects(msg) => handle_images_response(msg),
             }
         }
     }
@@ -158,33 +182,16 @@ fn income_message_handler() -> impl IncomeMessageHandler {
     IncomeMessageHandlerImpl {}
 }
 
-fn outgoing_message_handler(vscode: WebviewApi) -> impl OutgoingMessageSender {
-    struct OutgoingMessageSenderImpl {
-        vscode: WebviewApi,
-    }
-    impl OutgoingMessageSender for OutgoingMessageSenderImpl {
-        fn send_message(&self, message: OutgoingMessage) {
-            self.vscode
-                .post_message(JsValue::from_serde(&message).unwrap());
-        }
-    }
-
-    OutgoingMessageSenderImpl { vscode }
-}
-
 #[function_component]
 pub fn App() -> Html {
+    let vscode_requests = use_memo((), {
+        let vscode = vscode::acquire_vscode_api();
+        |_| VSCodeRequests::new(vscode)
+    }) as Rc<dyn ServerRequests>;
+
     let dispatch = Dispatch::<AppState>::new();
 
     let canvas_ref = use_node_ref();
-
-    dispatch.reduce_mut({
-        let vscode = vscode::acquire_vscode_api();
-        let message_handler = Rc::new(outgoing_message_handler(vscode));
-        move |state| {
-            state.message_service = Some(message_handler);
-        }
-    });
 
     // TODO: move from here
     let view_id = ViewId::Primary;
@@ -336,6 +343,7 @@ pub fn App() -> Html {
     "#,
     );
     html! {
+    <ServerRequestsProvider server_requests={vscode_requests}>
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
             // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
@@ -362,5 +370,6 @@ pub fn App() -> Html {
             // <ImageSelectionList images={ entries }/>
             <Main gl_view_node_ref={my_node_ref} />
         </div>
+    </ServerRequestsProvider>
     }
 }

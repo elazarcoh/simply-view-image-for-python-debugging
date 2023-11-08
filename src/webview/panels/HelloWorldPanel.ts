@@ -13,6 +13,7 @@ import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
+import { FromExtensionMessage, FromExtensionMessageWithId } from "../webview";
 
 /**
  * This class manages the state and behavior of HelloWorld webview panels.
@@ -75,7 +76,7 @@ export class HelloWorldPanel {
         const extensionUri = context.extensionUri;
         if (HelloWorldPanel.currentPanel) {
             // If the webview panel already exists reveal it
-            HelloWorldPanel.currentPanel._panel.reveal(ViewColumn.One);
+            HelloWorldPanel.currentPanel._panel.reveal(ViewColumn.Beside);
         } else {
             // If a webview panel does not already exist create and show a new one
             const panel = window.createWebviewPanel(
@@ -84,7 +85,7 @@ export class HelloWorldPanel {
                 // Panel title
                 "Hello World",
                 // The editor column the panel should be displayed in
-                ViewColumn.One,
+                ViewColumn.Beside,
                 // Extra panel configurations
                 {
                     // Enable JavaScript in the webview
@@ -204,7 +205,7 @@ export class HelloWorldPanel {
     }
 
     public postMessage(
-        message: object
+        message: FromExtensionMessageWithId
     ) {
         this._webviewMessageHandler.sendToWebview(message);
     }

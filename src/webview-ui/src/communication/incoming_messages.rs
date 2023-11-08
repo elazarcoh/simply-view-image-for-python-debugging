@@ -1,6 +1,3 @@
-
-
-
 // use wasm_bindgen::prelude::*;
 
 // #[wasm_bindgen]
@@ -63,10 +60,36 @@
 //     RequestViewable(RequestViewable),
 // }
 
-pub struct SetImageMessage {
+use super::common::MessageId;
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug)]
+pub struct ImageInfo {
+    pub name: String,
+    // pub shape: Option<Vec<u32>>,
+    // pub data_type: Option<String>,
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug)]
+pub struct ImageObjects {
+    pub variables: Vec<ImageInfo>,
+    pub expressions: Vec<ImageInfo>,
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug)]
+pub struct ShowImage {
     pub image_base64: String,
 }
 
-pub enum IncomingMessage {
-    SetImageMessage(SetImageMessage),
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub enum FromExtensionMessage {
+    ShowImageMessage(ShowImage),
+    ImageObjects(ImageObjects),
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
+pub struct FromExtensionMessageWithId {
+    pub(crate) id: MessageId,
+    pub(crate) message: FromExtensionMessage,
 }

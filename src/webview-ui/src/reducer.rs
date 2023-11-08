@@ -6,7 +6,7 @@ use yewdux::prelude::*;
 
 use crate::{
     image_view::types::{ImageId, TextureImage, ViewId},
-    store::{AppState, ImageData},
+    store::{AppState, ImageData}, 
 };
 
 pub enum StoreAction {
@@ -55,6 +55,7 @@ impl Reducer<AppState> for StoreAction {
 #[derive(Debug)]
 pub enum RequestAction {
     ImageDataById(ImageId),
+    ImagesList
 }
 
 fn create_image_for_view(
@@ -213,6 +214,12 @@ impl AsyncReducer<AppState> for RequestAction {
                         log::error!("Failed to create image for view");
                     }
                 }
+            }
+
+            RequestAction::ImagesList => {
+                // if let Some(message_service) = state.message_service {
+                //     message_service.send_message(RequestImagesMessage{}.into());
+                // }
             }
         };
 

@@ -2,31 +2,14 @@ use gloo::events::EventListener;
 use gloo_utils::format::JsValueSerdeExt;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use yew::Callback;
+use yew::prelude::*;
 
-use super::{
-    incoming_messages::{IncomingMessage, SetImageMessage},
-    outgoing_messages::OutgoingMessage,
-};
+use crate::communication::incoming_messages::FromExtensionMessageWithId;
+
+use super::incoming_messages::FromExtensionMessage;
 
 pub trait IncomeMessageHandler {
-    fn handle_incoming_message(&self, message: IncomingMessage);
-}
-pub trait OutgoingMessageSender {
-    fn send_message(&self, message: OutgoingMessage);
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct MyMessage {
-    pub message: String,
-    #[serde(rename = "imageBase64")]
-    pub image_base64: String,
-}
-
-fn parse_message(message: MyMessage) -> IncomingMessage {
-    IncomingMessage::SetImageMessage(SetImageMessage {
-        image_base64: message.image_base64,
-    })
+    fn handle_incoming_message(&self, message: FromExtensionMessage);
 }
 
 pub fn install_incoming_message_handler(
@@ -39,12 +22,9 @@ pub fn install_incoming_message_handler(
             .data();
 
         log::debug!("Received message: {:?}", data);
-        let message: MyMessage = data.into_serde().unwrap();
-        log::debug!("Received message.message: {:?}", message.message);
+        let message: FromExtensionMessageWithId = data.into_serde().unwrap();
 
-        let message = parse_message(message);
-
-        incoming_message_handler.handle_incoming_message(message);
+        incoming_message_handler.handle_incoming_message(message.message);
     });
 
     let window = web_sys::window().unwrap();

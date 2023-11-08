@@ -1,3 +1,5 @@
+pub mod vscode_requests;
+
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen()]

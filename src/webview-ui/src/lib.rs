@@ -255,7 +255,7 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
     pub renderer: RefCell<Renderer>,
-    pub image_views_coordinator: ImageViewsCoordinator,
+    pub image_views_coordinator: RefCell<ImageViewsCoordinator>,
     pub vscode_message_handler: VSCodeMessageHandler,
 }
 
@@ -273,7 +273,7 @@ impl RenderingContext for Coordinator {
     }
 
     fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)> {
-        self.image_views_coordinator.visible_nodes()
+        self.image_views_coordinator.borrow().visible_nodes()
     }
 }
 
@@ -286,7 +286,7 @@ fn App() -> Html {
             |_| Coordinator {
                 gl: RefCell::new(None),
                 renderer: RefCell::new(Renderer::new()),
-                image_views_coordinator: ImageViewsCoordinator::new(),
+                image_views_coordinator: RefCell::new(ImageViewsCoordinator::new()),
                 vscode_message_handler: VSCodeMessageHandler::new(vscode, image_cache),
             }
         },
@@ -297,7 +297,10 @@ fn App() -> Html {
 
     // TODO: move from here
     let view_id = InViewName::Single(InSingleViewName::Single);
-    let my_node_ref = coordinator.image_views_coordinator.get_node_ref(view_id);
+    let my_node_ref = coordinator
+        .image_views_coordinator
+        .borrow()
+        .get_node_ref(view_id);
 
     use_effect({
         let window = window().unwrap();
@@ -360,6 +363,24 @@ fn App() -> Html {
                     .renderer
                     .borrow_mut()
                     .set_rendering_context(coordinator.clone());
+
+                // TODO: remove. debug thing
+                let _ = {
+                    create_image_for_view(&gl).map(|image| {
+                        (&coordinator)
+                            .image_views_coordinator
+                            .borrow_mut()
+                            .add_image(image)
+                    })
+                    // .map(|id| {
+                    //     coordinator.image_views_coordinator.set_image_to_view(
+                    //         id,
+                    //         image_view::types::InViewName::Single(
+                    //             image_view::types::InSingleViewName::Single,
+                    //         ),
+                    //     )
+                    // });
+                };
 
                 move || {
                     coordinator.gl.replace(None);

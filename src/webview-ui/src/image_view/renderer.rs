@@ -24,13 +24,11 @@ struct Programs {
     basic: ProgramBundle,
 }
 
-pub struct Renderer {
-    programs: Option<Rc<Programs>>,
-}
+pub struct Renderer {}
 
 impl Renderer {
     pub fn new() -> Self {
-        Self { programs: None }
+        Self {}
     }
 
     fn request_animation_frame(f: &Closure<dyn FnMut()>) {
@@ -46,7 +44,6 @@ impl Renderer {
     }
 
     fn setup_rendering_callback_if_ready(rendering_context: Rc<dyn RenderingContext>) {
-
         let gl = rendering_context.gl().clone();
 
         gl.enable(WebGl2RenderingContext::SCISSOR_TEST);
@@ -68,6 +65,7 @@ impl Renderer {
                     return;
                 } else {
                     Renderer::render(&gl, &programs, rendering_context.as_ref());
+                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));

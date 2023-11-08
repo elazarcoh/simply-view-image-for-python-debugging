@@ -9,6 +9,7 @@ use web_sys::{
 };
 use yew::NodeRef;
 
+use crate::common::Size;
 use crate::image_view::camera;
 use crate::webgl_utils::attributes::{
     create_attributes_from_array, create_buffer_info_from_arrays, Arrays,
@@ -36,6 +37,10 @@ struct RenderingData {
 
 const VIEW_WIDTH: f32 = 1.0;
 const VIEW_HEIGHT: f32 = 1.0;
+const VIEW_SIZE: Size = Size {
+    width: VIEW_WIDTH,
+    height: VIEW_HEIGHT,
+};
 
 fn create_image_plane_attributes(
     gl: &GL,
@@ -140,7 +145,7 @@ impl Renderer {
                     return;
                 } else {
                     Renderer::render(&gl, &rendering_data, rendering_context.as_ref());
-                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));
@@ -167,48 +172,6 @@ impl Renderer {
             basic: shader_program,
             image: image_program.build()?,
         })
-    }
-
-    fn calculate_view_projection(canvas: &HtmlCanvasElement, camera: &Camera) -> glam::Mat3 {
-        const VIEW_ASPECT_RATIO: f32 = VIEW_WIDTH / VIEW_HEIGHT;
-        let canvas_aspect_ratio = canvas.width() as f32 / canvas.height() as f32;
-        let scale = canvas_aspect_ratio / VIEW_ASPECT_RATIO;
-
-        let camera_matrix = camera.as_matrix();
-        let view_matrix = camera_matrix.inverse();
-
-        // make sure the view aspect ratio matches the canvas aspect ratio
-        let view_aspect_matrix = if scale > 1.0 {
-            glam::Mat3::from_scale(glam::Vec2::new(1.0 / scale, 1.0))
-        } else {
-            glam::Mat3::from_scale(glam::Vec2::new(1.0, scale))
-        };
-
-        let view_projection = math_utils::mat3::projection(VIEW_WIDTH, VIEW_HEIGHT);
-        let canvas_projection =
-            math_utils::mat3::projection(canvas.width() as f32, canvas.height() as f32);
-        let view_to_canvas = canvas_projection.inverse() * view_projection * view_aspect_matrix;
-
-        let view_size_in_canvas = view_to_canvas * glam::Vec3::new(VIEW_WIDTH, VIEW_HEIGHT, 1.0);
-        let view_width_in_canvas = view_size_in_canvas.x;
-        let view_height_in_canvas = view_size_in_canvas.y;
-
-        let center_in_canvas_matrix = if scale > 1.0 {
-            glam::Mat3::from_translation(glam::Vec2::new(
-                (canvas.width() as f32 - view_width_in_canvas) / 2.0,
-                0.0,
-            ))
-        } else {
-            glam::Mat3::from_translation(glam::Vec2::new(
-                0.0,
-                (canvas.height() as f32 - view_height_in_canvas) / 2.0,
-            ))
-        };
-
-        let view_projection_matrix =
-            canvas_projection * center_in_canvas_matrix * view_to_canvas * view_matrix;
-
-        view_projection_matrix
     }
 
     fn canvas(gl: &GL) -> HtmlCanvasElement {
@@ -341,8 +304,12 @@ impl Renderer {
         let program = &rendering_data.programs.image;
 
         let canvas = Renderer::canvas(gl);
+        let canvas_size = Size {
+            width: canvas.width() as f32,
+            height: canvas.height() as f32,
+        };
         let camera = &image_view_data.camera;
-        let view_projection = Renderer::calculate_view_projection(&canvas, camera);
+        let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
         gl.use_program(Some(&program.program));
         set_uniforms(
@@ -353,7 +320,6 @@ impl Renderer {
             ]),
         );
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
-        log::debug!("render_image: draw_buffer_info");
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
     }
 }

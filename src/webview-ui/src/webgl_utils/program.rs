@@ -114,7 +114,6 @@ fn create_uniform_setters(
         .as_f64()
         .unwrap() as u32;
 
-    log::debug!("num_uniforms: {}", num_uniforms);
 
     let mut uniform_setters: HashMap<String, UniformSetter> = HashMap::new();
     for ii in 0..num_uniforms {
@@ -134,7 +133,6 @@ fn create_uniform_setters(
         let gl_type = uniform_info.type_();
         if let Some(location) = gl.get_uniform_location(program, uniform_info.name().as_str()) {
             let setter = make_uniform_setter(gl_type, location);
-            log::debug!("name: {}", name);
             uniform_setters.insert(name.to_string(), setter);
         }
     }

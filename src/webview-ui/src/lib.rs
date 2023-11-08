@@ -7,6 +7,7 @@ extern crate cfg_if;
 
 use base64::{engine::general_purpose, Engine as _};
 
+mod common;
 mod communication;
 mod components;
 mod image_view;
@@ -45,7 +46,7 @@ use crate::image_view::renderer::Renderer;
 use crate::image_view::types::InSingleViewName;
 use crate::image_view::types::InViewName;
 use crate::image_view::types::TextureImage;
-use mouse_events::on_wheel;
+use mouse_events::calculate_camera_after_wheel_zoom;
 
 // #[wasm_bindgen]
 // pub fn send_example_to_js() -> JsValue {
@@ -286,7 +287,13 @@ impl RenderingContext for Coordinator {
                 .borrow()
                 .get_node_ref(view_id)
                 .cast::<HtmlElement>()
-                .expect(format!("Unable to cast node ref to HtmlElement for view {:?}", view_id).as_str()),
+                .expect(
+                    format!(
+                        "Unable to cast node ref to HtmlElement for view {:?}",
+                        view_id
+                    )
+                    .as_str(),
+                ),
             image_id: self.image_views.borrow().get_image_id(view_id),
         }
     }
@@ -317,34 +324,47 @@ fn App() -> Html {
 
     use_effect({
         let window = window().unwrap();
-        let coordinator = coordinator.clone();
+        let coordinator = Rc::clone(&coordinator);
         let canvas_ref = canvas_ref.clone();
+        let my_node_ref = my_node_ref.clone();
 
         move || {
-            let onmessage = Callback::from(move |event: Event| {
-                let data = event
-                    .dyn_ref::<web_sys::MessageEvent>()
-                    .expect("Unable to cast event to MessageEvent")
-                    .data();
-                coordinator.vscode_message_handler.handle_message(data);
-            });
-            let message_listener =
-                EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()));
-
-            let onwheel = Callback::from(move |event: Event| {
-                let event = event
-                    .dyn_ref::<web_sys::WheelEvent>()
-                    .expect("Unable to cast event to WheelEvent");
-                let canvas_element = canvas_ref
-                    .cast::<HtmlCanvasElement>()
-                    .expect("canvas_ref not attached to a canvas element");
-                on_wheel(event, &canvas_element)
-            });
-            let options = EventListenerOptions::enable_prevent_default();
-            let wheel_listener =
-                EventListener::new_with_options(&window, "wheel", options, move |e| {
-                    onwheel.emit(e.clone())
+            let message_listener = {
+                let coordinator = Rc::clone(&coordinator);
+                let onmessage = Callback::from(move |event: Event| {
+                    let data = event
+                        .dyn_ref::<web_sys::MessageEvent>()
+                        .expect("Unable to cast event to MessageEvent")
+                        .data();
+                    coordinator.vscode_message_handler.handle_message(data);
                 });
+                EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()))
+            };
+
+            let wheel_listener: EventListener = {
+                let coordinator = Rc::clone(&coordinator);
+                let onwheel = Callback::from(move |event: Event| {
+                    let event = event
+                        .dyn_ref::<web_sys::WheelEvent>()
+                        .expect("Unable to cast event to WheelEvent");
+                    let canvas_element = canvas_ref
+                        .cast::<HtmlCanvasElement>()
+                        .expect("canvas_ref not attached to a canvas element");
+                    let camera = (&coordinator).views_cameras.borrow().get(view_id);
+                    let new_camera = calculate_camera_after_wheel_zoom(event, &canvas_element, &camera);
+                    (&coordinator)
+                        .views_cameras
+                        .borrow_mut()
+                        .set(view_id, new_camera);
+                });
+                let options = EventListenerOptions::enable_prevent_default();
+                let view_element = my_node_ref
+                    .cast::<HtmlElement>()
+                    .expect("Unable to cast node ref to HtmlElement");
+                EventListener::new_with_options(&view_element, "wheel", options, move |e| {
+                    onwheel.emit(e.clone())
+                })
+            };
 
             move || {
                 drop(message_listener);

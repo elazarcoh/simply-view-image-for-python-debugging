@@ -212,7 +212,7 @@ impl Renderer {
         gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
 
-        gl.clear_color(1.0, 1.0, 0.0, 1.0);
+        gl.clear_color(1.0, 0.0, 0.0, 1.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
         let vert_code = include_str!("../shaders/basic.vert");
@@ -236,10 +236,10 @@ impl Renderer {
             .attribute("a_position")
             .build()?;
             
-        gl.use_program(Some(&shader_program));
+        gl.use_program(Some(&shader_program.program));
 
         // Attach the position vector as an attribute for the GL context.
-        let position = gl.get_attrib_location(&shader_program, "a_position") as u32;
+        let position = gl.get_attrib_location(&shader_program.program, "a_position") as u32;
         gl.vertex_attrib_pointer_with_i32(position, 2, GL::FLOAT, false, 0, 0);
         gl.enable_vertex_attrib_array(position);
 

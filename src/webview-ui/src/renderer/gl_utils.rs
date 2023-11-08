@@ -1,10 +1,11 @@
 // based on twgl
 
 use do_notation::m;
+use std::mem;
 
 use std::ops::Deref;
 
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use web_sys::*;
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
@@ -755,17 +756,30 @@ fn set_texture_from_array(
 
 type GLConstant = u32;
 
-pub struct ProgramInfo {}
+pub struct ProgramBundle {
+    pub program: WebGlProgram,
+    pub shaders: Vec<WebGlShader>,
+}
 
-fn checkShaderStatus(gl: &GL, shaderType: GLConstant, shader: &WebGlShader) -> Result<(), String> {
+fn check_shader_status(
+    gl: &GL,
+    shader_type: GLConstant,
+    shader: &WebGlShader,
+) -> Result<(), String> {
     // Check the compile status
     let compiled = gl.get_shader_parameter(shader, GL::COMPILE_STATUS);
-    if (!compiled) {
+    if !compiled {
+        let shader_type_str = match shader_type {
+            GL::VERTEX_SHADER => "vertex",
+            GL::FRAGMENT_SHADER => "fragment",
+            _ => "unknown",
+        };
         // Something went wrong during compilation; get the error
         let last_error = gl.get_shader_info_log(shader);
         let shader_source = gl.get_shader_source(shader);
         let msg = format!(
-            "Error compiling shader: {}\nsource:\n{}",
+            "Error compiling `{}` shader: {}\nsource:\n{}",
+            shader_type_str,
             last_error.unwrap_or("unknown error".to_string()),
             shader_source.unwrap_or("unknown source".to_string())
         );
@@ -775,8 +789,10 @@ fn checkShaderStatus(gl: &GL, shaderType: GLConstant, shader: &WebGlShader) -> R
     }
 }
 
-fn getProgramErrors(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
+fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
     // Check the link status
+    gl.validate_program(program);
+
     let linked = gl
         .get_program_parameter(&program, GL::LINK_STATUS)
         .as_bool()
@@ -790,7 +806,7 @@ fn getProgramErrors(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
             .iter()
             .map(|shader| {
                 let shader: &WebGlShader = shader.dyn_ref::<WebGlShader>().unwrap();
-                checkShaderStatus(
+                check_shader_status(
                     &gl,
                     gl.get_shader_parameter(shader, GL::SHADER_TYPE)
                         .as_f64()
@@ -840,6 +856,13 @@ impl GLDrop for WebGlBuffer {
     }
 }
 
+impl GLDrop for ProgramBundle {
+    fn drop(&self, gl: &GL) {
+        self.program.drop(gl);
+        self.shaders.iter().for_each(|shader| shader.drop(gl));
+    }
+}
+
 pub struct GLGuard<T: GLDrop> {
     gl: GL,
     obj: T,
@@ -863,12 +886,16 @@ fn gl_guarded<T: GLDrop, E>(gl: GL, f: impl FnOnce(&GL) -> Result<T, E>) -> Resu
     f(&gl).map(move |obj| GLGuard { gl, obj })
 }
 
+fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
+    mem::replace(&mut guard.obj, JsCast::unchecked_into(JsValue::UNDEFINED))
+}
+
 fn create_program(
     gl: &GL,
     vertex_shader: &str,
     fragment_shader: &str,
     opt_attribs: Option<Vec<&str>>,
-) -> Result<GLGuard<WebGlProgram>, String> {
+) -> Result<GLGuard<ProgramBundle>, String> {
     let binding = opt_attribs.unwrap_or(vec![]);
     let attribute_locations = binding.iter().enumerate().collect::<Vec<(usize, &&str)>>();
 
@@ -902,7 +929,20 @@ fn create_program(
         gl.bind_attrib_location(&program, *i as u32, name);
     });
 
-    Ok(program)
+    gl.link_program(&program);
+
+    validate_program(gl, &program)?;
+
+    Ok(GLGuard {
+        gl: gl.clone(),
+        obj: ProgramBundle {
+            program: take_into_owned(program),
+            shaders: vec![
+                take_into_owned(gl_vertex_shader),
+                take_into_owned(gl_fragment_shader),
+            ],
+        },
+    })
 }
 
 #[derive(Debug, Builder)]
@@ -937,7 +977,7 @@ impl<'a> GLProgramBuilder<'a> {
 }
 
 impl<'a> GLProgramBuilderBuilder<'a> {
-    pub fn build(self) -> Result<GLGuard<WebGlProgram>, String> {
+    pub fn build(self) -> Result<GLGuard<ProgramBundle>, String> {
         self.fallible_build()
             .map_err(|e| format!("GLProgramBuilder error: {}", e))
             .and_then(|b| {

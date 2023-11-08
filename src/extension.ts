@@ -20,7 +20,6 @@ import { HelloWorldPanel } from "./webview/panels/HelloWorldPanel";
 import { HoverProvider } from "./HoverProvider";
 import { constructOpenSendAndCloseCode } from "./python-communication/BuildPythonCode";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { WebsocketServer } from "./webview/communication/WebsocketServer";
 import { Server } from "./webview/communication/Server";
 
 function onConfigChange(): void {
@@ -113,15 +112,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     // const socketServer = Container.get(Server);
     // socketServer.start();
-
-    try {
-        logDebug("Starting websocket server");
-        const websocketServer = Container.get(WebsocketServer);
-        logDebug(`Websocket server started on port ${websocketServer.port}`);
-    } catch (e) {
-        logDebug("Failed to start websocket server");
-        logDebug(e);
-    }
 
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };

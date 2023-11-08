@@ -1,11 +1,14 @@
-use stylist::yew::use_style;
+use stylist::{css, yew::use_style, Style};
 use yew::prelude::*;
-use yewdux::{dispatch, prelude::Dispatch};
+use yewdux::{
+    dispatch,
+    prelude::{use_selector, Dispatch},
+};
 
 use crate::{
     communication::incoming_messages::ImageInfo,
     components::icon_button::{IconToggleButton, ToggleState},
-    image_view::types::DrawingOptionsBuilder,
+    image_view::types::{Coloring, DrawingOptionsBuilder},
     reducer::{StoreAction, UpdateDrawingOptions},
     store::AppState,
 };
@@ -41,32 +44,49 @@ mod features {
 
     #[rustfmt::skip]
     pub(crate) fn list_features(datatype: Datatype, channels: Channels) -> EnumSet<Feature> {
-        match (channels, datatype) {
-            (Channels::One, Datatype::Uint8) => Feature::HighContrast | Feature::Invert | Feature::Segmentation | Feature::Heatmap,
-            (Channels::One, Datatype::Uint16) => Feature::HighContrast | Feature::Invert |  Feature::Segmentation | Feature::Heatmap,
-            (Channels::One, Datatype::Float32) => Feature::HighContrast | Feature::Invert |  Feature::Heatmap,
-            (Channels::One, Datatype::Int8) => Feature::HighContrast | Feature::Invert |  Feature::Segmentation | Feature::Heatmap,
-            (Channels::One, Datatype::Int16) => Feature::HighContrast | Feature::Invert |  Feature::Segmentation | Feature::Heatmap,
-            (Channels::One, Datatype::Bool) => EnumSet::from(Feature::Invert),
-            (Channels::Two, Datatype::Uint8) => Feature::Grayscale | Feature::R | Feature::G | Feature::Invert,
-            (Channels::Two, Datatype::Uint16) => Feature::Grayscale | Feature::R | Feature::G | Feature::Invert,
-            (Channels::Two, Datatype::Float32) => Feature::Grayscale | Feature::R | Feature::G | Feature::Invert,
-            (Channels::Two, Datatype::Int8) => Feature::Grayscale | Feature::R | Feature::G | Feature::Invert,
-            (Channels::Two, Datatype::Int16) => Feature::Grayscale | Feature::R | Feature::G | Feature::Invert,
-            (Channels::Two, Datatype::Bool) => Feature::Grayscale | Feature::R | Feature::G | Feature::Invert,
-            (Channels::Three, Datatype::Uint8) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert,
-            (Channels::Three, Datatype::Uint16) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert,
-            (Channels::Three, Datatype::Float32) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert,
-            (Channels::Three, Datatype::Int8) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert,
-            (Channels::Three, Datatype::Int16) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert,
-            (Channels::Three, Datatype::Bool) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert,
-            (Channels::Four, Datatype::Uint8) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert | Feature::NoAlpha,
-            (Channels::Four, Datatype::Uint16) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert | Feature::NoAlpha,
-            (Channels::Four, Datatype::Float32) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert | Feature::NoAlpha,
-            (Channels::Four, Datatype::Int8) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert | Feature::NoAlpha,
-            (Channels::Four, Datatype::Int16) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert | Feature::NoAlpha,
-            (Channels::Four, Datatype::Bool) => Feature::Grayscale | Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Invert | Feature::NoAlpha,
+        let for_all = EnumSet::from(Feature::Invert);
+        let rgb_features = Feature::RGB | Feature::BGR | Feature::R | Feature::G | Feature::B | Feature::Grayscale | Feature::NoAlpha;
+        let gray_alpha_features = Feature::NoAlpha | Feature::HighContrast;
+        let gray_features = Feature::HighContrast | Feature::Heatmap | Feature::NoAlpha;
+        let integer_gray_features = Feature::Segmentation | gray_features;
+        let no_additional_features = EnumSet::empty();
+
+        for_all | match (channels, datatype) {
+            (Channels::One, Datatype::Uint8) => integer_gray_features,
+            (Channels::One, Datatype::Uint16) => integer_gray_features,
+            (Channels::One, Datatype::Uint32) => integer_gray_features,
+            (Channels::One, Datatype::Float32) => gray_features,
+            (Channels::One, Datatype::Int8) => integer_gray_features,
+            (Channels::One, Datatype::Int16) => integer_gray_features,
+            (Channels::One, Datatype::Int32) => integer_gray_features,
+            (Channels::One, Datatype::Bool) => no_additional_features,
+            (Channels::Two, Datatype::Uint8) => gray_alpha_features,
+            (Channels::Two, Datatype::Uint16) => gray_alpha_features,
+            (Channels::Two, Datatype::Uint32) => gray_alpha_features,
+            (Channels::Two, Datatype::Float32) => gray_alpha_features,
+            (Channels::Two, Datatype::Int8) => gray_alpha_features,
+            (Channels::Two, Datatype::Int16) => gray_alpha_features,
+            (Channels::Two, Datatype::Int32) => gray_alpha_features,
+            (Channels::Two, Datatype::Bool) => no_additional_features,
+            (Channels::Three, Datatype::Uint8) => rgb_features,
+            (Channels::Three, Datatype::Uint16) => rgb_features,
+            (Channels::Three, Datatype::Uint32) => rgb_features,
+            (Channels::Three, Datatype::Float32) => rgb_features,
+            (Channels::Three, Datatype::Int8) => rgb_features,
+            (Channels::Three, Datatype::Int16) => rgb_features,
+            (Channels::Three, Datatype::Int32) => rgb_features,
+            (Channels::Three, Datatype::Bool) => no_additional_features,
+            (Channels::Four, Datatype::Uint8) => rgb_features,
+            (Channels::Four, Datatype::Uint16) => rgb_features,
+            (Channels::Four, Datatype::Uint32) => rgb_features,
+            (Channels::Four, Datatype::Float32) => rgb_features,
+            (Channels::Four, Datatype::Int8) => rgb_features,
+            (Channels::Four, Datatype::Int16) => rgb_features,
+            (Channels::Four, Datatype::Int32) => rgb_features,
+            (Channels::Four, Datatype::Bool) => no_additional_features,
+            
         }
+
     }
 }
 
@@ -74,82 +94,134 @@ mod features {
 pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     let DisplayOptionProps { entry } = props;
 
+    let image_id = entry.image_id.clone();
+    let drawing_options = use_selector(move |state: &AppState| {
+        state.drawing_options.borrow().get_or_default(&image_id)
+    });
+
     let features = features::list_features(entry.datatype, entry.channels);
 
-    let dispatch = Dispatch::<AppState>::new();
-    let image_id = entry.image_id.clone();
-    let drawing_options = dispatch
-        .get()
-        .drawing_options
-        .borrow()
-        .get_or_default(&image_id);
+    let currently_selected_style = use_style!(
+        r#"
+        background-color: var(--vscode-button-background);
+    "#
+    );
+    let default_style = use_style!(r#" "#);
 
+    let image_id = entry.image_id.clone();
     let high_contrast_button = html! {
-        <IconToggleButton
+        <IconButton
+            class={if drawing_options.high_contrast { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"High Contrast"}
-            off_icon={"svifpd-icons svifpd-icons-contrast"}
-            initial_state={ToggleState::from(drawing_options.high_contrast)}
-            on_state_changed={{
+            title={"High Contrast"}
+            icon={"svifpd-icons svifpd-icons-contrast"}
+            onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
-                move |(state, _): (ToggleState, _)| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::SetHighContrast(state == ToggleState::On))); }
+                let drawing_options = drawing_options.clone();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::HighContrast(!drawing_options.high_contrast))); }
             }}
         />
     };
     let grayscale_button = html! {
         <IconButton
+            class={if drawing_options.coloring == Coloring::Grayscale { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Grayscale"}
+            title={"Grayscale"}
             icon={"codicon svifpd-icons-Grayscale"}
-        />
-    };
-    let RGB_button = html! {
-        <IconButton
-            aria_label={"RGB"}
-            icon={"svifpd-icons svifpd-icons-RGB"}
-        />
-    };
-    let BGR_button = html! {
-        <IconButton
-            aria_label={"BGR"}
-            icon={"svifpd-icons svifpd-icons-BGR"}
-        />
-    };
-    let R_button = html! {
-        <IconButton
-            aria_label={"R"}
-            icon={"svifpd-icons svifpd-icons-R"}
-        />
-    };
-    let G_button = html! {
-        <IconButton
-            aria_label={"G"}
-            icon={"svifpd-icons svifpd-icons-G"}
-        />
-    };
-    let B_button = html! {
-        <IconButton
-            aria_label={"B"}
-            icon={"svifpd-icons svifpd-icons-B"}
-        />
-    };
-    let invert_button = html! {
-        <IconToggleButton
-            aria_label={"Invert"}
-            off_icon={"codicon codicon-debug"}
-            initial_state={ToggleState::from(drawing_options.invert)}
-            on_state_changed={{
+            onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
-                move |(state, _): (ToggleState, _)| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::SetInvert(state == ToggleState::On))); }
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Grayscale))); }
             }}
         />
     };
-    let transpose_button = html! {
+    let rgb_button = html! {
         <IconButton
-            aria_label={"Transpose"}
-            icon={"svifpd-icons svifpd-icons-transpose"}
+            class={if drawing_options.coloring == Coloring::Rgb { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"RGB"}
+            title={"RGB"}
+            icon={"svifpd-icons svifpd-icons-RGB"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Rgb))); }
+            }}
         />
     };
+    let bgr_button = html! {
+        <IconButton
+            class={if drawing_options.coloring == Coloring::Bgr { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"BGR"}
+            title={"BGR"}
+            icon={"svifpd-icons svifpd-icons-BGR"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Bgr))); }
+            }}
+        />
+    };
+    let r_button = html! {
+        <IconButton
+            class={if drawing_options.coloring == Coloring::R { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Red Channel"}
+            title={"Red Channel"}
+            icon={"svifpd-icons svifpd-icons-R"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::R))); }
+            }}
+        />
+    };
+    let g_button = html! {
+        <IconButton
+            class={if drawing_options.coloring == Coloring::G { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Green Channel"}
+            title={"Green Channel"}
+            icon={"svifpd-icons svifpd-icons-G"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::G))); }
+            }}
+        />
+    };
+    let b_button = html! {
+        <IconButton
+            class={if drawing_options.coloring == Coloring::B { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Blue Channel"}
+            title={"Blue Channel"}
+            icon={"svifpd-icons svifpd-icons-B"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::B))); }
+            }}
+        />
+    };
+    let invert_button = html! {
+        <IconButton
+            class={if drawing_options.invert { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Invert Colors"}
+            title={"Invert Colors"}
+            icon={"svifpd-icons svifpd-icons-invert"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                let drawing_options = drawing_options.clone();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Invert(!drawing_options.invert))); }
+            }}
+        />
+    };
+    // let transpose_button = html! {
+    //     <IconButton
+    //         aria_label={"Transpose"}
+    //         title={"Transpose"}
+    //         icon={"svifpd-icons svifpd-icons-transpose"}
+    //     />
+    // };
 
     let mut buttons = Vec::new();
     if features.contains(features::Feature::HighContrast) {
@@ -159,26 +231,26 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
         buttons.push(grayscale_button);
     }
     if features.contains(features::Feature::RGB) {
-        buttons.push(RGB_button);
+        buttons.push(rgb_button);
     }
     if features.contains(features::Feature::BGR) {
-        buttons.push(BGR_button);
+        buttons.push(bgr_button);
     }
     if features.contains(features::Feature::R) {
-        buttons.push(R_button);
+        buttons.push(r_button);
     }
     if features.contains(features::Feature::G) {
-        buttons.push(G_button);
+        buttons.push(g_button);
     }
     if features.contains(features::Feature::B) {
-        buttons.push(B_button);
+        buttons.push(b_button);
     }
     if features.contains(features::Feature::Invert) {
         buttons.push(invert_button);
     }
-    if features.contains(features::Feature::Transpose) {
-        buttons.push(transpose_button);
-    }
+    // if features.contains(features::Feature::Transpose) {
+    //     buttons.push(transpose_button);
+    // }
 
     let style = use_style!(
         r#"

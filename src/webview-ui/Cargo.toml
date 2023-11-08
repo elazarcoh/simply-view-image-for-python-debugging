@@ -66,6 +66,9 @@ ab_glyph = "0.2.22"
 serde-wasm-bindgen = "0.6.1"
 serde_bytes = "0.11.12"
 instant = "0.1.12"
+serde_repr = "0.1.17"
+enumset = "1.1.3"
+itertools = "0.11.0"
 
 [dependencies.web-sys]
 version = "0.3.22"

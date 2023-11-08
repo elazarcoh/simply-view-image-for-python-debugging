@@ -272,28 +272,7 @@ pub fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-            // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
             <vscode-button onclick={onclick}> {"FooBar"} </vscode-button>
-            // <vscode-panels>
-            //     <vscode-panel-tab id="tab-1">
-            //         {"PROBLEMS"}
-            //     </vscode-panel-tab>
-            //     <vscode-panel-tab id="tab-2">
-            //         {"OUTPUT"}
-            //     </vscode-panel-tab>
-            //     <vscode-panel-tab id="tab-3">
-            //         {"DEBUG CONSOLE"}
-            //     </vscode-panel-tab>
-            //     <vscode-panel-tab id="tab-4">
-            //         {"TERMINAL"}
-            //     </vscode-panel-tab>
-            //     <vscode-panel-view id="view-1"> {"Problems Content"} </vscode-panel-view>
-            //     <vscode-panel-view id="view-2"> {"Output Content"} </vscode-panel-view>
-            //     <vscode-panel-view id="view-3"> {"Debug Console Content"} </vscode-panel-view>
-            //     <vscode-panel-view id="view-4"> {"Terminal Content"} </vscode-panel-view>
-            // </vscode-panels>
-            // <div>{ "Hello World!" }</div>
-            // <ImageSelectionList images={ entries }/>
             <Main gl_view_node_ref={my_node_ref} />
         </div>
     }

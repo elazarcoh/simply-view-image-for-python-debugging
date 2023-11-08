@@ -55,24 +55,45 @@ pub enum Datatype {
     Uint8,
     #[serde(rename = "uint16")]
     Uint16,
-    // #[serde(rename = "uint32")]
-    // Uint32,
+    #[serde(rename = "uint32")]
+    Uint32,
+    // #[serde(rename = "float16")]  // not supported by rust (not IEEE)
+    // Float16,
     #[serde(rename = "float32")]
     Float32,
-    // #[serde(rename = "float64")]
+    // #[serde(rename = "float64")]  // not supported by webgl
     // Float64,
     #[serde(rename = "int8")]
     Int8,
     #[serde(rename = "int16")]
     Int16,
-    // #[serde(rename = "int32")]
-    // Int32,
-    // #[serde(rename = "int64")]
+    #[serde(rename = "int32")]
+    Int32,
+    // #[serde(rename = "int64")]  // not supported by webgl
     // Int64,
-    // #[serde(rename = "uint64")]
+    // #[serde(rename = "uint64")]  // not supported by webgl
     // Uint64,
     #[serde(rename = "bool")]
     Bool,
+}
+
+impl Datatype {
+    pub fn num_bytes(&self) -> usize {
+        match self {
+            Datatype::Uint8 => 1,
+            Datatype::Uint16 => 2,
+            Datatype::Uint32 => 4,
+            // Datatype::Float16 => 2,
+            Datatype::Float32 => 4,
+            // Datatype::Float64 => 8,
+            Datatype::Int8 => 1,
+            Datatype::Int16 => 2,
+            Datatype::Int32 => 4,
+            // Datatype::Int64 => 8,
+            // Datatype::Uint64 => 8,
+            Datatype::Bool => 1,
+        }
+    }
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq)]

@@ -9,7 +9,6 @@ pub fn MainToolbar(props: &MainToolbarProps) -> Html {
     let MainToolbarProps {} = props;
     html! {
         <div>
-            {"I'm a main toolbar"}
         </div>
     }
 }

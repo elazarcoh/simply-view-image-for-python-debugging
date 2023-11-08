@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-
 use wasm_bindgen::JsCast;
 use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
@@ -83,11 +82,40 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
 }
 
 fn make_uniform_setter(gl_type: GLConstant, location: WebGlUniformLocation) -> UniformSetter {
-    Box::new(move |gl: &GL, value: &dyn GLValue| {
-        if cfg!(debug_assertions) {
-            value.verify(gl_type).unwrap();
+    Box::new(move |gl: &GL, value: &UniformValue| match value {
+        UniformValue::Int(v) => gl.uniform1i(Some(&location), **v),
+        UniformValue::Float(v) => gl.uniform1f(Some(&location), **v),
+        UniformValue::Bool(v) => gl.uniform1i(Some(&location), **v as i32),
+        UniformValue::Vec2(v) => gl.uniform2fv_with_f32_array(Some(&location), v.as_ref()),
+        UniformValue::Vec3(v) => gl.uniform3fv_with_f32_array(Some(&location), v.as_ref()),
+        UniformValue::Vec4(v) => gl.uniform4fv_with_f32_array(Some(&location), v.as_ref()),
+        UniformValue::Mat3(v) => gl.uniform_matrix3fv_with_f32_array(
+            Some(&location),
+            false,
+            v.to_cols_array().as_slice(),
+        ),
+        UniformValue::Mat4(v) => gl.uniform_matrix4fv_with_f32_array(
+            Some(&location),
+            false,
+            v.to_cols_array().as_slice(),
+        ),
+        UniformValue::Texture(_) => panic!("Texture should be handled separately"),
+    })
+}
+
+fn make_sampler_setter(
+    gl_type: GLConstant,
+    texture_unit: i32,
+    location: WebGlUniformLocation,
+) -> UniformSetter {
+    Box::new(move |gl: &GL, value: &UniformValue| {
+        if let UniformValue::Texture(value) = value {
+            gl.uniform1i(Some(&location), texture_unit);
+            gl.active_texture(GL::TEXTURE0 + texture_unit as u32);
+            gl.bind_texture(TextureTarget::Texture2D as _, Some(value));
+        } else {
+            panic!("Expected texture value");
         }
-        value.set(gl, &location);
     })
 }
 
@@ -112,8 +140,10 @@ fn create_uniform_setters(
         .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
         .as_f64()
         .unwrap() as u32;
+    log::debug!("Num uniforms: {}", num_uniforms);
 
     let mut uniform_setters: HashMap<String, UniformSetter> = HashMap::new();
+    let mut texture_unit = 0;
     for ii in 0..num_uniforms {
         let uniform_info = gl
             .get_active_uniform(program, ii)
@@ -129,8 +159,29 @@ fn create_uniform_setters(
             &name
         };
         let gl_type = uniform_info.type_();
+        log::debug!("Uniform: {} type: {}", name, gl_type);
         if let Some(location) = gl.get_uniform_location(program, uniform_info.name().as_str()) {
-            let setter = make_uniform_setter(gl_type, location);
+            let setter = if [
+                GL::SAMPLER_2D,
+                GL::SAMPLER_CUBE,
+                GL::SAMPLER_3D,
+                GL::SAMPLER_2D_ARRAY,
+                GL::INT_SAMPLER_2D,
+                GL::INT_SAMPLER_3D,
+                GL::INT_SAMPLER_CUBE,
+                GL::UNSIGNED_INT_SAMPLER_2D,
+                GL::UNSIGNED_INT_SAMPLER_3D,
+            ]
+            .contains(&gl_type)
+            {
+                let unit = texture_unit;
+                log::debug!("Creating sampler setter for: {} at unit: {}", name, unit);
+                texture_unit += uniform_info.size();
+                log::debug!("Texture unit is now: {}", texture_unit);
+                make_sampler_setter(gl_type, unit, location)
+            } else {
+                make_uniform_setter(gl_type, location)
+            };
             uniform_setters.insert(name.to_string(), setter);
         }
     }
@@ -194,7 +245,7 @@ pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformVal
 pub fn set_buffers_and_attributes<B>(program: &ProgramBundle, buffer_info: &BufferInfo<B>)
 where
     B: GLBuffer,
-     {
+{
     buffer_info.attribs.iter().for_each(|attrib| {
         if let Some(attr_setter) = program.attribute_setters.get(attrib.info.name.as_str()) {
             (attr_setter.setter)(&program.gl, &attrib.info, &attrib.buffer);

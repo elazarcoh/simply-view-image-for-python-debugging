@@ -12,10 +12,11 @@ pub enum Coloring {
     Default,
     Grayscale,
     R,
-    // G,
-    // B,
-    // Bgr,
-    // Segmentation,
+    G,
+    B,
+    Bgr,
+    Rgb,
+    Segmentation,
 }
 
 #[derive(
@@ -91,15 +92,34 @@ lazy_static! {
     static ref FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS: std::collections::HashMap<(Datatype, u32), (InternalFormat, Format, ElementType)> = {
         let mut m = std::collections::HashMap::new();
         // rustfmt 
-        m.insert((Datatype::Uint8, 1), (InternalFormat::Luminance, Format::Luminance, ElementType::UnsignedByte));
-        m.insert((Datatype::Uint8, 2), (InternalFormat::Rg8, Format::Rg, ElementType::UnsignedByte));
-        m.insert((Datatype::Uint8, 3), (InternalFormat::Rgb8, Format::Rgb, ElementType::UnsignedByte));
-        m.insert((Datatype::Uint8, 4), (InternalFormat::Rgba8, Format::Rgba, ElementType::UnsignedByte));
-        m.insert((Datatype::Uint16, 4), (InternalFormat::Rgba4, Format::RgbaInteger, ElementType::UnsignedShort));
+        m.insert((Datatype::Uint8, 1), (InternalFormat::R8UI, Format::RedInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Uint8, 2), (InternalFormat::RG8UI, Format::RgInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Uint8, 3), (InternalFormat::RGB8UI, Format::RgbInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Uint8, 4), (InternalFormat::RGBA8UI, Format::RgbaInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Int8, 1), (InternalFormat::R8I, Format::RedInteger, ElementType::Byte));
+        m.insert((Datatype::Int8, 2), (InternalFormat::RG8I, Format::RgInteger, ElementType::Byte));
+        m.insert((Datatype::Int8, 3), (InternalFormat::RGB8I, Format::RgbInteger, ElementType::Byte));
+        m.insert((Datatype::Int8, 4), (InternalFormat::RGBA8I, Format::RgbaInteger, ElementType::Byte));
+        m.insert((Datatype::Uint16, 1), (InternalFormat::R16UI, Format::RedInteger, ElementType::UnsignedShort));
+        m.insert((Datatype::Uint16, 2), (InternalFormat::RG16UI, Format::RgInteger, ElementType::UnsignedShort));
+        m.insert((Datatype::Uint16, 3), (InternalFormat::RGB16UI, Format::RgbInteger, ElementType::UnsignedShort));
+        m.insert((Datatype::Uint16, 4), (InternalFormat::RGBA16UI, Format::RgbaInteger, ElementType::UnsignedShort));
+        m.insert((Datatype::Int16, 1), (InternalFormat::R16I, Format::RedInteger, ElementType::Short));
+        m.insert((Datatype::Int16, 2), (InternalFormat::RG16I, Format::RgInteger, ElementType::Short));
+        m.insert((Datatype::Int16, 3), (InternalFormat::RGB16I, Format::RgbInteger, ElementType::Short));
+        m.insert((Datatype::Int16, 4), (InternalFormat::RGBA16I, Format::RgbaInteger, ElementType::Short));
+        m.insert((Datatype::Uint32, 1), (InternalFormat::R32UI, Format::RedInteger, ElementType::UnsignedInt));
+        m.insert((Datatype::Uint32, 2), (InternalFormat::RG32UI, Format::RgInteger, ElementType::UnsignedInt));
+        m.insert((Datatype::Uint32, 3), (InternalFormat::RGB32UI, Format::RgbInteger, ElementType::UnsignedInt));
+        m.insert((Datatype::Uint32, 4), (InternalFormat::RGBA32UI, Format::RgbaInteger, ElementType::UnsignedInt));
+        m.insert((Datatype::Int32, 1), (InternalFormat::R32I, Format::RedInteger, ElementType::Int));
+        m.insert((Datatype::Int32, 2), (InternalFormat::RG32I, Format::RgInteger, ElementType::Int));
+        m.insert((Datatype::Int32, 3), (InternalFormat::RGB32I, Format::RgbInteger, ElementType::Int));
+        m.insert((Datatype::Int32, 4), (InternalFormat::RGBA32I, Format::RgbaInteger, ElementType::Int));
         m.insert((Datatype::Float32, 1), (InternalFormat::R32F, Format::Red, ElementType::Float));
-        m.insert((Datatype::Float32, 2), (InternalFormat::Rg32F, Format::Rg, ElementType::Float));
-        m.insert((Datatype::Float32, 3), (InternalFormat::Rgb32F, Format::Rgb, ElementType::Float));
-        m.insert((Datatype::Float32, 4), (InternalFormat::Rgba32F, Format::Rgba, ElementType::Float));
+        m.insert((Datatype::Float32, 2), (InternalFormat::RG32F, Format::RG, ElementType::Float));
+        m.insert((Datatype::Float32, 3), (InternalFormat::RGB32F, Format::Rgb, ElementType::Float));
+        m.insert((Datatype::Float32, 4), (InternalFormat::RGBA32F, Format::Rgba, ElementType::Float));
 
         m
     };

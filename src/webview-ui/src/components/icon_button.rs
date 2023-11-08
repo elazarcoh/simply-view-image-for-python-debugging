@@ -30,21 +30,27 @@ impl From<ToggleState> for bool {
 #[derive(PartialEq, Properties, Default)]
 pub struct IconButtonProps {
     #[prop_or_default]
+    pub class: Classes,
+    #[prop_or_default]
     pub aria_label: Option<AttrValue>,
     pub icon: AttrValue,
     #[prop_or_default]
     pub onclick: Option<Callback<MouseEvent>>,
     #[prop_or_default]
     pub spin: Option<bool>,
+    #[prop_or_default]
+    pub title: Option<AttrValue>,
 }
 
 #[styled_component]
 pub fn IconButton(props: &IconButtonProps) -> Html {
     let IconButtonProps {
+        class,
         aria_label,
         icon,
         onclick,
         spin,
+        title,
     } = props;
 
     let node_ref = use_node_ref();
@@ -84,7 +90,7 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
     );
 
     html! {
-        <vscode-button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={css!("visibility: hidden;")}>
+        <vscode-button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={classes!(css!("visibility: hidden;"), class.clone())} title={title.clone()}>
             <span class={classes!(icon, spin_style, spin.map(|v| if v { "spin" } else { "" }))}></span>
         </vscode-button>
     }
@@ -100,6 +106,8 @@ pub struct IconToggleButtonProps {
     pub initial_state: ToggleState,
     #[prop_or_default]
     pub on_state_changed: Option<Callback<(ToggleState, MouseEvent)>>,
+    #[prop_or_default]
+    pub title: Option<AttrValue>,
 }
 
 #[styled_component]
@@ -110,6 +118,7 @@ pub fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
         off_icon,
         initial_state,
         on_state_changed,
+        title,
     } = props;
 
     let state = use_state(|| *initial_state);
@@ -137,11 +146,11 @@ pub fn IconToggleButton(props: &IconToggleButtonProps) -> Html {
                     background-color: var(--vscode-checkbox-background);
                 }
                 "#)}>
-                <IconButton aria_label={Some(aria_label.clone())} icon={on_icon.clone().unwrap_or_else(|| off_icon.clone()).clone()} onclick={Some(onclick.clone())} />
+                <IconButton aria_label={Some(aria_label.clone())} icon={on_icon.clone().unwrap_or_else(|| off_icon.clone()).clone()} onclick={Some(onclick.clone())} title={title.clone()} />
             </div>
         } else {
             <div >
-                <IconButton aria_label={Some(aria_label.clone())} icon={off_icon.clone()} onclick={Some(onclick.clone())} />
+                <IconButton aria_label={Some(aria_label.clone())} icon={off_icon.clone()} onclick={Some(onclick.clone())} title={title.clone()} />
             </div>
         }
     }

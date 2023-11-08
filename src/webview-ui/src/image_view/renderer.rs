@@ -10,6 +10,7 @@ use web_sys::{
 };
 
 use crate::common::Size;
+use crate::communication::incoming_messages::Datatype;
 use crate::image_view::camera;
 use crate::math_utils::ToHom;
 use crate::webgl_utils;
@@ -28,7 +29,8 @@ use super::rendering_context::{ImageViewData, RenderingContext};
 use super::types::{all_views, TextureImage, ViewId};
 
 struct Programs {
-    image: ProgramBundle,
+    normalized_image: ProgramBundle,
+    uint_image: ProgramBundle,
 }
 
 struct RenderingData {
@@ -173,14 +175,20 @@ impl Renderer {
     }
 
     fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs, String> {
-        let image_program = webgl_utils::program::GLProgramBuilder::create(gl)
+        let normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
             .fragment_shader(include_str!("../shaders/image.frag"))
             .attribute("vin_position")
             .build()?;
+        let uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-uint.frag"))
+            .attribute("vin_position")
+            .build()?;
 
         Ok(Programs {
-            image: image_program,
+            normalized_image,
+            uint_image,
         })
     }
 
@@ -289,12 +297,6 @@ impl Renderer {
 
         Renderer::scissor_view(gl, &image_view_data.html_element);
 
-        {
-            let [r, g, b, a] = [0.0, 0.0, 1.0, 1.0];
-            gl.clear_color(r, g, b, a);
-        };
-        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-
         let image_id = image_view_data.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
@@ -320,7 +322,7 @@ impl Renderer {
         view_name: &ViewId,
     ) {
         let gl = &rendering_data.gl;
-        let program = &rendering_data.programs.image;
+        let program = &rendering_data.programs.uint_image;
         let config = rendering_context.rendering_configuration();
 
         let html_element_size = Size {
@@ -344,7 +346,7 @@ impl Renderer {
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
         let drawing_options = rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
-        let color_multiplier = calculate_color_matrix(&texture.image.info, &drawing_options);
+        let (color_multiplier, u_color_addition) = calculate_color_matrix(&texture.image.info, &drawing_options);
 
         gl.use_program(Some(&program.program));
         set_uniforms(
@@ -355,6 +357,7 @@ impl Renderer {
                 ("u_enable_borders", UniformValue::Bool(&enable_borders)),
                 ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
                 ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
+                ("u_color_addition", UniformValue::Vec4(&u_color_addition)),
                 ("u_invert", UniformValue::Bool(&drawing_options.invert)),
             ]),
         );

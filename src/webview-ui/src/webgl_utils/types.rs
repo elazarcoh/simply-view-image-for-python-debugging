@@ -19,6 +19,7 @@ impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 
 #[enum_dispatch(GLVerifyType, GLSet)]
 pub enum UniformValue<'a> {
+    Int(&'a i32),
     Float(&'a f32),
     Bool(&'a bool),
     Texture(&'a WebGlTexture),
@@ -30,7 +31,7 @@ pub enum UniformValue<'a> {
     Mat4(&'a glam::Mat4),
 }
 
-pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
+pub type UniformSetter = Box<dyn Fn(&GL, &UniformValue)>;
 pub type AttributeSetterFunction = Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>;
 
 pub struct AttributeSetter {
@@ -198,9 +199,7 @@ pub struct GLGuard<T: GLDrop> {
 
 impl<T: core::fmt::Debug + GLDrop> core::fmt::Debug for GLGuard<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GLGuard")
-            .field("obj", &self.obj)
-            .finish()
+        f.debug_struct("GLGuard").field("obj", &self.obj).finish()
     }
 }
 
@@ -229,9 +228,15 @@ pub fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
     mem::replace(&mut guard.obj, JsCast::unchecked_into(JsValue::UNDEFINED))
 }
 
-#[enum_dispatch]
+// #[enum_dispatch]
 pub trait GLSet {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation);
+}
+
+impl GLSet for &i32 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
+        gl.uniform1i(Some(location), **self);
+    }
 }
 
 impl GLSet for &f32 {
@@ -243,16 +248,6 @@ impl GLSet for &f32 {
 impl GLSet for &bool {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
         gl.uniform1i(Some(location), **self as i32);
-    }
-}
-
-impl GLSet for &WebGlTexture {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) {
-        let texture_unit = 0;
-        gl.uniform1i(Some(location), texture_unit); // TODO: need to fine the texture unit
-        gl.active_texture(GL::TEXTURE0 + texture_unit as u32);
-        gl.bind_texture(TextureTarget::Texture2D as _, Some(self));
-        // TODO: maybe need to bindSampler
     }
 }
 
@@ -286,7 +281,7 @@ impl GLSet for &glam::Mat4 {
     }
 }
 
-#[enum_dispatch]
+// #[enum_dispatch]
 pub trait GLVerifyType {
     fn verify(&self, expected_type: GLConstant) -> Result<(), String>;
 }
@@ -305,6 +300,12 @@ fn impl_gl_verify_type(
         ))
     } else {
         Ok(())
+    }
+}
+
+impl GLVerifyType for &i32 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::INT, gl_type)
     }
 }
 

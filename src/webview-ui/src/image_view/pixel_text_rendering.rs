@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
 use ab_glyph::{FontArc, Glyph, GlyphId, PxScale, Rect};
 use glam::{Mat3, Vec4};
@@ -10,7 +10,7 @@ use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
     common::Size,
-    communication::incoming_messages::{Datatype, ImageData, Channels},
+    communication::incoming_messages::{Channels, Datatype, ImageData},
     webgl_utils::{
         self,
         draw::draw_buffer_info,
@@ -54,11 +54,7 @@ impl PixelValue {
     pub fn from_image(image: &ImageData, pixel: &PixelLoc) -> Self {
         let c = image.info.channels;
         let pixel_index = (pixel.x + pixel.y * image.info.width) as usize;
-        let bytes_per_element = match image.info.datatype {
-            Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
-            Datatype::Uint16 | Datatype::Int16 => 2,
-            Datatype::Float32 => 4,
-        };
+        let bytes_per_element = image.info.datatype.num_bytes();
         let start = pixel_index * c as usize * bytes_per_element;
         let end = start + c as usize * bytes_per_element;
         let bytes = &image.bytes[start..end];
@@ -71,12 +67,9 @@ impl PixelValue {
         }
     }
 
+    #[rustfmt::skip]
     fn format_value(&self) -> String {
-        let bytes_per_element = match self.datatype {
-            Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
-            Datatype::Uint16 | Datatype::Int16 => 2,
-            Datatype::Float32 => 4,
-        };
+        let bytes_per_element = self.datatype.num_bytes();
         (0..self.num_channels.into())
             .map(|c| {
                 let start = c as usize * bytes_per_element;
@@ -85,8 +78,6 @@ impl PixelValue {
                 match self.datatype {
                     Datatype::Uint8 => format!("{}", u8::from_ne_bytes([bytes[0]])),
                     Datatype::Int8 => format!("{}", i8::from_ne_bytes([bytes[0]])),
-                    Datatype::Uint16 => format!("{}", u16::from_ne_bytes([bytes[0], bytes[1]])),
-                    Datatype::Int16 => format!("{}", i16::from_ne_bytes([bytes[0], bytes[1]])),
                     Datatype::Float32 => {
                         let value = f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
                         // if too long, use scientific notation
@@ -97,6 +88,10 @@ impl PixelValue {
                         }
                     }
                     Datatype::Bool => format!("{}", bytes[0] != 0),
+                    Datatype::Uint16 => format!("{}", u16::from_ne_bytes([bytes[0], bytes[1]])),
+                    Datatype::Uint32 => format!("{}", u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])),
+                    Datatype::Int16 => format!("{}", i16::from_ne_bytes([bytes[0], bytes[1]])),
+                    Datatype::Int32 => format!("{}", i32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])),
                 }
             })
             .collect::<Vec<_>>()
@@ -110,11 +105,7 @@ impl PixelValue {
             Channels::Three | Channels::Four => [0.299, 0.587, 0.114],
         };
         let mut gray = 0.0;
-        let bytes_per_element = match self.datatype {
-            Datatype::Uint8 | Datatype::Int8 | Datatype::Bool => 1,
-            Datatype::Uint16 | Datatype::Int16 => 2,
-            Datatype::Float32 => 4,
-        };
+        let bytes_per_element = self.datatype.num_bytes();
         let cs = usize::min(self.num_channels as usize, 3);
         #[rustfmt::skip]
         (0..cs).for_each(|c| {
@@ -122,12 +113,14 @@ impl PixelValue {
             let end = start + bytes_per_element;
             let bytes = &self.bytes[start..end];
             match self.datatype {
-                Datatype::Uint8 => gray += multipliers[c] * u8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
-                Datatype::Int8 => gray += multipliers[c] * i8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
-                Datatype::Uint16 =>  gray += multipliers[c] * u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
-                Datatype::Int16 =>  gray += multipliers[c] * i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+                Datatype::Uint8 => gray += multipliers[c] * u8::from_ne_bytes([bytes[0]]) as f32 / u8::MAX as f32,
+                Datatype::Int8 => gray += multipliers[c] * i8::from_ne_bytes([bytes[0]]) as f32 / i8::MAX as f32,
                 Datatype::Float32 =>  gray += multipliers[c] * f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
                 Datatype::Bool => gray += (bytes[0] != 0) as u8 as f32,
+                Datatype::Uint16 => gray += multipliers[c] * u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / u16::MAX as f32,
+                Datatype::Uint32 => gray += multipliers[c] * u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / u32::MAX as f32,
+                Datatype::Int16 => gray += multipliers[c] * i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / i16::MAX as f32,
+                Datatype::Int32 => gray += multipliers[c] * i32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / i32::MAX as f32,
             }
         });
 
@@ -139,12 +132,14 @@ impl PixelValue {
             let end = start + bytes_per_element;
             let bytes = &self.bytes[start..end];
             match self.datatype {
-                Datatype::Uint8 => u8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
-                Datatype::Int8 => i8::from_ne_bytes([bytes[0]]) as f32 / 255.0,
-                Datatype::Uint16 => u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
-                Datatype::Int16 => i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+                Datatype::Uint8 => u8::from_ne_bytes([bytes[0]]) as f32 / u8::MAX as f32,
+                Datatype::Int8 => i8::from_ne_bytes([bytes[0]]) as f32 / i8::MAX as f32,
                 Datatype::Float32 => f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
                 Datatype::Bool => (bytes[0] != 0) as u8 as f32,
+                Datatype::Uint16 => u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / u16::MAX as f32,
+                Datatype::Uint32 => u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / u32::MAX as f32,
+                Datatype::Int16 => i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / i16::MAX as f32,
+                Datatype::Int32 => i32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / i32::MAX as f32,
             }
         };
 

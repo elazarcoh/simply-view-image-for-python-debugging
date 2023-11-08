@@ -22,6 +22,7 @@ mod reducer;
 mod tmp_for_debug;
 use app::App;
 use cfg_if::cfg_if;
+use stylist::global_style;
 use wasm_bindgen::prelude::*;
 
 // If you don't want to use `wee_alloc`, you can safely delete this.
@@ -48,6 +49,8 @@ fn run() -> Result<(), JsValue> {
     init_log();
 
     web_sys::console::clear();
+
+    let style = global_style!("overflow: hidden;");
 
     yew::Renderer::<App>::new().render();
 

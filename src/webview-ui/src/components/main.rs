@@ -62,7 +62,6 @@ pub fn Main(props: &MainProps) -> Html {
                 <div class={"main-toolbar"}>
                     <MainToolbar />
                 </div>
-                {"I'm a main"}
                 <GLView node_ref={gl_view_node_ref} />
             </div>
         </div>

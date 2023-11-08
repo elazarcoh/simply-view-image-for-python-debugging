@@ -1,4 +1,5 @@
-use stylist::yew::use_style;
+use itertools::Itertools;
+use stylist::{yew::use_style, css};
 use yew::prelude::*;
 use yewdux::prelude::*;
 
@@ -22,12 +23,12 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
 
     let entry_style = use_style!(
         r#"
-        border: 1px solid var(--vscode-panel-border);
         padding: 5px;
         width: 100%;
     "#,
     );
 
+    let num_entries = images_data.borrow().image_ids.len();
     let entries = images_data
         .borrow()
         .image_ids
@@ -62,6 +63,11 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             </div>
             }
         })
+        .interleave(
+            std::iter::once(html! { <hr class={css!("margin: 0; border-color: var(--vscode-menu-border);")} /> })
+                .cycle()
+                .take(num_entries.saturating_sub(1)),
+        )
         .collect::<Vec<_>>();
 
     html! {

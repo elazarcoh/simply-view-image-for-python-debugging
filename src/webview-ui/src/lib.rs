@@ -1,10 +1,12 @@
 mod communication;
+use base64::{engine::general_purpose, Engine as _};
 mod components;
 mod renderer;
 mod vscode;
 use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
 use log::{info, warn};
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use web_sys::{window, HtmlCanvasElement, WebGl2RenderingContext};
@@ -44,12 +46,32 @@ use crate::renderer::Renderer;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-struct VSCodeMessageHandler {}
+struct VSCodeMessageHandler {
+    webview_api: vscode::WebviewApi,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MyMessage {
+    pub message: String,
+    #[serde(rename = "imageBase64")]
+    pub image_base64: String,
+}
 
 impl VSCodeMessageHandler {
     fn handle_message(&self, message: JsValue) {
         log::debug!("Received message: {:?}", message);
-        // let message = message.into_serde().unwrap();
+        let message: MyMessage = message.into_serde().unwrap();
+        log::debug!("Received message.message: {:?}", message.message);
+
+        let bytes = general_purpose::STANDARD
+            .decode(message.image_base64)
+            .unwrap();
+        let image = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).unwrap();
+        let width = image.width();
+        let height = image.height();
+        let channels = image.color().channel_count();
+        log::debug!("Received image: {}x{}x{}", width, height, channels);
+
         // match message.command.as_str() {
         //     "hello" => {
         //         info!("Received hello message: {}", message.payload);
@@ -62,6 +84,10 @@ impl VSCodeMessageHandler {
         //     }
         // }
     }
+
+    pub fn send_message(&self, message: JsValue) {
+        self.webview_api.post_message(message);
+    }
 }
 
 struct Coordinator {
@@ -71,10 +97,11 @@ struct Coordinator {
 
 #[function_component]
 fn App() -> Html {
+   
     let coordinator = use_memo(
         |_| Coordinator {
             renderer: Rc::new(RefCell::new(Renderer::new())),
-            vscode_message_handler: Rc::new(VSCodeMessageHandler {}),
+            vscode_message_handler: Rc::new(VSCodeMessageHandler { webview_api: vscode::acquire_vscode_api() }),
         },
         (),
     );
@@ -84,7 +111,6 @@ fn App() -> Html {
         let coordinator = coordinator.clone();
 
         move || {
-
             let onmessage = Callback::from(move |event: Event| {
                 let data = event
                     .dyn_ref::<web_sys::MessageEvent>()
@@ -99,8 +125,14 @@ fn App() -> Html {
         }
     });
 
+    let onclick = Callback::from(move |_| {
+        let greeting = String::from("Hi there");
+        log::debug!("Sending greeting: {}", greeting);
+    });
+
     html! {
         <RendererProvider renderer={coordinator.renderer.clone()}>
+            <vscode-button {onclick}> {"Click me!"} </vscode-button>
             <div>{ "Hello World!" }</div>
             <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
         </RendererProvider>
@@ -129,8 +161,6 @@ fn run() -> Result<(), JsValue> {
     init_log();
 
     console::clear();
-
-    // let vscode = vscode::acquireVsCodeApi();
 
     // Use `web_sys`'s global `window` function to get a handle on the global
     // window object.

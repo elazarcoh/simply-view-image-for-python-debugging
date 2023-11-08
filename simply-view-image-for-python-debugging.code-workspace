@@ -17,6 +17,9 @@
 		"rust-analyzer.linkedProjects": [
 			"./src/webview-ui/Cargo.toml"
 		],
-		"rust-analyzer.showUnlinkedFileNotification": false
+		"rust-analyzer.showUnlinkedFileNotification": false,
+		"emmet.includeLanguages": {
+			"rust": "html",
+		}
 	}
 }

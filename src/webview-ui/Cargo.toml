@@ -54,6 +54,7 @@ yew-hooks = "0.2.0"
 stylist = { version = "0.12.1", features = ["yew_integration"] }
 
 base64 = "0.21.2"
+image = "0.24.7"
 
 [dependencies.web-sys]
 version = "0.3.22"

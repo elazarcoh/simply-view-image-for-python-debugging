@@ -11,6 +11,7 @@ use crate::{
         image_views::ImageViews,
         types::{ImageId, ViewId},
     },
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 // TODO: Move this to a separate file
@@ -60,15 +61,26 @@ impl Listener for ImagesFetcher {
             .collect::<Vec<_>>();
 
         for image_id in currently_viewing_image_ids {
+            log::debug!(
+                "ImagesFetcher::on_change: currently viewing image {}",
+                image_id
+            );
             if !state.image_cache.borrow().has(&image_id) {
-                log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                // TODO: fetch image
+                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                if let Some(image_info) = state.images.borrow().by_id.get(&image_id) {
+                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                    VSCodeRequests::request_image_data(
+                        image_id,
+                        image_info.info.expression.clone(),
+                    );
+                }
             }
         }
     }
 }
 
 #[derive(Store, Clone)]
+#[store(listener(ImagesFetcher))]
 pub struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
@@ -83,25 +95,6 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(
-        gl: Option<WebGl2RenderingContext>,
-        images: Mrc<Images>,
-        image_views: Mrc<ImageViews>,
-        image_cache: Mrc<ImageCache>,
-        view_cameras: Mrc<ViewsCameras>,
-        configuration: configurations::Configuration,
-    ) -> Self {
-        init_listener(ImagesFetcher);
-        Self {
-            gl,
-            images,
-            image_views,
-            image_cache,
-            view_cameras,
-            configuration,
-        }
-    }
-
     pub fn image_views(&self) -> Mrc<ImageViews> {
         self.image_views.clone()
     }
@@ -135,13 +128,6 @@ impl PartialEq for AppState {
             && self.image_cache == other.image_cache
             && self.view_cameras == other.view_cameras
             && self.configuration == other.configuration
-            // && (self.message_service.is_none() && other.message_service.is_none()
-            //     || (self.message_service.is_some()
-            //         && other.message_service.is_some()
-            //         && Rc::ptr_eq(
-            //             self.message_service.as_ref().unwrap(),
-            //             other.message_service.as_ref().unwrap(),
-            //         )))
             && self.gl == other.gl
     }
 }

@@ -114,16 +114,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("svifpd.open-settings", async () => {
             HelloWorldPanel.render(context);
-            // setTimeout(async () => {
-            //     if (HelloWorldPanel.currentPanel !== undefined) {
-            //         const path = "C:/Users/hodaya/Documents/simply-view-image-for-python-debugging/watch-view.png";
-            //         const contents = await fs.readFile(path, {encoding: 'base64'});
-            //         HelloWorldPanel.currentPanel.postMessage({
-            //             message: "Foo",
-            //             imageBase64: contents,
-            //         });
-            //     }
-            // }, 1000);
         })
     );
 }

@@ -12,6 +12,7 @@ use crate::{
 pub enum StoreAction {
     UpdateImages(Vec<(ImageId, ImageData)>),
     SetImageToView(ImageId, ViewId),
+    AddTextureImage(ImageId, TextureImage),
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -33,19 +34,14 @@ impl Reducer<AppState> for StoreAction {
 
             StoreAction::SetImageToView(image_id, view_id) => {
                 log::debug!("SetImageToView: {:?} {:?}", image_id, view_id);
-
-                if state.image_cache.borrow().get(&image_id).is_none() {
-
-                    log::debug!("Creating image for view");
-                    let gl = state.gl.as_ref().unwrap();
-                    let invert = state.image_cache.borrow().len() % 2 == 0;
-                    let image = create_image_for_view(gl, invert).unwrap();
-
-                    state.image_cache.borrow_mut().set(&image_id, image);
-                }
-
                 state.set_image_to_view(image_id, view_id);
             }
+
+            StoreAction::AddTextureImage(image_id, texture_image) => {
+                log::debug!("AddTextureImage: {:?}", image_id);
+                state.image_cache.borrow_mut().set(&image_id, texture_image);
+            }
+
         };
 
         app_state

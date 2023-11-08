@@ -200,13 +200,7 @@ impl Renderer {
             .iter()
             .map(|view_id| {
                 let view_data = rendering_context.view_data(*view_id);
-                Renderer::render_view(
-                    gl,
-                    rendering_data,
-                    &view_data,
-                    rendering_context,
-                    view_id,
-                )
+                Renderer::render_view(gl, rendering_data, &view_data, rendering_context, view_id)
             })
             .collect::<Result<Vec<_>, _>>();
 
@@ -277,7 +271,11 @@ impl Renderer {
         rendering_context: &dyn RenderingContext,
         view_name: &ViewId,
     ) -> Result<(), String> {
-        if image_view_data.image_id.is_none() {
+        if image_view_data.image_id.is_none()
+            || rendering_context
+                .texture_by_id(image_view_data.image_id.as_ref().unwrap())
+                .is_none()
+        {
             return Ok(());
         }
         let canvas = Renderer::canvas(gl);

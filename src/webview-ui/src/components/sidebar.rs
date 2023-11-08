@@ -1,19 +1,14 @@
 use gloo::events::EventListener;
 use stylist::yew::use_style;
 use wasm_bindgen::JsCast;
-use web_sys::HtmlElement;
+
 use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    communication::server_requests::ServerRequestsContext,
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
-        image_list_item::ImageListItem,
-    },
-    image_view::types::{ImageId, ViewId},
-    reducer,
-    store::AppState,
+    }, vscode::vscode_requests::VSCodeRequests,
 };
 
 #[derive(PartialEq, Properties)]
@@ -59,8 +54,6 @@ pub struct RefreshButtonProps {}
 pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
     let RefreshButtonProps {} = props;
 
-    let server_requests_ctx = use_context::<ServerRequestsContext>().unwrap();
-
     let is_loading = use_state(|| false);
 
     html! {
@@ -68,10 +61,9 @@ pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
             aria_label={"Refresh"}
             icon={"codicon codicon-refresh"}
             onclick={Callback::from({
-                let server_requests_ctx = server_requests_ctx.clone();
-                let is_loading = is_loading.clone();
+                let _is_loading = is_loading.clone();
                 move |_| {
-                    let id = server_requests_ctx.requests_images();
+                    let _id = VSCodeRequests::request_images();
                     // is_loading.set(true);
                 }})}
             spin={*is_loading}
@@ -138,7 +130,7 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
             initial_state={if *pinned {ToggleState::On} else {ToggleState::Off}}
             on_state_changed={
                 let pinned = pinned.clone();
-                Callback::from(move |(state, e): (_, MouseEvent)| {
+                Callback::from(move |(state, _e): (_, MouseEvent)| {
                     pinned.set(state == ToggleState::On)
                 })
             } />

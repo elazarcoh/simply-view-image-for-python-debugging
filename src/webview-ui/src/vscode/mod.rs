@@ -1,4 +1,5 @@
 pub mod vscode_requests;
+pub mod vscode_listener;
 
 use wasm_bindgen::prelude::*;
 

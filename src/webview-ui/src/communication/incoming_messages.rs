@@ -60,6 +60,8 @@
 //     RequestViewable(RequestViewable),
 // }
 
+use crate::image_view::types::ImageId;
+
 use super::common::MessageId;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug)]
@@ -76,15 +78,16 @@ pub struct ImageObjects {
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug)]
-pub struct ShowImage {
-    pub image_base64: String,
+pub struct ImageData {
+    pub image_id: ImageId,
+    pub base64: String,
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub enum FromExtensionMessage {
-    ShowImageMessage(ShowImage),
+    ImageData(ImageData),
     ImageObjects(ImageObjects),
 }
 

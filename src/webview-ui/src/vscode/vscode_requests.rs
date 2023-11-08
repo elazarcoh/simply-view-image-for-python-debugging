@@ -1,11 +1,19 @@
+use std::rc::Rc;
+
 use tsify::JsValueSerdeExt;
 use wasm_bindgen::JsValue;
 
+use yewdux::prelude::*;
+
 use crate::communication::common::MessageId;
-use crate::{communication::server_requests::ServerRequests, vscode::WebviewApi};
+use crate::image_view::types::ImageId;
+use crate::vscode::WebviewApi;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
-struct RequestImageData {}
+struct RequestImageData {
+    image_id: ImageId,
+    expression: String,
+}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct RequestImages {}
@@ -24,26 +32,50 @@ struct FromWebviewMessageWithId {
     message: FromWebviewMessage,
 }
 
-pub struct VSCodeRequests {
-    vscode: WebviewApi,
+#[derive(Store, Clone, PartialEq, Default)]
+struct WebviewApiStore {
+    vscode: Option<Rc<WebviewApi>>,
 }
 
+pub(crate) struct VSCodeRequests;
+
 impl VSCodeRequests {
-    pub(crate) fn new(vscode: WebviewApi) -> Self {
-        Self { vscode }
+    fn vscode() -> Rc<WebviewApi> {
+        Dispatch::<WebviewApiStore>::new().get().vscode.as_ref().ok_or(
+            "VSCodeRequests::vscode: VSCodeRequests::init must be called before VSCodeRequests::vscode",
+        ).unwrap().clone()
     }
 
-    fn send_message(&self, message: FromWebviewMessage) -> MessageId {
+    pub(crate) fn init(vscode: WebviewApi) {
+        Dispatch::<WebviewApiStore>::new().reduce_mut(move |state| {
+            state.vscode = Some(Rc::new(vscode));
+        });
+    }
+
+    fn send_message(message: FromWebviewMessage) -> MessageId {
         let id = MessageId::generate();
-        self.vscode
-            .post_message(JsValue::from_serde(&FromWebviewMessageWithId { id: id.clone(), message }).unwrap());
+        Self::vscode().post_message(
+            JsValue::from_serde(&FromWebviewMessageWithId {
+                id: id.clone(),
+                message,
+            })
+            .unwrap(),
+        );
         id
     }
 }
 
-impl ServerRequests for VSCodeRequests {
-    fn requests_images(&self) -> MessageId {
+impl VSCodeRequests {
+    pub fn request_images() -> MessageId {
         log::debug!("VSCodeRequests::requests_images");
-        self.send_message(FromWebviewMessage::RequestImages(RequestImages {}))
+        Self::send_message(FromWebviewMessage::RequestImages(RequestImages {}))
+    }
+
+    pub fn request_image_data(image_id: ImageId, expression: String) -> MessageId {
+        log::debug!("VSCodeRequests::request_image_data: {:?}", image_id);
+        Self::send_message(FromWebviewMessage::RequestImageData(RequestImageData {
+            image_id,
+            expression,
+        }))
     }
 }

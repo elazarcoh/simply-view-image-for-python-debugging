@@ -1,7 +1,8 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
 
-use crate::{store::ImageInfo};
+use crate::communication::incoming_messages::ImageInfo;
+
 
 fn shape_to_string(shape: &[u32]) -> String {
     let mut shape_string = String::new();
@@ -53,11 +54,11 @@ pub fn ImageListItem(props: &ImageListItemProps) -> Html {
                 <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
                     <vscode-data-grid-row>
                         <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
-                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.shape)}</vscode-data-grid-cell>
+                        // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.shape)}</vscode-data-grid-cell>
                     </vscode-data-grid-row>
                     <vscode-data-grid-row>
                         <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
-                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.data_type}</vscode-data-grid-cell>
+                        // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.data_type}</vscode-data-grid-cell>
                     </vscode-data-grid-row>
                 </vscode-data-grid>
             </div>

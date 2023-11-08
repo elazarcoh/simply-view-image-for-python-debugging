@@ -13,31 +13,34 @@ import { hasValue } from "../../utils/Utils";
 import { findExpressionViewables } from "../../PythonObjectInfo";
 import { Except } from "../../utils/Except";
 import { serializePythonObjectToDisk } from "../../from-python-serialization/DiskSerialization";
+// import Container from "typedi";
+// import { WebsocketServer } from "../communication/WebsocketServer";
+import { logDebug } from "../../Logging";
 
 export class WebviewMessageHandler {
     constructor(private webview: vscode.Webview) {}
 
-    handleImagesRequest(id: MessageId) {
-        const validVariables: ImageInfo[] =
-            activeDebugSessionData()
-                ?.currentPythonObjectsList?.variablesList.map(([exp, info]) =>
-                    info.isError
-                        ? null
-                        : ({
-                              name: exp,
-                              // shape: info.result[1]['shape'],
-                              // data_type: info.result[1]['dtype'],
-                          } as ImageInfo)
-                )
-                .filter(hasValue) ?? [];
-        const validExpressions: ImageInfo[] = []; // TODO: Implement this
+    handleImagesRequest(_id: MessageId) {
+        // const validVariables: ImageInfo[] =
+        //     activeDebugSessionData()
+        //         ?.currentPythonObjectsList?.variablesList.map(([exp, info]) =>
+        //             info.isError
+        //                 ? null
+        //                 : ({
+        //                       name: exp,
+        //                       // shape: info.result[1]['shape'],
+        //                       // data_type: info.result[1]['dtype'],
+        //                   } as ImageInfo)
+        //         )
+        //         .filter(hasValue) ?? [];
+        // const validExpressions: ImageInfo[] = []; // TODO: Implement this
 
-        const message: FromExtensionMessage = {
-            type: "ImageObjects",
-            variables: validVariables,
-            expressions: validExpressions,
-        };
-        this.sendToWebview({ id, message });
+        // const message: FromExtensionMessage = {
+        //     type: "ImageObjects",
+        //     variables: validVariables,
+        //     expressions: validExpressions,
+        // };
+        // this.sendToWebview({ id, message });
     }
 
     async handleImageDataRequest(id: MessageId, args: RequestImageData) {
@@ -69,14 +72,49 @@ export class WebviewMessageHandler {
         }
 
         // load image from disk
-        const contents = await fs.readFile(path, { encoding: "base64" });
-        await this.sendToWebview({
+        // const contents = await fs.readFile(path, { encoding: "base64" });
+        // await this.sendToWebview({
+        //     id,
+        //     message: {
+        //         type: "ImageData",
+        //         image_id: args.image_id,
+        //         base64: contents,
+        //     },
+        // });
+    }
+
+    async handleWebviewReady(id: MessageId) {
+        logDebug("Webview ready");
+
+        const image_info: ImageInfo = {
+            image_id: "foobar-id",
+            value_variable_kind: "variable",
+            expression: "img[:2, :2]",
+            width: 512,
+            height: 512,
+            channels: 3,
+            datatype: "uint8",
+            additional_info: {},
+        };
+        // const websocketServer = Container.get(WebsocketServer);
+        // const port = websocketServer.port;
+        // const data = Uint8Array.from([1, 2, 3, 4, 5]);
+        const len = image_info.width * image_info.height * image_info.channels;
+        const arrayBuffer = new ArrayBuffer(len);
+        const data = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < len; ++i) {
+            data[i] = i % 16;
+        }
+        // const data = Buffer.alloc(1024 * 1024 * 10).fill(3);
+        // const message: FromExtensionMessage = {
+        //     type: "WebsocketServerInfo",
+        //     // @ts-expect-error // TODO: fix this
+        //     data,
+        // };
+        // this.sendToWebview({ id, message });
+        return this.sendToWebview({
             id,
-            message: {
-                type: "ImageData",
-                image_id: args.image_id,
-                base64: contents,
-            },
+            message: { type: "ImageData", ...image_info, bytes: arrayBuffer },
         });
     }
 
@@ -87,6 +125,8 @@ export class WebviewMessageHandler {
 
         const type = message.type;
         switch (type) {
+            case "WebviewReady":
+                return this.handleWebviewReady(id);
             case "RequestImages":
                 return this.handleImagesRequest(id);
             case "RequestImageData":

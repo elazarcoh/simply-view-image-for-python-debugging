@@ -63,8 +63,9 @@ bytemuck = "1.14.0"
 glyph_brush_draw_cache = "0.1.5"
 glyph_brush_layout = "0.2.3"
 ab_glyph = "0.2.22"
-gloo-net = { version = "0.4.0", features = ["websocket", "futures-sink", "futures-core"] }
-futures = "0.3.28"
+serde-wasm-bindgen = "0.6.1"
+serde_bytes = "0.11.12"
+instant = "0.1.12"
 
 [dependencies.web-sys]
 version = "0.3.22"

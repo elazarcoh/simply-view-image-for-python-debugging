@@ -60,6 +60,40 @@ pub enum Format {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+pub enum InternalFormat {
+    Rgb = GL::RGB,
+    Rgba = GL::RGBA,
+    LuminanceAlpha = GL::LUMINANCE_ALPHA,
+    Luminance = GL::LUMINANCE,
+    Alpha = GL::ALPHA,
+    R8 = GL::R8,
+    R16F = GL::R16F,
+    R32F = GL::R32F,
+    R8Ui = GL::R8UI,
+    Rg8 = GL::RG8,
+    Rg16F = GL::RG16F,
+    Rg32F = GL::RG32F,
+    Rg8Ui = GL::RG8UI,
+    Rgb8 = GL::RGB8,
+    Srgb8 = GL::SRGB8,
+    Rgb565 = GL::RGB565,
+    R11FG11FB10F = GL::R11F_G11F_B10F,
+    Rgb9E5 = GL::RGB9_E5,
+    Rgb16F = GL::RGB16F,
+    Rgb32F = GL::RGB32F,
+    Rgb8Ui = GL::RGB8UI,
+    Rgba8 = GL::RGBA8,
+    Srgb8Alpha8 = GL::SRGB8_ALPHA8,
+    Rgb5A1 = GL::RGB5_A1,
+    Rgb10A2 = GL::RGB10_A2,
+    Rgba4 = GL::RGBA4,
+    Rgba16F = GL::RGBA16F,
+    Rgba32F = GL::RGBA32F,
+    Rgba8Ui = GL::RGBA8UI,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
 pub enum TextureTarget {
     Texture2D = GL::TEXTURE_2D,
     TextureCubeMap = GL::TEXTURE_CUBE_MAP,

@@ -10,6 +10,9 @@ use crate::image_view::types::ImageId;
 use crate::vscode::WebviewApi;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
+struct WebviewReady {}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct RequestImageData {
     image_id: ImageId,
     expression: String,
@@ -22,6 +25,7 @@ struct RequestImages {}
 #[serde(tag = "type")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 enum FromWebviewMessage {
+    WebviewReady(WebviewReady),
     RequestImageData(RequestImageData),
     RequestImages(RequestImages),
 }
@@ -77,5 +81,10 @@ impl VSCodeRequests {
             image_id,
             expression,
         }))
+    }
+
+    pub fn webview_ready() -> MessageId {
+        log::debug!("VSCodeRequests::webview_ready");
+        Self::send_message(FromWebviewMessage::WebviewReady(WebviewReady {}))
     }
 }

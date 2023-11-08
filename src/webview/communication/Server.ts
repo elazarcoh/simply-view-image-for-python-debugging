@@ -174,6 +174,7 @@ export class Server {
 function logDebug(...obj: any[]): void {
     console.log(...obj);
 }
+
 export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
     if (!map.has(key)) {
         map.set(key, value);

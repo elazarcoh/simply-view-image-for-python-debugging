@@ -56,7 +56,7 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                     {onclick}
                     class={entry_style.clone()}
                 >
-                    <ImageListItem entry={data.info.clone()} />
+                    <ImageListItem entry={data.clone()} />
                 </vscode-option>
             </div>
             }

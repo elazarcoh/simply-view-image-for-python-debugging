@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
-use crate::communication::websocket_client::try_websocket;
+// use crate::communication::websocket_client::try_websocket;
 use crate::components::main::Main;
 
 use crate::configurations;
@@ -28,9 +28,6 @@ use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::reducer::StoreAction;
 use crate::store::AppState;
-use crate::store::ImageData;
-use crate::store::ImageInfo;
-use crate::store::ValueVariableKind;
 use crate::vscode;
 use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
@@ -128,6 +125,9 @@ pub fn App() -> Html {
         let my_node_ref = my_node_ref.clone();
 
         move || {
+            // send message to VSCode that the webview is ready
+            VSCodeRequests::webview_ready();
+
             let message_listener = VSCodeListener::install_incoming_message_handler();
 
             let camera_context_rc = Rc::new(camera_context()) as Rc<dyn CameraContext>;
@@ -159,7 +159,7 @@ pub fn App() -> Html {
             };
 
             // Request images from VSCode on startup
-            VSCodeRequests::request_images();
+            // VSCodeRequests::request_images();
 
             move || {
                 drop(message_listener);
@@ -219,7 +219,7 @@ pub fn App() -> Html {
 
     // TODO: remove this
     let onclick = Callback::from(|_| {
-        try_websocket();
+        // try_websocket(41091);
     });
 
     let main_style = use_style!(

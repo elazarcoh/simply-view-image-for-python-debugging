@@ -14,36 +14,10 @@ use crate::{
     vscode::vscode_requests::VSCodeRequests,
 };
 
-// TODO: Move this to a separate file
-#[derive(Clone, Debug, PartialEq)]
-pub enum ValueVariableKind {
-    Variable,
-    Expression,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct ImageInfo {
-    pub expression: String,
-    pub shape: Vec<u32>,
-    pub data_type: String,
-    pub value_variable_kind: ValueVariableKind,
-}
-
-#[derive(Debug)]
-pub struct ImageData {
-    pub info: ImageInfo,
-}
-
-impl ImageData {
-    pub fn new(info: ImageInfo) -> Self {
-        Self { info }
-    }
-}
-
 #[derive(Default)]
 pub struct Images {
     pub image_ids: Vec<ImageId>,
-    pub by_id: HashMap<ImageId, ImageData>,
+    pub by_id: HashMap<ImageId, crate::communication::incoming_messages::ImageInfo>,
 }
 
 struct ImagesFetcher;
@@ -71,7 +45,7 @@ impl Listener for ImagesFetcher {
                     log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
                     VSCodeRequests::request_image_data(
                         image_id,
-                        image_info.info.expression.clone(),
+                        image_info.expression.clone(),
                     );
                 }
             }

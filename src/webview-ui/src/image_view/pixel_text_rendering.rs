@@ -16,7 +16,7 @@ use crate::{
         program::{set_buffers_and_attributes, set_uniforms},
         reusable_buffer::ReusableBuffer,
         *,
-    },
+    }, communication::incoming_messages::ImageData,
 };
 
 pub struct PixelTextRenderer {
@@ -48,14 +48,15 @@ pub enum PixelValue {
 pub type PixelLoc = glam::UVec2;
 
 impl PixelValue {
-    pub fn from_image(image: &image::DynamicImage, pixel: &PixelLoc) -> Self {
-        match image {
-            DynamicImage::ImageRgba8(image) => {
-                let pixel = image.get_pixel(pixel.x, pixel.y);
-                Self::Rgba(pixel[0], pixel[1], pixel[2], pixel[3])
-            }
-            _ => todo!(),
-        }
+    pub fn from_image(image: &ImageData, pixel: &PixelLoc) -> Self {
+        // match image {
+        //     DynamicImage::ImageRgba8(image) => {
+        //         let pixel = image.get_pixel(pixel.x, pixel.y);
+        //         Self::Rgba(pixel[0], pixel[1], pixel[2], pixel[3])
+        //     }
+        //     _ => todo!(),
+        // }
+        PixelValue::Rgba(0, 0, 0, 0)
     }
 
     fn format_value(&self) -> String {

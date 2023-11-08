@@ -1,4 +1,6 @@
 use base64::{engine::general_purpose, Engine};
+use image::{DynamicImage, ImageBuffer};
+use js_sys::Reflect;
 use yewdux::prelude::Dispatch;
 
 use gloo::events::EventListener;
@@ -7,6 +9,7 @@ use gloo_utils::format::JsValueSerdeExt;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
+use crate::communication::common::MessageId;
 use crate::communication::incoming_messages::{self, FromExtensionMessageWithId};
 
 use crate::image_view::types::TextureImage;
@@ -14,10 +17,12 @@ use crate::{
     communication::incoming_messages::{FromExtensionMessage, ImageObjects},
     image_view::types::{ImageId, ViewId},
     reducer::StoreAction,
-    store::{AppState, ImageData, ImageInfo, ValueVariableKind},
+    store::{AppState},
 };
 
 pub(crate) struct VSCodeListener;
+
+use wasm_bindgen::prelude::*;
 
 impl VSCodeListener {
     pub fn install_incoming_message_handler() -> EventListener {
@@ -27,8 +32,12 @@ impl VSCodeListener {
                 .expect("Unable to cast event to MessageEvent")
                 .data();
 
-            log::debug!("Received message: {:?}", data);
-            let message: FromExtensionMessageWithId = data.into_serde().unwrap();
+            log::debug!("Received message");
+            log::debug!("message data: {:?}", data);
+            let start = instant::Instant::now();
+            let message: FromExtensionMessageWithId = serde_wasm_bindgen::from_value(data).unwrap();
+            let end = instant::Instant::now();
+            log::debug!("deserialization took {:?}", end - start);
 
             Self::handle_incoming_message(message.message);
         });
@@ -38,15 +47,14 @@ impl VSCodeListener {
     }
 
     fn handle_incoming_message(message: FromExtensionMessage) {
-        let handle_set_image_message = |message: incoming_messages::ImageData| {
-            let image_id = message.image_id;
-            let bytes = general_purpose::STANDARD.decode(message.base64).unwrap();
-            let image =
-                image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).unwrap();
+        let handle_set_image_message = |image_data: incoming_messages::ImageData| {
+            let image_id = image_data.info.image_id.clone();
+            // let bytes = general_purpose::STANDARD.decode(message.base64).unwrap();
+            // let image =
+            //     image::load_from_memory(&message.bytes).expect("Unable to load image from bytes");
 
             let dispatch = Dispatch::<AppState>::new();
-
-            let tex_image = TextureImage::try_new(image, dispatch.get().gl.as_ref().unwrap())
+            let tex_image = TextureImage::try_new(image_data, dispatch.get().gl.as_ref().unwrap())
                 .expect("Unable to create texture image");
             dispatch.apply(StoreAction::AddTextureImage(image_id, tex_image));
 
@@ -71,23 +79,23 @@ impl VSCodeListener {
 
         let handle_images_response = |message: ImageObjects| {
             log::debug!("Received images response: {:?}", message);
-            let dispatch = Dispatch::<AppState>::new();
-            let images = message
-                .variables
-                .into_iter()
-                .map(|info| {
-                    (
-                        ImageId::generate(),
-                        ImageData::new(ImageInfo {
-                            expression: info.name,
-                            shape: vec![0, 0, 0],
-                            data_type: "TODO".to_string(),
-                            value_variable_kind: ValueVariableKind::Variable,
-                        }),
-                    )
-                })
-                .collect();
-            dispatch.apply(StoreAction::UpdateImages(images));
+            // let dispatch = Dispatch::<AppState>::new();
+            // let images = message
+            //     .variables
+            //     .into_iter()
+            //     .map(|info| {
+            //         (
+            //             ImageId::generate(),
+            //             ImageData::new(ImageInfo {
+            //                 expression: info.expression,
+            //                 shape: vec![0, 0, 0],
+            //                 data_type: "TODO".to_string(),
+            //                 value_variable_kind: ValueVariableKind::Variable,
+            //             }),
+            //         )
+            //     })
+            //     .collect();
+            // dispatch.apply(StoreAction::UpdateImages(images));
         };
 
         match message {

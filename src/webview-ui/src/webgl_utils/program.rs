@@ -177,7 +177,6 @@ fn create_uniform_setters(
                 let unit = texture_unit;
                 log::debug!("Creating sampler setter for: {} at unit: {}", name, unit);
                 texture_unit += uniform_info.size();
-                log::debug!("Texture unit is now: {}", texture_unit);
                 make_sampler_setter(gl_type, unit, location)
             } else {
                 make_uniform_setter(gl_type, location)

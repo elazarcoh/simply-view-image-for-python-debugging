@@ -19,7 +19,10 @@ mod vscode;
 mod webgl_utils;
 mod store;
 mod reducer;
+
+#[cfg(debug_assertions)]
 mod tmp_for_debug;
+
 use app::App;
 use cfg_if::cfg_if;
 use stylist::global_style;
@@ -48,6 +51,7 @@ fn run() -> Result<(), JsValue> {
 
     init_log();
 
+    #[cfg(debug_assertions)]
     web_sys::console::clear();
 
     let _ = global_style!(r#"

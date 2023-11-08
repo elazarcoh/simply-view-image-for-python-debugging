@@ -226,10 +226,26 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
+                let drawing_options = drawing_options.clone();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::IgnoreAlpha(!drawing_options.ignore_alpha))); }
             }}
         />
     };
+    let heatmap_button = html! {
+        <IconButton
+            class={ if let Coloring::Heatmap{..} = drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Heatmap"}
+            title={"Heatmap"}
+            // icon={"svifpd-icons svifpd-icons-heatmap"}
+            icon={"codicon codicon-table"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Heatmap{name: "fire".to_string()}))); }
+            }}
+        />
+    };
+
     // let transpose_button = html! {
     //     <IconButton
     //         aria_label={"Transpose"}
@@ -262,6 +278,9 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
     if features.contains(features::Feature::IgnoreAlpha) {
         buttons.push(ignore_alpha_button);
+    }
+    if features.contains(features::Feature::Heatmap) {
+        buttons.push(heatmap_button);
     }
     // if features.contains(features::Feature::Transpose) {
     //     buttons.push(transpose_button);

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, rc::Rc};
+use std::{borrow::BorrowMut, collections::HashMap, fmt::Debug, rc::Rc};
 
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
@@ -6,6 +6,7 @@ use yewdux::{mrc::Mrc, prelude::*};
 use crate::{
     configurations,
     image_view::{
+        builtin_colormaps::BUILTIN_COLORMAPS,
         camera::ViewsCameras,
         colormap,
         image_cache::ImageCache,
@@ -40,9 +41,9 @@ impl ImagesDrawingOptions {
     }
 }
 
-struct ColorMapsCache(HashMap<String, GLGuard<web_sys::WebGlTexture>>);
+struct ColorMapTexturesCache(HashMap<String, Rc<GLGuard<web_sys::WebGlTexture>>>);
 
-impl ColorMapsCache {
+impl ColorMapTexturesCache {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
@@ -51,21 +52,45 @@ impl ColorMapsCache {
         &mut self,
         gl: &WebGl2RenderingContext,
         colormap: &colormap::ColorMap,
-    ) -> Result<&GLGuard<web_sys::WebGlTexture>, String> {
+    ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>, String> {
         let name = colormap.name.to_string();
         if self.0.contains_key(&name) {
-            return Ok(self.0.get(&name).unwrap());
+            return Ok(self.0.get(&name).unwrap().clone());
         }
 
         let tex = colormap::create_texture_for_colormap(gl, colormap)?;
-        self.0.insert(name.clone(), tex);
-        Ok(self.0.get(&name).unwrap())
+        self.0.insert(name.clone(), Rc::new(tex));
+        Ok(self.0.get(&name).unwrap().clone())
     }
 }
 
-impl Default for ColorMapsCache {
+impl Default for ColorMapTexturesCache {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+struct ColorMapRegistry(HashMap<String, Rc<colormap::ColorMap>>);
+impl ColorMapRegistry {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn get(&self, name: &str) -> Option<Rc<colormap::ColorMap>> {
+        self.0.get(name).cloned()
+    }
+
+    pub fn register(&mut self, colormap: colormap::ColorMap) {
+        self.0.insert(colormap.name.to_string(), Rc::new(colormap));
+    }
+}
+impl Default for ColorMapRegistry {
+    fn default() -> Self {
+        let mut registry = Self::new();
+        BUILTIN_COLORMAPS
+            .iter()
+            .for_each(|c| registry.register(c.clone()));
+        registry
     }
 }
 
@@ -109,7 +134,8 @@ pub struct AppState {
     pub image_cache: Mrc<ImageCache>,
     pub drawing_options: Mrc<ImagesDrawingOptions>,
 
-    color_maps_cache: Mrc<ColorMapsCache>,
+    color_map_registry: Mrc<ColorMapRegistry>,
+    color_map_textures_cache: Mrc<ColorMapTexturesCache>,
 
     pub view_cameras: Mrc<ViewsCameras>,
 
@@ -127,6 +153,21 @@ impl AppState {
             .borrow_mut()
             .set_image_to_view(image_id, view_id);
     }
+
+    pub fn get_color_map_texture(
+        &self,
+        name: &str,
+    ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>, String> {
+        let gl = self.gl.as_ref().ok_or("WebGL context not initialized")?;
+        let colormap = self
+            .color_map_registry
+            .borrow()
+            .get(name)
+            .ok_or_else(|| format!("ColorMap {} not found", name))?;
+        self.color_map_textures_cache
+            .borrow_mut()
+            .get_or_create(gl, &colormap)
+    }
 }
 
 impl Default for AppState {
@@ -138,7 +179,8 @@ impl Default for AppState {
             image_views: Default::default(),
             image_cache: Default::default(),
             view_cameras: Default::default(),
-            color_maps_cache: Default::default(),
+            color_map_registry: Default::default(),
+            color_map_textures_cache: Default::default(),
             configuration: Default::default(),
             drawing_options: Default::default(),
         }

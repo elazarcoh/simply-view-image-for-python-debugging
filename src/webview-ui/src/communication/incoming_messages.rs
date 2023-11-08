@@ -62,6 +62,8 @@ impl Display for Channels {
     }
 }
 
+
+// TODO: move Datatype to a more general place
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum Datatype {
     #[serde(rename = "uint8")]

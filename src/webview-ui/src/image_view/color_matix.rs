@@ -322,7 +322,8 @@ pub fn calculate_color_matrix(
     let modify_value_mult = IDENTITY;
     let modify_value_add = ADD_ZERO;
 
-    let (modify_value_mult, modify_value_add) = if drawing_options.high_contrast {
+    let heatmap: bool = matches!(drawing_options.coloring, Coloring::Heatmap{..}); 
+    let (modify_value_mult, modify_value_add) = if drawing_options.high_contrast || heatmap  {
         stretch_values_matrix(image_info, image_computed_info)
     } else {
         (modify_value_mult, modify_value_add)

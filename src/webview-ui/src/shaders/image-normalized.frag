@@ -11,6 +11,9 @@ uniform mat4 u_color_multiplier;
 uniform vec4 u_color_addition;
 uniform bool u_invert;
 
+uniform bool u_use_colormap;
+uniform sampler2D u_colormap;
+
 uniform vec2 u_buffer_dimension;
 uniform bool u_enable_borders;
 
@@ -35,6 +38,12 @@ void main()
 
   if(u_invert){
     color.rgb = 1.-color.rgb;
+  }
+
+  if (u_use_colormap) {
+    vec2 colormap_uv = vec2(color.r, 0.5);
+    vec4 colormap_color = texture(u_colormap, colormap_uv);
+    color.rgb = colormap_color.rgb;
   }
 
   float c = checkboard(gl_FragCoord.xy);

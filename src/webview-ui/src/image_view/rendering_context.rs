@@ -2,11 +2,11 @@ use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
-use crate::configurations::RenderingConfiguration;
+use crate::{configurations::RenderingConfiguration, webgl_utils};
 
 use super::{
     camera::Camera,
-    types::{ImageId, ViewId, TextureImage, DrawingOptions},
+    types::{DrawingOptions, ImageId, TextureImage, ViewId},
 };
 
 pub struct ImageViewData {
@@ -22,6 +22,10 @@ pub trait RenderingContext {
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
     fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions;
+    fn get_color_map_texture(
+        &self,
+        colormap_name: &str,
+    ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>, String>;
 }
 
 pub trait CameraContext {

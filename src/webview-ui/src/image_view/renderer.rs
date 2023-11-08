@@ -1,9 +1,11 @@
 use std::iter::FromIterator;
 
+use std::ops::Deref;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use glam::{Mat3, UVec2, Vec2, Vec3};
 
+use image::EncodableLayout;
 use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
@@ -24,7 +26,7 @@ use super::color_matix::calculate_color_matrix;
 use super::constants::VIEW_SIZE;
 use super::pixel_text_rendering::{PixelTextCache, PixelTextRenderer, PixelTextRenderingData};
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::types::{all_views, PixelValue, TextureImage, ViewId};
+use super::types::{all_views, Coloring, PixelValue, TextureImage, ViewId};
 
 struct Programs {
     normalized_image: ProgramBundle,
@@ -38,6 +40,7 @@ struct RenderingData {
     gl: GL,
     programs: Programs,
     text_renderer: PixelTextRenderer,
+    placeholder_texture: GLGuard<web_sys::WebGlTexture>,
 
     image_plane_buffer: BufferInfo,
 }
@@ -105,6 +108,25 @@ fn create_image_plane_attributes(
     )
 }
 
+fn create_placeholder_texture(gl: &GL) -> Result<GLGuard<web_sys::WebGlTexture>, String> {
+    const PLACEHOLDER_BYTES: &[u8] = &[0, 0, 0, 0];
+    webgl_utils::textures::create_texture_from_bytes(
+        gl,
+        PLACEHOLDER_BYTES,
+        1, // width
+        1, // height
+        1, // channels
+        Datatype::Float32,
+        webgl_utils::types::CreateTextureParametersBuilder::default()
+            .mag_filter(webgl_utils::constants::TextureMagFilter::Nearest)
+            .min_filter(webgl_utils::constants::TextureMinFilter::Nearest)
+            .wrap_s(webgl_utils::constants::TextureWrap::ClampToEdge)
+            .wrap_t(webgl_utils::constants::TextureWrap::ClampToEdge)
+            .build()
+            .unwrap(),
+    )
+}
+
 pub struct Renderer {}
 
 impl Renderer {
@@ -131,6 +153,8 @@ impl Renderer {
 
         let programs = Renderer::create_programs(&gl).unwrap();
 
+        let placeholder_texture = create_placeholder_texture(&gl).unwrap();
+
         let image_plane_attributes =
             create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
                 .unwrap();
@@ -148,6 +172,7 @@ impl Renderer {
             gl: gl.clone(),
             programs,
             text_renderer,
+            placeholder_texture,
             image_plane_buffer: image_plane_attributes,
         };
 
@@ -367,19 +392,43 @@ impl Renderer {
             &drawing_options,
         );
 
+        let mut uniform_values = HashMap::from([
+            ("u_texture", UniformValue::Texture(&texture.texture)),
+            ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
+            ("u_enable_borders", UniformValue::Bool(&enable_borders)),
+            ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
+            ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
+            ("u_color_addition", UniformValue::Vec4(&u_color_addition)),
+            ("u_invert", UniformValue::Bool(&drawing_options.invert)),
+        ]);
+
+        let colormap_texture = if let Coloring::Heatmap { name } = drawing_options.coloring {
+            let color_map_texture = rendering_context
+                .get_color_map_texture(&name)
+                .expect("Could not get color map texture");
+
+            let tex = color_map_texture.obj.clone();
+            Some(tex)
+        } else {
+            None
+        };
+
+        if colormap_texture.is_some() {
+            uniform_values.insert(
+                "u_colormap",
+                UniformValue::Texture(colormap_texture.as_ref().unwrap()),
+            );
+            uniform_values.insert("u_use_colormap", UniformValue::Bool(&true));
+        } else {
+            uniform_values.insert("u_use_colormap", UniformValue::Bool(&false));
+            uniform_values.insert(
+                "u_colormap",
+                UniformValue::Texture(&rendering_data.placeholder_texture),
+            );
+        }
+
         gl.use_program(Some(&program.program));
-        set_uniforms(
-            program,
-            &HashMap::from([
-                ("u_texture", UniformValue::Texture(&texture.texture)),
-                ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
-                ("u_enable_borders", UniformValue::Bool(&enable_borders)),
-                ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
-                ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
-                ("u_color_addition", UniformValue::Vec4(&u_color_addition)),
-                ("u_invert", UniformValue::Bool(&drawing_options.invert)),
-            ]),
-        );
+        set_uniforms(program, &uniform_values);
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 

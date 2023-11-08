@@ -93,6 +93,14 @@ fn rendering_context() -> impl RenderingContext {
                 .borrow()
                 .get_or_default(image_id)
         }
+
+        fn get_color_map_texture(
+            &self,
+            colormap_name: &str,
+        ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>, String> {
+            let dispatch = Dispatch::<AppState>::new();
+            dispatch.get().get_color_map_texture(colormap_name)
+        }
     }
 
     RenderingContextImpl {}

@@ -5,12 +5,6 @@ use web_sys::*;
 
 use super::types::*;
 
-fn create_texture(gl: &GL) -> Result<(), String> {
-    let tex = gl_guarded(gl.clone(), |gl| {
-        gl.create_texture().ok_or("Could not create texture")
-    })?;
-    Ok(())
-}
 
 cfg_if! {
     if #[cfg(feature = "image")] {

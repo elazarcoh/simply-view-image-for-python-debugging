@@ -1,14 +1,17 @@
-// #version 300 es
-
+#version 300 es
 precision mediump float;
 
-out vec4 fout_color;
+layout(location = 0) out vec4 fout_color;
 
 uniform float u_time;
-// uniform sampler2D u_texture;
+uniform sampler2D u_texture;
 
 
 void main() {
 
-    gl_FragColor = vec4(1.0, u_time, 1.0, 1.0);
+    vec2 uv = vec2(0.5, u_time);
+    vec4 color=texture(u_texture, uv);
+
+    // fout_color = vec4(1.0, u_time, 1.0, 1.0);
+    fout_color = color;
 }

@@ -218,6 +218,16 @@ impl GLSet for f32 {
     }
 }
 
+impl GLSet for WebGlTexture {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        let texture_unit = 0;
+        gl.uniform1i(Some(location), texture_unit); // TODO: need to fine the texture unit
+        gl.active_texture(GL::TEXTURE0 + texture_unit as u32);
+        gl.bind_texture(GL::TEXTURE_2D, Some(self));
+        // TODO: maybe need to bindSampler
+    }
+}
+
 pub trait GLVerifyType {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String>;
 }
@@ -247,6 +257,13 @@ impl GLVerifyType for f32 {
         impl_gl_verify_type::<f32>(WebGl2RenderingContext::FLOAT, gl_type)
     }
 }
+
+impl GLVerifyType for WebGlTexture {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type::<WebGlTexture>(WebGl2RenderingContext::SAMPLER_2D, gl_type)
+    }
+}
+
 
 // image crate integration
 cfg_if! {

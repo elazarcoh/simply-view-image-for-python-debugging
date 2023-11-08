@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use image;
@@ -220,10 +221,11 @@ impl Renderer {
 
         log::debug!("creating image...");
         let solid_image_data =
-            image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
+            image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
         log::debug!("created buffer");
         let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
-        log::debug!("created image");
+        log::debug!("created image. width: {}, height: {}", solid_image.width(), solid_image.height());
+        log::debug!("sample value [128, 128]: {:?}", solid_image.to_rgba8().get_pixel(128, 128));
         let tex = create_texture_from_image(gl, &solid_image)?;
         log::debug!("successfully created texture");
 
@@ -257,8 +259,9 @@ impl Renderer {
             .ok_or("Could not find attribute setter for a_position")?
             .setter)(&gl, &attr);
 
-        shader_program.uniform_setters.get("u_time").unwrap()(&gl, &0.0);
-        // shader_program.uniform_setters.get("u_texture").unwrap()(&gl, &tex);
+        shader_program.uniform_setters.get("u_time").unwrap()(&gl, &0.5);
+        let t = tex.deref();
+        shader_program.uniform_setters.get("u_texture").ok_or("could not find setter for u_texture")?(&gl, t);
 
         // Attach the time as a uniform for the GL context.
         gl.draw_arrays(GL::TRIANGLES, 0, 6);

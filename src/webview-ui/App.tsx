@@ -5,6 +5,8 @@ import RadioButtonGroup from "./components/RadioButtonGroup";
 import SelectableImage from "./components/SelectableImage";
 import React, { useEffect } from "react";
 import { messageHandlerInstance } from "./../utils/MessageHandler";
+import ImagesGridFlow from "./components/ImagesGrid";
+import { useMeasure } from "react-use";
 
 // enum GalleryStyle {
 //     Single,
@@ -36,23 +38,23 @@ const messageHandler = messageHandlerInstance<WebviewPushCommands>();
 function convertURIToImageData(URI: string): Promise<ImageData> {
     return new Promise(function (resolve, reject) {
         if (URI == null) return reject();
-        console.log("has URI");
+        // console.log("has URI");
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         if (context === null) return reject();
-        console.log("has context");
+        // console.log("has context");
         const image = new Image();
         image.addEventListener(
             "load",
             function () {
-                console.log("loaded image");
+                // console.log("loaded image");
                 canvas.width = image.width;
                 canvas.height = image.height;
-                console.log(
-                    "set canvas size: %d, %d",
-                    image.width,
-                    image.height
-                );
+                // console.log(
+                // "set canvas size: %d, %d",
+                // image.width,
+                // image.height
+                // );
                 context.drawImage(image, 0, 0, canvas.width, canvas.height);
                 resolve(
                     context.getImageData(0, 0, canvas.width, canvas.height)
@@ -70,7 +72,7 @@ const base64ToImageData = async (
     if (!base64.startsWith("data:image/")) {
         base64 = "data:image/png;base64," + base64;
     }
-    console.log("base64ToImageData");
+    // console.log("base64ToImageData");
     return convertURIToImageData(base64);
 };
 
@@ -92,7 +94,8 @@ const imageUrlToBase64 = async (url: string): Promise<string> => {
 
 function App() {
     const [label, setLabel] = React.useState("Hello World!");
-    const [imageData, setImageData] = React.useState<ImageData | null>(null);
+
+    const [images, setImages] = React.useState<ImageData[]>([]);
 
     useEffect(() => {
         messageHandler.listenToCommand("view-image", async (data) => {
@@ -108,36 +111,135 @@ function App() {
             }
         });
 
-        imageUrlToBase64("https://dummyimage.com/200x300&text=Hello+World!")
-            .then(base64ToImageData)
-            .then((img) => {
-                img && setImageData(img);
-            });
+        const urls = [
+            "https://dummyimage.com/200x300&text=1",
+            "https://dummyimage.com/200x300&text=2",
+            "https://dummyimage.com/200x300&text=3",
+            "https://dummyimage.com/200x300&text=3",
+        ];
+        const images = Promise.all(
+            urls.map((url) => imageUrlToBase64(url).then(base64ToImageData))
+        )
+            .then((images) =>
+                images.filter(
+                    (image): image is ImageData => image !== undefined
+                )
+            )
+            .then((images) =>
+                setImages([
+                    ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                    // ...images,
+                ])
+            );
     }, []);
 
     function handleHowdyClick() {
         vscode.postMessage({
             command: "hello",
             text: "Hey there partner! 🤠",
-            imageData: imageData,
         });
     }
 
+    const mainRef = React.useRef<HTMLDivElement>(null);
+
     return (
-        <main>
-            <h1>{label}</h1>
-            <VSCodeButton onClick={handleHowdyClick}>Howdy!</VSCodeButton>
+        <main className="main" ref={mainRef}>
+            {/* <h1>{label}</h1> */}
+            {/* <VSCodeButton onClick={handleHowdyClick}>Howdy!</VSCodeButton>
             <RadioButtonGroup defaultValue="b">
                 <VSCodeButton value="a">A</VSCodeButton>
                 <VSCodeButton value="b">B</VSCodeButton>
                 <VSCodeButton value="c">C</VSCodeButton>
-            </RadioButtonGroup>
-            {imageData && (
-                <SelectableImage
-                    names={["a", "b", "c", "d"]}
-                    imageData={imageData}
-                />
-            )}
+            </RadioButtonGroup> */}
+            {/* <div className="container">
+                <div className="image-wrap">
+                    <img src="http://placehold.it/150x150" alt="" />
+                </div>
+            </div> */}
+
+            <ImagesGridFlow images={images} ref={mainRef} />
+
+            {/* <div className="my-container"> */}
+            {/* <p>My Container</p> */}
+            {/* <div className="image-container">
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+
+                    <img
+                        className="img"
+                        src="https://via.placeholder.com/1550"
+                        alt="Placeholder square image"
+                    />
+                </div> */}
+            {/* <p>My Container</p> */}
+            {/* </div> */}
         </main>
     );
 }

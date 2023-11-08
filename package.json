@@ -383,6 +383,7 @@
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-use": "^17.4.0",
     "reflect-metadata": "^0.1.13",
     "sharp": "^0.31.3",
     "tmp": "^0.2.1",

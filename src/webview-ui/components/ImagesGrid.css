@@ -1,0 +1,13 @@
+:root {
+    --image-grid-gap: 3px;
+}
+.image-grid-flow {
+    display: grid;
+    gap: var(--image-grid-gap);
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.image-grid-flow > * {
+    display: flex;
+}

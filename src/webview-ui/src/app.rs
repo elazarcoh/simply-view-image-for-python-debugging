@@ -7,9 +7,8 @@ use wasm_bindgen::JsCast;
 use gloo::console;
 use gloo::events::EventListener;
 use js_sys::Date;
-use yew::{html, Component, Context, Html, NodeRef};
 use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext as GL, WebGlRenderingContext};
-
+use yew::{html, Component, Context, Html, NodeRef};
 
 // Define the possible messages which can be sent to the component
 pub enum Msg {
@@ -21,10 +20,10 @@ pub struct App {
     value: i64, // This will store the counter value
 
     node_ref: NodeRef,
+    div_ref: NodeRef,
 }
 
-impl App{
-
+impl App {
     fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         window()
             .unwrap()
@@ -104,9 +103,12 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self { value: 0,
-                node_ref: NodeRef::default(),
-         }
+        // Create a Closure from a Box<dyn Fn> - this has to be 'static
+        Self {
+            value: 0,
+            node_ref: NodeRef::default(),
+            div_ref: NodeRef::default(),
+        }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -126,7 +128,7 @@ impl Component for App {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <div>
+            <div ref={self.div_ref.clone()}>
                 <canvas ref={self.node_ref.clone()} />
 
                 <div class="panel">
@@ -164,7 +166,6 @@ impl Component for App {
             </div>
         }
     }
-
 
     fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
         // Only start the render loop if it's the first render

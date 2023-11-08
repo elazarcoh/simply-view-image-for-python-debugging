@@ -1,11 +1,21 @@
-mod app;
-mod com_types;
+mod components;
+mod renderer;
+mod vscode;
 
 use gloo_utils::format::JsValueSerdeExt;
+use std::rc::Rc;
+use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext};
 
+use gloo::events::EventListener;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
+use web_sys::HtmlElement;
+use yew::prelude::*;
+use yew_hooks::prelude::*;
 
+use crate::components::GLProvider;
+use crate::components::GLView;
+use crate::renderer::Renderer;
 
 // #[wasm_bindgen]
 // pub fn send_example_to_js() -> JsValue {
@@ -21,20 +31,6 @@ use web_sys::console;
 //     // let example: com_types::Example = val.into_serde().unwrap();
 // }
 
-#[wasm_bindgen()]
-extern "C" {
-    type WebviewApi;
-    fn acquireVsCodeApi() -> WebviewApi;
-
-    /**
-     * Post a message to the owner of the webview.
-     *
-     * @param message Data to post. Must be JSON serializable.
-     */
-    #[wasm_bindgen(method)]
-    fn postMessage(this: &WebviewApi, message: JsValue);
-}
-
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.
 //
@@ -42,6 +38,17 @@ extern "C" {
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+#[function_component]
+fn App() -> Html {
+
+    html! {
+            <GLProvider>
+                <div>{ "Hello World!" }</div>
+                <GLView />
+            </GLProvider>
+        }
+}
 
 // Called by our JS entry point to run the example
 #[wasm_bindgen(start)]
@@ -51,7 +58,9 @@ fn run() -> Result<(), JsValue> {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 
-    let vscode = acquireVsCodeApi();
+    console::clear();
+
+    // let vscode = vscode::acquireVsCodeApi();
 
     // Use `web_sys`'s global `window` function to get a handle on the global
     // window object.
@@ -72,7 +81,7 @@ fn run() -> Result<(), JsValue> {
 
     console::log_1(&"Hello using web-sys".into());
 
-    app::render();
+    yew::Renderer::<App>::new().render();
 
     Ok(())
 }

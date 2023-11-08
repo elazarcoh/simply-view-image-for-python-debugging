@@ -13,6 +13,10 @@
 	"settings": {
 		"files.associations": {
 			"vscode-ext-config.json": "jsonc"
-		}
+		},
+		"rust-analyzer.linkedProjects": [
+			"./src/webview-ui/Cargo.toml"
+		],
+		"rust-analyzer.showUnlinkedFileNotification": false
 	}
 }

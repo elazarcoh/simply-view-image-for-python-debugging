@@ -42,7 +42,9 @@ yew = { version = "0.20", features = ["csr"] }
 serde = { version = "1.0.183", features = ["derive"] }
 gloo-utils = { version = "0.1.7", features = ["serde"] }
 gloo-events = "0.2"
+gloo-timers = "0.3.0"
 tsify = "0.4.5"
+yew-hooks = "0.2.0"
 
 [dependencies.web-sys]
 version = "0.3.22"

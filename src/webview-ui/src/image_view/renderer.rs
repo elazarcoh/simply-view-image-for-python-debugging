@@ -210,7 +210,7 @@ impl Renderer {
                     return;
                 } else {
                     Renderer::render(&gl, &mut rendering_data, rendering_context.as_ref());
-                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));

@@ -58,6 +58,9 @@ enum_dispatch = "0.3.12"
 uuid = { version = "1.4.1", features = ["v4"] }
 glyph_brush = "0.7.8"
 bytemuck = "1.14.0"
+glyph_brush_draw_cache = "0.1.5"
+glyph_brush_layout = "0.2.3"
+ab_glyph = "0.2.22"
 
 [dependencies.web-sys]
 version = "0.3.22"

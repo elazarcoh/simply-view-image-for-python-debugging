@@ -184,16 +184,34 @@ fn create_attributes_setters(
     //   return attribSetters;
 }
 
-pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<String, UniformValue>) {
+pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<&str, UniformValue>) {
     uniforms
         .iter()
-        .for_each(|(name, value)| match program.uniform_setters.get(name) {
+        .for_each(|(name, value)| match program.uniform_setters.get(*name) {
             Some(setter) => setter(&program.gl, value),
             None => log::warn!(
                 "Could not find uniform setter for: {}. Maybe it is unused?",
                 name
             ),
         });
+}
+
+pub fn set_buffers_and_attributes(program: &ProgramBundle, buffer_info: &BufferInfo) {
+    buffer_info.attribs.iter().for_each(|(info)| {
+        if let Some(attr_setter) = program.attribute_setters.get(info.name.as_str()) {
+            (attr_setter.setter)(&program.gl, &info);
+        } else {
+            log::warn!(
+                "Could not find attribute setter for: {}. Maybe it is unused?",
+                info.name
+            );
+        }
+    });
+
+    if let Some(indices) = &buffer_info.indices {
+        let gl = &program.gl;
+        gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&indices));
+    }
 }
 
 pub fn create_program_bundle(

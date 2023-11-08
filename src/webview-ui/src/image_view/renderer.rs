@@ -1,5 +1,5 @@
 use std::ops::{Deref, IndexMut};
-use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use image;
 use wasm_bindgen::prelude::*;
@@ -10,18 +10,82 @@ use web_sys::{
 use yew::NodeRef;
 
 use crate::webgl_utils;
-use crate::webgl_utils::program::set_uniforms;
-use crate::webgl_utils::textures::create_texture_from_image;
-use crate::webgl_utils::types::{
-    take_into_owned, ArrayData, ArraySpec, CreateTextureParameters, CreateTextureParametersBuilder,
-    ProgramBundle, TextureMagFilter, TextureMinFilter, UniformValue,
+use crate::webgl_utils::attributes::{
+    create_attributes_from_array, create_buffer_info_from_arrays, Arrays,
 };
+use crate::webgl_utils::constants::*;
+use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
+use crate::webgl_utils::types::*;
 
 use super::image_view::ImageView;
-use super::rendering_context::{self, RenderingContext};
+use super::rendering_context::RenderingContext;
 
 struct Programs {
     basic: ProgramBundle,
+    image: ProgramBundle,
+}
+
+struct RenderingData {
+    gl: GL,
+    programs: Programs,
+
+    image_plane_buffer: BufferInfo,
+}
+
+fn create_image_plane_attributes(
+    gl: &GL,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+) -> Result<BufferInfo, String> {
+    let a_image_plane_position = ArraySpec {
+        name: "vin_position".to_string(),
+        data: (&[
+            x,
+            y, // bottom left
+            x + width,
+            y, // bottom right
+            x,
+            y + height, // top left
+            x + width,
+            y + height, // top right
+        ] as &[f32]),
+        num_components: 2,
+        normalized: true,
+        stride: None,
+        target: BindingPoint::ArrayBuffer,
+    };
+    let indices = ArraySpec {
+        name: "indices".to_string(),
+        data: (&[0_u16, 1, 2, 1, 2, 3] as &[u16]),
+        num_components: 3,
+        normalized: false,
+        stride: None,
+        target: BindingPoint::ElementArrayBuffer,
+    };
+    let a_texture_uv = ArraySpec {
+        name: "uv".to_string(),
+        data: (&[
+            0.0_f32, 0.0, // bottom left
+            0.0, 1.0, // bottom right
+            1.0, 0.0, // top left
+            1.0, 1.0, // top right
+        ] as &[f32]),
+        num_components: 2,
+        normalized: true,
+        stride: None,
+        target: BindingPoint::ArrayBuffer,
+    };
+
+    create_buffer_info_from_arrays(
+        gl,
+        Arrays {
+            f32_arrays: vec![a_image_plane_position, a_texture_uv],
+            u8_arrays: vec![],
+        },
+        Some(indices),
+    )
 }
 
 pub struct Renderer {}
@@ -50,6 +114,15 @@ impl Renderer {
 
         let programs = Renderer::create_programs(&gl).unwrap();
 
+        let image_plane_attributes =
+            create_image_plane_attributes(&gl, 0.0, 0.0, 1.0, 1.0).unwrap();
+
+        let rendering_data = RenderingData {
+            gl: gl.clone(),
+            programs,
+            image_plane_buffer: image_plane_attributes,
+        };
+
         // Gloo-render's request_animation_frame has this extra closure
         // wrapping logic running every frame, unnecessary cost.
         // Here constructing the wrapped closure just once.
@@ -64,7 +137,7 @@ impl Renderer {
                     let _ = cb.borrow_mut().take();
                     return;
                 } else {
-                    Renderer::render(&gl, &programs, rendering_context.as_ref());
+                    Renderer::render(&gl, &rendering_data, rendering_context.as_ref());
                     // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
@@ -83,14 +156,20 @@ impl Renderer {
             .attribute("a_position")
             .build()?;
 
+        let image_program = webgl_utils::GLProgramBuilder::new(&gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image.frag"))
+            .attribute("vin_position");
+
         Ok(Programs {
             basic: shader_program,
+            image: image_program.build()?,
         })
     }
 
     fn render(
         gl: &WebGl2RenderingContext,
-        programs: &Programs,
+        rendering_data: &RenderingData,
         rendering_context: &dyn RenderingContext,
     ) {
         let render_result = rendering_context
@@ -99,7 +178,7 @@ impl Renderer {
             .map(|(image_view, image_view_element)| {
                 Renderer::render_view(
                     gl,
-                    programs,
+                    rendering_data,
                     image_view,
                     image_view_element,
                     rendering_context,
@@ -113,7 +192,7 @@ impl Renderer {
 
     fn render_view(
         gl: &WebGl2RenderingContext,
-        programs: &Programs,
+        rendering_data: &RenderingData,
         image_view: &ImageView,
         image_view_element: &HtmlElement,
         rendering_context: &dyn RenderingContext,
@@ -150,7 +229,7 @@ impl Renderer {
         };
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
-        let basic_program = &programs.basic;
+        let basic_program = &rendering_data.programs.basic;
         gl.use_program(Some(&basic_program.program));
 
         let mut mat = glam::Mat4::IDENTITY;
@@ -159,8 +238,8 @@ impl Renderer {
         set_uniforms(
             &basic_program,
             &HashMap::from([
-                ("u_time".to_string(), UniformValue::Float(&0.5)),
-                ("u_transform".to_string(), UniformValue::Mat4(&mat)),
+                ("u_time", UniformValue::Float(&0.5)),
+                ("u_transform", UniformValue::Mat4(&mat)),
             ]),
         );
 
@@ -171,13 +250,13 @@ impl Renderer {
             let texture = &t.texture;
             set_uniforms(
                 &basic_program,
-                &HashMap::from([("u_texture".to_string(), UniformValue::Texture(&texture))]),
+                &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
             );
         }
 
         let array_info: ArraySpec<&[f32]> = ArraySpec {
             name: "a_position".to_string(),
-            data: ArrayData::Slice(&[
+            data: (&[
                 -0.5_f32, -0.5, // bottom left
                 0.5, -0.5, // bottom right
                 0.0, 0.5, // top
@@ -185,6 +264,7 @@ impl Renderer {
             num_components: 2,
             normalized: true,
             stride: None,
+            target: BindingPoint::ArrayBuffer,
         };
         let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
         (basic_program
@@ -196,6 +276,29 @@ impl Renderer {
         // Attach the time as a uniform for the GL context.
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
 
+        let image_id = image_view.model.image_id.as_ref().ok_or(
+            "Could not find texture for image_id. This should not happen, please report a bug.",
+        )?;
+        let texture = rendering_context.texture_by_id(&image_id).ok_or(
+            "Could not find texture for image_id. This should not happen, please report a bug.",
+        )?;
+        Renderer::render_image(rendering_data, &texture.texture);
+
         Ok(())
+    }
+
+    fn render_image(rendering_data: &RenderingData, texture: &WebGlTexture) {
+        let gl = &rendering_data.gl;
+        let program = &rendering_data.programs.image;
+
+        gl.use_program(Some(&program.program));
+        set_uniforms(
+            program,
+            &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
+        );
+        set_buffers_and_attributes(
+            program,
+            &rendering_data.image_plane_buffer,
+        );
     }
 }

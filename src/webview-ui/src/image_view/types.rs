@@ -97,8 +97,8 @@ impl TextureImage {
             &gl,
             &image,
             webgl_utils::types::CreateTextureParametersBuilder::default()
-                .mag_filter(webgl_utils::types::TextureMagFilter::Nearest)
-                .min_filter(webgl_utils::types::TextureMinFilter::Nearest)
+                .mag_filter(webgl_utils::constants::TextureMagFilter::Nearest)
+                .min_filter(webgl_utils::constants::TextureMinFilter::Nearest)
                 .build()
                 .unwrap(),
         )?;

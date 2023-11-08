@@ -30,7 +30,7 @@ cfg_if! {
             height as i32,
             0,
             format,
-            type_.into(),
+            type_ as GLConstant,
             image.as_bytes(),
             0,
         ).map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;

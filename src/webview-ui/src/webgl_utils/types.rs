@@ -10,7 +10,7 @@ use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
 
 use super::attributes::IntoJsArray;
-use super::constants::GL_CONSTANT_NAMES;
+pub use super::constants::*;
 
 pub type GLConstant = u32;
 
@@ -38,72 +38,6 @@ pub struct AttributeSetter {
 
 pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum ElementType {
-    Byte = GL::BYTE,
-    UnsignedByte = GL::UNSIGNED_BYTE,
-    Short = GL::SHORT,
-    UnsignedShort = GL::UNSIGNED_SHORT,
-    Int = GL::INT,
-    UnsignedInt = GL::UNSIGNED_INT,
-    Float = GL::FLOAT,
-}
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum GLPrimitive {
-    Float = GL::FLOAT,
-    FloatVec2 = GL::FLOAT_VEC2,
-    FloatVec3 = GL::FLOAT_VEC3,
-    FloatVec4 = GL::FLOAT_VEC4,
-}
-
-impl TryFrom<GLConstant> for GLPrimitive {
-    type Error = String;
-
-    fn try_from(value: GLConstant) -> Result<Self, Self::Error> {
-        match value {
-            GL::FLOAT => Ok(GLPrimitive::Float),
-            GL::FLOAT_VEC2 => Ok(GLPrimitive::FloatVec2),
-            GL::FLOAT_VEC3 => Ok(GLPrimitive::FloatVec3),
-            GL::FLOAT_VEC4 => Ok(GLPrimitive::FloatVec4),
-            _ => Err(format!("unknown element type: {}", value)),
-        }
-    }
-}
-
-impl Into<GLConstant> for ElementType {
-    fn into(self) -> GLConstant {
-        self as GLConstant
-    }
-}
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum TextureMagFilter {
-    Nearest = GL::NEAREST,
-    Linear = GL::LINEAR,
-}
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum TextureMinFilter {
-    Nearest = GL::NEAREST,
-    Linear = GL::LINEAR,
-    NearestMipmapNearest = GL::NEAREST_MIPMAP_NEAREST,
-    LinearMipmapNearest = GL::LINEAR_MIPMAP_NEAREST,
-    NearestMipmapLinear = GL::NEAREST_MIPMAP_LINEAR,
-    LinearMipmapLinear = GL::LINEAR_MIPMAP_LINEAR,
-}
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum TextureWrap {
-    ClampToEdge = GL::CLAMP_TO_EDGE,
-    MirroredRepeat = GL::MIRRORED_REPEAT,
-    Repeat = GL::REPEAT,
-}
 
 pub trait ElementTypeFor {
     const ELEMENT_TYPE: ElementType;
@@ -113,7 +47,19 @@ impl ElementTypeFor for f32 {
     const ELEMENT_TYPE: ElementType = ElementType::Float;
 }
 
+impl ElementTypeFor for u8 {
+    const ELEMENT_TYPE: ElementType = ElementType::UnsignedByte;
+}
+
+impl ElementTypeFor for u16 {
+    const ELEMENT_TYPE: ElementType = ElementType::UnsignedShort;
+}
+
 impl<T: ElementTypeFor> ElementTypeFor for &[T] {
+    const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
+}
+
+impl <T: ElementTypeFor, const N: usize> ElementTypeFor for &[T; N] {
     const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
 }
 
@@ -121,17 +67,13 @@ impl<T: ElementTypeFor> ElementTypeFor for Vec<T> {
     const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
 }
 
-pub enum ArrayData<T> {
-    Slice(T),
-    // Buffer(WebGlBuffer),
-}
-
 pub struct ArraySpec<T: IntoJsArray> {
     pub num_components: usize,
     pub name: String,
-    pub data: ArrayData<T>,
+    pub data: T,
     pub normalized: bool,
     pub stride: Option<i32>,
+    pub target: BindingPoint,
 }
 
 pub struct AttribInfo {
@@ -146,11 +88,20 @@ pub struct AttribInfo {
     //  drawType:      array.drawType,
 }
 
+impl AttribInfo {
+    pub fn renamed(self, new_name: &str) -> AttribInfo {
+        AttribInfo {
+            name: new_name.to_string(),
+            ..self
+        }
+    }
+}
+
 pub struct BufferInfo {
-    num_elements: usize,
-    element_type: ElementType,
-    indices: Option<WebGlBuffer>,
-    attribs: HashMap<String, AttribInfo>,
+    // num_elements: usize,
+    // element_type: ElementType,
+    pub indices: Option<GLGuard<WebGlBuffer>>,
+    pub attribs: Vec<AttribInfo>,
 }
 
 pub struct ProgramBundle {
@@ -353,9 +304,6 @@ impl GLVerifyType for &glam::Mat4 {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_MAT4, gl_type)
     }
 }
-
-
-
 
 // image crate integration
 cfg_if! {

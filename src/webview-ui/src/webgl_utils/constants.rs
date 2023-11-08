@@ -1,4 +1,5 @@
 use do_notation::m;
+use std::convert::TryFrom;
 use std::mem;
 
 use std::collections::HashMap;
@@ -8,6 +9,80 @@ use web_sys::*;
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 use super::types::*;
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum ElementType {
+    Byte = GL::BYTE,
+    UnsignedByte = GL::UNSIGNED_BYTE,
+    Short = GL::SHORT,
+    UnsignedShort = GL::UNSIGNED_SHORT,
+    Int = GL::INT,
+    UnsignedInt = GL::UNSIGNED_INT,
+    Float = GL::FLOAT,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum GLPrimitive {
+    Float = GL::FLOAT,
+    FloatVec2 = GL::FLOAT_VEC2,
+    FloatVec3 = GL::FLOAT_VEC3,
+    FloatVec4 = GL::FLOAT_VEC4,
+}
+
+impl TryFrom<GLConstant> for GLPrimitive {
+    type Error = String;
+
+    fn try_from(value: GLConstant) -> Result<Self, Self::Error> {
+        match value {
+            GL::FLOAT => Ok(GLPrimitive::Float),
+            GL::FLOAT_VEC2 => Ok(GLPrimitive::FloatVec2),
+            GL::FLOAT_VEC3 => Ok(GLPrimitive::FloatVec3),
+            GL::FLOAT_VEC4 => Ok(GLPrimitive::FloatVec4),
+            _ => Err(format!("unknown element type: {}", value)),
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum TextureMagFilter {
+    Nearest = GL::NEAREST,
+    Linear = GL::LINEAR,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum TextureMinFilter {
+    Nearest = GL::NEAREST,
+    Linear = GL::LINEAR,
+    NearestMipmapNearest = GL::NEAREST_MIPMAP_NEAREST,
+    LinearMipmapNearest = GL::LINEAR_MIPMAP_NEAREST,
+    NearestMipmapLinear = GL::NEAREST_MIPMAP_LINEAR,
+    LinearMipmapLinear = GL::LINEAR_MIPMAP_LINEAR,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum TextureWrap {
+    ClampToEdge = GL::CLAMP_TO_EDGE,
+    MirroredRepeat = GL::MIRRORED_REPEAT,
+    Repeat = GL::REPEAT,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum BindingPoint {
+    ArrayBuffer = GL::ARRAY_BUFFER,
+    ElementArrayBuffer = GL::ELEMENT_ARRAY_BUFFER,
+    UniformBuffer = GL::UNIFORM_BUFFER,
+    CopyReadBuffer = GL::COPY_READ_BUFFER,
+    CopyWriteBuffer = GL::COPY_WRITE_BUFFER,
+    PixelPackBuffer = GL::PIXEL_PACK_BUFFER,
+    PixelUnpackBuffer = GL::PIXEL_UNPACK_BUFFER,
+    TransformFeedbackBuffer = GL::TRANSFORM_FEEDBACK_BUFFER,
+}
 
 lazy_static! {
     // to_string for gl constants
@@ -48,7 +123,7 @@ fn float_attribute_setter(index: u32) -> AttributeSetter {
             gl.vertex_attrib_pointer_with_i32(
                 index,
                 attr.num_components as i32,
-                attr.gl_type.into(),
+                attr.gl_type as GLConstant,
                 attr.normalized,
                 attr.stride,
                 0,

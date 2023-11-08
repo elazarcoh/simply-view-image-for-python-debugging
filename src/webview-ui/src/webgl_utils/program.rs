@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::ops::Deref;
 
 use wasm_bindgen::JsCast;
 use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
 
+use super::constants::GL_ATTRIBUTE_SETTER_FOR_TYPE;
 use super::types::*;
 
 fn check_shader_status(
@@ -81,7 +83,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
     }
 }
 
-fn make_setter(gl_type: GLConstant, location: WebGlUniformLocation) -> GLSetter {
+fn make_uniform_setter(gl_type: GLConstant, location: WebGlUniformLocation) -> UniformSetter {
     Box::new(move |gl: &GL, value: &dyn GLValue| {
         if cfg!(debug_assertions) {
             value.verify(gl_type).unwrap();
@@ -106,7 +108,7 @@ trait GLVerifyType {
 fn create_uniform_setters(
     gl: &GL,
     program: &WebGlProgram,
-) -> Result<HashMap<String, GLSetter>, String> {
+) -> Result<HashMap<String, UniformSetter>, String> {
     let num_uniforms = gl
         .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
         .as_f64()
@@ -114,7 +116,7 @@ fn create_uniform_setters(
 
     log::debug!("num_uniforms: {}", num_uniforms);
 
-    let mut uniform_setters: HashMap<String, GLSetter> = HashMap::new();
+    let mut uniform_setters: HashMap<String, UniformSetter> = HashMap::new();
     for ii in 0..num_uniforms {
         let uniform_info = gl
             .get_active_uniform(program, ii)
@@ -131,13 +133,56 @@ fn create_uniform_setters(
         };
         let gl_type = uniform_info.type_();
         if let Some(location) = gl.get_uniform_location(program, uniform_info.name().as_str()) {
-            let setter = make_setter(gl_type, location);
+            let setter = make_uniform_setter(gl_type, location);
             log::debug!("name: {}", name);
             uniform_setters.insert(name.to_string(), setter);
         }
     }
 
     Ok(uniform_setters)
+}
+
+fn is_built_in(attrib_info: &WebGlActiveInfo) -> bool {
+    let name = attrib_info.name();
+    name.starts_with("gl_") || name.starts_with("webgl_")
+}
+
+fn create_attributes_setters(
+    gl: &GL,
+    program: &WebGlProgram,
+) -> Result<HashMap<String, AttributeSetter>, String> {
+    let num_attribs = gl
+        .get_program_parameter(program, GL::ACTIVE_ATTRIBUTES)
+        .as_f64()
+        .unwrap() as u32;
+
+    let mut attrib_setters: HashMap<String, AttributeSetter> = HashMap::new();
+    for ii in 0..num_attribs {
+        let attrib_info = gl
+            .get_active_attrib(program, ii)
+            .ok_or("Could not get active attribute")?;
+
+        if is_built_in(&attrib_info) {
+            continue;
+        }
+        //     const index = gl.getAttribLocation(program, attribInfo.name);
+        let index = gl.get_attrib_location(program, attrib_info.name().as_str());
+        //     const typeInfo = attrTypeMap[attribInfo.type];
+        let gl_type: Result<ElementType, _> = attrib_info.type_().try_into();
+        if let Ok(gl_type) = gl_type {
+            log::debug!("gl_type: {:?}", gl_type);
+            //     const setter = typeInfo.setter(gl, index, typeInfo);
+            if let Ok(setter) = GL_ATTRIBUTE_SETTER_FOR_TYPE.get(&gl_type).ok_or(format!(
+                "Could not find attribute setter for type: {:?}",
+                &gl_type
+            )) {
+                attrib_setters.insert(attrib_info.name().to_string(), setter(index as u32));
+            }
+        }
+    }
+
+    Ok(attrib_setters)
+    //   return attribSetters;
 }
 
 pub fn create_program_bundle(
@@ -185,6 +230,8 @@ pub fn create_program_bundle(
 
     let uniform_setters = create_uniform_setters(gl, &program)?;
 
+    let attribute_setters = create_attributes_setters(gl, &program)?;
+
     Ok(GLGuard {
         gl: gl.clone(),
         obj: ProgramBundle {
@@ -194,6 +241,7 @@ pub fn create_program_bundle(
                 take_into_owned(gl_fragment_shader),
             ],
             uniform_setters,
+            attribute_setters,
         },
     })
 }

@@ -64,10 +64,17 @@ where
     };
     let gl_type = T::ELEMENT_TYPE;
     let num_components = array.num_components;
+    let normalized = array.normalized;
+    let stride = array.stride.unwrap_or(0);
+
     Ok(AttribInfo {
         name: attrib_name,
         num_components,
         buffer,
         gl_type,
+        normalized,
+        stride,
     })
 }
+
+pub fn set_attribute(program_bundle: &ProgramBundle, attr: &AttribInfo) {}

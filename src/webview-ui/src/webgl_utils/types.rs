@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::mem;
 
 use std::ops::Deref;
@@ -13,11 +14,60 @@ use super::constants::GL_CONSTANT_NAMES;
 
 pub type GLConstant = u32;
 
-pub type GLSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
+pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
 
+pub struct AttributeSetter {
+    pub index: u32,
+    pub setter: Box<dyn Fn(&GL, &AttribInfo)>,
+}
+
+pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
 pub enum ElementType {
-    UnsignedByte = GL::UNSIGNED_BYTE,
+    Int = GL::INT,
+    IntVec2 = GL::INT_VEC2,
+    IntVec3 = GL::INT_VEC3,
+    IntVec4 = GL::INT_VEC4,
+    UnsignedInt = GL::UNSIGNED_INT,
+    UnsignedIntVec2 = GL::UNSIGNED_INT_VEC2,
+    UnsignedIntVec3 = GL::UNSIGNED_INT_VEC3,
+    UnsignedIntVec4 = GL::UNSIGNED_INT_VEC4,
+    Float = GL::FLOAT,
+    FloatVec2 = GL::FLOAT_VEC2,
+    FloatVec3 = GL::FLOAT_VEC3,
+    FloatVec4 = GL::FLOAT_VEC4,
+    Bool = GL::BOOL,
+    BoolVec2 = GL::BOOL_VEC2,
+    BoolVec3 = GL::BOOL_VEC3,
+    BoolVec4 = GL::BOOL_VEC4,
+}
+
+impl TryFrom<GLConstant> for ElementType {
+    type Error = String;
+
+    fn try_from(value: GLConstant) -> Result<Self, Self::Error> {
+        match value {
+            GL::FLOAT => Ok(ElementType::Float),
+            GL::FLOAT_VEC2 => Ok(ElementType::FloatVec2),
+            GL::FLOAT_VEC3 => Ok(ElementType::FloatVec3),
+            GL::FLOAT_VEC4 => Ok(ElementType::FloatVec4),
+            GL::INT => Ok(ElementType::Int),
+            GL::INT_VEC2 => Ok(ElementType::IntVec2),
+            GL::INT_VEC3 => Ok(ElementType::IntVec3),
+            GL::INT_VEC4 => Ok(ElementType::IntVec4),
+            GL::UNSIGNED_INT => Ok(ElementType::UnsignedInt),
+            GL::UNSIGNED_INT_VEC2 => Ok(ElementType::UnsignedIntVec2),
+            GL::UNSIGNED_INT_VEC3 => Ok(ElementType::UnsignedIntVec3),
+            GL::UNSIGNED_INT_VEC4 => Ok(ElementType::UnsignedIntVec4),
+            GL::BOOL => Ok(ElementType::Bool),
+            GL::BOOL_VEC2 => Ok(ElementType::BoolVec2),
+            GL::BOOL_VEC3 => Ok(ElementType::BoolVec3),
+            GL::BOOL_VEC4 => Ok(ElementType::BoolVec4),
+            _ => Err(format!("unknown element type: {}", value)),
+        }
+    }
 }
 
 impl Into<GLConstant> for ElementType {
@@ -30,12 +80,8 @@ pub trait ElementTypeFor {
     const ELEMENT_TYPE: ElementType;
 }
 
-impl ElementTypeFor for u8 {
-    const ELEMENT_TYPE: ElementType = ElementType::UnsignedByte;
-}
-
 impl ElementTypeFor for f32 {
-    const ELEMENT_TYPE: ElementType = ElementType::UnsignedByte;
+    const ELEMENT_TYPE: ElementType = ElementType::Float;
 }
 
 impl<T: ElementTypeFor> ElementTypeFor for &[T] {
@@ -55,6 +101,8 @@ pub struct ArraySpec<T: IntoJsArray> {
     pub num_components: usize,
     pub name: String,
     pub data: ArrayData<T>,
+    pub normalized: bool,
+    pub stride: Option<i32>,
 }
 
 pub struct AttribInfo {
@@ -62,9 +110,9 @@ pub struct AttribInfo {
     pub num_components: usize,
     pub buffer: WebGlBuffer,
     pub gl_type: ElementType,
-    //  normalize:     normalization,
-    //  stride:        array.stride || 0,
-    //  offset:        array.offset || 0,
+    pub normalized: bool,
+    pub stride: i32,
+    //  pub offset:
     //  divisor:       array.divisor === undefined ? undefined : array.divisor,
     //  drawType:      array.drawType,
 }
@@ -79,7 +127,8 @@ pub struct BufferInfo {
 pub struct ProgramBundle {
     pub program: WebGlProgram,
     pub shaders: Vec<WebGlShader>,
-    pub uniform_setters: HashMap<String, GLSetter>,
+    pub uniform_setters: HashMap<String, UniformSetter>,
+    pub attribute_setters: HashMap<String, AttributeSetter>,
 }
 
 pub trait GLDrop {

@@ -38,3 +38,38 @@ lazy_static! {
         m // return
     };
 }
+
+fn float_attribute_setter(index: u32) -> AttributeSetter {
+    AttributeSetter {
+        index,
+        setter: Box::new(move |gl: &GL, attr: &AttribInfo| {
+            gl.bind_buffer(GL::ARRAY_BUFFER, Some(&attr.buffer));
+            gl.enable_vertex_attrib_array(index);
+            gl.vertex_attrib_pointer_with_i32(
+                index,
+                attr.num_components as i32,
+                attr.gl_type.into(),
+                attr.normalized,
+                attr.stride,
+                0,
+            );
+        }),
+    }
+}
+
+fn int_attribute_setter(gl: &GL, index: u32) {}
+
+fn uint_attribute_setter(gl: &GL, index: u32) {}
+
+lazy_static! {
+    pub static ref GL_ATTRIBUTE_SETTER_FOR_TYPE: HashMap<ElementType, AttributeSetterBuilder> = {
+        let mut m = HashMap::<ElementType, AttributeSetterBuilder>::new();
+
+        m.insert(ElementType::Float, float_attribute_setter);
+        m.insert(ElementType::FloatVec2, float_attribute_setter);
+        m.insert(ElementType::FloatVec3, float_attribute_setter);
+        m.insert(ElementType::FloatVec4, float_attribute_setter);
+
+        m
+    };
+}

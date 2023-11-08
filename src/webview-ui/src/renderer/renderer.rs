@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use wasm_bindgen::prelude::*;
-use web_sys::{HtmlElement, WebGlRenderingContext};
+use web_sys::{HtmlElement, WebGlRenderingContext, HtmlCanvasElement};
 use yew::NodeRef;
 
 use super::{InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
@@ -145,21 +145,19 @@ impl Renderer {
     }
 
     fn render_view(gl: &WebGlRenderingContext, v: &ViewHolder, e: &HtmlElement) {
+        let canvas = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
         let rect = e.get_bounding_client_rect();
+
+   // The following two lines set the size (in CSS pixels) of
+    // the drawing buffer to be identical to the size of the
+    // canvas HTML element, as determined by CSS.
+        canvas.set_width(canvas.client_width() as u32);
+        canvas.set_height(canvas.client_height() as u32);
 
         let width = rect.right() - rect.left();
         let height = rect.bottom() - rect.top();
         let left = rect.left();
-        // let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
-        let bottom = 100;
-
-        // log::debug!(
-        //     "width: {}, height: {}, left: {}, bottom: {}",
-        //     width,
-        //     height,
-        //     left,
-        //     bottom
-        // );
+        let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
 
         gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
@@ -168,45 +166,4 @@ impl Renderer {
         gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
     }
 
-    //     gl.enable(WebGlRenderingContext::SCISSOR_TEST);
-    //         div_ref.cast::<HtmlElement>().map(|elem| {
-    //             console::log!("div_ref cast to HtmlElement");
-    //             let rect = elem.get_bounding_client_rect();
-
-    //             if (rect.bottom() < 0.0
-    //                 || rect.top()
-    //                     > gl.canvas()
-    //                         .unwrap()
-    //                         .dyn_into::<HtmlCanvasElement>()
-    //                         .unwrap()
-    //                         .client_height() as f64)
-    //                 || (rect.right() < 0.0
-    //                     || rect.left()
-    //                         > gl.canvas()
-    //                             .unwrap()
-    //                             .dyn_into::<HtmlCanvasElement>()
-    //                             .unwrap()
-    //                             .client_width() as f64)
-    //             {
-    //                 console::log!("GLView div_ref not visible");
-    //             }
-
-    //             let width = rect.right() - rect.left();
-    //             let height = rect.bottom() - rect.top();
-    //             let left = rect.left();
-    //             // let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
-    //             let bottom = 100;
-
-    //             console::log!(
-    //                 "width: {}, height: {}, left: {}, bottom: {}",
-    //                 width,
-    //                 height,
-    //                 left,
-    //                 bottom
-    //             );
-    //             gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
-    //             gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
-
-    //             gl.clear_color(1.0, 0.0, 0.0, 1.0);
-    //             gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
 }

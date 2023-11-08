@@ -6,8 +6,8 @@ use web_sys::{
 };
 use yew::NodeRef;
 
-use super::gl_utils;
 use super::{ImageCache, InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
+use crate::webgl_utils;
 
 fn views(vt: ViewsType) -> Vec<String> {
     match vt {
@@ -230,15 +230,15 @@ impl Renderer {
         gl.bind_buffer(GL::ARRAY_BUFFER, Some(&vertex_buffer));
         gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &verts, GL::STATIC_DRAW);
 
-        let shader_program = gl_utils::GLProgramBuilder::new(&gl)
+        let shader_program = webgl_utils::GLProgramBuilder::new(&gl)
             .vertex_shader(vert_code)
             .fragment_shader(frag_code)
             .attribute("a_position")
             .build()?;
-            
+
         gl.use_program(Some(&shader_program.program));
 
-        shader_program.uniform_setters.get("u_time").unwrap()(&gl, 1.0);
+        shader_program.uniform_setters.get("u_time").unwrap()(&gl, &0.0);
 
         // Attach the position vector as an attribute for the GL context.
         let position = gl.get_attrib_location(&shader_program.program, "a_position") as u32;

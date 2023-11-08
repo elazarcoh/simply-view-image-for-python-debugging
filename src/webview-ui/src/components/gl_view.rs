@@ -3,12 +3,12 @@ use gloo_timers::callback::Interval;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext};
+use web_sys::{ HtmlCanvasElement, HtmlElement, WebGl2RenderingContext };
 use yew::prelude::*;
 use yew_hooks::use_raf;
 
 use crate::components::renderer_context::RendererContext;
-use crate::renderer::{InSingleViewName, InViewName, Renderer};
+use crate::renderer::{ InSingleViewName, InViewName, Renderer };
 
 // use crate::components::glcontext::use_gl_context;
 // use crate::components::GL;

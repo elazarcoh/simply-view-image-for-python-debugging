@@ -934,8 +934,6 @@ fn create_program_bundle(
 
     validate_program(gl, &program)?;
 
-    create_uniform_setters(gl, &program);
-
     Ok(GLGuard {
         gl: gl.clone(),
         obj: ProgramBundle {

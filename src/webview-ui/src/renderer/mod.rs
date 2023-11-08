@@ -7,4 +7,3 @@ pub use types::*;
 mod rendering;
 mod image_cache;
 pub use image_cache::*;
-mod gl_utils;

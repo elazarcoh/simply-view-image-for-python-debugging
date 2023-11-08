@@ -8,18 +8,18 @@ use base64::{engine::general_purpose, Engine as _};
 mod components;
 mod renderer;
 mod vscode;
+mod webgl_utils;
 use cfg_if::cfg_if;
 use gloo_utils::format::JsValueSerdeExt;
-use log::{info, warn};
+
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
-use web_sys::{window, HtmlCanvasElement, WebGl2RenderingContext};
+use web_sys::window;
 
 use gloo::events::EventListener;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
-use web_sys::HtmlElement;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 

@@ -64,7 +64,7 @@ struct TextureInfo {
 use std::collections::HashMap;
 
 lazy_static! {
-    static ref HASHMAP: HashMap<u32, &'static str> = {
+    static ref HASHMAP: HashMap<u32, TextureInfo> = {
         let mut m = HashMap::new();
         m.insert(
             WebGl2RenderingContext::ALPHA,
@@ -72,10 +72,660 @@ lazy_static! {
                 texture_format: WebGl2RenderingContext::ALPHA,
                 color_renderable: true,
                 texture_filterable: true,
-                bytes_per_element: vec![1, 2, 2, 4],
-                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE, WebGl2RenderingContext::HALF_FLOAT, WebGl2RenderingContext::HALF_FLOAT_OES, WebGl2RenderingContext::FLOAT],
+                bytes_per_element: vec![1, 2, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::FLOAT,
+                ],
             },
         );
+        m.insert(
+            WebGl2RenderingContext::LUMINANCE,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::LUMINANCE,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![1, 2, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::FLOAT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::LUMINANCE_ALPHA,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::LUMINANCE_ALPHA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![2, 4, 8],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::FLOAT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![3, 6, 12, 2],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::UNSIGNED_SHORT_5_6_5,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![4, 8, 16, 2, 2],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::UNSIGNED_SHORT_4_4_4_4,
+                    WebGl2RenderingContext::UNSIGNED_SHORT_5_5_5_1,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::DEPTH_COMPONENT,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::DEPTH_COMPONENT,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![2, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_INT,
+                    WebGl2RenderingContext::UNSIGNED_SHORT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![1],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R8_SNORM,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![1],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R16F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![4, 2],
+                datatype: vec![
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R32F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::FLOAT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R8UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![1],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R8I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![1],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R16UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![2],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R16I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![2],
+                datatype: vec![WebGl2RenderingContext::SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R32UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R32I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RED_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![2],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG8_SNORM,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![2],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG16F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![8, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG32F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![8],
+                datatype: vec![WebGl2RenderingContext::FLOAT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG8UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![2],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG8I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![2],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG16UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG16I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG32UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![8],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RG32I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RG_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![8],
+                datatype: vec![WebGl2RenderingContext::INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![3],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::SRGB8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![3],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB565,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![3, 2],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::UNSIGNED_SHORT_5_6_5,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB8_SNORM,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![3],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::R11F_G11F_B10F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![12, 6, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::UNSIGNED_INT_10F_11F_11F_REV,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB9_E5,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![12, 6, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                    WebGl2RenderingContext::UNSIGNED_INT_5_9_9_9_REV,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB16F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![12, 6],
+                datatype: vec![
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB32F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![12],
+                datatype: vec![WebGl2RenderingContext::FLOAT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB8UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB_INTEGER,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![3],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB8I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB_INTEGER,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![3],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB16UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB_INTEGER,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![6],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB16I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB_INTEGER,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![6],
+                datatype: vec![WebGl2RenderingContext::SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB32UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB_INTEGER,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![12],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB32I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGB_INTEGER,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![12],
+                datatype: vec![WebGl2RenderingContext::INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::SRGB8_ALPHA8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA8_SNORM,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB5_A1,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![4, 2, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::UNSIGNED_SHORT_5_5_5_1,
+                    WebGl2RenderingContext::UNSIGNED_INT_2_10_10_10_REV,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA4,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![4, 2],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    WebGl2RenderingContext::UNSIGNED_SHORT_4_4_4_4,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB10_A2,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: true,
+                texture_filterable: true,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT_2_10_10_10_REV],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA16F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: false,
+                texture_filterable: true,
+                bytes_per_element: vec![16, 8],
+                datatype: vec![
+                    WebGl2RenderingContext::FLOAT,
+                    WebGl2RenderingContext::HALF_FLOAT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA32F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA,
+                color_renderable: false,
+                texture_filterable: false,
+                bytes_per_element: vec![16],
+                datatype: vec![WebGl2RenderingContext::FLOAT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA8UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA8I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::BYTE],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGB10_A2UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT_2_10_10_10_REV],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA16UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![8],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA16I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![8],
+                datatype: vec![WebGl2RenderingContext::SHORT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA32I,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![16],
+                datatype: vec![WebGl2RenderingContext::INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::RGBA32UI,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::RGBA_INTEGER,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![16],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::DEPTH_COMPONENT16,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::DEPTH_COMPONENT,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![2, 4],
+                datatype: vec![
+                    WebGl2RenderingContext::UNSIGNED_SHORT,
+                    WebGl2RenderingContext::UNSIGNED_INT,
+                ],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::DEPTH_COMPONENT24,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::DEPTH_COMPONENT,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::DEPTH_COMPONENT32F,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::DEPTH_COMPONENT,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::FLOAT],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::DEPTH24_STENCIL8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::DEPTH_STENCIL,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::UNSIGNED_INT_24_8],
+            },
+        );
+        m.insert(
+            WebGl2RenderingContext::DEPTH32F_STENCIL8,
+            TextureInfo {
+                texture_format: WebGl2RenderingContext::DEPTH_STENCIL,
+                color_renderable: true,
+                texture_filterable: false,
+                bytes_per_element: vec![4],
+                datatype: vec![WebGl2RenderingContext::FLOAT_32_UNSIGNED_INT_24_8_REV],
+            },
+        );
+
         m
     };
 }

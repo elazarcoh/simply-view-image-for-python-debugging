@@ -12,7 +12,10 @@ use yew::NodeRef;
 use super::{ImageCache, InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
 use crate::webgl_utils;
 use crate::webgl_utils::textures::create_texture_from_image;
-use crate::webgl_utils::types::{ArrayData, ArraySpec};
+use crate::webgl_utils::types::{
+    take_into_owned, ArrayData, ArraySpec, CreateTextureParameters, CreateTextureParametersBuilder,
+    TextureMagFilter, TextureMinFilter,
+};
 
 fn views(vt: ViewsType) -> Vec<String> {
     match vt {
@@ -80,6 +83,7 @@ pub struct Renderer {
     gl: Option<WebGl2RenderingContext>,
     view_holders: Rc<RefCell<ViewHolders>>,
     image_cache: Rc<RefCell<ImageCache>>,
+    tmp_img: Option<image::DynamicImage>,
 }
 
 impl Renderer {
@@ -103,6 +107,7 @@ impl Renderer {
                     .map(|vt| (vt, make_map(vt))),
             )))),
             image_cache,
+            tmp_img: None,
         }
     }
 
@@ -125,39 +130,22 @@ impl Renderer {
         let cb = Rc::new(RefCell::new(None));
 
         let texture = {
-            let texture = gl
-                .create_texture()
-                .ok_or("failed to create texture")
-                .unwrap();
-            gl.bind_texture(GL::TEXTURE_2D, Some(&texture));
+            let solid_image_data =
+                image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
+            let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
 
-            // Because images have to be downloaded over the internet
-            // they might take a moment until they are ready.
-            // Until then put a single pixel in the texture so we can
-            // use it immediately. When the image has finished downloading
-            // we'll update the texture with the contents of the image.
-            let level = 0;
-            let internalFormat = GL::RGBA as i32;
-            let width = 1;
-            let height = 1;
-            let border = 0;
-            let srcFormat = GL::RGBA;
-            let srcType = GL::UNSIGNED_BYTE;
-            let pixel = [0u8, 0, 255, 255]; // opaque blue
-            gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
-                GL::TEXTURE_2D,
-                level,
-                internalFormat,
-                width,
-                height,
-                border,
-                srcFormat,
-                srcType,
-                &pixel,
-                0,
-            ).map_err(|e| format!("failed to set pixel: {:?}", e)).unwrap();
+            let tex = create_texture_from_image(
+                &gl,
+                &solid_image,
+                CreateTextureParametersBuilder::default()
+                    .mag_filter(TextureMagFilter::Nearest)
+                    .min_filter(TextureMinFilter::Nearest)
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
 
-            Some(texture)
+            Some(take_into_owned(tex))
         };
 
         *cb.borrow_mut() = Some(Closure::wrap(Box::new({
@@ -209,7 +197,11 @@ impl Renderer {
             .image_id = Some(image_id.to_string());
     }
 
-    fn render(gl: &WebGl2RenderingContext, view_holders: &Rc<RefCell<ViewHolders>>, texture: Option<&WebGlTexture>) {
+    fn render(
+        gl: &WebGl2RenderingContext,
+        view_holders: &Rc<RefCell<ViewHolders>>,
+        texture: Option<&WebGlTexture>,
+    ) {
         let render_result = view_holders
             .borrow()
             .visible_nodes()
@@ -256,23 +248,6 @@ impl Renderer {
 
         gl.clear_color(1.0, 0.0, 0.0, 1.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-
-        // log::debug!("creating image...");
-        // let solid_image_data =
-        //     image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
-        // log::debug!("created buffer");
-        // let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
-        // log::debug!(
-        //     "created image. width: {}, height: {}",
-        //     solid_image.width(),
-        //     solid_image.height()
-        // );
-        // log::debug!(
-        //     "sample value [128, 128]: {:?}",
-        //     solid_image.to_rgba8().get_pixel(128, 128)
-        // );
-        // let tex = create_texture_from_image(gl, &solid_image)?;
-        // log::debug!("successfully created texture");
 
         let vert_code = include_str!("../shaders/basic.vert");
         let frag_code = include_str!("../shaders/basic.frag");

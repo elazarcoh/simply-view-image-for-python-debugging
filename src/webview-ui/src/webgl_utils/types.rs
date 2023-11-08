@@ -12,30 +12,6 @@ use web_sys::*;
 use super::attributes::IntoJsArray;
 use super::constants::GL_CONSTANT_NAMES;
 
-// pub struct MoveOnly<T> {
-//     obj: T,
-// }
-
-// impl<T> MoveOnly<T> {
-//     pub fn new(obj: T) -> Self {
-//         Self { obj }
-//     }
-// }
-
-// impl<T> Deref for MoveOnly<T> {
-//     type Target = T;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.obj
-//     }
-// }
-
-// impl<T: GLDrop> GLDrop for MoveOnly<T> {
-//     fn drop(&self, gl: &GL) {
-//         self.obj.drop(gl);
-//     }
-// }
-
 pub type GLConstant = u32;
 
 pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
@@ -87,6 +63,33 @@ impl Into<GLConstant> for ElementType {
         self as GLConstant
     }
 }
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum TextureMagFilter {
+    Nearest = GL::NEAREST,
+    Linear = GL::LINEAR,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum TextureMinFilter {
+    Nearest = GL::NEAREST,
+    Linear = GL::LINEAR,
+    NearestMipmapNearest = GL::NEAREST_MIPMAP_NEAREST,
+    LinearMipmapNearest = GL::LINEAR_MIPMAP_NEAREST,
+    NearestMipmapLinear = GL::NEAREST_MIPMAP_LINEAR,
+    LinearMipmapLinear = GL::LINEAR_MIPMAP_LINEAR,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum TextureWrap {
+    ClampToEdge = GL::CLAMP_TO_EDGE,
+    MirroredRepeat = GL::MIRRORED_REPEAT,
+    Repeat = GL::REPEAT,
+}
+
 
 pub trait ElementTypeFor {
     const ELEMENT_TYPE: ElementType;
@@ -141,6 +144,19 @@ pub struct ProgramBundle {
     pub shaders: Vec<WebGlShader>,
     pub uniform_setters: HashMap<String, UniformSetter>,
     pub attribute_setters: HashMap<String, AttributeSetter>,
+}
+
+#[derive(Debug, Builder)]
+#[builder(setter(into, strip_option))]
+pub struct CreateTextureParameters {
+    #[builder(default)]
+    pub mag_filter: Option<TextureMagFilter>,
+    #[builder(default)]
+    pub min_filter: Option<TextureMinFilter>,
+    #[builder(default)]
+    pub wrap_s: Option<TextureWrap>,
+    #[builder(default)]
+    pub wrap_t: Option<TextureWrap>,
 }
 
 pub trait GLDrop {
@@ -263,7 +279,6 @@ impl GLVerifyType for WebGlTexture {
         impl_gl_verify_type::<WebGlTexture>(WebGl2RenderingContext::SAMPLER_2D, gl_type)
     }
 }
-
 
 // image crate integration
 cfg_if! {

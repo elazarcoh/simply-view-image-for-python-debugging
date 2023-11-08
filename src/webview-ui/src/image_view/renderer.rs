@@ -260,18 +260,18 @@ impl Renderer {
         let tl = Vec2::new(tlx, tly);
         let br = Vec2::new(brx, bry);
 
-        let lower_x_px = i32::max(0, (f32::floor(tl.x * image_size.width) as i32) - 1);
-        let lower_y_px = i32::max(0, (f32::floor(tl.y * image_size.height) as i32) - 1);
+        let lower_x_px = i32::max(0, (f32::floor(tl.x) as i32) - 1);
+        let lower_y_px = i32::max(0, (f32::floor(tl.y) as i32) - 1);
         let upper_x_px = i32::min(
             image_size.width as i32,
-            (f32::ceil(br.x * image_size.width) as i32) + 1,
+            (f32::ceil(br.x) as i32) + 1,
         );
         let upper_y_px = i32::min(
             image_size.height as i32,
-            (f32::ceil(br.y * image_size.height) as i32) + 1,
+            (f32::ceil(br.y) as i32) + 1,
         );
 
-        let pixel_size_device = (canvas_size.width / ((brx - tlx) * image_size.width)) as i32;
+        let pixel_size_device = (canvas_size.width / (brx - tlx)) as i32;
 
         PixelsInformation {
             lower_x_px,

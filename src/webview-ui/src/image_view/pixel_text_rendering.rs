@@ -77,6 +77,17 @@ impl PixelValue {
             Self::Rgba(r, g, b, a) => format!("{:.2}\n{:.2}\n{:.2}\n{:.2}", r, g, b, a),
         }
     }
+
+    fn to_color(&self) -> Vec4 {
+        match self {
+            Self::Rgba(r, g, b, a) => Vec4::new(
+                *r as f32 / 255.0,
+                *g as f32 / 255.0,
+                *b as f32 / 255.0,
+                *a as f32 / 255.0,
+            ),
+        }
+    }
 }
 
 struct PixelTextData {
@@ -444,10 +455,10 @@ impl PixelTextRenderer {
                     "u_gylphTexture",
                     UniformValue::Texture(&self.glyph_texture.texture),
                 ),
-                // (
-                //     "u_pixelColor",
-                //     UniformValue::Vec4(&Vec4::new(1.0, 0.0, 0.0, 1.0)),
-                // ),
+                (
+                    "u_pixelColor",
+                    UniformValue::Vec4(&data.pixel_value.to_color()),
+                ),
                 (
                     "u_imageToScreenMatrix",
                     UniformValue::Mat3(&(*data.image_coords_to_view_coord_mat * text_to_image)),
@@ -460,26 +471,6 @@ impl PixelTextRenderer {
         );
 
         let px = self.get_cache_pixel(data).unwrap();
-
-        // {
-        //     let v_u8 = utils::buffer_content_as_vec(
-        //         &self.gl,
-        //         &px.buffer_info.get_attrib("vin_position").unwrap().buffer,
-        //         6 * 2 * 4,
-        //     );
-        //     let v_f32: &[f32] = bytemuck::cast_slice(&v_u8);
-        //     log::debug!("Pos: {:?}", v_f32);
-        // }
-        // {
-        //     let v_u8 = utils::buffer_content_as_vec(
-        //         &self.gl,
-        //         &px.buffer_info.get_attrib("uv").unwrap().buffer,
-        //         6 * 2 * 4,
-        //     );
-        //     let v_f32: &[f32] = bytemuck::cast_slice(&v_u8);
-        //     log::debug!("UV: {:?}", v_f32);
-        // }
-        // log::debug!("num_elements: {:?}", px.buffer_info.num_elements);
 
         set_buffers_and_attributes(&self.program, &px.buffer_info);
         draw_buffer_info(gl, &px.buffer_info, DrawMode::Triangles);

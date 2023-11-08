@@ -379,12 +379,19 @@ impl Renderer {
         let texture = rendering_context.texture_by_id(&image_id).ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
-        Renderer::render_image(rendering_data, texture, image_view_data, view_name);
+        Renderer::render_image(
+            rendering_context,
+            rendering_data,
+            texture,
+            image_view_data,
+            view_name,
+        );
 
         Ok(())
     }
 
     fn render_image(
+        rendering_context: &dyn RenderingContext,
         rendering_data: &mut RenderingData,
         texture: Rc<TextureImage>,
         image_view_data: &ImageViewData,
@@ -392,6 +399,7 @@ impl Renderer {
     ) {
         let gl = &rendering_data.gl;
         let program = &rendering_data.programs.image;
+        let config = rendering_context.rendering_configuration();
 
         let canvas = Renderer::canvas(gl);
         let canvas_size = Size {
@@ -403,7 +411,8 @@ impl Renderer {
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
         let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
-        let enable_borders = pixels_info.image_pixel_size_device > 30; // TODO: make this configurable/constant
+        let enable_borders =
+            pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_border as _;
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
@@ -420,28 +429,32 @@ impl Renderer {
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
-        let pixel_text_cache = rendering_data
-            .pixel_text_cache_per_view
-            .get_mut(view_name)
-            .unwrap();
+        let to_render_text =
+            pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_values as _;
+        if to_render_text {
+            let pixel_text_cache = rendering_data
+                .pixel_text_cache_per_view
+                .get_mut(view_name)
+                .unwrap();
 
-        for x in pixels_info.lower_x_px..pixels_info.upper_x_px {
-            for y in pixels_info.lower_y_px..pixels_info.upper_y_px {
-                let image_pixels_to_view = Mat3::from_scale(Vec2::new(
-                    VIEW_SIZE.width / texture.image_size().width,
-                    VIEW_SIZE.height / texture.image_size().height,
-                ));
+            for x in pixels_info.lower_x_px..pixels_info.upper_x_px {
+                for y in pixels_info.lower_y_px..pixels_info.upper_y_px {
+                    let image_pixels_to_view = Mat3::from_scale(Vec2::new(
+                        VIEW_SIZE.width / texture.image_size().width,
+                        VIEW_SIZE.height / texture.image_size().height,
+                    ));
 
-                let pixel = PixelLoc::new(x as _, y as _);
-                let pixel_value = PixelValue::from_image(&texture.image, &pixel);
+                    let pixel = PixelLoc::new(x as _, y as _);
+                    let pixel_value = PixelValue::from_image(&texture.image, &pixel);
 
-                rendering_data.text_renderer.render(PixelTextRenderingData {
-                    pixel_text_cache,
-                    pixel_loc: &pixel,
-                    pixel_value: &pixel_value,
-                    image_coords_to_view_coord_mat: &image_pixels_to_view,
-                    view_projection: &view_projection,
-                });
+                    rendering_data.text_renderer.render(PixelTextRenderingData {
+                        pixel_text_cache,
+                        pixel_loc: &pixel,
+                        pixel_value: &pixel_value,
+                        image_coords_to_view_coord_mat: &image_pixels_to_view,
+                        view_projection: &view_projection,
+                    });
+                }
             }
         }
     }

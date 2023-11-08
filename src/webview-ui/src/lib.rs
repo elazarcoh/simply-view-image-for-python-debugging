@@ -10,12 +10,14 @@ use base64::{engine::general_purpose, Engine as _};
 mod common;
 mod communication;
 mod components;
+mod configurations;
 mod image_view;
 mod math_utils;
 mod mouse_events;
 mod vscode;
 mod webgl_utils;
 use cfg_if::cfg_if;
+use configurations::Configuration;
 use gloo_utils::format::JsValueSerdeExt;
 
 use image_view::camera::ViewsCameras;
@@ -42,6 +44,7 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use crate::components::GLView;
+use crate::configurations::ConfigurationProvider;
 use crate::image_view::image_cache::ImageCache;
 use crate::image_view::renderer::Renderer;
 use crate::image_view::types::InSingleViewName;
@@ -255,6 +258,7 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
     pub renderer: RefCell<Renderer>,
+    configuration: Configuration,
     pub texture_image_cache: RefCell<ImageCache>,
     pub image_views: RefCell<ImageViews>,
     views_cameras: RefCell<ViewsCameras>,
@@ -299,8 +303,11 @@ impl RenderingContext for Coordinator {
             image_id: self.image_views.borrow().get_image_id(view_id),
         }
     }
-}
 
+    fn rendering_configuration(&self) -> &configurations::RenderingConfiguration {
+        &self.configuration.rendering
+    }
+}
 
 impl CameraContext for Coordinator {
     fn get_camera_for_view(&self, view_id: InViewName) -> image_view::camera::Camera {
@@ -314,21 +321,18 @@ impl CameraContext for Coordinator {
 
 #[function_component]
 fn App() -> Html {
-    let coordinator = use_memo(
-        {
-            let vscode = vscode::acquire_vscode_api();
-            |_| Coordinator {
-                gl: RefCell::new(None),
-                renderer: RefCell::new(Renderer::new()),
-                texture_image_cache: RefCell::new(ImageCache::new()),
-                image_views: RefCell::new(ImageViews::new()),
-                views_cameras: RefCell::new(ViewsCameras::new()),
-                vscode_message_handler: VSCodeMessageHandler::new(vscode),
-            }
-        },
-        (),
-    );
-
+    let coordinator = use_memo((), {
+        let vscode = vscode::acquire_vscode_api();
+        |_| Coordinator {
+            gl: RefCell::new(None),
+            renderer: RefCell::new(Renderer::new()),
+            configuration: Configuration::default(),
+            texture_image_cache: RefCell::new(ImageCache::new()),
+            image_views: RefCell::new(ImageViews::new()),
+            views_cameras: RefCell::new(ViewsCameras::new()),
+            vscode_message_handler: VSCodeMessageHandler::new(vscode),
+        }
+    });
 
     let canvas_ref = use_node_ref();
 
@@ -361,12 +365,7 @@ fn App() -> Html {
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                ZoomHandler::install(
-                    canvas_ref,
-                    view_id,
-                    &view_element,
-                    coordinator
-                )
+                ZoomHandler::install(canvas_ref, view_id, &view_element, coordinator)
             };
 
             let pan_listener = {
@@ -375,12 +374,7 @@ fn App() -> Html {
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                PanHandler::install(
-                    canvas_ref,
-                    view_id,
-                    &view_element,
-                    coordinator
-                )
+                PanHandler::install(canvas_ref, view_id, &view_element, coordinator)
             };
 
             move || {
@@ -391,52 +385,49 @@ fn App() -> Html {
         }
     });
 
-    use_effect_with_deps(
-        {
-            let coordinator = Rc::clone(&coordinator);
-            move |canvas_ref: &NodeRef| {
-                let canvas = canvas_ref
-                    .cast::<HtmlCanvasElement>()
-                    .expect("canvas_ref not attached to a canvas element");
+    use_effect_with(canvas_ref.clone(), {
+        let coordinator = Rc::clone(&coordinator);
+        move |canvas_ref: &NodeRef| {
+            let canvas = canvas_ref
+                .cast::<HtmlCanvasElement>()
+                .expect("canvas_ref not attached to a canvas element");
 
-                let gl: WebGl2RenderingContext = canvas
-                    .get_context("webgl2")
-                    .unwrap()
-                    .unwrap()
-                    .dyn_into()
-                    .unwrap();
+            let gl: WebGl2RenderingContext = canvas
+                .get_context("webgl2")
+                .unwrap()
+                .unwrap()
+                .dyn_into()
+                .unwrap();
 
-                log::debug!("GL context created");
+            log::debug!("GL context created");
 
-                coordinator.gl.replace(Some(gl.clone()));
+            coordinator.gl.replace(Some(gl.clone()));
 
-                coordinator
-                    .renderer
-                    .borrow_mut()
-                    .set_rendering_context(coordinator.clone());
+            coordinator
+                .renderer
+                .borrow_mut()
+                .set_rendering_context(coordinator.clone());
 
-                // TODO: remove. debug thing
-                if let Err(err) = create_image_for_view(&gl)
-                    .map(|image| (&coordinator).texture_image_cache.borrow_mut().add(image))
-                    .map(|id| {
-                        coordinator.image_views.borrow_mut().set_image_to_view(
-                            id,
-                            image_view::types::InViewName::Single(
-                                image_view::types::InSingleViewName::Single,
-                            ),
-                        )
-                    })
-                {
-                    log::error!("Error creating image: {:?}", err);
-                }
-
-                move || {
-                    coordinator.gl.replace(None);
-                }
+            // TODO: remove. debug thing
+            if let Err(err) = create_image_for_view(&gl)
+                .map(|image| (&coordinator).texture_image_cache.borrow_mut().add(image))
+                .map(|id| {
+                    coordinator.image_views.borrow_mut().set_image_to_view(
+                        id,
+                        image_view::types::InViewName::Single(
+                            image_view::types::InSingleViewName::Single,
+                        ),
+                    )
+                })
+            {
+                log::error!("Error creating image: {:?}", err);
             }
-        },
-        canvas_ref.clone(),
-    );
+
+            move || {
+                coordinator.gl.replace(None);
+            }
+        }
+    });
 
     let onclick_get_image = Callback::from({
         let coordinator = Rc::clone(&coordinator);
@@ -498,15 +489,13 @@ fn App() -> Html {
 
     html! {
         <div class={main_style}>
-            // <RendererProvider renderer={coordinator.renderer.clone()}>
-                <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-                <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
-                <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
-                <div>{ "Hello World!" }</div>
-                <div class={image_view_container_style}>
-                    <GLView node_ref={my_node_ref} />
-                </div>
-            // </RendererProvider>
+            <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
+            <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
+            <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
+            <div>{ "Hello World!" }</div>
+            <div class={image_view_container_style}>
+                <GLView node_ref={my_node_ref} />
+            </div>
         </div>
     }
 }

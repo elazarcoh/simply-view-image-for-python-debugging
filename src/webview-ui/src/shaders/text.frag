@@ -17,6 +17,5 @@ void main()
 {
   vec4 gylph=texture(u_gylphTexture, vout_uv);
   if (gylph.r == 0.0) discard;
-  // fout_color=vec4(textColor(u_pixelColor.rgb), gylph.r);
-  fout_color=vec4(1.0, 1.0, 1.0, gylph.r);
+  fout_color=vec4(textColor(u_pixelColor.rgb), gylph.r);
 }

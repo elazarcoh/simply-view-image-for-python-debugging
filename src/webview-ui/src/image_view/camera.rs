@@ -13,9 +13,8 @@ pub struct Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            // translation: glam::Vec2::ZERO,
-            translation: glam::Vec2::new(-0.05, 0.0),
-            zoom: 6.0,
+            translation: glam::Vec2::ZERO,
+            zoom: 1.0,
         }
     }
 }

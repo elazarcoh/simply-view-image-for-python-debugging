@@ -39,14 +39,15 @@ console_log = { version = "1.0.0", optional = true, features = ["color"] }
 
 gloo = "0.8"
 js-sys = "0.3"
-yew = { version = "0.20", features = ["csr"] }
+yew = { version = "0.21", features = ["csr"] }
 serde = { version = "1.0.183", features = ["derive"] }
 gloo-utils = { version = "0.1.7", features = ["serde"] }
 gloo-events = "0.2"
 gloo-timers = "0.3.0"
 tsify = "0.4.5"
 yew-hooks = "0.2.0"
-stylist = { version = "0.12.1", features = ["yew_integration"] }
+stylist = { version = "0.13.0", features = ["yew_integration"] }
+getrandom = { version = "0.2", features = ["js"] }
 
 base64 = "0.21.2"
 image = { version = "0.24.7", optional = true }

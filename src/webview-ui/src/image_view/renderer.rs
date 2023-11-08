@@ -409,6 +409,13 @@ impl Renderer {
 
             let tex = color_map_texture.obj.clone();
             Some(tex)
+        } else if let Coloring::Segmentation { name } = drawing_options.coloring {
+            let color_map_texture = rendering_context
+                .get_color_map_texture(&name)
+                .expect("Could not get color map texture");
+
+            let tex = color_map_texture.obj.clone();
+            Some(tex)
         } else {
             None
         };

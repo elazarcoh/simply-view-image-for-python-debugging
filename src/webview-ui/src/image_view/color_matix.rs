@@ -219,7 +219,9 @@ pub fn calculate_color_matrix(
     };
     let (reorder, reorder_add) = match drawing_options.coloring {
         | Coloring::Default
-        | Coloring::Heatmap{..} // Heatmap coloring using the default coloring
+        // Heatmap and Segmentation coloring using the default coloring
+        | Coloring::Segmentation { .. }
+        | Coloring::Heatmap{..} 
          => {
             match datatype {
                 | Datatype::Uint8
@@ -309,20 +311,12 @@ pub fn calculate_color_matrix(
             Channels::Three => (RGB_TO_BGR, only_max_alpha(datatype)),
             Channels::Four => (RGB_TO_BGR, ADD_ZERO),
         },
-        Coloring::Segmentation => {
-            if channels == Channels::One && is_integer(datatype) {
-                (IDENTITY, ADD_ZERO)
-            } else {
-                log::warn!("Segmentation coloring is not supported for this image: {:?}, drawing_options: {:?}", image_info, drawing_options);
-                (DEFAULT, ADD_ZERO)
-            }
-        }
     };
     
     let modify_value_mult = IDENTITY;
     let modify_value_add = ADD_ZERO;
 
-    let heatmap: bool = matches!(drawing_options.coloring, Coloring::Heatmap{..}); 
+    let heatmap: bool = matches!(drawing_options.coloring, Coloring::Heatmap{..});
     let (modify_value_mult, modify_value_add) = if drawing_options.high_contrast || heatmap  {
         stretch_values_matrix(image_info, image_computed_info)
     } else {

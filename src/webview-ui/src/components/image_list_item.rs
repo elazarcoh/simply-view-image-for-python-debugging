@@ -245,6 +245,20 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
+    let segmentation_button = html! {
+        <IconButton
+            class={ if let Coloring::Segmentation{..} = drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
+            aria_label={"Segmentation"}
+            title={"Segmentation"}
+            // icon={"svifpd-icons svifpd-icons-segmentation"}
+            icon={"codicon codicon-heart"}
+            onclick={{
+                let image_id = image_id.clone();
+                let dispatch = Dispatch::<AppState>::new();
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Segmentation{name: "glasbey".to_string()}))); }
+            }}
+        />
+    };
 
     // let transpose_button = html! {
     //     <IconButton
@@ -281,6 +295,9 @@ pub fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
     if features.contains(features::Feature::Heatmap) {
         buttons.push(heatmap_button);
+    }
+    if features.contains(features::Feature::Segmentation) {
+        buttons.push(segmentation_button);
     }
     // if features.contains(features::Feature::Transpose) {
     //     buttons.push(transpose_button);

@@ -104,7 +104,7 @@ pub enum Coloring {
     G,
     B,
     SwapRgbBgr,
-    Segmentation,
+    Segmentation { name: String },
     Heatmap { name: String },
 }
 

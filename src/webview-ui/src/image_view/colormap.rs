@@ -2,16 +2,25 @@ use std::borrow::Cow;
 
 use crate::webgl_utils::{self, GLGuard};
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum ColorMapKind {
+    Linear,
+    Diverging,
+    Categorical,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct ColorMap {
     pub name: Cow<'static, str>,
+    pub kind: ColorMapKind,
     pub map: Cow<'static, [[f32; 3]]>,
 }
 
 impl ColorMap {
-    pub const fn new(name: &'static str, map: &'static [[f32; 3]]) -> Self {
+    pub const fn new(name: &'static str, kind: ColorMapKind, map: &'static [[f32; 3]]) -> Self {
         Self {
             name: Cow::Borrowed(name),
+            kind,
             map: Cow::Borrowed(map),
         }
     }
@@ -48,12 +57,20 @@ pub(crate) fn create_texture_for_colormap(
     gl.tex_parameteri(
         webgl_utils::TextureTarget::Texture2D as _,
         web_sys::WebGl2RenderingContext::TEXTURE_MAG_FILTER,
-        webgl_utils::TextureMagFilter::Linear as _,
+        match colormap.kind {
+            ColorMapKind::Linear => webgl_utils::TextureMagFilter::Linear,
+            ColorMapKind::Diverging => webgl_utils::TextureMagFilter::Linear,
+            ColorMapKind::Categorical => webgl_utils::TextureMagFilter::Nearest,
+        } as _,
     );
     gl.tex_parameteri(
         webgl_utils::TextureTarget::Texture2D as _,
         web_sys::WebGl2RenderingContext::TEXTURE_MIN_FILTER,
-        webgl_utils::TextureMinFilter::Linear as _,
+        match colormap.kind {
+            ColorMapKind::Linear => webgl_utils::TextureMinFilter::Linear,
+            ColorMapKind::Diverging => webgl_utils::TextureMinFilter::Linear,
+            ColorMapKind::Categorical => webgl_utils::TextureMinFilter::Nearest,
+        } as _,
     );
     gl.tex_parameteri(
         webgl_utils::TextureTarget::Texture2D as _,

@@ -1,68 +1,10 @@
-use std::{collections::HashMap, iter::FromIterator};
+use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
+use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext;
 use yew::NodeRef;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ViewsType {
-    Single,
-    Dual,
-    Quad,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum InSingleViewName {
-    Single,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum InDualViewName {
-    Left,
-    Right,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum InQuadViewName {
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum InViewName {
-    Single(InSingleViewName),
-    Dual(InDualViewName),
-    Quad(InQuadViewName),
-}
-
-impl ToString for InSingleViewName {
-    fn to_string(&self) -> String {
-        match self {
-            InSingleViewName::Single => "Single".to_string(),
-        }
-    }
-}
-
-impl ToString for InDualViewName {
-    fn to_string(&self) -> String {
-        match self {
-            InDualViewName::Left => "Left".to_string(),
-            InDualViewName::Right => "Right".to_string(),
-        }
-    }
-}
-
-impl ToString for InQuadViewName {
-    fn to_string(&self) -> String {
-        match self {
-            InQuadViewName::TopLeft => "TopLeft".to_string(),
-            InQuadViewName::TopRight => "TopRight".to_string(),
-            InQuadViewName::BottomLeft => "BottomLeft".to_string(),
-            InQuadViewName::BottomRight => "BottomRight".to_string(),
-        }
-    }
-}
+use super::{InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
 
 fn views(vt: ViewsType) -> Vec<String> {
     match vt {
@@ -91,7 +33,6 @@ pub struct Renderer {
     view_holders: HashMap<ViewsType, HashMap<String, ViewHolder>>,
 }
 
-
 impl Renderer {
     pub fn new() -> Self {
         let make_map = |vt: ViewsType| -> HashMap<String, ViewHolder> {
@@ -114,8 +55,40 @@ impl Renderer {
         }
     }
 
+    fn request_animation_frame(f: &Closure<dyn FnMut()>) {
+        web_sys::window()
+            .unwrap()
+            .request_animation_frame(f.as_ref().unchecked_ref())
+            .expect("should register `requestAnimationFrame` OK");
+    }
+
     pub fn bind_gl(&mut self, gl: WebGlRenderingContext) {
         log::debug!("Renderer::bind_gl");
+
+        // Gloo-render's request_animation_frame has this extra closure
+        // wrapping logic running every frame, unnecessary cost.
+        // Here constructing the wrapped closure just once.
+
+        let cb = Rc::new(RefCell::new(None));
+
+        *cb.borrow_mut() = Some(Closure::wrap(Box::new({
+            let cb = cb.clone();
+            let gl = gl.clone();
+            move || {
+                if gl.is_context_lost() {
+                    // Drop our handle to this closure so that it will get cleaned
+                    // up once we return.
+                    let _ = cb.borrow_mut().take();
+                    return;
+                } else {
+                    Renderer::render(&gl);
+                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                }
+            }
+        }) as Box<dyn FnMut()>));
+
+        Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+
         self.gl = Some(gl);
     }
 
@@ -138,4 +111,51 @@ impl Renderer {
             .unwrap()
             .node = node;
     }
+
+    fn render(gl: &WebGlRenderingContext) {
+        gl.clear_color(0.0, 1.0, 0.0, 1.0);
+        gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+    }
+
+    //     gl.enable(WebGlRenderingContext::SCISSOR_TEST);
+    //         div_ref.cast::<HtmlElement>().map(|elem| {
+    //             console::log!("div_ref cast to HtmlElement");
+    //             let rect = elem.get_bounding_client_rect();
+
+    //             if (rect.bottom() < 0.0
+    //                 || rect.top()
+    //                     > gl.canvas()
+    //                         .unwrap()
+    //                         .dyn_into::<HtmlCanvasElement>()
+    //                         .unwrap()
+    //                         .client_height() as f64)
+    //                 || (rect.right() < 0.0
+    //                     || rect.left()
+    //                         > gl.canvas()
+    //                             .unwrap()
+    //                             .dyn_into::<HtmlCanvasElement>()
+    //                             .unwrap()
+    //                             .client_width() as f64)
+    //             {
+    //                 console::log!("GLView div_ref not visible");
+    //             }
+
+    //             let width = rect.right() - rect.left();
+    //             let height = rect.bottom() - rect.top();
+    //             let left = rect.left();
+    //             // let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
+    //             let bottom = 100;
+
+    //             console::log!(
+    //                 "width: {}, height: {}, left: {}, bottom: {}",
+    //                 width,
+    //                 height,
+    //                 left,
+    //                 bottom
+    //             );
+    //             gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
+    //             gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
+
+    //             gl.clear_color(1.0, 0.0, 0.0, 1.0);
+    //             gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
 }

@@ -44,7 +44,7 @@ cfg_if! {
     }
 }
 
-#[wasm_bindgen(start)]
+#[wasm_bindgen(start, skip_typescript)]
 fn run() -> Result<(), JsValue> {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();

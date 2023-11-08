@@ -2,7 +2,10 @@ use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 
 use strum_macros::EnumCount;
 
-use crate::image_view::{types::{ImageId, PixelValue}, utils::image_minmax_on_bytes};
+use crate::image_view::{
+    types::{ImageId, PixelValue},
+    utils::image_minmax_on_bytes,
+};
 
 use super::common::MessageId;
 
@@ -61,7 +64,6 @@ impl Display for Channels {
         f.write_str(s)
     }
 }
-
 
 // TODO: move Datatype to a more general place
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -177,8 +179,7 @@ impl From<ImageData> for LocalImageData {
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub(crate) struct ImageObjects {
-    pub variables: Vec<ImageInfo>,
-    pub expressions: Vec<ImageInfo>,
+    pub objects: Vec<ImageInfo>,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
@@ -192,13 +193,20 @@ pub(crate) enum ExtensionResponse {
 pub(crate) struct ShowImageOptions {}
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
+#[serde(tag = "type")]
 pub(crate) enum ExtensionRequest {
-    ShowImage(ImageInfo, ShowImageOptions),
-    Invalidate(ImageObjects, HashMap<ImageId, ImageData>)
+    ShowImage {
+        info: ImageInfo,
+        options: ShowImageOptions,
+    },
+    Invalidate {
+        replacement_images: ImageObjects,
+        replacement_data: HashMap<ImageId, ImageData>,
+    },
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
-#[serde(tag = "type")]
+#[serde(tag = "kind")]
 pub(crate) enum FromExtensionMessage {
     Response(ExtensionResponse),
     Request(ExtensionRequest),

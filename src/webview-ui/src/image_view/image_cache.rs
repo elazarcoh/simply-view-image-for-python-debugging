@@ -34,6 +34,10 @@ impl ImageCache {
     pub(crate) fn len(&self) -> usize {
         self.cache.len()
     }
+
+    pub(crate) fn clear(&mut self) {
+        self.cache.clear();
+    }
 }
 
 impl Default for ImageCache {

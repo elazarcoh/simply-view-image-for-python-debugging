@@ -4,6 +4,7 @@ use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
 
 use crate::{
+    communication::incoming_messages::ImageInfo,
     configurations,
     image_view::{
         builtin_colormaps::BUILTIN_COLORMAPS,
@@ -18,9 +19,30 @@ use crate::{
 };
 
 #[derive(Default)]
-pub(crate) struct Images {
-    pub image_ids: Vec<ImageId>,
-    pub by_id: HashMap<ImageId, crate::communication::incoming_messages::ImageInfo>,
+pub(crate) struct Images(HashMap<ImageId, ImageInfo>);
+
+impl Images {
+    pub fn get(&self, image_id: &ImageId) -> Option<&ImageInfo> {
+        self.0.get(image_id)
+    }
+
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+
+    pub fn update(&mut self, images: Vec<(ImageId, ImageInfo)>) {
+        images.iter().for_each(|(id, info)| {
+            self.0.insert(id.clone(), info.clone());
+        });
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&ImageId, &ImageInfo)> {
+        self.0.iter()
+    }
 }
 
 #[derive(Default)]
@@ -115,7 +137,7 @@ impl Listener for ImagesFetcher {
             );
             if !state.image_cache.borrow().has(&image_id) {
                 log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                if let Some(image_info) = state.images.borrow().by_id.get(&image_id) {
+                if let Some(image_info) = state.images.borrow().get(&image_id) {
                     log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
                     VSCodeRequests::request_image_data(image_id, image_info.expression.clone());
                 }

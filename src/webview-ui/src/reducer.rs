@@ -1,11 +1,13 @@
-use std::{borrow::BorrowMut, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
-use web_sys::WebGl2RenderingContext;
 use yewdux::prelude::*;
 
 use crate::{
-    communication::incoming_messages::ImageInfo,
-    image_view::{types::{ImageId, TextureImage, ViewId, DrawingOptions, Coloring}, colormap::ColorMap},
+    communication::incoming_messages::{ImageData, ImageInfo, ImageObjects},
+    image_view::{
+        image_cache,
+        types::{Coloring, DrawingOptions, ImageId, TextureImage, ViewId},
+    },
     store::AppState,
 };
 
@@ -14,14 +16,18 @@ pub(crate) enum UpdateDrawingOptions {
     Coloring(Coloring),
     Invert(bool),
     HighContrast(bool),
-    IgnoreAlpha(bool)
+    IgnoreAlpha(bool),
 }
 
 pub(crate) enum StoreAction {
-    UpdateImages(Vec<(ImageId, ImageInfo)>), 
+    UpdateImages(Vec<(ImageId, ImageInfo)>),
     SetImageToView(ImageId, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
+    Invalidate {
+        replacement_images: ImageObjects,
+        replacement_data: HashMap<ImageId, ImageData>,
+    },
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -31,13 +37,8 @@ impl Reducer<AppState> for StoreAction {
 
         match self {
             StoreAction::UpdateImages(images) => {
-                let ids = images.iter().map(|(id, _)| id.clone()).collect::<Vec<_>>();
-                let images_hashmap = images.into_iter().collect::<HashMap<_, _>>();
-                {
-                    let mut mutable = state.images.borrow_mut();
-                    mutable.image_ids = ids;
-                    mutable.by_id = images_hashmap;
-                }
+                log::debug!("UpdateImages");
+                state.images.borrow_mut().update(images);
             }
 
             StoreAction::SetImageToView(image_id, view_id) => {
@@ -47,20 +48,77 @@ impl Reducer<AppState> for StoreAction {
 
             StoreAction::AddTextureImage(image_id, texture_image) => {
                 log::debug!("AddTextureImage: {:?}", image_id);
-                state.image_cache.borrow_mut().set(&image_id, *texture_image);
+                state
+                    .image_cache
+                    .borrow_mut()
+                    .set(&image_id, *texture_image);
             }
+
             StoreAction::UpdateDrawingOptions(image_id, update) => {
-                let current_drawing_options = state.drawing_options.borrow().get_or_default(&image_id).clone();
+                let current_drawing_options = state
+                    .drawing_options
+                    .borrow()
+                    .get_or_default(&image_id)
+                    .clone();
                 let new_drawing_option = match update {
                     UpdateDrawingOptions::Reset => DrawingOptions::default(),
-                    UpdateDrawingOptions::Coloring(c) => DrawingOptions { coloring: c, ..current_drawing_options},
-                    UpdateDrawingOptions::Invert(i) => DrawingOptions { invert: i, ..current_drawing_options},
-                    UpdateDrawingOptions::HighContrast(hc) => DrawingOptions { high_contrast: hc, ..current_drawing_options},
-                    UpdateDrawingOptions::IgnoreAlpha(ia) => DrawingOptions { ignore_alpha: ia, ..current_drawing_options},
+                    UpdateDrawingOptions::Coloring(c) => DrawingOptions {
+                        coloring: c,
+                        ..current_drawing_options
+                    },
+                    UpdateDrawingOptions::Invert(i) => DrawingOptions {
+                        invert: i,
+                        ..current_drawing_options
+                    },
+                    UpdateDrawingOptions::HighContrast(hc) => DrawingOptions {
+                        high_contrast: hc,
+                        ..current_drawing_options
+                    },
+                    UpdateDrawingOptions::IgnoreAlpha(ia) => DrawingOptions {
+                        ignore_alpha: ia,
+                        ..current_drawing_options
+                    },
                 };
-                state.drawing_options.borrow_mut().set(image_id, new_drawing_option);
+                state
+                    .drawing_options
+                    .borrow_mut()
+                    .set(image_id, new_drawing_option);
             }
-         };
+
+            StoreAction::Invalidate {
+                replacement_images,
+                mut replacement_data,
+            } => {
+                log::debug!("Invalidate");
+                state.image_cache.borrow_mut().clear();
+                state.images.borrow_mut().clear();
+
+                let images = replacement_images
+                    .objects
+                    .iter()
+                    .map(|info| (ImageId::generate(), info.clone()))
+                    .collect();
+                state.images.borrow_mut().update(images);
+
+                let res = replacement_images
+                    .objects
+                    .iter()
+                    .map(|info| info.image_id.clone())
+                    .map(|image_id| -> Result<(), String> {
+                        if let Some(image_data) = replacement_data.remove(&image_id) {
+                            let tex_image =
+                                TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;
+
+                            state.image_cache.borrow_mut().set(&image_id, tex_image);
+                        };
+                        Ok(())
+                    })
+                    .collect::<Result<Vec<_>, _>>();
+                if let Err(e) = res {
+                    log::error!("Error while updating image cache: {:?}", e);
+                }
+            }
+        };
 
         app_state
     }

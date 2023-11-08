@@ -132,7 +132,6 @@ fn camera_context() -> impl ViewContext {
                 .get()
                 .images
                 .borrow()
-                .by_id
                 .get(&image_id?)
                 .map(|image| Size {
                     width: image.width as _,

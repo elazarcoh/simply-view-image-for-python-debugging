@@ -28,12 +28,11 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     "#,
     );
 
-    let num_entries = images_data.borrow().image_ids.len();
+    let num_entries = images_data.borrow().len();
     let entries = images_data
         .borrow()
-        .image_ids
         .iter()
-        .map(|id| {
+        .map(|(id, info)| {
             let onclick = {
                 let selected_entry = selected_entry.clone();
 
@@ -49,7 +48,6 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             };
 
             let is_selected = *selected_entry == Some(id.clone());
-            let data = images_data.borrow().by_id.get(id).unwrap().clone();
 
             html! {
                 <vscode-option
@@ -57,7 +55,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                     {onclick}
                     class={entry_style.clone()}
                 >
-                    <ImageListItem entry={data} selected={is_selected} />
+                    <ImageListItem entry={info.clone()} selected={is_selected} />
                 </vscode-option>
             }
         })

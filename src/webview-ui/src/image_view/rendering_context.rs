@@ -20,7 +20,7 @@ pub trait RenderingContext {
     fn visible_nodes(&self) -> Vec<InViewName>;
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
     fn view_data(&self, view_id: InViewName) -> ImageViewData;
-    fn rendering_configuration(&self) -> &RenderingConfiguration;
+    fn rendering_configuration(&self) -> RenderingConfiguration;
 }
 
 pub trait CameraContext {

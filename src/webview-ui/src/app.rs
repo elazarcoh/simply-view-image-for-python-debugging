@@ -14,6 +14,7 @@ use web_sys::WebGl2RenderingContext;
 
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
+use yewdux::prelude::*;
 
 use crate::communication::incoming_messages::IncomingMessage;
 use crate::communication::incoming_messages::SetImageMessage;
@@ -25,8 +26,6 @@ use crate::communication::outgoing_messages::RequestImageMessage;
 
 use crate::components::GLView;
 
-use crate::components::image_list_item::ImageEntry;
-use crate::components::image_list_item::ImageInfo;
 use crate::components::image_list_item::ImageListItem;
 use crate::components::image_selection_list::ImageSelectionList;
 use crate::components::main::Main;
@@ -46,6 +45,11 @@ use crate::image_view::types::InViewName;
 use crate::image_view::types::TextureImage;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
+use crate::store::AppState;
+use crate::store::ImageData;
+use crate::store::ImageInfo;
+use crate::store::ValueVariableKind;
+use crate::store_action::StoreAction;
 use crate::vscode;
 
 fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, String> {
@@ -180,8 +184,7 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 
 struct Coordinator {
     pub gl: RefCell<Option<WebGl2RenderingContext>>,
-    pub renderer: RefCell<Renderer>,
-    configuration: configurations::Configuration,
+    // configuration: configurations::Configuration,
     pub texture_image_cache: RefCell<ImageCache>,
     pub image_views: RefCell<ImageViews>,
     views_cameras: RefCell<ViewsCameras>,
@@ -223,8 +226,9 @@ impl RenderingContext for Coordinator {
         }
     }
 
-    fn rendering_configuration(&self) -> &configurations::RenderingConfiguration {
-        &self.configuration.rendering
+    fn rendering_configuration(&self) -> configurations::RenderingConfiguration {
+        let dispatch = Dispatch::<AppState>::new();
+        dispatch.get().configuration.rendering.clone()
     }
 }
 
@@ -283,8 +287,7 @@ pub fn App() -> Html {
     let coordinator = use_memo((), {
         |_| Coordinator {
             gl: RefCell::new(None),
-            renderer: RefCell::new(Renderer::new()),
-            configuration: configurations::Configuration::default(),
+            // configuration: configurations::Configuration::default(),
             texture_image_cache: RefCell::new(ImageCache::new()),
             image_views: RefCell::new(ImageViews::new()),
             views_cameras: RefCell::new(ViewsCameras::new()),
@@ -342,7 +345,9 @@ pub fn App() -> Html {
         }
     });
 
+    let renderer = use_memo((), { |_| RefCell::new(Renderer::new()) });
     use_effect_with(canvas_ref.clone(), {
+        let renderer = Rc::clone(&renderer);
         let coordinator = Rc::clone(&coordinator);
         move |canvas_ref: &NodeRef| {
             let canvas = canvas_ref
@@ -360,8 +365,7 @@ pub fn App() -> Html {
 
             coordinator.gl.replace(Some(gl.clone()));
 
-            coordinator
-                .renderer
+            renderer
                 .borrow_mut()
                 .set_rendering_context(coordinator.clone());
 
@@ -379,6 +383,11 @@ pub fn App() -> Html {
             {
                 log::error!("Error creating image: {:?}", err);
             }
+
+            Dispatch::<AppState>::new().set(AppState {
+                gl: Some(gl.clone()),
+                ..Default::default()
+            });
 
             move || {
                 coordinator.gl.replace(None);
@@ -400,6 +409,31 @@ pub fn App() -> Html {
     //         //     .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
     //     }
     // });
+
+    // TODO: remove this
+    let dispatch = Dispatch::<AppState>::new();
+    let onclick = dispatch.apply_callback(|_| {
+        StoreAction::UpdateImages(vec![
+            (
+                ImageId::generate(),
+                ImageData::new(ImageInfo {
+                    expression: "image1".to_string(),
+                    shape: vec![10, 10, 4],
+                    data_type: "uint8".to_string(),
+                    value_variable_kind: ValueVariableKind::Variable,
+                }),
+            ),
+            (
+                ImageId::generate(),
+                ImageData::new(ImageInfo {
+                    expression: "image2".to_string(),
+                    shape: vec![20, 20, 4],
+                    data_type: "np.float32".to_string(),
+                    value_variable_kind: ValueVariableKind::Variable,
+                }),
+            ),
+        ])
+    });
 
     let main_style = use_style!(
         r#"
@@ -426,23 +460,11 @@ pub fn App() -> Html {
         z-index: -1;
     "#,
     );
-
-    let num_entries = 2;
-    let entries = (0..num_entries)
-        .map(|i| ImageEntry {
-            name: format!("My image {}", i),
-            info: ImageInfo {
-                shape: vec![256, 256, 4],
-                data_type: "u8".to_string(),
-            },
-        })
-        .collect::<Vec<_>>();
-
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
             // <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
-            // <vscode-button onclick={onclick_view_image}> {"View image"} </vscode-button>
+            <vscode-button onclick={onclick}> {"FooBar"} </vscode-button>
             // <vscode-panels>
             //     <vscode-panel-tab id="tab-1">
             //         {"PROBLEMS"}

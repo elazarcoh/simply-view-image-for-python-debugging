@@ -1,30 +1,34 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
+use yewdux::prelude::*;
 
-use crate::components::image_list_item::ImageListItem;
+use crate::{components::image_list_item::ImageListItem, store::{AppState, ImageInfo}};
 
-use super::image_list_item::ImageEntry;
 
 #[derive(PartialEq, Properties)]
 pub struct ImageSelectionListProps {
-    pub images: Vec<ImageEntry>,
 }
 
 #[function_component]
 pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
-    let ImageSelectionListProps { images } = props;
 
-    let selected_entry = use_state::<Option<(usize, ImageEntry)>, _>(|| None);
+    let images_data = use_selector(|state: &AppState| state.images.clone());
+    let image_infos = images_data.borrow().by_id.values().map(|image_data| image_data.info.clone()).collect::<Vec<_>>();
+
+    let ImageSelectionListProps {} = props;
+
+    let selected_entry = use_state::<Option<(usize, ImageInfo)>, _>(|| None);
 
     let entry_style = use_style!(
         r#"
         border: 1px solid var(--vscode-panel-border);
         padding: 5px;
+        width: 100%;
     "#,
     );
 
-    let entries = (0..images.len()).map(|i| {
-        let entry = &images[i];
+    let entries = (0..image_infos.len()).map(|i| {
+        let entry = &image_infos[i];
         let onclick = {
             let selected_entry = selected_entry.clone();
             let entry = entry.clone();

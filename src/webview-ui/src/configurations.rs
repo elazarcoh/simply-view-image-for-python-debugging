@@ -21,39 +21,39 @@ pub struct Configuration {
     pub rendering: RenderingConfiguration,
 }
 
-pub enum UpdateConfigurationAction {}
+// pub enum UpdateConfigurationAction {}
 
-impl UpdateConfigurationAction {
-    fn update(self, _configuration: Configuration) -> Configuration {
-        match self {
+// impl UpdateConfigurationAction {
+//     fn update(self, _configuration: Configuration) -> Configuration {
+//         match self {
             
-        }
-    }
-}
+//         }
+//     }
+// }
 
-impl Reducible for Configuration {
-    type Action = UpdateConfigurationAction;
+// impl Reducible for Configuration {
+//     type Action = UpdateConfigurationAction;
 
-    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        Rc::new(action.update((*self).clone()))
-    }
-}
+//     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+//         Rc::new(action.update((*self).clone()))
+//     }
+// }
 
-pub type ConfigurationContext = UseReducerHandle<Configuration>;
+// pub type ConfigurationContext = UseReducerHandle<Configuration>;
 
-#[derive(Properties, Debug, PartialEq)]
-pub struct ConfigurationProviderProps {
-    #[prop_or_default]
-    pub children: Html,
-}
+// #[derive(Properties, Debug, PartialEq)]
+// pub struct ConfigurationProviderProps {
+//     #[prop_or_default]
+//     pub children: Html,
+// }
 
-#[function_component]
-pub fn ConfigurationProvider(props: &ConfigurationProviderProps) -> Html {
-    let msg = use_reducer(Configuration::default);
+// #[function_component]
+// pub fn ConfigurationProvider(props: &ConfigurationProviderProps) -> Html {
+//     let msg = use_reducer(Configuration::default);
 
-    html! {
-        <ContextProvider<ConfigurationContext> context={msg}>
-            {props.children.clone()}
-        </ContextProvider<ConfigurationContext>>
-    }
-}
+//     html! {
+//         <ContextProvider<ConfigurationContext> context={msg}>
+//             {props.children.clone()}
+//         </ContextProvider<ConfigurationContext>>
+//     }
+// }

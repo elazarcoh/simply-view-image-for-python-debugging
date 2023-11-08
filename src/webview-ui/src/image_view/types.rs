@@ -89,6 +89,7 @@ impl ToString for InQuadViewName {
     }
 }
 
+#[derive(Debug)]
 pub struct TextureImage {
     pub image: DynamicImage,
     pub texture: GLGuard<web_sys::WebGlTexture>,

@@ -1,8 +1,11 @@
+
 use stylist::yew::use_style;
 use yew::prelude::*;
 
-use crate::components::{sidebar::Sidebar, main_toolbar::MainToolbar, GLView};
+use crate::components::{main_toolbar::MainToolbar, sidebar::Sidebar, GLView};
 
+pub trait UIHandler {
+}
 
 #[derive(PartialEq, Properties)]
 pub struct MainProps {
@@ -11,9 +14,7 @@ pub struct MainProps {
 
 #[function_component]
 pub fn Main(props: &MainProps) -> Html {
-    let MainProps {
-        gl_view_node_ref,
-    } = props;
+    let MainProps { gl_view_node_ref } = props;
 
     let main_style = use_style!(
         r#"
@@ -43,6 +44,16 @@ pub fn Main(props: &MainProps) -> Html {
     // "#,
     // );
 
+    // let num_entries = 2;
+    // let images = (0..num_entries)
+    //     .map(|i| image_list_item::ImageEntry {
+    //         name: format!("My image {}", i),
+    //         info: image_list_item::ImageInfo {
+    //             shape: vec![256, 256, 4],
+    //             data_type: "u8".to_string(),
+    //         },
+    //     })
+    //     .collect::<Vec<_>>();
 
     html! {
         <div class={main_style.clone()}>

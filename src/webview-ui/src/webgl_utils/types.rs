@@ -195,6 +195,14 @@ pub struct GLGuard<T: GLDrop> {
     pub obj: T,
 }
 
+impl<T: core::fmt::Debug + GLDrop> core::fmt::Debug for GLGuard<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GLGuard")
+            .field("obj", &self.obj)
+            .finish()
+    }
+}
+
 impl<T: GLDrop> Drop for GLGuard<T> {
     fn drop(&mut self) {
         self.obj.drop(&self.gl);

@@ -4,7 +4,8 @@ use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
-pub struct SidebarProps {}
+pub struct SidebarProps {
+}
 
 #[function_component]
 pub fn Sidebar(props: &SidebarProps) -> Html {
@@ -105,7 +106,7 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
                 {"Toggle pinned"}
             </button>
             <div>
-                {"I'm a sidebar"}
+                <crate::components::image_selection_list::ImageSelectionList />
             </div>
         </div>
     </div>

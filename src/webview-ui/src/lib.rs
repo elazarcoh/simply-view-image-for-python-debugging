@@ -15,6 +15,8 @@ mod math_utils;
 mod mouse_events;
 mod vscode;
 mod webgl_utils;
+mod store;
+mod store_action;
 use app::App;
 use cfg_if::cfg_if;
 use wasm_bindgen::prelude::*;

@@ -1,6 +1,7 @@
 mod components;
 mod renderer;
 mod vscode;
+use log::{info, warn};
 
 use gloo_utils::format::JsValueSerdeExt;
 use std::rc::Rc;
@@ -80,6 +81,9 @@ fn run() -> Result<(), JsValue> {
     // ));
 
     console::log_1(&"Hello using web-sys".into());
+    
+    info!("Hello using log macro");
+    warn!("checking if warn works");
 
     yew::Renderer::<App>::new().render();
 

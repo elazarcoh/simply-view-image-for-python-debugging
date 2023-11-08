@@ -7,11 +7,12 @@ use gloo::console;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 
+use stylist::yew::use_style;
 use web_sys::{window, Event, HtmlCanvasElement, HtmlElement, WebGlRenderingContext};
 use yew::prelude::*;
 use yew::{function_component, html, use_effect_with_deps, use_node_ref, Html};
-use stylist::yew::use_style;
 
+use crate::renderer::Renderer;
 
 // #[derive(Debug, PartialEq, Clone)]
 // pub struct GL {
@@ -169,10 +170,11 @@ use stylist::yew::use_style;
 //     use_context::<Rc<RefCell<GL>>>()
 // }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq)]
 pub struct Message {
     pub inner: String,
     pub gl: Option<WebGlRenderingContext>,
+    pub renderer: Option<Renderer>,
 }
 
 impl Reducible for Message {
@@ -182,6 +184,7 @@ impl Reducible for Message {
         Message {
             inner: action.0,
             gl: action.1,
+            renderer: None,
         }
         .into()
     }
@@ -203,6 +206,7 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
     let msg = use_reducer(|| Message {
         inner: "No message yet.".to_string(),
         gl: None,
+        renderer: None,
     });
 
     {
@@ -223,25 +227,31 @@ pub fn GLProvider(props: &MessageProviderProps) -> Html {
 
                 console::log!("GL context created");
 
-                msg.dispatch(("GL context created".to_string(), Some(gl)));
+                msg.dispatch((
+                    "GL context created".to_string(),
+                    None,
+                    // Some(Renderer::new(gl)),
+                ));
             },
             (msg, canvas_ref),
         );
     }
 
-    let canvas_style = use_style!(r#"
+    let canvas_style = use_style!(
+        r#"
         position: absolute;
         top: 0;
         width: 100%;
         height: 100%;
         z-index: -1;
         display: block;
-    "#,);
+    "#,
+    );
 
     html! {
-          <ContextProvider<MessageContext> context={msg}>
-              <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-              {props.children.clone()}
-          </ContextProvider<MessageContext>>
-      }
+        <ContextProvider<MessageContext> context={msg}>
+            <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
+            {props.children.clone()}
+        </ContextProvider<MessageContext>>
+    }
 }

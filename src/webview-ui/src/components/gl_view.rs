@@ -1,11 +1,13 @@
 use gloo::console;
 use gloo_timers::callback::Interval;
-use std::cell::RefCell;
+use std::{cell::RefCell, borrow::BorrowMut};
 use std::rc::Rc;
-use web_sys::{HtmlElement, WebGlRenderingContext, HtmlCanvasElement};
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlCanvasElement, HtmlElement, WebGlRenderingContext};
 use yew::prelude::*;
 use yew_hooks::use_raf;
-use wasm_bindgen::JsCast;
+
+use crate::renderer::{InSingleViewName, InViewName, Renderer};
 
 // use crate::components::glcontext::use_gl_context;
 // use crate::components::GL;
@@ -31,6 +33,12 @@ pub fn GLView(props: &Props) -> Html {
         let cctx = glctx.unwrap();
         let message = cctx.inner.clone();
         let gl: Option<WebGlRenderingContext> = cctx.gl.clone();
+        // if let Some(mut renderer) = cctx.renderer.clone() {
+        //     renderer.register(
+        //         InViewName::Single(InSingleViewName::Single),
+        //         div_ref.clone(),
+        //     )
+        // }
 
         if let Some(gl) = gl {
             console::log!("GLView got gl context");
@@ -39,31 +47,39 @@ pub fn GLView(props: &Props) -> Html {
                 console::log!("div_ref cast to HtmlElement");
                 let rect = elem.get_bounding_client_rect();
 
-                if (rect.bottom() < 0.0 || rect.top()  > gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64) ||
-                     (rect.right()  < 0.0 || rect.left() > gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_width() as f64) {
+                if (rect.bottom() < 0.0
+                    || rect.top()
+                        > gl.canvas()
+                            .unwrap()
+                            .dyn_into::<HtmlCanvasElement>()
+                            .unwrap()
+                            .client_height() as f64)
+                    || (rect.right() < 0.0
+                        || rect.left()
+                            > gl.canvas()
+                                .unwrap()
+                                .dyn_into::<HtmlCanvasElement>()
+                                .unwrap()
+                                .client_width() as f64)
+                {
                     console::log!("GLView div_ref not visible");
-                        
                 }
-            
-                let width  = rect.right() - rect.left();
+
+                let width = rect.right() - rect.left();
                 let height = rect.bottom() - rect.top();
-                let left   = rect.left();
+                let left = rect.left();
                 // let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
                 let bottom = 100;
-                
-                console::log!("width: {}, height: {}, left: {}, bottom: {}", width, height, left, bottom);
-                gl.viewport(
-                    left as i32,
-                    bottom as i32,
-                    width as i32,
-                    height as i32,
+
+                console::log!(
+                    "width: {}, height: {}, left: {}, bottom: {}",
+                    width,
+                    height,
+                    left,
+                    bottom
                 );
-                gl.scissor(
-                    left as i32,
-                    bottom as i32,
-                    width as i32,
-                    height as i32,
-                );
+                gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
+                gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
 
                 gl.clear_color(1.0, 0.0, 0.0, 1.0);
                 gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);

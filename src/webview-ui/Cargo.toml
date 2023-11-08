@@ -37,6 +37,8 @@ wee_alloc = { version = "0.4.5", optional = true }
 # in debug mode.
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
+log = "0.4.20"
+
 gloo = "0.8"
 js-sys = "0.3"
 yew = { version = "0.20", features = ["csr"] }

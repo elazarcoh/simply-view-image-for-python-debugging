@@ -754,9 +754,6 @@ fn set_texture_from_array(
 }
 
 type GLConstant = u32;
-pub struct StringVertexShader(String);
-pub struct StringFragmentShader(String);
-pub struct StringAttribute(String);
 
 pub struct ProgramInfo {}
 
@@ -866,23 +863,14 @@ fn gl_guarded<T: GLDrop, E>(gl: GL, f: impl FnOnce(&GL) -> Result<T, E>) -> Resu
     f(&gl).map(move |obj| GLGuard { gl, obj })
 }
 
-pub fn createProgram(
+fn create_program(
     gl: &GL,
-    vertex_shader: StringVertexShader,
-    fragment_shader: StringFragmentShader,
-    opt_attribs: Option<Vec<StringAttribute>>,
+    vertex_shader: &str,
+    fragment_shader: &str,
+    opt_attribs: Option<Vec<&str>>,
 ) -> Result<GLGuard<WebGlProgram>, String> {
-    // This code is really convoluted, because it may or may not be async
-    // Maybe it would be better to have a separate function
-    //   const progOptions = getProgramOptions(opt_attribs, opt_locations, opt_errorCallback);
-    //   const shaderSet = new Set(shaders);
-    //   const program = createProgramNoCheck(gl, shaders, progOptions);
-
     let binding = opt_attribs.unwrap_or(vec![]);
-    let attribute_locations = binding
-        .iter()
-        .enumerate()
-        .collect::<Vec<(usize, &StringAttribute)>>();
+    let attribute_locations = binding.iter().enumerate().collect::<Vec<(usize, &&str)>>();
 
     let program = gl_guarded(gl.clone(), |gl| {
         gl.create_program().ok_or("Could not create program")
@@ -892,7 +880,7 @@ pub fn createProgram(
         gl.create_shader(WebGl2RenderingContext::VERTEX_SHADER)
             .ok_or("Could not create vertex shader")
             .map(|shader| {
-                gl.shader_source(&shader, vertex_shader.0.as_str());
+                gl.shader_source(&shader, vertex_shader);
                 gl.compile_shader(&shader);
                 gl.attach_shader(&program, &shader);
                 shader
@@ -903,7 +891,7 @@ pub fn createProgram(
         gl.create_shader(WebGl2RenderingContext::FRAGMENT_SHADER)
             .ok_or("Could not create fragment shader")
             .map(|shader| {
-                gl.shader_source(&shader, fragment_shader.0.as_str());
+                gl.shader_source(&shader, fragment_shader);
                 gl.compile_shader(&shader);
                 gl.attach_shader(&program, &shader);
                 shader
@@ -911,10 +899,49 @@ pub fn createProgram(
     })?;
 
     let bounded_attributes = attribute_locations.iter().for_each(|(i, name)| {
-        gl.bind_attrib_location(&program, *i as u32, name.0.as_str());
+        gl.bind_attrib_location(&program, *i as u32, name);
     });
 
     Ok(program)
+}
+
+#[derive(Debug, Builder)]
+#[builder(
+    pattern = "owned",
+    custom_constructor,
+    create_empty = "empty",
+    build_fn(
+        private,
+        name = "fallible_build",
+        error = "::derive_builder::UninitializedFieldError"
+    )
+)]
+pub struct GLProgramBuilder<'a> {
+    #[builder(setter(custom))]
+    gl: &'a GL,
+
+    vertex_shader: &'a str,
+    fragment_shader: &'a str,
+
+    #[builder(setter(each(name = "attribute")))]
+    attributes: Vec<&'a str>,
+}
+
+impl<'a> GLProgramBuilder<'a> {
+    pub fn new<'b>(gl: &'b GL) -> GLProgramBuilderBuilder<'b> {
+        GLProgramBuilderBuilder {
+            gl: Some(gl),
+            ..GLProgramBuilderBuilder::empty()
+        }
+    }
+}
+
+impl<'a> GLProgramBuilderBuilder<'a> {
+    pub fn build(self) -> Result<GLGuard<WebGlProgram>, String> {
+        self.fallible_build()
+            .map(|b| create_program(b.gl, b.vertex_shader, b.fragment_shader, Some(b.attributes)))
+            .expect("All required fields were initialized")
+    }
 }
 
 // pub fn createProgramInfo(

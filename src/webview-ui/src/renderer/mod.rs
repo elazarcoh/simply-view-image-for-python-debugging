@@ -8,4 +8,3 @@ mod rendering;
 mod image_cache;
 pub use image_cache::*;
 mod gl_utils;
-pub use gl_utils::*;

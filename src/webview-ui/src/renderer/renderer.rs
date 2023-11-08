@@ -1,9 +1,12 @@
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use wasm_bindgen::prelude::*;
-use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext};
+use web_sys::{
+    HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
+};
 use yew::NodeRef;
 
+use super::gl_utils;
 use super::{ImageCache, InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
 
 fn views(vt: ViewsType) -> Vec<String> {
@@ -175,7 +178,7 @@ impl Renderer {
             });
     }
 
-    fn render_view(gl: &WebGl2RenderingContext, v: &ViewHolder, e: &HtmlElement) {
+    fn render_view(gl: &WebGl2RenderingContext, v: &ViewHolder, e: &HtmlElement) -> Result<(), JsValue> {
         let canvas = gl
             .canvas()
             .unwrap()
@@ -221,18 +224,27 @@ impl Renderer {
         gl.bind_buffer(GL::ARRAY_BUFFER, Some(&vertex_buffer));
         gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &verts, GL::STATIC_DRAW);
 
-        let vert_shader = gl.create_shader(GL::VERTEX_SHADER).unwrap();
-        gl.shader_source(&vert_shader, vert_code);
-        gl.compile_shader(&vert_shader);
+        // let program = gl_utils::ProgramBuilder::default()
+        //     .vertex_shader(vert_code);
 
-        let frag_shader = gl.create_shader(GL::FRAGMENT_SHADER).unwrap();
-        gl.shader_source(&frag_shader, frag_code);
-        gl.compile_shader(&frag_shader);
+        let shader_program = gl_utils::GLProgramBuilder::new(&gl)
+            .vertex_shader(vert_code)
+            .fragment_shader(frag_code)
+            .attribute("a_position")
+            .build()?;
 
-        let shader_program = gl.create_program().unwrap();
-        gl.attach_shader(&shader_program, &vert_shader);
-        gl.attach_shader(&shader_program, &frag_shader);
-        gl.link_program(&shader_program);
+        // let vert_shader = gl.create_shader(GL::VERTEX_SHADER).unwrap();
+        // gl.shader_source(&vert_shader, vert_code);
+        // gl.compile_shader(&vert_shader);
+
+        // let frag_shader = gl.create_shader(GL::FRAGMENT_SHADER).unwrap();
+        // gl.shader_source(&frag_shader, frag_code);
+        // gl.compile_shader(&frag_shader);
+
+        // let shader_program = gl.create_program().unwrap();
+        // gl.attach_shader(&shader_program, &vert_shader);
+        // gl.attach_shader(&shader_program, &frag_shader);
+        // gl.link_program(&shader_program);
 
         gl.use_program(Some(&shader_program));
 
@@ -244,5 +256,6 @@ impl Renderer {
         // Attach the time as a uniform for the GL context.
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
 
+        Ok(())
     }
 }

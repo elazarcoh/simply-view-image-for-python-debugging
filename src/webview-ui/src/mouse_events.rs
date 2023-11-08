@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
 
-use glam::{Mat3, Vec2, Vec3Swizzles};
+use glam::{Mat3, Vec2, Vec3Swizzles, Vec3};
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Event, HtmlCanvasElement, MouseEvent};
@@ -10,8 +10,9 @@ use crate::{
     common::Size,
     image_view::{
         camera::{self, Camera},
+        constants::VIEW_SIZE,
         rendering_context::CameraContext,
-        types::InViewName, constants::VIEW_SIZE,
+        types::InViewName,
     },
     math_utils::ToHom,
 };
@@ -155,24 +156,18 @@ impl PanHandler {
 pub struct ZoomHandler {}
 
 impl ZoomHandler {
-    fn new() -> Self {
-        Self {}
-    }
-
     pub fn install(
         canvas_ref: NodeRef,
         view_id: InViewName,
         view_element: &web_sys::HtmlElement,
         camera_context: Rc<dyn CameraContext>,
     ) -> EventListener {
-        let handler = Rc::new(RefCell::new(Self::new()));
-
         let wheel = {
             let canvas_element = canvas_ref
                 .cast::<HtmlCanvasElement>()
                 .expect("canvas_ref not attached to a canvas element");
             let camera_context = Rc::clone(&camera_context);
-            let self_handler = Rc::clone(&handler);
+
             Callback::from(move |event: Event| {
                 event.prevent_default();
                 let event = event
@@ -180,8 +175,10 @@ impl ZoomHandler {
                     .expect("Unable to cast event to WheelEvent");
                 let camera = camera_context.get_camera_for_view(view_id);
 
-                let clip_coordinates =
-                    get_clip_space_mouse_position(event.clone().dyn_into().unwrap(), &canvas_element);
+                let clip_coordinates = get_clip_space_mouse_position(
+                    event.clone().dyn_into().unwrap(),
+                    &canvas_element,
+                );
 
                 let canvas_size = Size {
                     width: canvas_element.width() as f32,
@@ -194,7 +191,7 @@ impl ZoomHandler {
 
                 let delta_y = event.delta_y();
                 let new_zoom = camera.zoom * (f32::powf(2.0, delta_y as f32 / 100.0));
-                let new_zoom = f32::clamp(new_zoom, 0.8, 10.0); // TODO: make these configurable
+                let new_zoom = f32::clamp(new_zoom, 0.5, 500.0);
 
                 let new_camera = Camera {
                     zoom: new_zoom,

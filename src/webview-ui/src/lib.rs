@@ -5,8 +5,6 @@ extern crate lazy_static;
 #[macro_use]
 extern crate cfg_if;
 
-use base64::{engine::general_purpose, Engine as _};
-
 mod common;
 mod communication;
 mod components;
@@ -16,8 +14,11 @@ mod math_utils;
 mod mouse_events;
 mod vscode;
 mod webgl_utils;
+use base64::engine::general_purpose;
+use base64::Engine;
 use cfg_if::cfg_if;
 use configurations::Configuration;
+use enum_dispatch::enum_dispatch;
 use gloo_utils::format::JsValueSerdeExt;
 
 use image_view::camera::ViewsCameras;
@@ -26,25 +27,24 @@ use image_view::rendering_context::CameraContext;
 use image_view::rendering_context::ImageViewData;
 use image_view::rendering_context::RenderingContext;
 use image_view::types::ImageId;
-use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
+use vscode::WebviewApi;
 use web_sys::window;
-use web_sys::AddEventListenerOptions;
+
 use web_sys::HtmlCanvasElement;
 use web_sys::HtmlElement;
-use web_sys::Node;
+
 use web_sys::WebGl2RenderingContext;
 
 use gloo::events::EventListener;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 use yew::prelude::*;
-use yew_hooks::prelude::*;
 
 use crate::components::GLView;
-use crate::configurations::ConfigurationProvider;
+
 use crate::image_view::image_cache::ImageCache;
 use crate::image_view::renderer::Renderer;
 use crate::image_view::types::InSingleViewName;
@@ -75,17 +75,48 @@ use crate::mouse_events::ZoomHandler;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+struct SetImageMessage {
+    image_base64: String,
+}
+
+enum IncomingMessage {
+    SetImageMessage(SetImageMessage),
+}
+
+trait IncomeMessageHandler {
+    fn handle_incoming_message(&self, message: IncomingMessage);
+}
+
+#[derive(serde::Serialize)]
+struct RequestImageMessage {}
+
+#[derive(serde::Serialize)]
+enum OutgoingMessage {
+    RequestImageMessage(RequestImageMessage),
+}
+
+trait OutgoingMessageSender {
+    fn send_message(&self, message: OutgoingMessage);
+}
+
 struct VSCodeMessageHandler {
     webview_api: vscode::WebviewApi,
+    incoming_message_handler: Rc<dyn IncomeMessageHandler>,
 }
 
 impl VSCodeMessageHandler {
-    pub fn new(webview_api: vscode::WebviewApi) -> Self {
-        Self { webview_api }
+    pub fn new(
+        webview_api: vscode::WebviewApi,
+        incoming_message_handler: Rc<dyn IncomeMessageHandler>,
+    ) -> Self {
+        Self {
+            webview_api,
+            incoming_message_handler,
+        }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct MyMessage {
     pub message: String,
     #[serde(rename = "imageBase64")]
@@ -98,14 +129,19 @@ impl VSCodeMessageHandler {
         let message: MyMessage = message.into_serde().unwrap();
         log::debug!("Received message.message: {:?}", message.message);
 
-        let bytes = general_purpose::STANDARD
-            .decode(message.image_base64)
-            .unwrap();
-        let image = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).unwrap();
-        let width = image.width();
-        let height = image.height();
-        let channels = image.color().channel_count();
-        log::debug!("Received image: {}x{}x{}", width, height, channels);
+        // let bytes = general_purpose::STANDARD
+        //     .decode(message.image_base64)
+        //     .unwrap();
+        // let image = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).unwrap();
+        // let width = image.width();
+        // let height = image.height();
+        // let channels = image.color().channel_count();
+        // log::debug!("Received image: {}x{}x{}", width, height, channels);
+
+        self.incoming_message_handler
+            .handle_incoming_message(IncomingMessage::SetImageMessage(SetImageMessage {
+                image_base64: message.image_base64,
+            }));
 
         // match message.command.as_str() {
         //     "hello" => {
@@ -262,7 +298,7 @@ struct Coordinator {
     pub texture_image_cache: RefCell<ImageCache>,
     pub image_views: RefCell<ImageViews>,
     views_cameras: RefCell<ViewsCameras>,
-    pub vscode_message_handler: VSCodeMessageHandler,
+    vscode: WebviewApi,
 }
 
 impl RenderingContext for Coordinator {
@@ -319,10 +355,77 @@ impl CameraContext for Coordinator {
     }
 }
 
+impl IncomeMessageHandler for Coordinator {
+    fn handle_incoming_message(&self, message: IncomingMessage) {
+        let handle_set_image_message = |message: SetImageMessage| {
+            let bytes = general_purpose::STANDARD
+                .decode(message.image_base64)
+                .unwrap();
+            let image =
+                image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).unwrap();
+            let width = image.width();
+            let height = image.height();
+            let channels = image.color().channel_count();
+
+            // TODO: remove this
+            let image = image::DynamicImage::ImageRgba8(image.to_rgba8());
+
+            let image = TextureImage::try_new(image, self.gl.borrow().as_ref().unwrap())
+                .expect("Unable to create texture image");
+
+            let image_id = self.texture_image_cache.borrow_mut().add(image);
+
+            let view_id = InViewName::Single(InSingleViewName::Single);
+
+            self.image_views
+                .borrow_mut()
+                .set_image_to_view(image_id, view_id);
+        };
+
+        match message {
+            IncomingMessage::SetImageMessage(msg) => handle_set_image_message(msg),
+        }
+    }
+}
+
+impl OutgoingMessageSender for Coordinator {
+    fn send_message(&self, message: OutgoingMessage) {
+        self.vscode
+            .post_message(JsValue::from_serde(&message).unwrap());
+    }
+}
+
+fn parse_message(message: MyMessage) -> IncomingMessage {
+    IncomingMessage::SetImageMessage(SetImageMessage {
+        image_base64: message.image_base64,
+    })
+}
+
+fn install_incoming_message_handler(
+    incoming_message_handler: Rc<dyn IncomeMessageHandler>,
+) -> EventListener {
+    let onmessage = Callback::from(move |event: Event| {
+        let data = event
+            .dyn_ref::<web_sys::MessageEvent>()
+            .expect("Unable to cast event to MessageEvent")
+            .data();
+
+        log::debug!("Received message: {:?}", data);
+        let message: MyMessage = data.into_serde().unwrap();
+        log::debug!("Received message.message: {:?}", message.message);
+
+        let message = parse_message(message);
+
+        incoming_message_handler.handle_incoming_message(message);
+    });
+
+    let window = window().unwrap();
+    EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()))
+}
+
 #[function_component]
 fn App() -> Html {
     let coordinator = use_memo((), {
-        let vscode = vscode::acquire_vscode_api();
         |_| Coordinator {
             gl: RefCell::new(None),
             renderer: RefCell::new(Renderer::new()),
@@ -330,7 +433,7 @@ fn App() -> Html {
             texture_image_cache: RefCell::new(ImageCache::new()),
             image_views: RefCell::new(ImageViews::new()),
             views_cameras: RefCell::new(ViewsCameras::new()),
-            vscode_message_handler: VSCodeMessageHandler::new(vscode),
+            vscode: vscode::acquire_vscode_api(),
         }
     });
 
@@ -341,40 +444,39 @@ fn App() -> Html {
     let my_node_ref = coordinator.image_views.borrow().get_node_ref(view_id);
 
     use_effect({
-        let window = window().unwrap();
         let coordinator = Rc::clone(&coordinator);
         let canvas_ref = canvas_ref.clone();
         let my_node_ref = my_node_ref.clone();
 
         move || {
-            let message_listener = {
-                let coordinator = Rc::clone(&coordinator);
-                let onmessage = Callback::from(move |event: Event| {
-                    let data = event
-                        .dyn_ref::<web_sys::MessageEvent>()
-                        .expect("Unable to cast event to MessageEvent")
-                        .data();
-                    coordinator.vscode_message_handler.handle_message(data);
-                });
-                EventListener::new(&window, "message", move |e| onmessage.emit(e.clone()))
-            };
+            let message_listener = install_incoming_message_handler(
+                Rc::clone(&coordinator) as Rc<dyn IncomeMessageHandler>
+            );
 
             let zoom_listener = {
                 let canvas_ref = canvas_ref.clone();
-                let coordinator = Rc::clone(&coordinator);
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                ZoomHandler::install(canvas_ref, view_id, &view_element, coordinator)
+                ZoomHandler::install(
+                    canvas_ref,
+                    view_id,
+                    &view_element,
+                    Rc::clone(&coordinator) as Rc<dyn CameraContext>,
+                )
             };
 
             let pan_listener = {
                 let canvas_ref = canvas_ref.clone();
-                let coordinator = Rc::clone(&coordinator);
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                PanHandler::install(canvas_ref, view_id, &view_element, coordinator)
+                PanHandler::install(
+                    canvas_ref,
+                    view_id,
+                    &view_element,
+                    Rc::clone(&coordinator) as Rc<dyn CameraContext>,
+                )
             };
 
             move || {
@@ -432,15 +534,7 @@ fn App() -> Html {
     let onclick_get_image = Callback::from({
         let coordinator = Rc::clone(&coordinator);
         move |_| {
-            let greeting = String::from("Hi there");
-            log::debug!("Sending greeting: {}", greeting);
-            coordinator.vscode_message_handler.send_message(
-                JsValue::from_serde(&MyMessage {
-                    message: greeting,
-                    image_base64: String::from(""),
-                })
-                .unwrap(),
-            );
+            coordinator.send_message(OutgoingMessage::RequestImageMessage(RequestImageMessage {}));
         }
     });
 

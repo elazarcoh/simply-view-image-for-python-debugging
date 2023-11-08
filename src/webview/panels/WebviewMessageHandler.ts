@@ -22,7 +22,7 @@ export class WebviewMessageHandler {
     async onWebviewMessage(message: any) {
         console.log(message);
 
-        const path = "C:/Users/hodaya/Documents/simply-view-image-for-python-debugging/watch-view.png";
+        const path = "/home/elazar/simply-view-image-for-python-debugging/webgl_impl_reference/public/images/xray.png";
         const contents = await fs.readFile(path, { encoding: 'base64' });
         console.log(this.webview)
         await this.sendToWebview({

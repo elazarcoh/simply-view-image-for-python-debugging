@@ -70,6 +70,115 @@ const GRAY_ALPHA : Mat4 = transpose(&Mat4::from_cols_array(&[
 const ADD_ZERO: Vec4 = Vec4::ZERO;
 const ALPHA_ONE: Vec4 = Vec4::new(0.0, 0.0, 0.0, 1.0);
 
+const NORMALIZE_U8: Mat4 = transpose(&Mat4::from_cols_array(&[
+    1.0 / u8::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u8::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u8::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u8::MAX as f32,
+]));
+const NORMALIZE_U16: Mat4 = transpose(&Mat4::from_cols_array(&[
+    1.0 / u16::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u16::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u16::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u16::MAX as f32,
+]));
+const NORMALIZE_U32: Mat4 = transpose(&Mat4::from_cols_array(&[
+    1.0 / u32::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u32::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u32::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / u32::MAX as f32,
+]));
+const NORMALIZE_I8: Mat4 = transpose(&Mat4::from_cols_array(&[
+    1.0 / i8::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i8::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i8::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i8::MAX as f32,
+]));
+const NORMALIZE_I16: Mat4 = transpose(&Mat4::from_cols_array(&[
+    1.0 / i16::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i16::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i16::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i16::MAX as f32,
+]));
+const NORMALIZE_I32: Mat4 = transpose(&Mat4::from_cols_array(&[
+    1.0 / i32::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i32::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i32::MAX as f32,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0 / i32::MAX as f32,
+]));
+
 fn is_integer(datatype: Datatype) -> bool {
     matches!(
         datatype,
@@ -82,20 +191,48 @@ fn is_integer(datatype: Datatype) -> bool {
     )
 }
 
-pub fn calculate_color_matrix(image_info: &ImageInfo, drawing_options: &DrawingOptions) -> (Mat4, Vec4) {
+pub fn calculate_color_matrix(
+    image_info: &ImageInfo,
+    drawing_options: &DrawingOptions,
+) -> (Mat4, Vec4) {
     let datatype = image_info.datatype;
     let num_channels = image_info.channels;
+    let normalization_matrix = match datatype {
+        Datatype::Uint8 => NORMALIZE_U8,
+        Datatype::Uint16 => NORMALIZE_U16,
+        Datatype::Uint32 => NORMALIZE_U32,
+        Datatype::Float32 => IDENTITY,
+        Datatype::Int8 => NORMALIZE_I8,
+        Datatype::Int16 => NORMALIZE_I16,
+        Datatype::Int32 => NORMALIZE_I32,
+        Datatype::Bool => IDENTITY,
+    };
     match drawing_options.coloring {
         Coloring::Default => {
-            if is_integer(datatype) {
-                match num_channels {
-                    Channels::One => (RED_AS_GRAYSCALE, ALPHA_ONE),  // Treat as grayscale. Alpha is always 1.
-                    Channels::Two => (GRAY_ALPHA, ADD_ZERO),  // Treat as grayscale + alpha
-                    Channels::Three => (RGB_INTEGER, ALPHA_ONE),  // Treat as RGB. Alpha is always 1.
+            match datatype {
+                Datatype::Uint8
+                | Datatype::Uint16
+                | Datatype::Uint32
+                | Datatype::Int8
+                | Datatype::Int16
+                | Datatype::Int32 => match num_channels {
+                    Channels::One => (RED_AS_GRAYSCALE * normalization_matrix, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
+                    Channels::Two => (GRAY_ALPHA * normalization_matrix, ADD_ZERO), // Treat as grayscale + alpha
+                    Channels::Three => (RGB_INTEGER * normalization_matrix, ALPHA_ONE), // Treat as RGB. Alpha is always 1.
+                    Channels::Four => (DEFAULT * normalization_matrix, ADD_ZERO),
+                },
+                Datatype::Float32 => match num_channels {
+                    Channels::One => (RED_AS_GRAYSCALE, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
+                    Channels::Two => (GRAY_ALPHA, ADD_ZERO), // Treat as grayscale + alpha
+                    Channels::Three => (DEFAULT, ALPHA_ONE), // Treat as RGB. Alpha is always 1.
                     Channels::Four => (DEFAULT, ADD_ZERO),
                 }
-            } else {
-                (DEFAULT, ADD_ZERO)
+                Datatype::Bool => match num_channels {
+                    Channels::One => (RED_AS_GRAYSCALE, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
+                    Channels::Two => (GRAY_ALPHA, ADD_ZERO), // Treat as grayscale + alpha
+                    Channels::Three => (DEFAULT, ALPHA_ONE), // Treat as RGB. Alpha is always 1.
+                    Channels::Four => (DEFAULT, ADD_ZERO),
+                }
             }
         }
         Coloring::Grayscale => {

@@ -31,6 +31,7 @@ use super::types::{all_views, TextureImage, ViewId};
 struct Programs {
     normalized_image: ProgramBundle,
     uint_image: ProgramBundle,
+    int_image: ProgramBundle,
 }
 
 struct RenderingData {
@@ -185,10 +186,16 @@ impl Renderer {
             .fragment_shader(include_str!("../shaders/image-uint.frag"))
             .attribute("vin_position")
             .build()?;
+        let int_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-int.frag"))
+            .attribute("vin_position")
+            .build()?;
 
         Ok(Programs {
             normalized_image,
             uint_image,
+            int_image,
         })
     }
 
@@ -322,7 +329,16 @@ impl Renderer {
         view_name: &ViewId,
     ) {
         let gl = &rendering_data.gl;
-        let program = &rendering_data.programs.uint_image;
+        let program = match texture.image.info.datatype {
+            Datatype::Uint8 => &rendering_data.programs.uint_image,
+            Datatype::Uint16 => &rendering_data.programs.uint_image,
+            Datatype::Uint32 => &rendering_data.programs.uint_image,
+            Datatype::Float32 => &rendering_data.programs.normalized_image,
+            Datatype::Int8 => &rendering_data.programs.int_image,
+            Datatype::Int16 => &rendering_data.programs.int_image,
+            Datatype::Int32 => &rendering_data.programs.int_image,
+            Datatype::Bool => &rendering_data.programs.uint_image,
+        };
         let config = rendering_context.rendering_configuration();
 
         let html_element_size = Size {

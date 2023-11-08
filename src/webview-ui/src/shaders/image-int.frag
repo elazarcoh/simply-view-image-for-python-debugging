@@ -1,13 +1,15 @@
 #version 300 es
 precision mediump float;
+precision mediump isampler2D;
 
 in vec2 vout_uv;
 layout(location = 0) out vec4 fout_color;
 
-uniform sampler2D u_texture;
+uniform isampler2D u_texture;
 
 // drawing options
 uniform mat4 u_color_multiplier;
+uniform vec4 u_color_addition;
 uniform bool u_invert;
 
 uniform vec2 u_buffer_dimension;
@@ -26,15 +28,20 @@ float checkboard(vec2 st) {
 void main()
 {
   vec2 pix = vout_uv;
-  vec4 sampled = texture(u_texture, pix);
-  vec4 color = vec4((u_color_multiplier*vec4(sampled.rgb,1.0)).rgb,sampled.a);
+
+  ivec4 texel = texture(u_texture, pix);
+  vec4 sampled = vec4(float(texel.r), float(texel.g), float(texel.b), float(texel.a));
+
+  vec4 color = u_color_multiplier * sampled + u_color_addition;
+
+  color = clamp(color, 0.0, 1.0);
 
   if(u_invert){
     color.rgb = 1.-color.rgb;
   }
 
   float c = checkboard(gl_FragCoord.xy);
-  color.rgb = mix(vec3(c, c, c), color.rgb, sampled.a);
+  color.rgb = mix(vec3(c, c, c), color.rgb, color.a);
   
   vec2 buffer_position=vout_uv*u_buffer_dimension;
   if(u_enable_borders){

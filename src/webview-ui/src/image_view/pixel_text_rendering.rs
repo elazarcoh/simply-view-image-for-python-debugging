@@ -87,7 +87,7 @@ impl PixelValue {
                             format!("{:.2}", value)
                         }
                     }
-                    Datatype::Bool => format!("{}", bytes[0] != 0),
+                    Datatype::Bool => format!("{}", (bytes[0] != 0) as u8),
                     Datatype::Uint16 => format!("{}", u16::from_ne_bytes([bytes[0], bytes[1]])),
                     Datatype::Uint32 => format!("{}", u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])),
                     Datatype::Int16 => format!("{}", i16::from_ne_bytes([bytes[0], bytes[1]])),

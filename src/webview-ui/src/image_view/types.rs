@@ -120,6 +120,10 @@ lazy_static! {
         m.insert((Datatype::Float32, 2), (InternalFormat::RG32F, Format::RG, ElementType::Float));
         m.insert((Datatype::Float32, 3), (InternalFormat::RGB32F, Format::Rgb, ElementType::Float));
         m.insert((Datatype::Float32, 4), (InternalFormat::RGBA32F, Format::Rgba, ElementType::Float));
+        m.insert((Datatype::Bool, 1), (InternalFormat::R8UI, Format::RedInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Bool, 2), (InternalFormat::RG8UI, Format::RgInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Bool, 3), (InternalFormat::RGB8UI, Format::RgbInteger, ElementType::UnsignedByte));
+        m.insert((Datatype::Bool, 4), (InternalFormat::RGBA8UI, Format::RgbaInteger, ElementType::UnsignedByte));
 
         m
     };

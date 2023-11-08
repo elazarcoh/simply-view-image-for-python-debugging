@@ -12,7 +12,9 @@ pub enum ValueVariableKind {
     Expression,
 }
 
-#[derive(serde_repr::Deserialize_repr, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    serde_repr::Deserialize_repr, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord,
+)]
 #[repr(u32)]
 pub enum Channels {
     One = 1,
@@ -93,6 +95,22 @@ impl Datatype {
             // Datatype::Uint64 => 8,
             Datatype::Bool => 1,
         }
+    }
+
+    pub fn is_floating(&self) -> bool {
+        matches!(
+            self,
+            Datatype::Float32,
+            // Datatype::Float64
+        )
+    }
+
+    pub fn is_unsigned_integer(&self) -> bool {
+        matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
+    }
+
+    pub fn is_signed_integer(&self) -> bool {
+        matches!(self, Datatype::Int8 | Datatype::Int16 | Datatype::Int32)
     }
 }
 

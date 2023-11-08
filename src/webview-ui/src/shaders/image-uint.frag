@@ -5,8 +5,6 @@ precision mediump usampler2D;
 in vec2 vout_uv;
 layout(location = 0) out vec4 fout_color;
 
-uniform vec2 u_offset;
-
 uniform usampler2D u_texture;
 
 // drawing options
@@ -32,7 +30,7 @@ void main()
   vec2 pix = vout_uv;
 
   uvec4 texel = texture(u_texture, pix);
-  vec4 sampled = vec4(float(texel.r) / 255.0, float(texel.g) / 255.0, float(texel.b) / 255.0, float(texel.a) / 255.0);
+  vec4 sampled = vec4(float(texel.r), float(texel.g), float(texel.b), float(texel.a));
 
   vec4 color = u_color_multiplier * sampled + u_color_addition;
 

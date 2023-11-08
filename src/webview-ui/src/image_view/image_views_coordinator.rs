@@ -6,9 +6,11 @@ use web_sys::HtmlElement;
 use yew::NodeRef;
 
 use super::camera::Camera;
+use super::image_cache::ImageCache;
 use super::image_view::{ImageView, ImageViewModel};
 use super::types::{
-    all_views, InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType,
+    all_views, ImageId, InDualViewName, InQuadViewName, InSingleViewName, InViewName, TextureImage,
+    ViewsType,
 };
 
 fn views(vt: ViewsType) -> Vec<InViewName> {
@@ -27,7 +29,7 @@ fn views(vt: ViewsType) -> Vec<InViewName> {
     }
 }
 
-pub struct ViewHolders(HashMap<InViewName, ImageView>);
+struct ViewHolders(HashMap<InViewName, ImageView>);
 
 impl ViewHolders {
     fn new(camera_provider: &CameraProvider) -> Self {
@@ -38,16 +40,16 @@ impl ViewHolders {
                     v,
                     ImageView {
                         node_ref: NodeRef::default(),
-                        model: ImageViewModel::new(camera_ref),
+                        model: ImageViewModel::new(),
                     },
                 )
             })),
         }
     }
-    pub fn visible_nodes(&self) -> Vec<(&ImageView, HtmlElement)> {
+    pub fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)> {
         self.0
             .values()
-            .filter_map(|v| v.node_ref.cast::<HtmlElement>().map(|e| (v, e)))
+            .filter_map(|v| v.node_ref.cast::<HtmlElement>().map(|e| (v.clone(), e)))
             .collect::<Vec<_>>()
     }
 }
@@ -72,33 +74,41 @@ impl CameraProvider {
 
 pub struct ImageViewsCoordinator {
     camera_provider: CameraProvider,
-    pub view_holders: Rc<ViewHolders>,
-    // image_cache: ImageCache,
+    view_holders: ViewHolders,
+    image_cache: ImageCache,
 }
 
 impl ImageViewsCoordinator {
     pub fn new() -> Self {
         let camera_provider = CameraProvider::new();
-        let make_map = |vt: ViewsType| -> HashMap<InViewName, ImageView> {
-            HashMap::from_iter(views(vt).into_iter().map(|v| {
-                let camera_ref = camera_provider.get(v);
-                (
-                    v,
-                    ImageView {
-                        node_ref: NodeRef::default(),
-                        model: ImageViewModel::new(camera_ref),
-                    },
-                )
-            }))
-        };
-        let view_holders = Rc::new(ViewHolders::new(&camera_provider));
+        let view_holders = ViewHolders::new(&camera_provider);
+        let image_cache = ImageCache::new();
         Self {
             camera_provider,
             view_holders,
+            image_cache,
         }
     }
 
     pub fn get_node_ref(&self, view_id: InViewName) -> NodeRef {
         self.view_holders.0.get(&view_id).unwrap().node_ref.clone()
+    }
+
+    pub fn add_image(&mut self, image: TextureImage) -> ImageId {
+        self.image_cache.add(image)
+    }
+
+    pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: InViewName) {
+        let image = self.image_cache.get(&image_id).unwrap();
+        let view = self.view_holders.0.get_mut(&view_id).unwrap();
+        view.model.set_image_id(image_id);
+    }
+
+    pub fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)> {
+        self.view_holders.visible_nodes()
+    }
+
+    pub fn texture_image_by_id(&self, id: &ImageId) -> Option<&TextureImage> {
+        self.image_cache.get(id)
     }
 }

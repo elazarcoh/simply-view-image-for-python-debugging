@@ -1,4 +1,17 @@
 use image::DynamicImage;
+use web_sys::WebGl2RenderingContext;
+
+use crate::webgl_utils::{self, types::GLGuard};
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ImageId(String);
+
+impl ImageId {
+    pub fn generate() -> Self {
+        let uuid = uuid::Uuid::new_v4();
+        Self(uuid.to_string())
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ViewsType {
@@ -73,12 +86,22 @@ impl ToString for InQuadViewName {
     }
 }
 
-pub struct Image {
+pub struct TextureImage {
     pub image: DynamicImage,
+    pub texture: GLGuard<web_sys::WebGlTexture>,
 }
 
-impl Image {
-    pub fn new(image: DynamicImage) -> Self {
-        Self { image }
+impl TextureImage {
+    pub fn try_new(image: DynamicImage, gl: &web_sys::WebGl2RenderingContext) -> Result<Self, String> {
+        let texture = webgl_utils::textures::create_texture_from_image(
+            &gl,
+            &image,
+            webgl_utils::types::CreateTextureParametersBuilder::default()
+                .mag_filter(webgl_utils::types::TextureMagFilter::Nearest)
+                .min_filter(webgl_utils::types::TextureMinFilter::Nearest)
+                .build()
+                .unwrap(),
+        )?;
+        Ok(Self { image, texture })
     }
 }

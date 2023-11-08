@@ -14,38 +14,23 @@ use crate::webgl_utils::program::set_uniforms;
 use crate::webgl_utils::textures::create_texture_from_image;
 use crate::webgl_utils::types::{
     take_into_owned, ArrayData, ArraySpec, CreateTextureParameters, CreateTextureParametersBuilder,
-    TextureMagFilter, TextureMinFilter, UniformValue,
+    ProgramBundle, TextureMagFilter, TextureMinFilter, UniformValue,
 };
 
 use super::image_view::ImageView;
-use super::image_views_coordinator::ViewHolders;
+use super::rendering_context::{self, RenderingContext};
 
-pub struct Renderer {
-    gl: Option<WebGl2RenderingContext>,
-    view_holders: Option<Rc<ViewHolders>>,
-    tmp_img: Option<image::DynamicImage>,
+struct Programs {
+    basic: ProgramBundle,
 }
 
-impl PartialEq for Renderer {
-    fn eq(&self, other: &Self) -> bool {
-        self.gl == other.gl
-            && (self.view_holders.is_none() && other.view_holders.is_none()
-                || self.view_holders.is_some()
-                    && other.view_holders.is_some()
-                    && Rc::ptr_eq(
-                        self.view_holders.as_ref().unwrap(),
-                        other.view_holders.as_ref().unwrap(),
-                    ))
-    }
+pub struct Renderer {
+    programs: Option<Rc<Programs>>,
 }
 
 impl Renderer {
     pub fn new() -> Self {
-        Self {
-            gl: None,
-            view_holders: None,
-            tmp_img: None,
-        }
+        Self { programs: None }
     }
 
     fn request_animation_frame(f: &Closure<dyn FnMut()>) {
@@ -55,240 +40,73 @@ impl Renderer {
             .expect("should register `requestAnimationFrame` OK");
     }
 
-    pub fn bind_view_holders(&mut self, view_holders: Rc<ViewHolders>) {
+    pub fn set_rendering_context(&mut self, rendering_context: Rc<dyn RenderingContext>) {
         log::debug!("Renderer::bind_view_holders");
-        self.view_holders = Some(view_holders);
-        self.setup_rendering_callback_if_ready();
+        Renderer::setup_rendering_callback_if_ready(rendering_context);
     }
 
-    pub fn bind_gl(&mut self, gl: WebGl2RenderingContext) {
-        log::debug!("Renderer::bind_gl");
+    fn setup_rendering_callback_if_ready(rendering_context: Rc<dyn RenderingContext>) {
+
+        let gl = rendering_context.gl().clone();
 
         gl.enable(WebGl2RenderingContext::SCISSOR_TEST);
 
-        self.gl = Some(gl);
-        self.setup_rendering_callback_if_ready();
-    }
+        let programs = Renderer::create_programs(&gl).unwrap();
 
-    pub fn unbind_gl(&mut self) {
-        log::debug!("Renderer::unbind_gl");
-        self.gl = None;
-    }
+        // Gloo-render's request_animation_frame has this extra closure
+        // wrapping logic running every frame, unnecessary cost.
+        // Here constructing the wrapped closure just once.
+        let cb = Rc::new(RefCell::new(None));
 
-    fn setup_rendering_callback_if_ready(&self) {
-        if let (Some(gl), Some(view_holders)) = (self.gl.as_ref(), self.view_holders.as_ref()) {
-            // Gloo-render's request_animation_frame has this extra closure
-            // wrapping logic running every frame, unnecessary cost.
-            // Here constructing the wrapped closure just once.
-
-            let cb = Rc::new(RefCell::new(None));
-
-            let texture = {
-                let data = [
-                    0u8, 0, 0, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1,
-                    200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200,
-                    191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    34, 177, 76, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 0, 0, 0,
-                    1, 0, 0, 0, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1,
-                    200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200,
-                    191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1, 255, 174, 201,
-                    1, 255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 0, 0, 0, 1, 0, 0, 0, 1, 200,
-                    191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1,
-                    200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200,
-                    191, 231, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76,
-                    1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
-                    1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200,
-                    191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 34, 177, 76, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1,
-                    255, 242, 0, 1, 255, 242, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 200, 191, 231, 1, 200,
-                    191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1,
-                    255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1,
-                    153, 217, 234, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0,
-                    1, 0, 0, 0, 1, 0, 0, 0, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231,
-                    1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200,
-                    191, 231, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201,
-                    1, 34, 177, 76, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 242, 0,
-                    1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 0, 0, 0, 1,
-                    0, 0, 0, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 200, 191,
-                    231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 34, 177, 76, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1,
-                    34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1,
-                    255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 200,
-                    191, 231, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1, 255, 174, 201,
-                    1, 255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 237,
-                    28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237,
-                    28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 34,
-                    177, 76, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 34, 177, 76, 1,
-                    237, 28, 36, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 237, 28, 36, 1, 34, 177, 76, 1, 237, 28, 36, 1, 237,
-                    28, 36, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201,
-                    1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 0, 0, 0, 1, 0, 0, 0,
-                    1, 255, 255, 255, 1, 34, 177, 76, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34,
-                    177, 76, 1, 185, 122, 87, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1,
-                    153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201,
-                    1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255,
-                    174, 201, 1, 255, 174, 201, 1, 0, 0, 0, 1, 34, 177, 76, 1, 200, 191, 231, 1,
-                    200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1, 185, 122, 87, 1, 185, 122,
-                    87, 1, 185, 122, 87, 1, 237, 28, 36, 1, 237, 28, 36, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174, 201,
-                    1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255,
-                    174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174,
-                    201, 1, 34, 177, 76, 1, 200, 191, 231, 1, 200, 191, 231, 1, 34, 177, 76, 1,
-                    185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122,
-                    87, 1, 185, 122, 87, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1,
-                    153, 217, 234, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1, 63, 72, 204, 1, 0, 0, 0, 1,
-                    34, 177, 76, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122,
-                    87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 153, 217, 234, 1,
-                    153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 34,
-                    177, 76, 1, 63, 72, 204, 1, 63, 72, 204, 1, 34, 177, 76, 1, 185, 122, 87, 1,
-                    185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122,
-                    87, 1, 237, 28, 36, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1,
-                    153, 217, 234, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 34, 177, 76, 1, 63, 72, 204, 1, 63, 72, 204, 1, 63, 72, 204,
-                    1, 34, 177, 76, 1, 0, 0, 0, 1, 185, 122, 87, 1, 185, 122, 87, 1, 185, 122, 87,
-                    1, 185, 122, 87, 1, 237, 28, 36, 1, 237, 28, 36, 1, 153, 217, 234, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255,
-                    174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1, 63, 72, 204,
-                    1, 63, 72, 204, 1, 34, 177, 76, 1, 127, 127, 127, 1, 127, 127, 127, 1, 0, 0, 0,
-                    1, 185, 122, 87, 1, 237, 28, 36, 1, 237, 28, 36, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1,
-                    34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    34, 177, 76, 1, 63, 72, 204, 1, 63, 72, 204, 1, 34, 177, 76, 1, 127, 127, 127,
-                    1, 127, 127, 127, 1, 0, 0, 0, 1, 237, 28, 36, 1, 255, 242, 0, 1, 255, 242, 0,
-                    1, 255, 242, 0, 1, 255, 242, 0, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153,
-                    217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201,
-                    1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255,
-                    174, 201, 1, 34, 177, 76, 1, 63, 72, 204, 1, 63, 72, 204, 1, 63, 72, 204, 1,
-                    34, 177, 76, 1, 127, 127, 127, 1, 127, 127, 127, 1, 237, 28, 36, 1, 0, 0, 0, 1,
-                    0, 0, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 153, 217, 234, 1,
-                    153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1, 63, 72, 204, 1, 63, 72,
-                    204, 1, 63, 72, 204, 1, 34, 177, 76, 1, 127, 127, 127, 1, 237, 28, 36, 1, 255,
-                    242, 0, 1, 255, 242, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 255, 242, 0, 1, 255, 242, 0,
-                    1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34,
-                    177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 34, 177, 76, 1,
-                    63, 72, 204, 1, 63, 72, 204, 1, 63, 72, 204, 1, 34, 177, 76, 1, 237, 28, 36, 1,
-                    255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 0, 0, 0, 1,
-                    255, 242, 0, 1, 255, 242, 0, 1, 237, 28, 36, 1, 153, 217, 234, 1, 153, 217,
-                    234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174, 201, 1, 255, 174, 201, 1,
-                    255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 34,
-                    177, 76, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 34,
-                    177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1,
-                    255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 237, 28, 36, 1,
-                    153, 217, 234, 1, 153, 217, 234, 1, 153, 217, 234, 1, 34, 177, 76, 1, 255, 174,
-                    201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 255, 174, 201, 1, 237, 28, 36, 1,
-                    237, 28, 36, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1,
-                    255, 242, 0, 1, 255, 242, 0, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1,
-                    34, 177, 76, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1,
-                    237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 34, 177, 76, 1,
-                    237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 237, 28, 36, 1, 127, 127, 127,
-                    1, 127, 127, 127, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 34, 177, 76, 1, 34, 177, 76, 1, 34, 177,
-                    76, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255,
-                    242, 0, 1, 63, 72, 204, 1, 63, 72, 204, 1, 63, 72, 204, 1, 63, 72, 204, 1, 34,
-                    177, 76, 1, 34, 177, 76, 1, 127, 127, 127, 1, 127, 127, 127, 1, 127, 127, 127,
-                    1, 127, 127, 127, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 63, 72, 204, 1, 63, 72, 204, 1, 63, 72, 204, 1, 63, 72,
-                    204, 1, 63, 72, 204, 1, 34, 177, 76, 1, 127, 127, 127, 1, 127, 127, 127, 1,
-                    127, 127, 127, 1, 127, 127, 127, 1, 34, 177, 76, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242, 0, 1, 255, 242,
-                    0, 1, 255, 242, 0, 1, 255, 242, 0, 1,
-                ];
-                // let solid_image_data =
-                //     image::ImageBuffer::from_fn(256, 256, |x, y| image::Rgba([255u8, 255, 0, 255]));
-                let data_vec = data.iter().map(|x| *x).collect::<Vec<u8>>();
-                let solid_image_data = image::ImageBuffer::from_raw(25, 25, data_vec).unwrap();
-                let solid_image = image::DynamicImage::ImageRgba8(solid_image_data);
-
-                let tex = create_texture_from_image(
-                    &gl,
-                    &solid_image,
-                    CreateTextureParametersBuilder::default()
-                        .mag_filter(TextureMagFilter::Nearest)
-                        .min_filter(TextureMinFilter::Nearest)
-                        .build()
-                        .unwrap(),
-                )
-                .unwrap();
-
-                Some(take_into_owned(tex))
-            };
-
-            *cb.borrow_mut() = Some(Closure::wrap(Box::new({
-                let cb = Rc::clone(&cb);
-                let gl = gl.clone();
-                let view_holders = Rc::clone(view_holders);
-                move || {
-                    if gl.is_context_lost() {
-                        // Drop our handle to this closure so that it will get cleaned
-                        // up once we return.
-                        let _ = cb.borrow_mut().take();
-                        return;
-                    } else {
-                        Renderer::render(&gl, &view_holders, texture.as_ref());
-                        // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
-                    }
+        *cb.borrow_mut() = Some(Closure::wrap(Box::new({
+            let cb = Rc::clone(&cb);
+            move || {
+                if gl.is_context_lost() {
+                    // Drop our handle to this closure so that it will get cleaned
+                    // up once we return.
+                    let _ = cb.borrow_mut().take();
+                    return;
+                } else {
+                    Renderer::render(&gl, &programs, rendering_context.as_ref());
                 }
-            }) as Box<dyn FnMut()>));
+            }
+        }) as Box<dyn FnMut()>));
 
-            Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
-        }
+        Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
     }
 
-    // pub fn put_image_to_view(&mut self, view_id: InViewName, image_id: &str) {
-    //     log::debug!("Renderer::put_image_to_view({:?}, {})", view_id, image_id);
-    //     let view_id = match view_id {
-    //         InViewName::Single(v) => (ViewsType::Single, v.to_string()),
-    //         InViewName::Dual(v) => (ViewsType::Dual, v.to_string()),
-    //         InViewName::Quad(v) => (ViewsType::Quad, v.to_string()),
-    //     };
-    //     self.view_holders
-    //         .borrow_mut()
-    //         .0
-    //         .get_mut(&view_id.0)
-    //         .unwrap()
-    //         .get_mut(&view_id.1)
-    //         .unwrap()
-    //         .data
-    //         .image_id = Some(image_id.to_string());
-    // }
+    fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs, String> {
+        let vert_code = include_str!("../shaders/basic.vert");
+        let frag_code = include_str!("../shaders/basic.frag");
+
+        let shader_program = webgl_utils::GLProgramBuilder::new(&gl)
+            .vertex_shader(vert_code)
+            .fragment_shader(frag_code)
+            .attribute("a_position")
+            .build()?;
+
+        Ok(Programs {
+            basic: shader_program,
+        })
+    }
 
     fn render(
         gl: &WebGl2RenderingContext,
-        view_holders: &Rc<ViewHolders>,
-        texture: Option<&WebGlTexture>,
+        programs: &Programs,
+        rendering_context: &dyn RenderingContext,
     ) {
-        let render_result = view_holders
+        let render_result = rendering_context
             .visible_nodes()
             .iter()
-            .map(|(v, e)| Renderer::render_view(gl, v, e, texture))
+            .map(|(image_view, image_view_element)| {
+                Renderer::render_view(
+                    gl,
+                    programs,
+                    image_view,
+                    image_view_element,
+                    rendering_context,
+                )
+            })
             .collect::<Result<Vec<_>, _>>();
         if let Err(e) = render_result {
             log::error!("Renderer::render: {}", e);
@@ -297,16 +115,17 @@ impl Renderer {
 
     fn render_view(
         gl: &WebGl2RenderingContext,
-        v: &ImageView,
-        e: &HtmlElement,
-        texture: Option<&WebGlTexture>,
+        programs: &Programs,
+        image_view: &ImageView,
+        image_view_element: &HtmlElement,
+        rendering_context: &dyn RenderingContext,
     ) -> Result<(), String> {
         let canvas = gl
             .canvas()
             .unwrap()
             .dyn_into::<HtmlCanvasElement>()
             .unwrap();
-        let rect = e.get_bounding_client_rect();
+        let rect = image_view_element.get_bounding_client_rect();
 
         // The following two lines set the size (in CSS pixels) of
         // the drawing buffer to be identical to the size of the
@@ -328,13 +147,35 @@ impl Renderer {
         gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
         {
-            let [r, g, b, a] = v.model.bg_color.unwrap_or([0.0, 0.0, 0.0, 1.0]);
+            let [r, g, b, a] = image_view.model.bg_color.unwrap_or([0.0, 0.0, 0.0, 1.0]);
             gl.clear_color(r, g, b, a);
         };
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
-        let vert_code = include_str!("../shaders/basic.vert");
-        let frag_code = include_str!("../shaders/basic.frag");
+        let basic_program = &programs.basic;
+        gl.use_program(Some(&basic_program.program));
+
+        let mut mat = glam::Mat4::IDENTITY;
+        *mat.col_mut(0).index_mut(0) = 0.5;
+
+        set_uniforms(
+            &basic_program,
+            &HashMap::from([
+                ("u_time".to_string(), UniformValue::Float(&0.5)),
+                ("u_transform".to_string(), UniformValue::Mat4(&mat)),
+            ]),
+        );
+
+        if let Some(image_id) = &image_view.model.image_id {
+            let t = rendering_context.texture_by_id(&image_id).ok_or(
+                "Could not find texture for image_id. This should not happen, please report a bug.",
+            )?;
+            let texture = &t.texture;
+            set_uniforms(
+                &basic_program,
+                &HashMap::from([("u_texture".to_string(), UniformValue::Texture(&texture))]),
+            );
+        }
 
         let array_info: ArraySpec<&[f32]> = ArraySpec {
             name: "a_position".to_string(),
@@ -348,44 +189,11 @@ impl Renderer {
             stride: None,
         };
         let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
-
-        let shader_program = webgl_utils::GLProgramBuilder::new(&gl)
-            .vertex_shader(vert_code)
-            .fragment_shader(frag_code)
-            .attribute("a_position")
-            .build()?;
-
-        gl.use_program(Some(&shader_program.program));
-
-        let t = texture.ok_or("no texture")?;
-        let mut mat = glam::Mat4::IDENTITY;
-        *mat.col_mut(0).index_mut(0) = 0.5;
-        set_uniforms(
-            &shader_program,
-            &HashMap::from([
-                ("u_time".to_string(), UniformValue::Float(&0.5)),
-                ("u_texture".to_string(), UniformValue::Texture(&t)),
-                (
-                    "u_transform".to_string(),
-                    UniformValue::Mat4(&mat),
-                ),
-            ]),
-        );
-
-        (shader_program
+        (basic_program
             .attribute_setters
             .get("a_position")
             .ok_or("Could not find attribute setter for a_position")?
             .setter)(&gl, &attr);
-
-        // shader_program
-        //     .uniform_setters
-        //     .get("u_time")
-        //     .map(|| log::warn!("Uniform u_time not found in shader program. Maybe it's unused?")).(&gl, &0.5);
-        // shader_program
-        //     .uniform_setters
-        //     .get("u_texture")
-        //     .ok_or("could not find setter for u_texture")?(&gl, t);
 
         // Attach the time as a uniform for the GL context.
         gl.draw_arrays(GL::TRIANGLES, 0, 6);

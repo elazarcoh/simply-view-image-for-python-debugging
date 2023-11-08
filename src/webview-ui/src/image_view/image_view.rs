@@ -2,10 +2,9 @@ use std::rc::Rc;
 
 use yew::NodeRef;
 
-use super::camera::Camera;
+use super::{camera::Camera, types::ImageId};
 
-pub type CameraRef = Rc<Camera>;
-
+#[derive(Clone)]
 struct ImageViewParameters {
     pub view_width: u32,
     pub view_height: u32,
@@ -22,24 +21,28 @@ impl Default for ImageViewParameters {
     }
 }
 
+#[derive(Clone)]
 pub struct ImageViewModel {
-    pub camera_ref: CameraRef,
-    pub image_id: Option<String>,
+    pub image_id: Option<ImageId>,
     pub bg_color: Option<[f32; 4]>,
     parameters: ImageViewParameters,
 }
 
 impl ImageViewModel {
-    pub fn new(camera_ref: CameraRef) -> Self {
+    pub fn new() -> Self {
         Self {
-            camera_ref,
             image_id: None,
             bg_color: Some([0.0, 0.0, 1.0, 1.0]), // TODO: remove this
             parameters: ImageViewParameters::default(),
         }
     }
+
+    pub fn set_image_id(&mut self, image_id: ImageId) {
+        self.image_id = Some(image_id);
+    }
 }
 
+#[derive(Clone)]
 pub struct ImageView {
     pub model: ImageViewModel,
     pub node_ref: NodeRef,

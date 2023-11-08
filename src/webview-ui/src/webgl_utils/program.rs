@@ -184,12 +184,24 @@ fn create_attributes_setters(
     //   return attribSetters;
 }
 
+pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<String, UniformValue>) {
+    uniforms
+        .iter()
+        .for_each(|(name, value)| match program.uniform_setters.get(name) {
+            Some(setter) => setter(&program.gl, value.deref()),
+            None => log::warn!(
+                "Could not find uniform setter for: {}. Maybe it is unused?",
+                name
+            ),
+        });
+}
+
 pub fn create_program_bundle(
     gl: &GL,
     vertex_shader: &str,
     fragment_shader: &str,
     opt_attribs: Option<Vec<&str>>,
-) -> Result<GLGuard<ProgramBundle>, String> {
+) -> Result<ProgramBundle, String> {
     let binding = opt_attribs.unwrap_or(vec![]);
     let attribute_locations = binding.iter().enumerate().collect::<Vec<(usize, &&str)>>();
 
@@ -231,17 +243,15 @@ pub fn create_program_bundle(
 
     let attribute_setters = create_attributes_setters(gl, &program)?;
 
-    Ok(GLGuard {
+    Ok(ProgramBundle {
         gl: gl.clone(),
-        obj: ProgramBundle {
-            program: take_into_owned(program),
-            shaders: vec![
-                take_into_owned(gl_vertex_shader),
-                take_into_owned(gl_fragment_shader),
-            ],
-            uniform_setters,
-            attribute_setters,
-        },
+        program: take_into_owned(program),
+        shaders: vec![
+            take_into_owned(gl_vertex_shader),
+            take_into_owned(gl_fragment_shader),
+        ],
+        uniform_setters,
+        attribute_setters,
     })
 }
 
@@ -277,7 +287,7 @@ impl<'a> GLProgramBuilder<'a> {
 }
 
 impl<'a> GLProgramBuilderBuilder<'a> {
-    pub fn build(self) -> Result<GLGuard<ProgramBundle>, String> {
+    pub fn build(self) -> Result<ProgramBundle, String> {
         self.fallible_build()
             .map_err(|e| format!("GLProgramBuilder error: {}", e))
             .and_then(|b| {

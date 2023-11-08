@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::mem;
@@ -14,6 +13,29 @@ use super::constants::GL_CONSTANT_NAMES;
 
 pub type GLConstant = u32;
 
+pub trait GLValue: GLVerifyType + GLSet {}
+impl<T> GLValue for T where T: GLVerifyType + GLSet {}
+
+pub enum UniformValue<'a> {
+    Float(&'a f32),
+    Texture(&'a WebGlTexture),
+}
+impl<'a> GLVerifyType for UniformValue<'a> {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        match self {
+            UniformValue::Float(f) => f.verify(gl_type),
+            UniformValue::Texture(t) => t.verify(gl_type),
+        }
+    }
+}   
+impl<'a> GLSet for UniformValue<'a> {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        match self {
+            UniformValue::Float(f) => f.set(gl, location),
+            UniformValue::Texture(t) => t.set(gl, location),
+        }
+    }
+}
 pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
 
 pub struct AttributeSetter {
@@ -90,7 +112,6 @@ pub enum TextureWrap {
     Repeat = GL::REPEAT,
 }
 
-
 pub trait ElementTypeFor {
     const ELEMENT_TYPE: ElementType;
 }
@@ -140,10 +161,18 @@ pub struct BufferInfo {
 }
 
 pub struct ProgramBundle {
+    pub gl: GL,
     pub program: WebGlProgram,
     pub shaders: Vec<WebGlShader>,
     pub uniform_setters: HashMap<String, UniformSetter>,
     pub attribute_setters: HashMap<String, AttributeSetter>,
+}
+
+impl Drop for ProgramBundle {
+    fn drop(&mut self) {
+        self.program.drop(&self.gl);
+        self.shaders.iter().for_each(|shader| shader.drop(&self.gl));
+    }
 }
 
 #[derive(Debug, Builder)]
@@ -178,13 +207,6 @@ impl GLDrop for WebGlShader {
 impl GLDrop for WebGlBuffer {
     fn drop(&self, gl: &GL) {
         gl.delete_buffer(Some(self));
-    }
-}
-
-impl GLDrop for ProgramBundle {
-    fn drop(&self, gl: &GL) {
-        self.program.drop(gl);
-        self.shaders.iter().for_each(|shader| shader.drop(gl));
     }
 }
 
@@ -248,8 +270,6 @@ pub trait GLVerifyType {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String>;
 }
 
-pub trait GLValue: GLVerifyType + GLSet {}
-impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 
 fn impl_gl_verify_type<T: GLVerifyType>(
     expected_gl_type: GLConstant,

@@ -15,6 +15,7 @@ export const PlotlyFigure: Viewable = {
         setupCode: () => PLOTLY_CODE,
         testSetupCode:
             "is_plotly_figure, plotly_figure_info, plotly_figure_save", // require all three functions to be defined
+        id: "plotly_figure",
     },
     testTypePythonCode: {
         evalCode: (expression: string) =>
@@ -45,6 +46,7 @@ export const PyplotFigure: Viewable = {
         },
         testSetupCode:
             "is_pyplot_figure, pyplot_figure_info, pyplot_figure_save", // require all three functions to be defined
+        id: "pyplot_figure",
     },
     testTypePythonCode: {
         evalCode: (expression: string) =>
@@ -74,6 +76,7 @@ export const PyplotAxes: Viewable = {
             );
         },
         testSetupCode: "is_pyplot_ax, pyplot_ax_info, pyplot_ax_save", // require all three functions to be defined
+        id: "pyplot_axes",
     },
     testTypePythonCode: {
         evalCode: (expression: string) => `${m("is_pyplot_ax")}(${expression})`,

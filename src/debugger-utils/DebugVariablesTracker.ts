@@ -72,9 +72,8 @@ export class DebugVariablesTracker {
     > = new Map();
     _currentFrameId: number | undefined;
 
-    currentFrameId(): number {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this._currentFrameId!;
+    currentFrameId(): number | undefined {
+        return this._currentFrameId;
     }
 
     setFrameId(frameId: number | undefined): void {

@@ -22,19 +22,19 @@ function runThroughDebugger(
     } as DebugProtocol.EvaluateArguments);
 }
 
-async function runPython<R>(
+export async function runPython<R>(
     code: EvalCodePython<R>,
     parse: true,
     session: vscode.DebugSession,
     options: RunInPythonOptions
 ): Promise<Except<R>>;
-async function runPython<R>(
+export async function runPython<R>(
     code: EvalCodePython<R>,
     parse: false,
     session: vscode.DebugSession,
     options: RunInPythonOptions
 ): Promise<Except<null>>;
-async function runPython<R>(
+export async function runPython<R>(
     code: EvalCodePython<R>,
     parse: boolean,
     session: vscode.DebugSession,

@@ -1,11 +1,14 @@
-try:
-    import matplotlib.pyplot as plt
-
-    def set_matplotlib_agg(to_set):
-        if to_set:
+def set_matplotlib_agg(to_set):
+    if to_set:
+        try:
             import matplotlib
             matplotlib.use('agg')
+        except:
+            pass
 
+try:
+
+    import matplotlib.pyplot as plt
     def pyplot_figure():
         def is_pyplot_figure(obj):
             try:

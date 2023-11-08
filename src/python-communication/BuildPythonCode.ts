@@ -4,6 +4,7 @@ import { AllViewables } from "../AllViewables";
 import { indent } from "../utils/Utils";
 
 export const PYTHON_MODULE_NAME = "_python_view_image_mod";
+const SETUP_RESULT_VARIABLE_NAME = `${PYTHON_MODULE_NAME}_setup_result`;
 const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
 const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
@@ -16,13 +17,18 @@ except:
     
     from types import ModuleType
     ${PYTHON_MODULE_NAME} = ModuleType('python_view_image_mod', '')
-    exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
+    try:
+        exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
+    except Exception as e:
+        ${SETUP_RESULT_VARIABLE_NAME} = e
+        del ${PYTHON_MODULE_NAME}
 `;
 
 function execInModuleCode(
     moduleName: string,
     content: string,
-    tryExpression: string
+    tryExpression: string,
+    errorCapturingVariableName: string,
 ): string {
     const code: string = `
 exec('''
@@ -31,8 +37,8 @@ ${indent(tryExpression, 4)}
 except:
     try:
 ${indent(content, 8)}
-    except:
-        pass
+    except Exception as e:
+        ${errorCapturingVariableName} = { 'error': e }
 ''', ${moduleName}.__dict__
 )
 `;
@@ -61,8 +67,8 @@ function concatExpressionsToPythonList(expressions: string[]): string {
 
 function combineSetupCodes(setupCodes: SetupCode[]): string {
     const setupCode = setupCodes
-        .map(({ setupCode, testSetupCode }) =>
-            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode)
+        .map(({ setupCode, testSetupCode, id: errorCapuringVariableName }) =>
+            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode, errorCapuringVariableName)
         )
         .join("\n\n");
 
@@ -75,10 +81,14 @@ ${setupCode}
     return code;
 }
 
-export function verifyModuleExistsCode(): EvalCodePython<boolean> {
-    return convertExpressionIntoValueWrappedExpression(
-        `'${PYTHON_MODULE_NAME}' in globals()`
-    );
+export function verifyModuleExistsCode(): EvalCodePython<Except<boolean>> {
+    return {
+        pythonCode: `"Value({})".format('${PYTHON_MODULE_NAME}' in globals())`
+    };
+}
+
+export function moduleSetupCode(): EvalCodePython<null> {
+    return { pythonCode: CREATE_MODULE_IF_NOT_EXISTS };
 }
 
 export function viewablesSetupCode(): EvalCodePython<null> {

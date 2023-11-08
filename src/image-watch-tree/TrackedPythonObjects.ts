@@ -85,6 +85,12 @@ export async function saveAllTrackedObjects(
     trackedObjects: ReadonlyArray<TrackedObject>,
     session: vscode.DebugSession
 ): Promise<void> {
+    const debugSessionData = activeDebugSessionData(session);
+    if (debugSessionData.setupOkay === false) {
+        // Probably too soon to save
+        return;
+    }
+
     const codes = trackedObjects.map(({ expression, viewable, savePath }) => {
         return constructValueWrappedExpressionFromEvalCode(
             viewable.serializeObjectPythonCode,
@@ -94,7 +100,6 @@ export async function saveAllTrackedObjects(
     });
     const saveObjectsCode = combineMultiEvalCodePython(codes);
 
-    const debugSessionData = activeDebugSessionData(session);
     const mkdirRes = debugSessionData.savePathHelper.mkdir();
     if (mkdirRes.isError) {
         logError(

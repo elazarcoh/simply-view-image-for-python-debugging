@@ -10,6 +10,7 @@ export const NumpyTensor: Viewable = {
     setupPythonCode: {
         setupCode: () => NUMPY_TENSOR_CODE,
         testSetupCode: "is_numpy_tensor, numpy_tensor_info, numpy_tensor_save", // require all three functions to be defined
+        id: "numpy_tensor",
     },
     testTypePythonCode: {
         evalCode: (expression: string) =>
@@ -33,6 +34,7 @@ export const TorchTensor: Viewable = {
     setupPythonCode: {
         setupCode: () => TORCH_TENSOR_CODE,
         testSetupCode: "is_torch_tensor, torch_tensor_info, torch_tensor_save", // require all three functions to be defined
+        id: "torch_tensor",
     },
     testTypePythonCode: {
         evalCode: (expression: string) =>

@@ -177,7 +177,8 @@ export class CurrentPythonObjectsList {
     }
 
     public async update(): Promise<void> {
-        if (activeDebugSessionData(this.debugSession).isStopped === false) {
+        const debugSessionData = activeDebugSessionData(this.debugSession);
+        if (debugSessionData.isStopped === false || debugSessionData.setupOkay === false) {
             return;
         }
         this._variablesList.length = 0;

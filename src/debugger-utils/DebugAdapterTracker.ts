@@ -52,6 +52,16 @@ export const createDebugAdapterTracker = (
         await saveTracked();
     }, 500);
 
+    let isSetupRunning = false;
+    const runSetupIfNotRunning = debounce(async () => {
+        if (isSetupRunning) {
+            return;
+        }
+        isSetupRunning = true;
+        await runSetup(session);
+        isSetupRunning = false;
+    }, 500);
+
     return {
         onWillStartSession: () => {
             logTrace("onWillStartSession");
@@ -94,7 +104,7 @@ export const createDebugAdapterTracker = (
                 logDebug("Breakpoint hit");
                 debugSessionData.isStopped = true;
 
-                await debounce(runSetup, 250)(session);
+                await debounce(runSetupIfNotRunning, 250)();
             } else if (msg.type === "response" && msg.command === "variables") {
                 // Add context to debug variable. This is a workaround.
                 if (
@@ -112,7 +122,7 @@ export const createDebugAdapterTracker = (
             } else if (msg.type === "response" && msg.command === "scopes") {
                 debugVariablesTracker.onScopesResponse(msg);
                 // scope has changed. Make sure setup is okay
-                await runSetup(session);
+                await runSetupIfNotRunning();
                 await onScopeChange();
             }
         },

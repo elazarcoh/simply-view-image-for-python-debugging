@@ -11,7 +11,11 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         range: vscode.Range
     ): Promise<TypedCommand<"svifpd._internal_view-object">[] | undefined> {
         const debugSession = vscode.debug.activeDebugSession;
-        if (debugSession === undefined || activeDebugSessionData(debugSession).isStopped === false) {
+        if (debugSession === undefined) {
+            return undefined;
+        }
+        const debugSessionData = activeDebugSessionData(debugSession);
+        if (debugSessionData.isStopped === false || debugSessionData.setupOkay === false) {
             return undefined;
         }
 

@@ -7,6 +7,10 @@ type SetupCode = {
      * Code that is run before the setup code, to avoid re-running the setup code
      */
     testSetupCode: string;
+    /**
+     * Unique identifier for this setup code. Used to debug errors in the setup code.
+     */
+    id: string;
 };
 
 type EvalCode<_ResultType, Args extends Array<unknown> = []> = {

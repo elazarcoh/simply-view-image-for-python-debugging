@@ -1,4 +1,4 @@
-use super::types::GLConstant;
+use super::types::*;
 use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer, WebGlProgram};
 /**
  * Given typed array creates a WebGLBuffer and copies the typed array
@@ -20,12 +20,16 @@ use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer, WebGlProgram};
 //   setBufferFromTypedArray(gl, type, buffer, typedArray, drawType);
 //   return buffer;
 // }
-trait CorrespondingJsArray {
-    type JsArray;
+pub trait IntoJsArray {
+    type JsArray:  AsRef<js_sys::Object>;
+    fn into_js_array(self) -> Self::JsArray;
 }
 
-impl CorrespondingJsArray for f32 {
+impl IntoJsArray for &[f32] {
     type JsArray = js_sys::Float32Array;
+    fn into_js_array(self) -> Self::JsArray {
+        js_sys::Float32Array::from(self)
+    }
 }
 
 // fn into_js_array<T: CorrespondingJsArray>(slice: T) -> T::JsArray {
@@ -37,28 +41,63 @@ impl CorrespondingJsArray for f32 {
 //     let x = <&[f32] as CorrespondingJsArray>::JsArray::from(slice);
 // }
 
-fn into_js_array<T: CorrespondingJsArray>(slice: &[T]) {
-    let array: <T as CorrespondingJsArray>::JsArray =
-        <T as CorrespondingJsArray>::JsArray::from(slice);
+
+pub fn create_buffer_from_data<T: IntoJsArray>(
+    gl: &GL,
+    data: T,
+    buffer_type: Option<GLConstant>,
+    draw_type: Option<GLConstant>,
+) -> Result<WebGlBuffer, String> {
+    let buffer = gl.create_buffer().ok_or("Could not create buffer")?;
+    let buffer_type_ = buffer_type.unwrap_or(GL::ARRAY_BUFFER);
+    let draw_type_ = draw_type.unwrap_or(GL::STATIC_DRAW);
+    gl.bind_buffer(buffer_type_, Some(&buffer));
+    let array = data.into_js_array();
+    gl.buffer_data_with_array_buffer_view(buffer_type_, array.as_ref(), draw_type_);
+
+    Ok(buffer)
 }
-
-fn bar(slice: &[f32]) {
-    let _ = into_js_array(slice);
-}
-
-
-// pub fn create_buffer_from_slice<T: CorrespondingJsArray>(
+// pub fn create_buffer_info_from_data<T: IntoJsArray>(
 //     gl: &GL,
-//     slice: &[T],
-//     buffer_type: Option<GLConstant>,
-//     draw_type: Option<GLConstant>,
-// ) -> Result<WebGlBuffer, String> {
-//     let buffer = gl.create_buffer().ok_or("Could not create buffer")?;
-//     let buffer_type_ = buffer_type.unwrap_or(GL::ARRAY_BUFFER);
-//     let draw_type_ = draw_type.unwrap_or(GL::STATIC_DRAW);
-//     gl.bind_buffer(buffer_type_, Some(&buffer));
-//     let array = into_js_array(slice);
-//     gl.buffer_data_with_array_buffer_view(buffer_type_, &array, draw_type_);
+//     data: ArraySpec<T>,
+// ) -> Result<BufferInfo, String> {
+    
 
-//     Ok(buffer)
 // }
+
+fn create_attribs_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<AttribInfo, String> {
+      let attribName = array.name;
+//       if (array.value) {
+//         if (!Array.isArray(array.value) && !typedArrays.isArrayBuffer(array.value)) {
+//           throw new Error('array.value is not array or typedarray');
+//         }
+//         attribs[attribName] = {
+//           value: array.value,
+//         };
+//       } else {
+//         let fn;
+//         if (array.buffer && array.buffer instanceof WebGLBuffer) {
+//           fn = attribBufferFromBuffer;
+//         } else if (typeof array === "number" || typeof array.data === "number") {
+//           fn = attribBufferFromSize;
+//         } else {
+//           fn = attribBufferFromArrayLike;
+//         }
+//         const {buffer, type, numValues, arrayType} = fn(gl, array, arrayName);
+//         const normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArrayType(arrayType);
+//         const numComponents = getNumComponents(array, arrayName, numValues);
+//         attribs[attribName] = {
+//           buffer:        buffer,
+//           numComponents: numComponents,
+//           type:          type,
+//           normalize:     normalization,
+//           stride:        array.stride || 0,
+//           offset:        array.offset || 0,
+//           divisor:       array.divisor === undefined ? undefined : array.divisor,
+//           drawType:      array.drawType,
+//         };
+//       }
+//   gl.bindBuffer(ARRAY_BUFFER, null);
+//   return attribs;
+}
+

@@ -10,11 +10,46 @@ use web_sys::*;
 
 use super::constants::GL_CONSTANT_NAMES;
 
-pub type GLConstant = u32;
+pub(crate) type GLConstant = u32;
 
-pub type GLSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
+pub(crate) type GLSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
 
-pub struct ProgramBundle {
+#[repr(u32)]
+pub(crate) enum ElementType {
+    UnsignedByte = GL::UNSIGNED_BYTE,
+}
+
+impl Into<GLConstant> for ElementType {
+    fn into(self) -> GLConstant {
+        self as GLConstant
+    }
+}
+
+pub(crate) enum ArrayData<T> {
+    Slice(T),
+    Buffer(WebGlBuffer),
+}
+
+pub(crate) struct ArraySpec<T> {
+    pub num_components: u32,
+    pub name: String,
+    pub data: ArrayData<T>,
+}
+
+pub(crate) struct AttribInfo {
+    num_components: u32,
+}
+
+pub(crate) struct BufferInfo {
+    num_elements: u32,
+    element_type: ElementType,
+    indices: Option<WebGlBuffer>,
+    attribs: HashMap<String, AttribInfo>,
+}
+
+
+
+pub(crate) struct ProgramBundle {
     pub program: WebGlProgram,
     pub shaders: Vec<WebGlShader>,
     pub uniform_setters: HashMap<String, GLSetter>,

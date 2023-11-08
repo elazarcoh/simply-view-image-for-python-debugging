@@ -20,6 +20,7 @@ use gloo_utils::format::JsValueSerdeExt;
 
 use image_view::camera::ViewsCameras;
 use image_view::image_views::ImageViews;
+use image_view::rendering_context::CameraContext;
 use image_view::rendering_context::ImageViewData;
 use image_view::rendering_context::RenderingContext;
 use image_view::types::ImageId;
@@ -46,6 +47,7 @@ use crate::image_view::renderer::Renderer;
 use crate::image_view::types::InSingleViewName;
 use crate::image_view::types::InViewName;
 use crate::image_view::types::TextureImage;
+use crate::mouse_events::PanHelper;
 use mouse_events::calculate_camera_after_wheel_zoom;
 
 // #[wasm_bindgen]
@@ -299,6 +301,17 @@ impl RenderingContext for Coordinator {
     }
 }
 
+
+impl CameraContext for Coordinator {
+    fn get_camera_for_view(&self, view_id: InViewName) -> image_view::camera::Camera {
+        self.views_cameras.borrow().get(view_id)
+    }
+
+    fn set_camera_for_view(&self, view_id: InViewName, camera: image_view::camera::Camera) {
+        self.views_cameras.borrow_mut().set(view_id, camera);
+    }
+}
+
 #[function_component]
 fn App() -> Html {
     let coordinator = use_memo(
@@ -315,6 +328,7 @@ fn App() -> Html {
         },
         (),
     );
+
 
     let canvas_ref = use_node_ref();
 
@@ -342,6 +356,7 @@ fn App() -> Html {
             };
 
             let wheel_listener: EventListener = {
+                let canvas_ref = canvas_ref.clone();
                 let coordinator = Rc::clone(&coordinator);
                 let onwheel = Callback::from(move |event: Event| {
                     let event = event
@@ -351,7 +366,8 @@ fn App() -> Html {
                         .cast::<HtmlCanvasElement>()
                         .expect("canvas_ref not attached to a canvas element");
                     let camera = (&coordinator).views_cameras.borrow().get(view_id);
-                    let new_camera = calculate_camera_after_wheel_zoom(event, &canvas_element, &camera);
+                    let new_camera =
+                        calculate_camera_after_wheel_zoom(event, &canvas_element, &camera);
                     (&coordinator)
                         .views_cameras
                         .borrow_mut()
@@ -366,9 +382,24 @@ fn App() -> Html {
                 })
             };
 
+            let pan_listener = {
+                let canvas_ref = canvas_ref.clone();
+                let coordinator = Rc::clone(&coordinator);
+                let view_element = my_node_ref
+                    .cast::<HtmlElement>()
+                    .expect("Unable to cast node ref to HtmlElement");
+                PanHelper::install(
+                    canvas_ref,
+                    view_id,
+                    &view_element,
+                    coordinator
+                )
+            };
+
             move || {
                 drop(message_listener);
                 drop(wheel_listener);
+                drop(pan_listener);
             }
         }
     });

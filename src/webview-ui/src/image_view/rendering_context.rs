@@ -19,3 +19,8 @@ pub trait RenderingContext {
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
     fn view_data(&self, view_id: InViewName) -> ImageViewData;
 }
+
+pub trait CameraContext {
+    fn get_camera_for_view(&self, view_id: InViewName) -> Camera;
+    fn set_camera_for_view(&self, view_id: InViewName, camera: Camera);
+}

@@ -1,7 +1,25 @@
 mod app;
+mod com_types;
+
+use gloo_utils::format::JsValueSerdeExt;
 
 use wasm_bindgen::prelude::*;
 use web_sys::console;
+
+
+#[wasm_bindgen]
+pub fn send_example_to_js() -> JsValue {
+    let example = com_types::Example {
+        field3: [2., 3., 4., 5.],
+    };
+
+    JsValue::from_serde(&example).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn receive_example_from_js(_: JsValue) {
+    // let example: com_types::Example = val.into_serde().unwrap();
+}
 
 #[wasm_bindgen()]
 extern "C" {
@@ -47,8 +65,10 @@ fn run() -> Result<(), JsValue> {
 
     body.append_child(&val)?;
 
-    vscode.postMessage(JsValue::from_str(r#"{ "command": "hello", "payload": "Hey there partner! 🤠", "requestId": 1 }"#));
-
+    vscode.postMessage(send_example_to_js());
+    // vscode.postMessage(JsValue::from_str(
+    //     r#"{ "command": "hello", "payload": "Hey there partner! 🤠", "requestId": 1 }"#,
+    // ));
 
     console::log_1(&"Hello using web-sys".into());
 

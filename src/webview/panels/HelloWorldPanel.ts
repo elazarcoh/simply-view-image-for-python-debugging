@@ -203,6 +203,7 @@ export class HelloWorldPanel {
     ) {
         webview.onDidReceiveMessage(
             (message) => {
+                console.log(message);
                 message = JSON.parse(message);
 
                 const { command, requestId, payload } = message;

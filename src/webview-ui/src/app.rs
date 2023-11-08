@@ -9,6 +9,7 @@ use js_sys::Date;
 use yew::{html, Component, Context, Html, NodeRef};
 use web_sys::{window, HtmlCanvasElement, WebGlRenderingContext as GL, WebGlRenderingContext};
 
+
 // Define the possible messages which can be sent to the component
 pub enum Msg {
     Increment,

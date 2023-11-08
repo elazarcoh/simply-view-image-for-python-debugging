@@ -1,3 +1,4 @@
+import { Example } from "../webview-ui/pkg/webview";
 
 type WebviewPushCommands = {
     "view-image": {
@@ -5,3 +6,5 @@ type WebviewPushCommands = {
         imageBase64: string;
     };
 };
+
+type XX = { e: Example }

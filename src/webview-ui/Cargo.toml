@@ -39,6 +39,9 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 gloo = "0.8"
 js-sys = "0.3"
 yew = { version = "0.20", features = ["csr"] }
+serde = { version = "1.0.183", features = ["derive"] }
+gloo-utils = { version = "0.1.7", features = ["serde"] }
+tsify = "0.4.5"
 
 [dependencies.web-sys]
 version = "0.3.22"

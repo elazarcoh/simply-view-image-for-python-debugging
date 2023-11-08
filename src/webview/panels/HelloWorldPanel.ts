@@ -13,7 +13,7 @@ import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 // import * as sharp from "sharp";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
-import { FromExtensionMessage, FromExtensionMessageWithId } from "../webview";
+import { FromExtensionMessageWithId } from "../webview";
 
 /**
  * This class manages the state and behavior of HelloWorld webview panels.
@@ -55,7 +55,9 @@ export class HelloWorldPanel {
             extensionUri
         );
 
-        this._webviewMessageHandler = new WebviewMessageHandler(this._panel.webview);
+        this._webviewMessageHandler = new WebviewMessageHandler(
+            this._panel.webview
+        );
 
         // Set an event listener to listen for messages passed from the webview context
         // this._setWebviewMessageListener(this._panel.webview, context);
@@ -192,21 +194,16 @@ export class HelloWorldPanel {
         );
         // replace script with vscode-resource URIs
         const htmlWithVscodeResourceUris = indexHtml
-        .replaceAll( /\${nonce}/g, nonce)
-        .replaceAll( /\${webviewCspSource}/g, webview.cspSource)
-        .replaceAll( /\${baseUri}/g, baseUri.toString())
-            .replace(
-            /<script defer src="webview.js"><\/script>/g,
-            () => {
+            .replaceAll(/\${nonce}/g, nonce)
+            .replaceAll(/\${webviewCspSource}/g, webview.cspSource)
+            .replaceAll(/\${baseUri}/g, baseUri.toString())
+            .replace(/<script defer src="webview.js"><\/script>/g, () => {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
-            }
-        );
+            });
         return htmlWithVscodeResourceUris;
     }
 
-    public postMessage(
-        message: FromExtensionMessageWithId
-    ) {
+    public postMessage(message: FromExtensionMessageWithId) {
         this._webviewMessageHandler.sendToWebview(message);
     }
 }

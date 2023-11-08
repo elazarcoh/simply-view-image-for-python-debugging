@@ -71,3 +71,11 @@ export function hasValue<T>(value: T | null | undefined): value is T {
 export function notEmptyArray<T>(array: T[]): array is NonEmptyArray<T> {
     return array.length !== 0;
 }
+
+export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
+    if (!map.has(key)) {
+        map.set(key, value);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion  -- we just set it
+    return map.get(key)!;
+}

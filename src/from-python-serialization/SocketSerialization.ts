@@ -87,46 +87,6 @@ enum ExceptionType {
     UnknownException = 0xff,
 }
 
-class StatefulReader {
-    readonly functions: {
-        [key: string]: [number, (offset?: number) => number];
-    } = {
-        readUInt8: [1, Buffer.prototype.readUInt8],
-        readUInt32: [4, Buffer.prototype.readUInt32BE],
-        readFloat32: [4, Buffer.prototype.readFloatBE],
-        readFloat64: [8, Buffer.prototype.readDoubleBE],
-    };
-
-    constructor(private buffer: Buffer) {}
-
-    get currentBuffer() {
-        return this.buffer;
-    }
-
-    private read([length, readFunction]: [
-        number,
-        (offset?: number) => number
-    ]) {
-        const result = readFunction.call(this.buffer, 0);
-        const newBuffer = this.buffer.subarray(length);
-        this.buffer = newBuffer;
-        return result;
-    }
-
-    readUInt8() {
-        return this.read(this.functions.readUInt8);
-    }
-    readUInt32() {
-        return this.read(this.functions.readUInt32);
-    }
-    readFloat32() {
-        return this.read(this.functions.readFloat32);
-    }
-    readFloat64() {
-        return this.read(this.functions.readFloat64);
-    }
-}
-
 type WebviewHelloMessage = { type: MessageType.WebviewHello };
 type PythonSendingObjectMessage<T> = {
     type: MessageType.PythonSendingObject;
@@ -360,34 +320,6 @@ function parseExceptionMessage(buffer: Buffer) {
     return exception;
 }
 
-class MessageChunks {
-    private messageChunks: Buffer[] = [];
-    private messageLength: number = 0;
-
-    constructor(private expectedMessageLength: number) {}
-
-    addChunk(chunk: Buffer) {
-        const chunkLength = chunk.length;
-        if (this.messageLength + chunkLength > this.expectedMessageLength) {
-            throw new Error("Chunk is too big");
-        }
-        this.messageChunks.push(chunk);
-        this.messageLength += chunkLength;
-    }
-
-    get isComplete() {
-        return this.messageLength === this.expectedMessageLength;
-    }
-
-    fullMessage() {
-        if (!this.isComplete) {
-            throw new Error("Message is not complete");
-        }
-        const fullMessage = Buffer.concat(this.messageChunks);
-        return fullMessage;
-    }
-}
-
 function parseMessageLength(buffer: Buffer): [number, Buffer] {
     const reader = new StatefulReader(buffer);
     const messageLength = reader.readUInt32();
@@ -434,7 +366,7 @@ class Client {
 
 @Service()
 export class SocketServer {
-    private server: net.Server;
+    public readonly server: net.Server;
     private port?: number = undefined;
     private started: boolean = false;
     private webviewClient?: net.Socket = undefined;
@@ -491,6 +423,7 @@ export class SocketServer {
         const client = new Client(socket);
         socket.on("data", (data) => client.onData(data, onMessage, onError));
     }
+
 }
 
 // TODO: Remove this

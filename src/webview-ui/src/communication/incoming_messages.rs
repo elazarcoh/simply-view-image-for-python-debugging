@@ -1,6 +1,8 @@
 use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 
-use crate::image_view::types::ImageId;
+use strum_macros::EnumCount;
+
+use crate::image_view::{types::{ImageId, PixelValue}, utils::image_minmax_on_bytes};
 
 use super::common::MessageId;
 
@@ -13,7 +15,16 @@ pub enum ValueVariableKind {
 }
 
 #[derive(
-    serde_repr::Deserialize_repr, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord,
+    serde_repr::Deserialize_repr,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    EnumCount,
 )]
 #[repr(u32)]
 pub enum Channels {
@@ -127,6 +138,12 @@ pub struct ImageInfo {
     pub additional_info: HashMap<String, String>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ComputedInfo {
+    pub min: PixelValue,
+    pub max: PixelValue,
+}
+
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub struct ImageData {
     #[serde(flatten)]
@@ -135,6 +152,25 @@ pub struct ImageData {
     #[tsify(type = "ArrayBuffer")]
     #[serde(with = "serde_bytes")]
     pub bytes: Vec<u8>,
+}
+
+pub struct LocalImageData {
+    pub info: ImageInfo,
+    pub computed_info: ComputedInfo,
+    pub bytes: Vec<u8>,
+}
+
+impl From<ImageData> for LocalImageData {
+    fn from(image_data: ImageData) -> Self {
+        let info = image_data.info;
+        let bytes = image_data.bytes;
+        let (min, max) = image_minmax_on_bytes(&bytes, info.datatype, info.channels);
+        Self {
+            info,
+            computed_info: ComputedInfo { min, max },
+            bytes,
+        }
+    }
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

@@ -69,6 +69,10 @@ instant = "0.1.12"
 serde_repr = "0.1.17"
 enumset = "1.1.3"
 itertools = "0.11.0"
+static_assertions = "1.1.0"
+strum = "0.25"
+strum_macros = "0.25"
+
 
 [dependencies.web-sys]
 version = "0.3.22"

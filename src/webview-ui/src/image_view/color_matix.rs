@@ -1,7 +1,7 @@
-use glam::{Mat4, Vec4};
+use glam::{Mat4, Vec3, Vec4};
 
 use crate::{
-    communication::incoming_messages::{Channels, Datatype, ImageData, ImageInfo},
+    communication::incoming_messages::{Channels, ComputedInfo, Datatype, ImageData, ImageInfo},
     math_utils::mat4::transpose,
     webgl_utils::draw,
 };
@@ -133,8 +133,34 @@ fn is_integer(datatype: Datatype) -> bool {
     )
 }
 
+fn stretch_values_matrix(
+    image_info: &ImageInfo,
+    image_computed_info: &ComputedInfo,
+) -> (Mat4, Vec4) {
+    // x = (x - min) / (max - min) = x / (max - min) - min / (max - min)
+    // x = x * (1 / (max - min)) - min / (max - min)
+    // x = x * (1 / (max - min)) + (-min / (max - min))
+    let mut factor = Vec3::ONE;
+    let mut add = Vec3::ZERO;
+    let color_channels = u32::min(image_info.channels as u32, 3);
+    (0..color_channels).for_each(|c| {
+        let min = image_computed_info.min.get::<f32>(c);
+        let max = image_computed_info.max.get::<f32>(c);
+        let denom = max - min;
+
+        factor[c as usize] = 1.0 / denom;
+        add[c as usize] = -min / denom;
+    });
+
+    let factor = Mat4::from_scale(factor);
+    let add = Vec4::new(add.x, add.y, add.z, 0.0);
+
+    (factor, add)
+}
+
 pub fn calculate_color_matrix(
     image_info: &ImageInfo,
+    image_computed_info: &ComputedInfo,
     drawing_options: &DrawingOptions,
 ) -> (Mat4, Vec4) {
     let datatype = image_info.datatype;
@@ -210,11 +236,20 @@ pub fn calculate_color_matrix(
         }
     };
 
+    let (stretch, stretch_add) = if drawing_options.high_contrast {
+        stretch_values_matrix(image_info, image_computed_info)
+    } else {
+        (IDENTITY, ADD_ZERO)
+    };
+
     let (mat, add) = if drawing_options.ignore_alpha {
         (IGNORE_ALPHA * mat, ALPHA_ONE)
     } else {
         (mat, add)
     };
-
-    (mat * normalization_matrix, add)
+    
+    // TODO: fix bugs
+    let res = (mat * normalization_matrix * stretch, add + mat * stretch_add);
+    log::debug!("color_matrix: {}, add: {}", res.0, res.1);
+    res
 }

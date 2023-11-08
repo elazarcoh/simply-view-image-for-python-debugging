@@ -7,3 +7,6 @@ pub mod rendering_context;
 pub mod constants;
 pub mod pixel_text_rendering;
 pub mod color_matix;
+pub mod colormap;
+pub mod builtin_colormaps;
+pub mod utils;

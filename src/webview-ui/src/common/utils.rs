@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use crate::communication::incoming_messages::{Channels, Datatype};
+
 pub fn eq_rc<T: ?Sized>(a: &Option<Rc<T>>, b: &Option<Rc<T>>) -> bool {
     match (a, b) {
         (Some(a), Some(b)) => Rc::ptr_eq(a, b),

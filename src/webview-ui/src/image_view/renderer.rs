@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use glam::{Mat3, Vec2, Vec3};
+use glam::{Mat3, UVec2, Vec2, Vec3};
 
 use wasm_bindgen::prelude::*;
 use web_sys::{
@@ -22,11 +22,9 @@ use crate::webgl_utils::types::*;
 
 use super::color_matix::calculate_color_matrix;
 use super::constants::VIEW_SIZE;
-use super::pixel_text_rendering::{
-    PixelLoc, PixelTextCache, PixelTextRenderer, PixelTextRenderingData, PixelValue,
-};
+use super::pixel_text_rendering::{PixelTextCache, PixelTextRenderer, PixelTextRenderingData};
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::types::{all_views, TextureImage, ViewId};
+use super::types::{all_views, PixelValue, TextureImage, ViewId};
 
 struct Programs {
     normalized_image: ProgramBundle,
@@ -363,8 +361,11 @@ impl Renderer {
 
         let drawing_options =
             rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
-        let (color_multiplier, u_color_addition) =
-            calculate_color_matrix(&texture.image.info, &drawing_options);
+        let (color_multiplier, u_color_addition) = calculate_color_matrix(
+            &texture.image.info,
+            &texture.image.computed_info,
+            &drawing_options,
+        );
 
         gl.use_program(Some(&program.program));
         set_uniforms(
@@ -397,7 +398,7 @@ impl Renderer {
                         VIEW_SIZE.height / texture.image_size().height,
                     ));
 
-                    let pixel = PixelLoc::new(x as _, y as _);
+                    let pixel = UVec2::new(x as _, y as _);
                     let pixel_value = PixelValue::from_image(&texture.image, &pixel);
 
                     rendering_data.text_renderer.render(PixelTextRenderingData {

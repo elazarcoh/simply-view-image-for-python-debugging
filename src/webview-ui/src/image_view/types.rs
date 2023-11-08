@@ -1,11 +1,94 @@
-use std::{convert::TryFrom, fmt::Display};
+use std::fmt::Display;
 
-use image::DynamicImage;
+use crate::communication::incoming_messages::{Datatype, LocalImageData};
+use bytemuck::Pod;
+use glam::{UVec2};
+use strum::EnumCount;
+use webgl_utils::types::{ElementType, Format, InternalFormat};
 
 use crate::{
     common::Size,
+    communication::incoming_messages::{Channels},
     webgl_utils::{self, types::GLGuard},
 };
+
+static_assertions::const_assert_eq!(Channels::COUNT, 4); // If this is failing, you need to update the code below
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct PixelValue {
+    pub num_channels: Channels,
+    pub datatype: Datatype,
+    pub bytes: [u8; 32], // we need at most: 4 channels * 8 bytes per channel
+}
+
+impl Display for PixelValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let datatype = self.datatype;
+        write!(f, "(")?;
+        let mut sep = "";
+        (0..self.num_channels.into())
+            .map(|c| -> std::fmt::Result {
+                let res = match datatype {
+                    Datatype::Uint8 => write!(f, "{}{}", sep, self.get::<u8>(c)),
+                    Datatype::Uint16 => write!(f, "{}{}", sep, self.get::<u16>(c)),
+                    Datatype::Uint32 => write!(f, "{}{}", sep, self.get::<u32>(c)),
+                    Datatype::Float32 => write!(f, "{}{}", sep, self.get::<f32>(c)),
+                    Datatype::Int8 => write!(f, "{}{}", sep, self.get::<i8>(c)),
+                    Datatype::Int16 => write!(f, "{}{}", sep, self.get::<i16>(c)),
+                    Datatype::Int32 => write!(f, "{}{}", sep, self.get::<i32>(c)),
+                    Datatype::Bool => write!(f, "{}{}", sep, self.get::<u8>(c)),
+                };
+                sep = ", ";
+                res
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        write!(f, ")")
+    }
+}
+
+impl PixelValue {
+    pub fn new(num_channels: Channels, datatype: Datatype) -> Self {
+        Self {
+            num_channels,
+            datatype,
+            bytes: [0_u8; 32],
+        }
+    }
+
+    pub fn from_image(image: &LocalImageData, pixel: &UVec2) -> Self {
+        let c = image.info.channels;
+        let pixel_index = (pixel.x + pixel.y * image.info.width) as usize;
+        let bytes_per_element = image.info.datatype.num_bytes();
+        let start = pixel_index * c as usize * bytes_per_element;
+        let end = start + c as usize * bytes_per_element;
+        let bytes = &image.bytes[start..end];
+        let mut bytes_array = [0_u8; 32];
+        bytes_array[..bytes.len()].copy_from_slice(bytes);
+        Self {
+            num_channels: c,
+            datatype: image.info.datatype,
+            bytes: bytes_array,
+        }
+    }
+
+    pub fn get<T: Pod>(&self, channel: u32) -> &T {
+        debug_assert!(channel < self.num_channels as u32);
+        let bytes_per_element = self.datatype.num_bytes();
+        let start = channel as usize * bytes_per_element;
+        let end = start + bytes_per_element;
+        let bytes = &self.bytes[start..end];
+        bytemuck::from_bytes::<T>(bytes)
+    }
+
+    pub fn get_mut<T: Pod>(&mut self, channel: u32) -> &mut T {
+        debug_assert!(channel < self.num_channels as u32);
+        let bytes_per_element = self.datatype.num_bytes();
+        let start = channel as usize * bytes_per_element;
+        let end = start + bytes_per_element;
+        let bytes = &mut self.bytes[start..end];
+        bytemuck::from_bytes_mut::<T>(bytes)
+    }
+}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Coloring {
@@ -64,9 +147,8 @@ pub fn all_views() -> Vec<ViewId> {
     vec![ViewId::Primary]
 }
 
-#[derive(Debug)]
 pub struct TextureImage {
-    pub image: crate::communication::incoming_messages::ImageData,
+    pub image: LocalImageData,
     pub texture: GLGuard<web_sys::WebGlTexture>,
 }
 
@@ -86,6 +168,7 @@ impl TextureImage {
                 .build()
                 .unwrap(),
         )?;
+        let image = LocalImageData::from(image);
         Ok(Self { image, texture })
     }
 
@@ -98,8 +181,7 @@ impl TextureImage {
 }
 
 // TODO: move from here
-use crate::communication::incoming_messages::Datatype;
-use webgl_utils::types::{ElementType, Format, InternalFormat};
+
 #[rustfmt::skip]
 lazy_static! {
     static ref FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS: std::collections::HashMap<(Datatype, u32), (InternalFormat, Format, ElementType)> = {

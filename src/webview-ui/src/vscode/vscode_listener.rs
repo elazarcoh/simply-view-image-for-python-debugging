@@ -56,7 +56,7 @@ impl VSCodeListener {
             let dispatch = Dispatch::<AppState>::new();
             let tex_image = TextureImage::try_new(image_data, dispatch.get().gl.as_ref().unwrap())
                 .expect("Unable to create texture image");
-            dispatch.apply(StoreAction::AddTextureImage(image_id, tex_image));
+            dispatch.apply(StoreAction::AddTextureImage(image_id, Box::new(tex_image)));
 
             // let _width = image.width();
             // let _height = image.height();

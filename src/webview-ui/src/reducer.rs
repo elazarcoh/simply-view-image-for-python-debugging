@@ -20,7 +20,7 @@ pub enum UpdateDrawingOptions {
 pub enum StoreAction {
     UpdateImages(Vec<(ImageId, ImageInfo)>), 
     SetImageToView(ImageId, ViewId),
-    AddTextureImage(ImageId, TextureImage),
+    AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
 }
 
@@ -47,7 +47,7 @@ impl Reducer<AppState> for StoreAction {
 
             StoreAction::AddTextureImage(image_id, texture_image) => {
                 log::debug!("AddTextureImage: {:?}", image_id);
-                state.image_cache.borrow_mut().set(&image_id, texture_image);
+                state.image_cache.borrow_mut().set(&image_id, *texture_image);
             }
             StoreAction::UpdateDrawingOptions(image_id, update) => {
                 let current_drawing_options = state.drawing_options.borrow().get_or_default(&image_id).clone();

@@ -306,6 +306,27 @@ fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
     TextureImage::try_new(image_data, gl).unwrap()
 }
 
+fn image_texture_gray_f32_not_normalized(gl: &WebGl2RenderingContext, min_value: f32, max_value: f32) -> TextureImage {
+    let bytes_rgba = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .map(|chunk| {
+            let r = chunk[0] as f32 / 255.0;
+            let g = chunk[1] as f32 / 255.0;
+            let b = chunk[2] as f32 / 255.0;
+            let gray = r * 0.3 + g * 0.59 + b * 0.11;
+            gray * (max_value - min_value) + min_value
+        })
+        .collect::<Vec<f32>>();
+    let image_data = image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Float32,
+        Channels::One,
+        format!("image_gray_f32_not_normalized_{}_{}", min_value, max_value).as_str(),
+    );
+    TextureImage::try_new(image_data, gl).unwrap()
+}
+
 fn image_texture_with_transparency(gl: &WebGl2RenderingContext) -> TextureImage {
     let bytes_rgba = image_rgba_data_u8();
     let data = bytes_rgba
@@ -413,6 +434,8 @@ pub fn set_debug_images(gl: &WebGl2RenderingContext) {
         image_texture_rgba_f32(gl),
         image_texture_rgb_f32(gl),
         image_texture_gray_f32(gl),
+        image_texture_gray_f32_not_normalized(gl, 0.0, 0.5),
+        image_texture_gray_f32_not_normalized(gl, -100.0, 100.0),
         image_texture_with_transparency(gl),
         image_fully_transparent(gl),
     ];
@@ -425,7 +448,7 @@ pub fn set_debug_images(gl: &WebGl2RenderingContext) {
 
     for image in images {
         let image_id = image.image.info.image_id.clone();
-        dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), image));
+        dispatch.apply(StoreAction::AddTextureImage(image_id.clone(), Box::new(image)));
         log::debug!("setting image to view");
         let view_id = ViewId::Primary;
         dispatch.apply(StoreAction::SetImageToView(image_id, view_id));

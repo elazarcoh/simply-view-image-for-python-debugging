@@ -3,17 +3,6 @@ mod app;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
-#[wasm_bindgen(module = "@vscode/webview-ui-toolkit")]
-extern "C" {
-    type DesignSystem;
-    fn provideVSCodeDesignSystem() -> DesignSystem;
-
-    #[wasm_bindgen(method)]
-    fn register(this: &DesignSystem, element: JsValue);
-
-    fn vsCodeButton() -> JsValue;
-}
-
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.
 //
@@ -44,9 +33,7 @@ fn run() -> Result<(), JsValue> {
 
     console::log_1(&"Hello using web-sys".into());
 
-    provideVSCodeDesignSystem().register(vsCodeButton());
-
-    // app::render();
+    app::render();
 
     Ok(())
 }

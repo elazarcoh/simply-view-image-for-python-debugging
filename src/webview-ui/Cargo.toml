@@ -42,4 +42,17 @@ yew = { version = "0.20", features = ["csr"] }
 
 [dependencies.web-sys]
 version = "0.3.22"
-features = ['Document', 'Element', 'HtmlElement', 'Node', 'Window', 'console']
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'Node',
+  'Window',
+  'HtmlCanvasElement',
+  'console',
+  'WebGlBuffer',
+  'WebGlProgram',
+  'WebGlRenderingContext',
+  'WebGlShader',
+  'WebGlUniformLocation',
+]

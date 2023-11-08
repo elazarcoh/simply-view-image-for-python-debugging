@@ -74,6 +74,7 @@ features = [
   'Node',
   'Window',
   'HtmlCanvasElement',
+  'CssStyleDeclaration',
   'console',
   'WebGlBuffer',
   'WebGlProgram',

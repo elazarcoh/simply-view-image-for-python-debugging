@@ -8,15 +8,6 @@ pub enum ToggleState {
     Off,
 }
 
-impl From<ToggleState> for bool {
-    fn from(val: ToggleState) -> Self {
-        match val {
-            ToggleState::On => true,
-            ToggleState::Off => false,
-        }
-    }
-}
-
 #[derive(PartialEq, Properties, Default)]
 pub struct IconButtonProps {
     aria_label: Option<AttrValue>,
@@ -24,7 +15,7 @@ pub struct IconButtonProps {
     onclick: Option<Callback<MouseEvent>>,
 }
 
-#[function_component]
+#[styled_component]
 pub fn IconButton(props: &IconButtonProps) -> Html {
     let IconButtonProps {
         aria_label,
@@ -43,6 +34,7 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
                 if let Some(e) = node_ref.cast::<web_sys::HtmlElement>() {
                     Timeout::new(10, move || {
                         let _ = e.set_attribute("appearance", "icon");
+                        let _ = e.style().set_property("visibility", "visible");
                     })
                     .forget();
                 }
@@ -52,7 +44,7 @@ pub fn IconButton(props: &IconButtonProps) -> Html {
     }
 
     html! {
-        <vscode-button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()}>
+        <vscode-button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={css!("visibility: hidden;")}>
             <span class={icon}></span>
         </vscode-button>
     }

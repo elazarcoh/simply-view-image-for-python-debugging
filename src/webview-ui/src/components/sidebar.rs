@@ -1,30 +1,27 @@
 use gloo::events::EventListener;
 use stylist::yew::use_style;
 use wasm_bindgen::JsCast;
-use yew::{prelude::*};
+use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    components::{image_list_item::ImageListItem, icon_button::{IconToggleButton, ToggleState}},
+    components::{
+        icon_button::{IconToggleButton, ToggleState},
+        image_list_item::ImageListItem,
+    },
     image_view::types::{ImageId, ViewId},
     reducer,
-    store::{AppState},
+    store::AppState,
 };
 
 #[derive(PartialEq, Properties)]
 struct ToolbarProps {
-    pinned: bool,
-    pinned_button_clicked: Callback<()>,
-    collapse_button_clicked: Callback<()>,
+    children: Html,
 }
 
 #[function_component]
 fn Toolbar(props: &ToolbarProps) -> Html {
-    let ToolbarProps {
-        pinned,
-        pinned_button_clicked,
-        collapse_button_clicked,
-    } = props;
+    let ToolbarProps { children } = props;
 
     // let toggle_pinned = {
     //     let pinned_button_clicked = pinned_button_clicked.clone();
@@ -37,26 +34,17 @@ fn Toolbar(props: &ToolbarProps) -> Html {
         r#"
         width: 100%;
         display: flex;
-        list-style-type: none;
-        padding: var(--size-2);
-        border-radius: var(--radius-3);
-        gap: var(--size-4);
-        box-shadow: 
-            0 2px 0 0 hsl(0 0% 100% / 0.5) inset,
-            0 2px 0 0 hsl(0 0% 25% / 0.5);
-        align-items: right;
-        justify-content: center;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
         align-content: center;
-        backdrop-filter: blur(10px);
+        flex-wrap: nowrap;
         "#,
     );
 
     html! {
         <div class={toolbar_style}>
-
-            <vscode-button appearance="icon" aria-label="Toggle sidebar" >
-                <span class={"codicon codicon-chevron-right"}></span>
-            </vscode-button>
+            {children.clone()}
         </div>
     }
 }
@@ -71,15 +59,7 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
     let node_ref = use_node_ref();
 
     let pinned = use_state(|| true);
-    let toggle_pin = {
-        let pinned = pinned.clone();
-        Callback::from(move |_| pinned.set(*pinned))
-    };
     let collapsed = use_state(|| false);
-    let on_collapse_change = {
-        let collapsed = collapsed.clone();
-        Callback::from(move |_| collapsed.set(!*collapsed))
-    };
 
     let dragging = use_state(|| false);
     use_effect_with(node_ref.clone(), {
@@ -120,12 +100,34 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
         }
     });
 
+    let pin_toggle_button = html! {
+        <IconToggleButton
+            aria_label={"Toggle sidebar".to_string()}
+            on_icon={"codicon codicon-pinned".to_string()}
+            off_icon={"codicon codicon-pin".to_string()}
+            initial_state={if *pinned {ToggleState::On} else {ToggleState::Off}}
+            on_state_changed={
+                let pinned = pinned.clone();
+                Callback::from(move |(state, _)| pinned.set(state == ToggleState::On))
+            } />
+    };
+    let collapse_toggle_button = html! {
+        <IconToggleButton
+            aria_label={"Toggle sidebar".to_string()}
+            on_icon={"codicon codicon-chevron-right".to_string()}
+            off_icon={"codicon codicon-chevron-left".to_string()}
+            initial_state={if *collapsed {ToggleState::On} else {ToggleState::Off}}
+            on_state_changed={
+                let collapsed = collapsed.clone();
+                Callback::from(move |(state, _)| collapsed.set(state == ToggleState::On))
+            } />
+    };
+
     /* Expanded sidebar */
     let sidebar_style = use_style!(
         r#"
         top: 0;
-        background-color: #333;
-        color: #fff;
+        background-color: var(--vscode-sideBar-background);
         width: 200px;
         height: 100%;
     "#,
@@ -162,7 +164,10 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
                     else if *dragging {classes!(sidebar_style.clone(), sidebar_unpinned_style.clone(), dragging_style.clone())}
                     else {classes!(sidebar_style.clone(), sidebar_unpinned_style.clone(), not_dragging_style.clone())}
         }>
-            <Toolbar pinned={*pinned} pinned_button_clicked={toggle_pin} collapse_button_clicked={on_collapse_change} />
+            <Toolbar>
+                {pin_toggle_button}
+                {collapse_toggle_button}
+            </Toolbar>
             <div>
                 <crate::components::image_selection_list::ImageSelectionList />
             </div>
@@ -179,59 +184,10 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
     </div>
     };
 
-    // html! {
-    // <div ref={node_ref}>
-    //    if *collapsed {{collapsed_html}}
-    //    else {{expanded_html}}
-    // </div>
-    // }
-
-    // html! {
-    // <section class="component-container">
-    //   <h2>{"Button"}</h2>
-    //   <section class="component-example">
-    //     <p>{"Default Button"}</p>
-    //     <vscode-button appearance="primary">{"Button Text"}</vscode-button>
-    //   </section>
-    //   <section class="component-example">
-    //     <p>{"Secondary Button"}</p>
-    //     <vscode-button appearance="secondary">{"Button Text"}</vscode-button>
-    //   </section>
-    //   <section class="component-example">
-    //     <p>{"With Disabled"}</p>
-    //     <vscode-button disabled={true}>{"Button Text"}</vscode-button>
-    //   </section>
-    //   <section class="component-example">
-    //     <p>{"With Start Icon"}</p>
-    //     <vscode-button>
-    //       {"Button Text"}
-    //       <span slot="start" class="codicon codicon-add"></span>
-    //     </vscode-button>
-    //   </section>
-    //   <section class="component-example">
-    //     <p>{"With Icon Only"}</p>
-    //     <vscode-button appearance="icon" >
-    //       <span class="codicon codicon-check"></span>
-    //     </vscode-button>
-    //   </section>
-    // </section>
-    //   }
-    // // Html::from_html_unchecked(r#"
-    // //      <vscode-button aria-label="Confirm" appearance="icon" >
-    // //        <span class="codicon codicon-check"></span>
-    // //      </vscode-button>
-    // // "#.into())
     html! {
         <div ref={node_ref}>
-            <IconToggleButton
-                aria_label={"Toggle sidebar".to_string()}
-                on_icon={"codicon codicon-chevron-right".to_string()}
-                off_icon={"codicon codicon-chevron-left".to_string()}
-                initial_state={ToggleState::Off}
-                on_state_changed={Callback::from(|_|
-                    log::debug!("IconToggleButton::on_state_changed")
-                )} />
-            {"Hello world!"}
+        if *collapsed {{collapsed_html}}
+        else {{expanded_html}}
         </div>
     }
 }

@@ -75,7 +75,7 @@ impl CameraProvider {
 pub struct ImageViewsCoordinator {
     camera_provider: CameraProvider,
     view_holders: ViewHolders,
-    image_cache: ImageCache,
+    pub image_cache: ImageCache,
 }
 
 impl ImageViewsCoordinator {

@@ -19,7 +19,9 @@ use image_view::image_view::ImageView;
 use image_view::image_views_coordinator::ImageViewsCoordinator;
 use image_view::renderer;
 use image_view::rendering_context::RenderingContext;
+use image_view::types::ImageId;
 use serde::{Deserialize, Serialize};
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
@@ -251,10 +253,10 @@ fn create_image_for_view(gl: &WebGl2RenderingContext) -> Result<TextureImage, St
 }
 
 struct Coordinator {
-    gl: RefCell<Option<WebGl2RenderingContext>>,
-    renderer: Rc<RefCell<Renderer>>,
-    image_views_coordinator: Rc<RefCell<ImageViewsCoordinator>>,
-    vscode_message_handler: Rc<VSCodeMessageHandler>,
+    pub gl: RefCell<Option<WebGl2RenderingContext>>,
+    pub renderer: Rc<RefCell<Renderer>>,
+    pub image_views_coordinator: ImageViewsCoordinator,
+    pub vscode_message_handler: Rc<VSCodeMessageHandler>,
 }
 
 impl RenderingContext for Coordinator {
@@ -262,16 +264,16 @@ impl RenderingContext for Coordinator {
         self.gl
             .borrow()
             .as_ref()
-            .expect("GL context not initialized")
+            .expect("GL context not set")
             .clone()
     }
 
-    fn texture_by_id(&self, id: &image_view::types::ImageId) -> Option<&TextureImage> {
-        todo!()
+    fn texture_by_id(&self, id: &ImageId) -> Option<&TextureImage> {
+        self.image_views_coordinator.texture_image_by_id(id)
     }
 
     fn visible_nodes(&self) -> Vec<(ImageView, HtmlElement)> {
-        self.image_views_coordinator.borrow().visible_nodes()
+        self.image_views_coordinator.visible_nodes()
     }
 }
 
@@ -284,7 +286,7 @@ fn App() -> Html {
             |_| Coordinator {
                 gl: RefCell::new(None),
                 renderer: Rc::new(RefCell::new(Renderer::new())),
-                image_views_coordinator: Rc::new(RefCell::new(ImageViewsCoordinator::new())),
+                image_views_coordinator: ImageViewsCoordinator::new(),
                 vscode_message_handler: Rc::new(VSCodeMessageHandler::new(vscode, image_cache)),
             }
         },
@@ -295,10 +297,7 @@ fn App() -> Html {
 
     // TODO: move from here
     let view_id = InViewName::Single(InSingleViewName::Single);
-    let my_node_ref = coordinator
-        .image_views_coordinator
-        .borrow()
-        .get_node_ref(view_id);
+    let my_node_ref = coordinator.image_views_coordinator.get_node_ref(view_id);
 
     use_effect({
         let window = window().unwrap();
@@ -355,7 +354,7 @@ fn App() -> Html {
 
                 log::debug!("GL context created");
 
-                coordinator.gl.replace(Some(gl.clone()));
+                // coordinator.gl.replace(Some(gl.clone()));
 
                 coordinator
                     .renderer
@@ -363,7 +362,7 @@ fn App() -> Html {
                     .set_rendering_context(coordinator.clone());
 
                 move || {
-                    coordinator.gl.replace(None);
+                    // coordinator.gl.replace(None);
                 }
             }
         },

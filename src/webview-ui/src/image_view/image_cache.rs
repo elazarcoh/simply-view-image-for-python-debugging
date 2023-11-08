@@ -15,8 +15,8 @@ impl ImageCache {
         }
     }
 
-    pub fn get(&self, key: &ImageId) -> Option<&TextureImage> {
-        self.cache.get(key)
+    pub fn get(&self, id: &ImageId) -> Option<&TextureImage> {
+        self.cache.get(id)
     }
 
     pub fn add(&mut self, image: TextureImage)  -> ImageId {

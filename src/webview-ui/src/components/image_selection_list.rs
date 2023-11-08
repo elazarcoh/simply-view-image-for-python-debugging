@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use stylist::{yew::use_style, css};
+use stylist::{css, yew::use_style};
 use yew::prelude::*;
 use yewdux::prelude::*;
 
@@ -52,15 +52,13 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             let data = images_data.borrow().by_id.get(id).unwrap().clone();
 
             html! {
-            <div>
                 <vscode-option
                     aria-selected={if is_selected {"true"} else {"false"}}
                     {onclick}
                     class={entry_style.clone()}
                 >
-                    <ImageListItem entry={data} />
+                    <ImageListItem entry={data} selected={is_selected} />
                 </vscode-option>
-            </div>
             }
         })
         .interleave(

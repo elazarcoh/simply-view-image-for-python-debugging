@@ -337,20 +337,12 @@ fn shape_to_string(shape: &[u32]) -> String {
 #[derive(PartialEq, Properties, Clone)]
 pub struct ImageListItemProps {
     pub entry: ImageInfo,
+    pub selected: bool,
 }
 
 #[function_component]
 pub fn ImageListItem(props: &ImageListItemProps) -> Html {
-    let ImageListItemProps { entry } = props;
-
-    let container_style = use_style!(
-        r#"
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: left;
-    "#
-    );
+    let ImageListItemProps { entry, selected } = props;
 
     let info_grid_style = use_style!(
         r#"
@@ -367,21 +359,19 @@ pub fn ImageListItem(props: &ImageListItemProps) -> Html {
     );
 
     html! {
-        <div class={container_style.clone()}>
-            <div>
-                <label>{&entry.expression}</label>
-                <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
-                    <vscode-data-grid-row>
-                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
-                        // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.shape)}</vscode-data-grid-cell>
-                    </vscode-data-grid-row>
-                    <vscode-data-grid-row>
-                        <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
-                        // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.data_type}</vscode-data-grid-cell>
-                    </vscode-data-grid-row>
-                </vscode-data-grid>
-                <DisplayOption entry={entry.clone()} />
-            </div>
-        </div>
+        <>
+            <label title={entry.expression.clone()}>{&entry.expression}</label>
+            <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
+                <vscode-data-grid-row>
+                    <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
+                    // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.shape)}</vscode-data-grid-cell>
+                </vscode-data-grid-row>
+                <vscode-data-grid-row>
+                    <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
+                    // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.data_type}</vscode-data-grid-cell>
+                </vscode-data-grid-row>
+            </vscode-data-grid>
+            if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+        </>
     }
 }

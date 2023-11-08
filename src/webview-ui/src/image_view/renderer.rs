@@ -125,10 +125,13 @@ impl PixelValueFormatter {
 
         // let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
         let text = match image {
-            DynamicImage::ImageRgba8(image)=> {
+            DynamicImage::ImageRgba8(image) => {
                 let pixel = image.get_pixel(x as u32, y as u32);
-                format!("{:.5}\n{:.5}\n{:.5}\n{:.5}", pixel[0], pixel[1], pixel[2], pixel[3])
-            },
+                format!(
+                    "{:.5}\n{:.5}\n{:.5}\n{:.5}",
+                    pixel[0], pixel[1], pixel[2], pixel[3]
+                )
+            }
             _ => "Not RGBA".to_string(),
         };
 
@@ -147,7 +150,8 @@ impl PixelValueFormatter {
             .with_screen_position((
                 ((x as f32 + px) * pixel_offset + letters_offset_inside_pixel) * font_scale,
                 ((y as f32 + py) * pixel_offset + letters_offset_inside_pixel) * font_scale,
-            )).to_owned();
+            ))
+            .to_owned();
 
         FormattedPixelValue {
             section,
@@ -451,20 +455,23 @@ impl Renderer {
                 let formatted_pixel_value =
                     PixelValueFormatter::format_pixel_value(&texture.image, x, y);
 
-                rendering_data
-                    .text_renderer
-                    .queue_section(formatted_pixel_value.section.to_borrowed());
+                // rendering_data
+                //     .text_renderer
+                //     .queue_section(formatted_pixel_value.section.to_borrowed());
                 let image_pixels_to_view = Mat3::from_scale(Vec2::new(
                     VIEW_SIZE.width / texture.image_size().width,
                     VIEW_SIZE.height / texture.image_size().height,
                 ));
-                // rescale the font to a single pixel
+                // // rescale the font to a single pixel
                 let text_to_image = formatted_pixel_value.text_to_image;
                 let text_to_view = image_pixels_to_view * text_to_image;
+                
                 rendering_data
                     .text_renderer
                     .render(&text_to_view, &view_projection);
+                break;
             }
+            break;
         }
         // render text
         // let font_scale = 100.0;

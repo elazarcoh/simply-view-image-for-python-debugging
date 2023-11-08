@@ -187,8 +187,10 @@ impl Renderer {
 
         gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
-
-        gl.clear_color(1.0, 0.0, 0.0, 1.0);
+        {
+            let [r, g, b, a] = v.model.bg_color.unwrap_or([0.0, 0.0, 0.0, 1.0]);
+            gl.clear_color(r, g, b, a);
+        };
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
         let vert_code = include_str!("../shaders/basic.vert");

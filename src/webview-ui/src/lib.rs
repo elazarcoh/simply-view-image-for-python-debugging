@@ -5,8 +5,10 @@ extern crate lazy_static;
 #[macro_use]
 extern crate cfg_if;
 
-mod communication;
 use base64::{engine::general_purpose, Engine as _};
+
+mod communication;
+mod math_utils;
 mod components;
 mod image_view;
 mod mouse_events;

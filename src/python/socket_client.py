@@ -1,14 +1,20 @@
 import socket
+import sys
 import traceback
 import struct
 import numpy as np
+
 
 # See SocketSerialization.ts for message format
 # MessageType 
 PythonSendingObject = 0x01
 # ObjectType
 NumpyArray = 0x01
+Json = 0x02
 ExceptionObject = 0xff
+# ByteOrderType
+LittleEndian = 0x01
+BigEndian = 0x02
 # ArrayDataType
 Float32 = 0x01
 Float64 = 0x02
@@ -37,6 +43,7 @@ ObjectIdType = np.uint32
 ObjectType = np.uint8
 NumDimsType = np.uint8
 DimType = np.uint32
+ByteOrderType = np.uint8
 
 array_dtype_to_array_data_type = {
     "float32": Float32,
@@ -53,6 +60,7 @@ array_dtype_to_array_data_type = {
     "bool_": Bool,
 }
 
+BYTE_ORDER = LittleEndian if sys.byteorder == 'little' else BigEndian
 
 def create_numpy_message(
     request_id: RequestIdType,
@@ -66,24 +74,38 @@ def create_numpy_message(
 
     # Create the message body
     array_dtype =   array_dtype_to_array_data_type[str(array.dtype)]
+    byte_order =    ByteOrderType(BYTE_ORDER)
     num_dimensions = NumDimsType(len(array.shape))
     array_shape =   np.array(array.shape, dtype=DimType)
     array_data =    array.tobytes()
 
     # Create the message
-    message = [
+    header = [
         message_type,
         request_id,
         object_id,
         object_type,
         array_dtype,
+        byte_order,
         num_dimensions,
         *array_shape,
+    ]
+    
+    # add padding before the array data, making sure the offset is a multiple of the element size
+    header_size = 1 + 4 + 4 + 1 + 1 + 1 + 1 + num_dimensions * 4
+    bytes_per_element = array.dtype.itemsize
+    message_length_placeholder = 4
+    padding_size =  (bytes_per_element - (header_size + message_length_placeholder) % bytes_per_element) % bytes_per_element
+    padding = bytes(padding_size)
+
+    message = [
+        *header,
+        padding,
         array_data,
     ]
 
     # Create the message format string
-    message_format = f'>BIIBBB{num_dimensions}I{len(array_data)}s'
+    message_format = f'!BIIBBBB{num_dimensions}I{len(padding)}s{len(array_data)}s'
 
     # Pack the message
     message_pack = struct.pack(message_format, *message)
@@ -115,24 +137,59 @@ def create_exception_message(
     ]
 
     # Create the message format string
-    message_format = f'>BIIBB{len(exception_message)}s'
+    message_format = f'!BIIBB{len(exception_message)}s'
 
     # Pack the message
     message_pack = struct.pack(message_format, *message)
 
     return message_pack
 
-def open_send_and_close(port, request_id, array):
+def create_json_message(
+    request_id: RequestIdType,
+    obj: str,
+):
+    # Create the message header
+    message_type = MessageType(PythonSendingObject)
+    request_id = RequestIdType(request_id)
+    object_id = ObjectIdType(id(obj))
+    object_type = ObjectType(Json)
+
+    # Create the message body
+    json_message = obj.encode()
+    
+    # Create the message
+    message = [
+        message_type,
+        request_id,
+        object_id,
+        object_type,
+        json_message,
+    ]
+
+    # Create the message format string
+    message_format = f'!BIIB{len(json_message)}s'
+
+    # Pack the message
+    message_pack = struct.pack(message_format, *message)
+
+    return message_pack
+
+def open_send_and_close(port, request_id, obj, type):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(('localhost', port))
 
         try:
-            message = create_numpy_message(request_id, array)
+            if type == NumpyArray:
+                message = create_numpy_message(request_id, obj)
+            elif type == Json:
+                message = create_json_message(request_id, obj)
+            else:
+                raise ValueError(f'Unknown type {type}')
         except Exception as e:
             message = create_exception_message(request_id, e)
         
         # Send the message length (4 bytes, big-endian)
-        msg_len = struct.pack('>I', len(message))
+        msg_len = struct.pack('!I', len(message))
         s.sendall(msg_len)
 
         # Send the message data

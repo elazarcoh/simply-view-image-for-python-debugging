@@ -1,7 +1,9 @@
 import COMMON from "../python/common.py?raw";
+import SOCKET_CLIENT from "../python/socket_client.py?raw";
 import Container from "typedi";
 import { AllViewables } from "../AllViewables";
 import { indent } from "../utils/Utils";
+import { ObjectType } from "../from-python-serialization/SocketSerialization";
 
 export const PYTHON_MODULE_NAME = "_python_view_image_mod";
 const SETUP_RESULT_VARIABLE_NAME = `${PYTHON_MODULE_NAME}_setup_result`;
@@ -9,6 +11,7 @@ const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
 const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
 const OBJECT_SHAPE_IF_IT_HAS_ONE = `${PYTHON_MODULE_NAME}.object_shape_if_it_has_one`;
+const OPEN_SEND_AND_CLOSE = `${PYTHON_MODULE_NAME}.open_send_and_close`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -22,6 +25,11 @@ except:
     except Exception as e:
         ${SETUP_RESULT_VARIABLE_NAME} = e
         del ${PYTHON_MODULE_NAME}
+
+    try:
+        exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
+    except:
+        pass
 `;
 
 function execInModuleCode(
@@ -168,5 +176,16 @@ export function constructObjectShapeCode(
 ): EvalCodePython<Except<PythonObjectShape>> {
     return convertExpressionIntoValueWrappedExpression(
         `${OBJECT_SHAPE_IF_IT_HAS_ONE}(${expression})`
+    );
+}
+
+export function constructOpenSendAndCloseCode(
+    port: number,
+    request_id: number,
+    expression: string,
+    type: ObjectType,
+): EvalCodePython<Except<PythonObjectShape>> {
+    return convertExpressionIntoValueWrappedExpression(
+        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${type.valueOf()})`
     );
 }

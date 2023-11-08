@@ -18,7 +18,10 @@ import { hasValue } from "./utils/Utils";
 import { setupPluginManager } from "./plugins";
 import { HelloWorldPanel } from "./webview/panels/HelloWorldPanel";
 import { HoverProvider } from "./HoverProvider";
-import * as fs from "fs/promises";
+import { ObjectType, SocketServer } from "./from-python-serialization/SocketSerialization";
+import { constructOpenSendAndCloseCode } from "./python-communication/BuildPythonCode";
+import { evaluateInPython } from "./python-communication/RunPythonCode";
+
 
 function onConfigChange(): void {
     initLog();
@@ -108,12 +111,21 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...registerExtensionCommands(context));
 
+    const socketServer = Container.get(SocketServer);
+    socketServer.start();
+
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };
 
     context.subscriptions.push(
         vscode.commands.registerCommand("svifpd.open-settings", async () => {
-            HelloWorldPanel.render(context);
+            // HelloWorldPanel.render(context);
+            const code = constructOpenSendAndCloseCode(socketServer.portNumber, 55, "js", ObjectType.Json);
+            console.log(code);
+            const session = vscode.debug.activeDebugSession;
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const res = await evaluateInPython(code, session!);
+            console.log(res);
         })
     );
 }

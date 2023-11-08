@@ -1,3 +1,4 @@
+use enum_dispatch::enum_dispatch;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::mem;
@@ -16,26 +17,18 @@ pub type GLConstant = u32;
 pub trait GLValue: GLVerifyType + GLSet {}
 impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 
+#[enum_dispatch(GLVerifyType, GLSet)]
 pub enum UniformValue<'a> {
     Float(&'a f32),
     Texture(&'a WebGlTexture),
+
+    Vec2(&'a glam::Vec2),
+    Vec3(&'a glam::Vec3),
+    Vec4(&'a glam::Vec4),
+    Mat3(&'a glam::Mat3),
+    Mat4(&'a glam::Mat4),
 }
-impl<'a> GLVerifyType for UniformValue<'a> {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
-        match self {
-            UniformValue::Float(f) => f.verify(gl_type),
-            UniformValue::Texture(t) => t.verify(gl_type),
-        }
-    }
-}   
-impl<'a> GLSet for UniformValue<'a> {
-    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
-        match self {
-            UniformValue::Float(f) => f.set(gl, location),
-            UniformValue::Texture(t) => t.set(gl, location),
-        }
-    }
-}
+
 pub type UniformSetter = Box<dyn Fn(&GL, &dyn GLValue)>;
 
 pub struct AttributeSetter {
@@ -246,17 +239,18 @@ pub fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
     mem::replace(&mut guard.obj, JsCast::unchecked_into(JsValue::UNDEFINED))
 }
 
+#[enum_dispatch]
 pub trait GLSet {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> ();
 }
 
-impl GLSet for f32 {
+impl GLSet for &f32 {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
-        gl.uniform1f(Some(location), *self);
+        gl.uniform1f(Some(location), **self);
     }
 }
 
-impl GLSet for WebGlTexture {
+impl GLSet for &WebGlTexture {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
         let texture_unit = 0;
         gl.uniform1i(Some(location), texture_unit); // TODO: need to fine the texture unit
@@ -266,18 +260,48 @@ impl GLSet for WebGlTexture {
     }
 }
 
-pub trait GLVerifyType {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String>;
+impl GLSet for &glam::Vec2 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform2fv_with_f32_array(Some(location), self.as_ref());
+    }
 }
 
+impl GLSet for &glam::Vec3 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform3fv_with_f32_array(Some(location), self.as_ref());
+    }
+}
 
-fn impl_gl_verify_type<T: GLVerifyType>(
-    expected_gl_type: GLConstant,
+impl GLSet for &glam::Vec4 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform4fv_with_f32_array(Some(location), self.as_ref());
+    }
+}
+
+impl GLSet for &glam::Mat3 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform_matrix3fv_with_f32_array(Some(location), false, self.to_cols_array().as_slice());
+    }
+}
+
+impl GLSet for &glam::Mat4 {
+    fn set(&self, gl: &GL, location: &WebGlUniformLocation) -> () {
+        gl.uniform_matrix4fv_with_f32_array(Some(location), false, self.to_cols_array().as_slice());
+    }
+}
+
+#[enum_dispatch]
+pub trait GLVerifyType {
+    fn verify(&self, expected_type: GLConstant) -> Result<(), String>;
+}
+
+fn impl_gl_verify_type(
     actual_gl_type: GLConstant,
+    expected_gl_type: GLConstant,
 ) -> Result<(), String> {
     if expected_gl_type != actual_gl_type {
         Err(format!(
-            "expected type: {}, actual type: {}",
+            "expected type in shader: {}, actual type: {}",
             GL_CONSTANT_NAMES
                 .get(&expected_gl_type)
                 .unwrap_or(&"unknown"),
@@ -288,17 +312,50 @@ fn impl_gl_verify_type<T: GLVerifyType>(
     }
 }
 
-impl GLVerifyType for f32 {
+impl GLVerifyType for &f32 {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
-        impl_gl_verify_type::<f32>(WebGl2RenderingContext::FLOAT, gl_type)
+        impl_gl_verify_type(WebGl2RenderingContext::FLOAT, gl_type)
     }
 }
 
-impl GLVerifyType for WebGlTexture {
+impl GLVerifyType for &WebGlTexture {
     fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
-        impl_gl_verify_type::<WebGlTexture>(WebGl2RenderingContext::SAMPLER_2D, gl_type)
+        impl_gl_verify_type(WebGl2RenderingContext::SAMPLER_2D, gl_type)
     }
 }
+
+impl GLVerifyType for &glam::Vec2 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::FLOAT_VEC2, gl_type)
+    }
+}
+
+impl GLVerifyType for &glam::Vec3 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::FLOAT_VEC3, gl_type)
+    }
+}
+
+impl GLVerifyType for &glam::Vec4 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::FLOAT_VEC4, gl_type)
+    }
+}
+
+impl GLVerifyType for &glam::Mat3 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::FLOAT_MAT3, gl_type)
+    }
+}
+
+impl GLVerifyType for &glam::Mat4 {
+    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+        impl_gl_verify_type(WebGl2RenderingContext::FLOAT_MAT4, gl_type)
+    }
+}
+
+
+
 
 // image crate integration
 cfg_if! {

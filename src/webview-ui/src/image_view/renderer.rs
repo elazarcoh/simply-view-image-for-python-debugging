@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, IndexMut};
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use image;
@@ -358,11 +358,17 @@ impl Renderer {
         gl.use_program(Some(&shader_program.program));
 
         let t = texture.ok_or("no texture")?;
+        let mut mat = glam::Mat4::IDENTITY;
+        *mat.col_mut(0).index_mut(0) = 0.5;
         set_uniforms(
             &shader_program,
             &HashMap::from([
                 ("u_time".to_string(), UniformValue::Float(&0.5)),
                 ("u_texture".to_string(), UniformValue::Texture(&t)),
+                (
+                    "u_transform".to_string(),
+                    UniformValue::Mat4(&mat),
+                ),
             ]),
         );
 

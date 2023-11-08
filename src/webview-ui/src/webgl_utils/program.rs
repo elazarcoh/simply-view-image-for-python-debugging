@@ -188,7 +188,7 @@ pub fn set_uniforms(program: &ProgramBundle, uniforms: &HashMap<String, UniformV
     uniforms
         .iter()
         .for_each(|(name, value)| match program.uniform_setters.get(name) {
-            Some(setter) => setter(&program.gl, value.deref()),
+            Some(setter) => setter(&program.gl, value),
             None => log::warn!(
                 "Could not find uniform setter for: {}. Maybe it is unused?",
                 name

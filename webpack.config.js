@@ -74,7 +74,7 @@ const extensionConfig = {
 const webviewConfig = {
     ...baseConfig,
     target: ["web", "es2020"],
-    entry: "./webview-ui/src/index.tsx",
+    entry: "./src/webview-ui/src/index.tsx",
     experiments: { outputModule: true },
     resolve: {
         extensions: [".ts", ".tsx", ".js", ".jsx", ".css"],

@@ -4,6 +4,7 @@ import {
     VSCodeProgressRing,
 } from "@vscode/webview-ui-toolkit/react";
 import { useState } from "react";
+import ImageView from "./ImageView";
 import "./SelectableImage.css";
 
 interface ImagePlaceholderProps {
@@ -22,29 +23,30 @@ const ImagePlaceholder = ({ placeholderText }: ImagePlaceholderProps) => {
 
 interface ImageFrameProps {
     isLoading: boolean;
-    imageData: Base64<string> | null;
+    imageData: ImageData | null;
 }
-
 const ImageFrame = ({ imageData, isLoading }: ImageFrameProps) => {
-    return (
-        <div className="svifpd-image-frame">
-            {isLoading || imageData === null ? (
-                <VSCodeProgressRing />
-            ) : (
-                <img src={imageData} alt="Selected image" />
-            )}
-        </div>
-    );
+    if (imageData === null) {
+        return <ImagePlaceholder placeholderText="No image selected" />;
+    } else if (isLoading) {
+        return <VSCodeProgressRing />;
+    } else {
+        return (
+            <div className="svifpd-image-frame">
+                <ImageView imageData={imageData} />
+            </div>
+        );
+    }
 };
 
 interface SelectableImageProps {
     names: string[];
-    imageDataBase64ByName: (name: string) => Promise<Base64<string>>;
+    imageDataByName: (name: string) => Promise<ImageData>;
 }
 
 const SelectableImage = (props: SelectableImageProps) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const [imageData, setImageData] = useState<Base64<string> | null>(null);
+    const [imageData, setImageData] = useState<ImageData | null>(null);
 
     const handleMenuItemClick = async (name: string) => {
         setImageData(null);
@@ -52,7 +54,7 @@ const SelectableImage = (props: SelectableImageProps) => {
         // FIXME: remove this when we have a real async image loading function
         await new Promise((resolve) => setTimeout(resolve, 1000));
         setSelectedImage(name);
-        const data = await props.imageDataBase64ByName(name);
+        const data = await props.imageDataByName(name);
         setImageData(data);
     };
 
@@ -75,7 +77,10 @@ const SelectableImage = (props: SelectableImageProps) => {
             </VSCodeDropdown>
             <div className="svifpd-selectable-image__image">
                 {selectedImage !== null ? (
-                    <ImageFrame imageData={imageData} isLoading={imageData === null} />
+                    <ImageFrame
+                        imageData={imageData}
+                        isLoading={imageData === null}
+                    />
                 ) : (
                     <ImagePlaceholder placeholderText="No image selected" />
                 )}

@@ -40,7 +40,7 @@ export interface TypedCommand<C extends AvailableCommands>
 }
 
 const Commands = {
-    "svifpd.open-settings": openExtensionSettings,
+    // "svifpd.open-settings": openExtensionSettings,
     "svifpd.watch-refresh": refreshWatchTree,
     "svifpd._internal_view-object": viewObject,
     "svifpd.add-expression": addExpressionTreeItem,
@@ -98,7 +98,7 @@ export function registerExtensionCommands(
         _registerCommandByName("svifpd.watch-track-enable"),
         _registerCommandByName("svifpd.watch-track-disable"),
         _registerCommandByName("svifpd.watch-refresh"),
-        _registerCommandByName("svifpd.open-settings"),
+        // _registerCommandByName("svifpd.open-settings"),
         _registerCommandByName("svifpd.update-frame-id"),
         _registerCommandByName("svifpd.view-debug-variable"),
         _registerCommandByName("svifpd.disable-plugin"),

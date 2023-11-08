@@ -7,7 +7,7 @@
 			"path": "example-plugin"
 		},
 		{
-			"path": "webview-ui"
+			"path": "src/webview-ui"
 		}
 	],
 	"settings": {

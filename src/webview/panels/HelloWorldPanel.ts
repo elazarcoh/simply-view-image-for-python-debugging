@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import {
     Disposable,
     Webview,
@@ -8,6 +9,8 @@ import {
 } from "vscode";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
+// import * as sharp from "sharp";
+import { MessageHandlerData } from "../../utils/MessageHandlerData";
 
 /**
  * This class manages the state and behavior of HelloWorld webview panels.
@@ -30,7 +33,11 @@ export class HelloWorldPanel {
      * @param panel A reference to the webview panel
      * @param extensionUri The URI of the directory containing the extension
      */
-    private constructor(panel: WebviewPanel, extensionUri: Uri) {
+    private constructor(
+        panel: WebviewPanel,
+        extensionUri: Uri,
+        context: vscode.ExtensionContext
+    ) {
         this._panel = panel;
 
         // Set an event listener to listen for when the panel is disposed (i.e. when the user closes
@@ -44,7 +51,7 @@ export class HelloWorldPanel {
         );
 
         // Set an event listener to listen for messages passed from the webview context
-        this._setWebviewMessageListener(this._panel.webview);
+        this._setWebviewMessageListener(this._panel.webview, context);
     }
 
     /**
@@ -53,7 +60,8 @@ export class HelloWorldPanel {
      *
      * @param extensionUri The URI of the directory containing the extension.
      */
-    public static render(extensionUri: Uri) {
+    public static render(context: vscode.ExtensionContext) {
+        const extensionUri = context.extensionUri;
         if (HelloWorldPanel.currentPanel) {
             // If the webview panel already exists reveal it
             HelloWorldPanel.currentPanel._panel.reveal(ViewColumn.One);
@@ -77,7 +85,8 @@ export class HelloWorldPanel {
 
             HelloWorldPanel.currentPanel = new HelloWorldPanel(
                 panel,
-                extensionUri
+                extensionUri,
+                context
             );
         }
     }
@@ -112,7 +121,10 @@ export class HelloWorldPanel {
      * rendered within the webview panel
      */
     private _getWebviewContent(webview: Webview, extensionUri: Uri) {
-        const stylesUri = getUri(webview, extensionUri, ["dist", "webview.css"]);
+        const stylesUri = getUri(webview, extensionUri, [
+            "dist",
+            "webview.css",
+        ]);
         const scriptUri = getUri(webview, extensionUri, ["dist", "webview.js"]);
 
         const nonce = getNonce();
@@ -124,7 +136,7 @@ export class HelloWorldPanel {
         <head>
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+          <meta http-equiv="Content-Security-Policy" content="default-src https:; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
           <link rel="stylesheet" type="text/css" href="${stylesUri}">
           <title>Hello World</title>
         </head>
@@ -143,31 +155,59 @@ export class HelloWorldPanel {
      * @param webview A reference to the extension webview
      * @param context A reference to the extension context
      */
-    private _setWebviewMessageListener(webview: Webview) {
+    private _setWebviewMessageListener(
+        webview: Webview,
+        context: vscode.ExtensionContext
+    ) {
         webview.onDidReceiveMessage(
-            (message: unknown) => {
-                if (
-                    typeof message !== "object" ||
-                    message === null ||
-                    !("command" in message) ||
-                    !("text" in message)
-                ) {
-                    return;
-                }
-                const command = message.command;
-                const text = message.text as string;
+            (message) => {
+                const { command, requestId, payload } = message;
 
-                switch (command) {
-                    case "hello":
-                        // Code that should run in response to the hello message command
-                        window.showInformationMessage(text);
-                        return;
-                    // Add more switch case statements here as more webview message commands
-                    // are created within the webview context (i.e. inside media/main.js)
+                if (command === "<command id>") {
+                    // Do something with the payload
+                    console.log(payload);
+
+                    // Send a response back to the webview
+                    webview.postMessage({
+                        command,
+                        requestId, // The requestId is used to identify the response
+                        payload: `Hello from the extension!`,
+                    } as MessageHandlerData<string>);
                 }
             },
             undefined,
-            this._disposables
+            context.subscriptions
         );
+
+        //     webview.onDidReceiveMessage(
+        //         (message: unknown) => {
+        //             if (
+        //                 typeof message !== "object" ||
+        //                 message === null ||
+        //                 !("command" in message) ||
+        //                 !("text" in message)
+        //             ) {
+        //                 return;
+        //             }
+        //             const command = message.command;
+        //             const text = message.text as string;
+
+        //             switch (command) {
+        //                 case "hello":
+        //                     // Code that should run in response to the hello message command
+        //                     window.showInformationMessage(text);
+        //                     return;
+        //                 // Add more switch case statements here as more webview message commands
+        //                 // are created within the webview context (i.e. inside media/main.js)
+        //             }
+        //         },
+        //         undefined,
+        //         this._disposables
+        //     );
+        // }
+    }
+
+    public postMessage(message: unknown) {
+        this._panel.webview.postMessage(message);
     }
 }

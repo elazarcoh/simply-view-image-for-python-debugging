@@ -1,0 +1,20 @@
+.svifpd-radio-button-group {
+    display: flex;
+    flex-direction: row;
+}
+
+.svifpd-radio-button-group > .vscode-button {
+  margin-right: 2px;
+}
+
+.svifpd-radio-button-group > .vscode-button.unselected {
+    background-color: var(--vscode-button-secondaryBackground);
+}
+
+.svifpd-radio-button-group > .vscode-button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.svifpd-radio-button-group > .vscode-button:active {
+    background-color: var(--vscode-button-background);
+}

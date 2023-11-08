@@ -112,8 +112,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     // const panel = createPanel(context.extensionUri);
     // if (panel) context.subscriptions.push(panel);
- // Create the show hello world command
+    // Create the show hello world command
 
-    HelloWorldPanel.render(context.extensionUri);
-
+    context.subscriptions.push(
+        vscode.commands.registerCommand("svifpd.open-settings", async () => {
+            HelloWorldPanel.render(context);
+            setTimeout(() => {
+                if(HelloWorldPanel.currentPanel !== undefined) {
+                    HelloWorldPanel.currentPanel.postMessage({ command: 'hello', text: 'extension hello world' });
+                }
+            }, 1000);
+        })
+    );
 }

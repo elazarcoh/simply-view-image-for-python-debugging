@@ -3,16 +3,15 @@ import PropTypes from "prop-types";
 import "./RadioButtonGroup.css";
 
 interface RadioButtonGroupProps {
-    options: string[];
     defaultValue?: string;
     onChange?: (value: string) => void;
 }
 
 function RadioButtonGroup({
-    options,
     defaultValue,
     onChange,
-}: RadioButtonGroupProps): JSX.Element {
+    children,
+}: React.PropsWithChildren<RadioButtonGroupProps>): JSX.Element {
     const [selected, setSelected] = useState<string | null>(
         defaultValue ?? null
     );
@@ -33,20 +32,23 @@ function RadioButtonGroup({
     }, [defaultValue]);
 
     const className = (option: string) => {
-        return `svifpd-radio-button ${selected === option ? "selected" : ""}`;
+        return `vscode-button ${
+            option === selected ? "selected" : "unselected"
+        }`;
     };
 
     return (
         <div className="svifpd-radio-button-group">
-            {options.map((option) => (
-                <button
-                    className={className(option)}
-                    key={option}
-                    onClick={() => handleClick(option)}
-                >
-                    {option}
-                </button>
-            ))}
+            {React.Children.map(children, (child) => {
+                if (React.isValidElement(child)) {
+                    return React.cloneElement(child, {
+                        ...child.props,
+                        className: className(child.props.value),
+                        onClick: () => handleClick(child.props.value),
+                    });
+                }
+                return child;
+            })}
         </div>
     );
 }

@@ -1,6 +1,10 @@
+// based on twgl
+
 use do_notation::m;
 
+use wasm_bindgen::JsCast;
 use web_sys::*;
+use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 type TextureSrc = Vec<u8>;
 
@@ -64,7 +68,7 @@ struct TextureInfo {
 use std::collections::HashMap;
 
 lazy_static! {
-    static ref HASHMAP: HashMap<u32, TextureInfo> = {
+    static ref FORMAT_INFO: HashMap<u32, TextureInfo> = {
         let mut m = HashMap::new();
         m.insert(
             WebGl2RenderingContext::ALPHA,
@@ -730,100 +734,6 @@ lazy_static! {
     };
 }
 
-// let s_textureInternalFormatInfo;
-// function getTextureInternalFormatInfo(internalFormat) {
-//   if (!s_textureInternalFormatInfo) {
-//     // NOTE: these properties need unique names so we can let Uglify mangle the name.
-//     const t = {};
-//     // unsized formats
-//     t[ALPHA]              = { textureFormat: ALPHA,           colorRenderable: true,  textureFilterable: true,  bytesPerElement: [1, 2, 2, 4],        type: [UNSIGNED_BYTE, HALF_FLOAT, HALF_FLOAT_OES, FLOAT], };
-//     t[LUMINANCE]          = { textureFormat: LUMINANCE,       colorRenderable: true,  textureFilterable: true,  bytesPerElement: [1, 2, 2, 4],        type: [UNSIGNED_BYTE, HALF_FLOAT, HALF_FLOAT_OES, FLOAT], };
-//     t[LUMINANCE_ALPHA]    = { textureFormat: LUMINANCE_ALPHA, colorRenderable: true,  textureFilterable: true,  bytesPerElement: [2, 4, 4, 8],        type: [UNSIGNED_BYTE, HALF_FLOAT, HALF_FLOAT_OES, FLOAT], };
-//     t[RGB]                = { textureFormat: RGB,             colorRenderable: true,  textureFilterable: true,  bytesPerElement: [3, 6, 6, 12, 2],    type: [UNSIGNED_BYTE, HALF_FLOAT, HALF_FLOAT_OES, FLOAT, UNSIGNED_SHORT_5_6_5], };
-//     t[RGBA]               = { textureFormat: RGBA,            colorRenderable: true,  textureFilterable: true,  bytesPerElement: [4, 8, 8, 16, 2, 2], type: [UNSIGNED_BYTE, HALF_FLOAT, HALF_FLOAT_OES, FLOAT, UNSIGNED_SHORT_4_4_4_4, UNSIGNED_SHORT_5_5_5_1], };
-//     t[DEPTH_COMPONENT]    = { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [2, 4],              type: [UNSIGNED_INT, UNSIGNED_SHORT], };
-
-//     // sized formats
-//     t[R8]                 = { textureFormat: RED,             colorRenderable: true,  textureFilterable: true,  bytesPerElement: [1],        type: [UNSIGNED_BYTE], };
-//     t[R8_SNORM]           = { textureFormat: RED,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [1],        type: [BYTE], };
-//     t[R16F]               = { textureFormat: RED,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [4, 2],     type: [FLOAT, HALF_FLOAT], };
-//     t[R32F]               = { textureFormat: RED,             colorRenderable: false, textureFilterable: false, bytesPerElement: [4],        type: [FLOAT], };
-//     t[R8UI]               = { textureFormat: RED_INTEGER,     colorRenderable: true,  textureFilterable: false, bytesPerElement: [1],        type: [UNSIGNED_BYTE], };
-//     t[R8I]                = { textureFormat: RED_INTEGER,     colorRenderable: true,  textureFilterable: false, bytesPerElement: [1],        type: [BYTE], };
-//     t[R16UI]              = { textureFormat: RED_INTEGER,     colorRenderable: true,  textureFilterable: false, bytesPerElement: [2],        type: [UNSIGNED_SHORT], };
-//     t[R16I]               = { textureFormat: RED_INTEGER,     colorRenderable: true,  textureFilterable: false, bytesPerElement: [2],        type: [SHORT], };
-//     t[R32UI]              = { textureFormat: RED_INTEGER,     colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_INT], };
-//     t[R32I]               = { textureFormat: RED_INTEGER,     colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [INT], };
-//     t[RG8]                = { textureFormat: RG,              colorRenderable: true,  textureFilterable: true,  bytesPerElement: [2],        type: [UNSIGNED_BYTE], };
-//     t[RG8_SNORM]          = { textureFormat: RG,              colorRenderable: false, textureFilterable: true,  bytesPerElement: [2],        type: [BYTE], };
-//     t[RG16F]              = { textureFormat: RG,              colorRenderable: false, textureFilterable: true,  bytesPerElement: [8, 4],     type: [FLOAT, HALF_FLOAT], };
-//     t[RG32F]              = { textureFormat: RG,              colorRenderable: false, textureFilterable: false, bytesPerElement: [8],        type: [FLOAT], };
-//     t[RG8UI]              = { textureFormat: RG_INTEGER,      colorRenderable: true,  textureFilterable: false, bytesPerElement: [2],        type: [UNSIGNED_BYTE], };
-//     t[RG8I]               = { textureFormat: RG_INTEGER,      colorRenderable: true,  textureFilterable: false, bytesPerElement: [2],        type: [BYTE], };
-//     t[RG16UI]             = { textureFormat: RG_INTEGER,      colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_SHORT], };
-//     t[RG16I]              = { textureFormat: RG_INTEGER,      colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [SHORT], };
-//     t[RG32UI]             = { textureFormat: RG_INTEGER,      colorRenderable: true,  textureFilterable: false, bytesPerElement: [8],        type: [UNSIGNED_INT], };
-//     t[RG32I]              = { textureFormat: RG_INTEGER,      colorRenderable: true,  textureFilterable: false, bytesPerElement: [8],        type: [INT], };
-//     t[RGB8]               = { textureFormat: RGB,             colorRenderable: true,  textureFilterable: true,  bytesPerElement: [3],        type: [UNSIGNED_BYTE], };
-//     t[SRGB8]              = { textureFormat: RGB,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [3],        type: [UNSIGNED_BYTE], };
-//     t[RGB565]             = { textureFormat: RGB,             colorRenderable: true,  textureFilterable: true,  bytesPerElement: [3, 2],     type: [UNSIGNED_BYTE, UNSIGNED_SHORT_5_6_5], };
-//     t[RGB8_SNORM]         = { textureFormat: RGB,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [3],        type: [BYTE], };
-//     t[R11F_G11F_B10F]     = { textureFormat: RGB,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [12, 6, 4], type: [FLOAT, HALF_FLOAT, UNSIGNED_INT_10F_11F_11F_REV], };
-//     t[RGB9_E5]            = { textureFormat: RGB,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [12, 6, 4], type: [FLOAT, HALF_FLOAT, UNSIGNED_INT_5_9_9_9_REV], };
-//     t[RGB16F]             = { textureFormat: RGB,             colorRenderable: false, textureFilterable: true,  bytesPerElement: [12, 6],    type: [FLOAT, HALF_FLOAT], };
-//     t[RGB32F]             = { textureFormat: RGB,             colorRenderable: false, textureFilterable: false, bytesPerElement: [12],       type: [FLOAT], };
-//     t[RGB8UI]             = { textureFormat: RGB_INTEGER,     colorRenderable: false, textureFilterable: false, bytesPerElement: [3],        type: [UNSIGNED_BYTE], };
-//     t[RGB8I]              = { textureFormat: RGB_INTEGER,     colorRenderable: false, textureFilterable: false, bytesPerElement: [3],        type: [BYTE], };
-//     t[RGB16UI]            = { textureFormat: RGB_INTEGER,     colorRenderable: false, textureFilterable: false, bytesPerElement: [6],        type: [UNSIGNED_SHORT], };
-//     t[RGB16I]             = { textureFormat: RGB_INTEGER,     colorRenderable: false, textureFilterable: false, bytesPerElement: [6],        type: [SHORT], };
-//     t[RGB32UI]            = { textureFormat: RGB_INTEGER,     colorRenderable: false, textureFilterable: false, bytesPerElement: [12],       type: [UNSIGNED_INT], };
-//     t[RGB32I]             = { textureFormat: RGB_INTEGER,     colorRenderable: false, textureFilterable: false, bytesPerElement: [12],       type: [INT], };
-//     t[RGBA8]              = { textureFormat: RGBA,            colorRenderable: true,  textureFilterable: true,  bytesPerElement: [4],        type: [UNSIGNED_BYTE], };
-//     t[SRGB8_ALPHA8]       = { textureFormat: RGBA,            colorRenderable: true,  textureFilterable: true,  bytesPerElement: [4],        type: [UNSIGNED_BYTE], };
-//     t[RGBA8_SNORM]        = { textureFormat: RGBA,            colorRenderable: false, textureFilterable: true,  bytesPerElement: [4],        type: [BYTE], };
-//     t[RGB5_A1]            = { textureFormat: RGBA,            colorRenderable: true,  textureFilterable: true,  bytesPerElement: [4, 2, 4],  type: [UNSIGNED_BYTE, UNSIGNED_SHORT_5_5_5_1, UNSIGNED_INT_2_10_10_10_REV], };
-//     t[RGBA4]              = { textureFormat: RGBA,            colorRenderable: true,  textureFilterable: true,  bytesPerElement: [4, 2],     type: [UNSIGNED_BYTE, UNSIGNED_SHORT_4_4_4_4], };
-//     t[RGB10_A2]           = { textureFormat: RGBA,            colorRenderable: true,  textureFilterable: true,  bytesPerElement: [4],        type: [UNSIGNED_INT_2_10_10_10_REV], };
-//     t[RGBA16F]            = { textureFormat: RGBA,            colorRenderable: false, textureFilterable: true,  bytesPerElement: [16, 8],    type: [FLOAT, HALF_FLOAT], };
-//     t[RGBA32F]            = { textureFormat: RGBA,            colorRenderable: false, textureFilterable: false, bytesPerElement: [16],       type: [FLOAT], };
-//     t[RGBA8UI]            = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_BYTE], };
-//     t[RGBA8I]             = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [BYTE], };
-//     t[RGB10_A2UI]         = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_INT_2_10_10_10_REV], };
-//     t[RGBA16UI]           = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [8],        type: [UNSIGNED_SHORT], };
-//     t[RGBA16I]            = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [8],        type: [SHORT], };
-//     t[RGBA32I]            = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [16],       type: [INT], };
-//     t[RGBA32UI]           = { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [16],       type: [UNSIGNED_INT], };
-//     // Sized Internal
-//     t[DEPTH_COMPONENT16]  = { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [2, 4],     type: [UNSIGNED_SHORT, UNSIGNED_INT], };
-//     t[DEPTH_COMPONENT24]  = { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_INT], };
-//     t[DEPTH_COMPONENT32F] = { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [FLOAT], };
-//     t[DEPTH24_STENCIL8]   = { textureFormat: DEPTH_STENCIL,   colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_INT_24_8], };
-//     t[DEPTH32F_STENCIL8]  = { textureFormat: DEPTH_STENCIL,   colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [FLOAT_32_UNSIGNED_INT_24_8_REV], };
-
-//     Object.keys(t).forEach(function(internalFormat) {
-//       const info = t[internalFormat];
-//       info.bytesPerElementMap = {};
-//       info.bytesPerElement.forEach(function(bytesPerElement, ndx) {
-//         const type = info.type[ndx];
-//         info.bytesPerElementMap[type] = bytesPerElement;
-//       });
-//     });
-//     s_textureInternalFormatInfo = t;
-//   }
-//   return s_textureInternalFormatInfo[internalFormat];
-// }
-
-// function getFormatAndTypeForInternalFormat(internalFormat) {
-//   const info = getTextureInternalFormatInfo(internalFormat);
-//   if (!info) {
-//     throw "unknown internal format";
-//   }
-//   return {
-//     format: info.textureFormat,
-//     type: info.type[0],
-//   };
-// }
-
 fn set_texture_from_array(
     gl: &WebGl2RenderingContext,
     tex: &WebGlTexture,
@@ -838,4 +748,178 @@ fn set_texture_from_array(
     let internal_format = options
         .internal_format
         .unwrap_or(options.format.unwrap_or(WebGl2RenderingContext::RGBA));
+    let format_info = FORMAT_INFO.get(&internal_format);
 }
+
+type GLConstant = u32;
+pub struct StringVertexShader(String);
+pub struct StringFragmentShader(String);
+
+pub struct ProgramInfo {}
+
+fn checkShaderStatus(gl: &GL, shaderType: GLConstant, shader: &WebGlShader) -> Result<(), String> {
+    // Check the compile status
+    let compiled = gl.get_shader_parameter(shader, GL::COMPILE_STATUS);
+    if (!compiled) {
+        // Something went wrong during compilation; get the error
+        let last_error = gl.get_shader_info_log(shader);
+        let shader_source = gl.get_shader_source(shader);
+        let msg = format!(
+            "Error compiling shader: {}\nsource:\n{}",
+            last_error.unwrap_or("unknown error".to_string()),
+            shader_source.unwrap_or("unknown source".to_string())
+        );
+        Err(msg)
+    } else {
+        Ok(())
+    }
+}
+
+fn getProgramErrors(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
+    // Check the link status
+    let linked = gl
+        .get_program_parameter(&program, GL::LINK_STATUS)
+        .as_bool()
+        .unwrap();
+
+    if !linked {
+        let last_error = gl.get_program_info_log(program);
+        let errors = gl
+            .get_attached_shaders(program)
+            .ok_or("Could not get attached shaders")?
+            .iter()
+            .map(|shader| {
+                let shader: &WebGlShader = shader.dyn_ref::<WebGlShader>().unwrap();
+                checkShaderStatus(
+                    &gl,
+                    gl.get_shader_parameter(shader, GL::SHADER_TYPE)
+                        .as_f64()
+                        .unwrap() as GLConstant,
+                    shader,
+                )
+            })
+            .filter(|result| result.is_err())
+            .map(|result| result.unwrap_err())
+            .collect::<Vec<_>>();
+
+        let message = format!(
+            "{}\n{}",
+            last_error.unwrap_or("unknown error".to_string()),
+            errors
+                .iter()
+                .map(|error| error.to_string())
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+
+        Err(message)
+    } else {
+        Ok(())
+    }
+}
+
+//   fn hasErrors(gl: GL, program: WebGlProgram) {
+//     let errors = getProgramErrors(gl, program, progOptions.errorCallback);
+//     if (errors) {
+//       deleteProgramAndShaders(gl, program, shaderSet);
+//     }
+//     return errors;
+//   }
+
+pub fn createProgram(
+    gl: &GL,
+    vertex_shader: StringVertexShader,
+    fragment_shader: StringFragmentShader,
+    opt_attribs: Option<Vec<String>>,
+) {
+    // This code is really convoluted, because it may or may not be async
+    // Maybe it would be better to have a separate function
+    //   const progOptions = getProgramOptions(opt_attribs, opt_locations, opt_errorCallback);
+    //   const shaderSet = new Set(shaders);
+    //   const program = createProgramNoCheck(gl, shaders, progOptions);
+
+    let binding = opt_attribs.unwrap_or(vec![]);
+    let attribute_locations = binding
+        .iter()
+        .enumerate()
+        .collect::<Vec<(usize, &String)>>();
+
+    let x: Result<WebGlProgram, &str> = m! {
+        program <- gl.create_program().ok_or("Could not create program");
+        gl_vertex_shader <- gl.create_shader(WebGl2RenderingContext::VERTEX_SHADER).ok_or("Could not create vertex shader");
+        gl_fragment_shader <- gl.create_shader(WebGl2RenderingContext::FRAGMENT_SHADER).ok_or("Could not create fragment shader");
+        let _ = gl.shader_source(&gl_vertex_shader, vertex_shader.0.as_str());
+        let _ = gl.shader_source(&gl_fragment_shader, fragment_shader.0.as_str());
+        let _= gl.compile_shader(&gl_vertex_shader);
+        let _= gl.compile_shader(&gl_fragment_shader);
+        let _ = gl.attach_shader(&program, &gl_vertex_shader);
+        let _ = gl.attach_shader(&program, &gl_fragment_shader);
+
+        let _ = attribute_locations.iter().for_each(|(i, name)| {
+            gl.bind_attrib_location(&program, *i as u32, name.as_str());
+        });
+
+        let _ = gl.link_program(&program);
+
+        Ok(program)
+    };
+
+    //   function hasErrors(gl, program) {
+    //     const errors = getProgramErrors(gl, program, progOptions.errorCallback);
+    //     if (errors) {
+    //       deleteProgramAndShaders(gl, program, shaderSet);
+    //     }
+    //     return errors;
+    //   }
+
+    //   if (progOptions.callback) {
+    //     waitForProgramLinkCompletionAsync(gl, program).then(() => {
+    //       const errors = hasErrors(gl, program);
+    //       progOptions.callback(errors, errors ? undefined : program);
+    //     });
+    //     return undefined;
+    //   }
+
+    //   return hasErrors(gl, program) ? undefined : program;
+}
+
+// pub fn createProgramInfo(
+//     gl: GL,
+//     shaderSources: Vec<String>,
+//     opt_attribs: Option<Vec<String>>,
+// ) -> ProgramInfo {
+//     //   let progOptions = getProgramOptions(opt_attribs, opt_locations, opt_errorCallback);
+//     //   const errors = [];
+//     //   shaderSources = shaderSources.map(function(source) {
+//     //     // Lets assume if there is no \n it's an id
+//     //     if (!notIdRE.test(source)) {
+//     //       const script = getElementById(source);
+//     //       if (!script) {
+//     //         const err = `no element with id: ${source}`;
+//     //         progOptions.errorCallback(err);
+//     //         errors.push(err);
+//     //       } else {
+//     //         source = script.text;
+//     //       }
+//     //     }
+//     //     return source;
+//     //   });
+
+//     //   if (errors.length) {
+//     //     return reportError(progOptions, '');
+//     //   }
+
+//     //   const origCallback = progOptions.callback;
+//     //   if (origCallback) {
+//     //     progOptions.callback = (err, program) => {
+//     //       origCallback(err, err ? undefined : createProgramInfoFromProgram(gl, program));
+//     //     };
+//     //   }
+
+//     //   const program = createProgramFromSources(gl, shaderSources, progOptions);
+//     //   if (!program) {
+//     //     return null;
+//     //   }
+
+//     //   return createProgramInfoFromProgram(gl, program);
+// }

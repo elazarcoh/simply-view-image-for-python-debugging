@@ -15,7 +15,7 @@ const RED_AS_GRAYSCALE: Mat4 = transpose(&Mat4::from_cols_array(&[
     1.0, 0.0, 0.0, 0.0,
     1.0, 0.0, 0.0, 0.0,
     1.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
 ]));
 #[rustfmt::skip]
 const RGB_TO_GRAYSCALE: Mat4 = transpose(&Mat4::from_cols_array(&[
@@ -65,18 +65,36 @@ const RGB_INTEGER : Mat4 = transpose(&Mat4::from_cols_array(&[
     1.0, 0.0, 0.0, 0.0,
     0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
 ]));
 #[rustfmt::skip]
-const GRAY_ALPHA : Mat4 = transpose(&Mat4::from_cols_array(&[
+const RG_TO_RED_ALPHA : Mat4 = transpose(&Mat4::from_cols_array(&[
     1.0, 0.0, 0.0, 0.0,
-    1.0, 0.0, 0.0, 0.0,
-    1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
     0.0, 1.0, 0.0, 0.0,
 ]));
 
 const ADD_ZERO: Vec4 = Vec4::ZERO;
-const ALPHA_ONE: Vec4 = Vec4::new(0.0, 0.0, 0.0, 1.0);
+
+const fn with_alpha(alpha: f32) -> Vec4 {
+    Vec4::new(0.0, 0.0, 0.0, alpha)
+}
+const fn max_by_datatype(datatype: Datatype) -> f32 {
+    match datatype {
+        Datatype::Uint8 => u8::MAX as f32,
+        Datatype::Uint16 => u16::MAX as f32,
+        Datatype::Uint32 => u32::MAX as f32,
+        Datatype::Float32 => 1.0,
+        Datatype::Int8 => i8::MAX as f32,
+        Datatype::Int16 => i16::MAX as f32,
+        Datatype::Int32 => i32::MAX as f32,
+        Datatype::Bool => 1.0,
+    }
+}
+const fn only_max_alpha(datatype: Datatype) -> Vec4 {
+    with_alpha(max_by_datatype(datatype))
+}
 
 #[rustfmt::skip]
 const NORMALIZE_U8: Mat4 = transpose(&Mat4::from_cols_array(&[
@@ -175,7 +193,13 @@ pub fn calculate_color_matrix(
         Datatype::Int32 => NORMALIZE_I32,
         Datatype::Bool => IDENTITY,
     };
-    let (mat, add) = match drawing_options.coloring {
+    let right_reorder = match num_channels {
+        Channels::One => IDENTITY,
+        Channels::Two => RG_TO_RED_ALPHA,
+        Channels::Three => IDENTITY,
+        Channels::Four => IDENTITY,
+    };
+    let (reorder, reorder_add) = match drawing_options.coloring {
         Coloring::Default => {
             match datatype {
                 Datatype::Uint8
@@ -184,29 +208,29 @@ pub fn calculate_color_matrix(
                 | Datatype::Int8
                 | Datatype::Int16
                 | Datatype::Int32 => match num_channels {
-                    Channels::One => (RED_AS_GRAYSCALE, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
-                    Channels::Two => (GRAY_ALPHA, ADD_ZERO),        // Treat as grayscale + alpha
-                    Channels::Three => (RGB_INTEGER, ALPHA_ONE), // Treat as RGB. Alpha is always 1.
+                    Channels::One => (RED_AS_GRAYSCALE, only_max_alpha(datatype)), // Treat as grayscale. Alpha is always 1.
+                    Channels::Two => (RED_AS_GRAYSCALE, ADD_ZERO), // Treat as grayscale + alpha
+                    Channels::Three => (RGB_INTEGER, only_max_alpha(datatype)), // Treat as RGB. Alpha is always 1.
                     Channels::Four => (DEFAULT, ADD_ZERO),
                 },
                 Datatype::Float32 => match num_channels {
-                    Channels::One => (RED_AS_GRAYSCALE, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
-                    Channels::Two => (GRAY_ALPHA, ADD_ZERO),        // Treat as grayscale + alpha
-                    Channels::Three => (DEFAULT, ALPHA_ONE), // Treat as RGB. Alpha is always 1.
+                    Channels::One => (RED_AS_GRAYSCALE, only_max_alpha(datatype)), // Treat as grayscale. Alpha is always 1.
+                    Channels::Two => (RED_AS_GRAYSCALE, ADD_ZERO), // Treat as grayscale + alpha
+                    Channels::Three => (DEFAULT, only_max_alpha(datatype)), // Treat as RGB. Alpha is always 1.
                     Channels::Four => (DEFAULT, ADD_ZERO),
                 },
                 Datatype::Bool => match num_channels {
-                    Channels::One => (RED_AS_GRAYSCALE, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
-                    Channels::Two => (GRAY_ALPHA, ADD_ZERO),        // Treat as grayscale + alpha
-                    Channels::Three => (DEFAULT, ALPHA_ONE), // Treat as RGB. Alpha is always 1.
+                    Channels::One => (RED_AS_GRAYSCALE, only_max_alpha(datatype)), // Treat as grayscale. Alpha is always 1.
+                    Channels::Two => (RED_AS_GRAYSCALE, ADD_ZERO), // Treat as grayscale + alpha
+                    Channels::Three => (DEFAULT, only_max_alpha(datatype)), // Treat as RGB. Alpha is always 1.
                     Channels::Four => (DEFAULT, ADD_ZERO),
                 },
             }
         }
         Coloring::Grayscale => {
             match num_channels {
-                Channels::One => (IDENTITY, ALPHA_ONE), // Treat as grayscale. Alpha is always 1.
-                Channels::Two => (GRAY_ALPHA, ADD_ZERO), // Treat as grayscale + alpha
+                Channels::One => (IDENTITY, only_max_alpha(datatype)), // Treat as grayscale. Alpha is always 1.
+                Channels::Two => (RED_AS_GRAYSCALE, ADD_ZERO), // Treat as grayscale + alpha
                 Channels::Three | Channels::Four => (RGB_TO_GRAYSCALE, ADD_ZERO),
             }
         }
@@ -235,21 +259,28 @@ pub fn calculate_color_matrix(
             }
         }
     };
+    
+    let modify_value_mult = IDENTITY;
+    let modify_value_add = ADD_ZERO;
 
-    let (stretch, stretch_add) = if drawing_options.high_contrast {
+    let (modify_value_mult, modify_value_add) = if drawing_options.high_contrast {
         stretch_values_matrix(image_info, image_computed_info)
     } else {
-        (IDENTITY, ADD_ZERO)
+        (modify_value_mult, modify_value_add)
     };
 
-    let (mat, add) = if drawing_options.ignore_alpha {
-        (IGNORE_ALPHA * mat, ALPHA_ONE)
+    let (modify_value_mult, modify_value_add) = if drawing_options.ignore_alpha {
+        (IGNORE_ALPHA * modify_value_mult, only_max_alpha(datatype) + modify_value_add)
     } else {
-        (mat, add)
+        (modify_value_mult, modify_value_add)
     };
-    
+
+    let modify_value_mult = normalization_matrix * modify_value_mult;
+
     // TODO: fix bugs
-    let res = (mat * normalization_matrix * stretch, add + mat * stretch_add);
+    log::debug!("reorder: {}, add: {}", reorder, reorder_add);
+    log::debug!("modify_value_mult: {}, add: {}", modify_value_mult, modify_value_add);
+    let res = (reorder * modify_value_mult * right_reorder, reorder * (modify_value_add + reorder_add));
     log::debug!("color_matrix: {}, add: {}", res.0, res.1);
     res
 }

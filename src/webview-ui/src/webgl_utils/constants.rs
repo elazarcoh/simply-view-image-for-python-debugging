@@ -47,6 +47,13 @@ impl TryFrom<GLConstant> for GLPrimitive {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+pub enum TextureTarget {
+    Texture2D = GL::TEXTURE_2D,
+    TextureCubeMap = GL::TEXTURE_CUBE_MAP,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
 pub enum TextureMagFilter {
     Nearest = GL::NEAREST,
     Linear = GL::LINEAR,
@@ -94,6 +101,19 @@ pub enum DrawMode {
     TriangleStrip = GL::TRIANGLE_STRIP,
     TriangleFan = GL::TRIANGLE_FAN,
     Triangles = GL::TRIANGLES,
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum Capability {
+    DepthTest = GL::DEPTH_TEST,
+    StencilTest = GL::STENCIL_TEST,
+    Blend = GL::BLEND,
+    CullFace = GL::CULL_FACE,
+    PolygonOffsetFill = GL::POLYGON_OFFSET_FILL,
+    SampleAlphaToCoverage = GL::SAMPLE_ALPHA_TO_COVERAGE,
+    SampleCoverage = GL::SAMPLE_COVERAGE,
+    ScissorTest = GL::SCISSOR_TEST,
 }
 
 lazy_static! {

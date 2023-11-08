@@ -39,7 +39,6 @@ pub struct AttributeSetter {
 
 pub type AttributeSetterBuilder = fn(u32) -> AttributeSetter;
 
-
 pub trait ElementTypeFor {
     const ELEMENT_TYPE: ElementType;
 }
@@ -60,7 +59,7 @@ impl<T: ElementTypeFor> ElementTypeFor for &[T] {
     const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
 }
 
-impl <T: ElementTypeFor, const N: usize> ElementTypeFor for &[T; N] {
+impl<T: ElementTypeFor, const N: usize> ElementTypeFor for &[T; N] {
     const ELEMENT_TYPE: ElementType = T::ELEMENT_TYPE;
 }
 
@@ -213,7 +212,7 @@ impl GLSet for &WebGlTexture {
         let texture_unit = 0;
         gl.uniform1i(Some(location), texture_unit); // TODO: need to fine the texture unit
         gl.active_texture(GL::TEXTURE0 + texture_unit as u32);
-        gl.bind_texture(GL::TEXTURE_2D, Some(self));
+        gl.bind_texture(TextureTarget::Texture2D as _, Some(self));
         // TODO: maybe need to bindSampler
     }
 }

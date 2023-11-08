@@ -18,12 +18,12 @@ cfg_if! {
         })?;
         let width = image.width();
         let height = image.height();
-        gl.bind_texture(GL::TEXTURE_2D, Some(&tex));
+        gl.bind_texture(TextureTarget::Texture2D as _, Some(&tex));
         let internal_format = GL::RGBA;
         let format = GL::RGBA;
         let type_ = element_type_for_dynamic_image(image);
         gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_u8_array_and_src_offset(
-            GL::TEXTURE_2D,
+            TextureTarget::Texture2D as _,
             0,
             internal_format as i32,
             width as i32,
@@ -36,16 +36,16 @@ cfg_if! {
         ).map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;
 
         parameters.mag_filter.map(|mag_filter| {
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, mag_filter as i32);
+            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_MAG_FILTER, mag_filter as i32);
         });
         parameters.min_filter.map(|min_filter| {
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, min_filter as i32);
+            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_MIN_FILTER, min_filter as i32);
         });
         parameters.wrap_s.map(|wrap_s| {
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_WRAP_S, wrap_s as i32);
+            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_WRAP_S, wrap_s as i32);
         });
         parameters.wrap_t.map(|wrap_t| {
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_WRAP_T, wrap_t as i32);
+            gl.tex_parameteri(TextureTarget::Texture2D as _, GL::TEXTURE_WRAP_T, wrap_t as i32);
         });
 
         Ok(tex)

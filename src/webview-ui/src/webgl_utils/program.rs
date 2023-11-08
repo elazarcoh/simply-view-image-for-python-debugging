@@ -167,7 +167,7 @@ fn create_attributes_setters(
         let gl_type: Result<GLPrimitive, _> = attrib_info.type_().try_into();
         if let Ok(gl_type) = gl_type {
             if let Some(setter) = GL_ATTRIBUTE_SETTER_FOR_TYPE.get(&gl_type) {
-                attrib_setters.insert(attrib_info.name().to_string(), setter(index as u32));
+                attrib_setters.insert(attrib_info.name().to_string(), setter(index as _));
             } else {
                 log::error!(
                     "Could not find attribute setter for type: {:?}. Required for attribute: {}",
@@ -248,7 +248,7 @@ pub fn create_program_bundle(
     })?;
 
     let bounded_attributes = attribute_locations.iter().for_each(|(i, name)| {
-        gl.bind_attrib_location(&program, *i as u32, name);
+        gl.bind_attrib_location(&program, *i as _, name);
     });
 
     gl.link_program(&program);

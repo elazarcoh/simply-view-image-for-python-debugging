@@ -25,6 +25,7 @@ use crate::{math_utils, webgl_utils};
 use super::camera::Camera;
 use super::constants::VIEW_SIZE;
 use super::rendering_context::{ImageViewData, RenderingContext};
+use super::text_rendering::TextRendering;
 use super::types::TextureImage;
 
 struct Programs {
@@ -131,7 +132,7 @@ impl Renderer {
             create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
                 .unwrap();
 
-        let gylph_rendering = webgl_utils::glyph::GlyphRendering::try_new(gl.clone()).unwrap();
+        let gylph_rendering = TextRendering::try_new(gl.clone()).unwrap();
 
         let rendering_data = RenderingData {
             gl: gl.clone(),
@@ -175,11 +176,12 @@ impl Renderer {
         let image_program = webgl_utils::program::GLProgramBuilder::new(&gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
             .fragment_shader(include_str!("../shaders/image.frag"))
-            .attribute("vin_position");
+            .attribute("vin_position")
+            .build()?;
 
         Ok(Programs {
             basic: shader_program,
-            image: image_program.build()?,
+            image: image_program,
         })
     }
 
@@ -284,8 +286,8 @@ impl Renderer {
         // The following two lines set the size (in CSS pixels) of
         // the drawing buffer to be identical to the size of the
         // canvas HTML element, as determined by CSS.
-        canvas.set_width(canvas.client_width() as u32);
-        canvas.set_height(canvas.client_height() as u32);
+        canvas.set_width(canvas.client_width() as _);
+        canvas.set_height(canvas.client_height() as _);
 
         Renderer::scissor_view(gl, &image_view_data.html_element);
 

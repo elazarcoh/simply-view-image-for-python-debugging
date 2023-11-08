@@ -61,7 +61,7 @@ export class HelloWorldPanel {
         // this._setWebviewMessageListener(this._panel.webview, context);
         this._panel.webview.onDidReceiveMessage(
             this._webviewMessageHandler.onWebviewMessage,
-            undefined,
+            this._webviewMessageHandler,
             context.subscriptions
         );
     }
@@ -200,58 +200,9 @@ export class HelloWorldPanel {
         return htmlWithVscodeResourceUris;
     }
 
-    /**
-     * Sets up an event listener to listen for messages passed from the webview context and
-     * executes code based on the message that is recieved.
-     *
-     * @param webview A reference to the extension webview
-     * @param context A reference to the extension context
-     */
-    private _setWebviewMessageListener(
-        webview: Webview,
-        context: vscode.ExtensionContext
-    ) {
-        webview.onDidReceiveMessage(
-            new WebviewMessageHandler(webview).onWebviewMessage,
-            undefined,
-            context.subscriptions
-        );
-
-        //     webview.onDidReceiveMessage(
-        //         (message: unknown) => {
-        //             if (
-        //                 typeof message !== "object" ||
-        //                 message === null ||
-        //                 !("command" in message) ||
-        //                 !("text" in message)
-        //             ) {
-        //                 return;
-        //             }
-        //             const command = message.command;
-        //             const text = message.text as string;
-
-        //             switch (command) {
-        //                 case "hello":
-        //                     // Code that should run in response to the hello message command
-        //                     window.showInformationMessage(text);
-        //                     return;
-        //                 // Add more switch case statements here as more webview message commands
-        //                 // are created within the webview context (i.e. inside media/main.js)
-        //             }
-        //         },
-        //         undefined,
-        //         this._disposables
-        //     );
-        // }
-    }
-
     public postMessage(
         message: any
     ) {
         this._webviewMessageHandler.sendToWebview(message);
-        // this._panel.webview.postMessage({
-        //     command,
-        //     payload,
-        // });
     }
 }

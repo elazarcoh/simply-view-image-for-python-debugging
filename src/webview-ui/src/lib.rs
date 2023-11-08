@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate derive_builder;
+
 mod communication;
 use base64::{engine::general_purpose, Engine as _};
 mod components;
@@ -20,6 +23,8 @@ use yew_hooks::prelude::*;
 
 use crate::components::GLView;
 use crate::components::RendererProvider;
+use crate::renderer::Image;
+use crate::renderer::ImageCache;
 use crate::renderer::InSingleViewName;
 use crate::renderer::InViewName;
 use crate::renderer::Renderer;
@@ -48,6 +53,16 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 struct VSCodeMessageHandler {
     webview_api: vscode::WebviewApi,
+    image_cache: Rc<RefCell<ImageCache>>,
+}
+
+impl VSCodeMessageHandler {
+    pub fn new(webview_api: vscode::WebviewApi, image_cache: Rc<RefCell<ImageCache>>) -> Self {
+        Self {
+            webview_api,
+            image_cache,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -71,6 +86,8 @@ impl VSCodeMessageHandler {
         let height = image.height();
         let channels = image.color().channel_count();
         log::debug!("Received image: {}x{}x{}", width, height, channels);
+
+        (*self.image_cache.borrow_mut()).insert("test".to_string(), Image::new(image));
 
         // match message.command.as_str() {
         //     "hello" => {
@@ -97,11 +114,14 @@ struct Coordinator {
 
 #[function_component]
 fn App() -> Html {
-   
     let coordinator = use_memo(
-        |_| Coordinator {
-            renderer: Rc::new(RefCell::new(Renderer::new())),
-            vscode_message_handler: Rc::new(VSCodeMessageHandler { webview_api: vscode::acquire_vscode_api() }),
+        {
+            let vscode = vscode::acquire_vscode_api();
+            let image_cache = Rc::new(RefCell::new(ImageCache::new()));
+            |_| Coordinator {
+                renderer: Rc::new(RefCell::new(Renderer::new(image_cache.clone()))),
+                vscode_message_handler: Rc::new(VSCodeMessageHandler::new(vscode, image_cache)),
+            }
         },
         (),
     );
@@ -125,14 +145,35 @@ fn App() -> Html {
         }
     });
 
-    let onclick = Callback::from(move |_| {
-        let greeting = String::from("Hi there");
-        log::debug!("Sending greeting: {}", greeting);
+    let onclick_get_image = Callback::from({
+        let message_handler = coordinator.vscode_message_handler.clone();
+        move |_| {
+            let greeting = String::from("Hi there");
+            log::debug!("Sending greeting: {}", greeting);
+            message_handler.send_message(
+                JsValue::from_serde(&MyMessage {
+                    message: greeting,
+                    image_base64: String::from(""),
+                })
+                .unwrap(),
+            );
+        }
+    });
+
+    let onclick_view_image = Callback::from({
+        let renderer = coordinator.renderer.clone();
+        move |_| {
+            (*renderer.borrow_mut()).put_image_to_view(
+                InViewName::Single(InSingleViewName::Single),
+                "test"
+            )
+        }
     });
 
     html! {
         <RendererProvider renderer={coordinator.renderer.clone()}>
-            <vscode-button {onclick}> {"Click me!"} </vscode-button>
+            <vscode-button onclick={onclick_get_image}> {"Get image"} </vscode-button>
+            <vscode-image onclick={onclick_view_image} > {"View image"} </vscode-image>
             <div>{ "Hello World!" }</div>
             <GLView view_name={InViewName::Single(InSingleViewName::Single)}/>
         </RendererProvider>

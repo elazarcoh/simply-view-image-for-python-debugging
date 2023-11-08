@@ -6,36 +6,48 @@ import {
     Uri,
     ViewColumn,
 } from "vscode";
-import { PostWebviewMessage } from "../webview";
+// import { PostWebviewMessage } from "../webview";
+import * as fs from "fs/promises";
+
+interface PostWebviewMessage { }
 
 export class WebviewMessageHandler {
 
     constructor(private webview: Webview) { }
 
     sendToWebview(message: PostWebviewMessage) {
-        this.webview.postMessage(message)
+        return this.webview.postMessage(message)
     }
 
-    onWebviewMessage(message: any) {
+    async onWebviewMessage(message: any) {
         console.log(message);
-        message = JSON.parse(message);
 
-        const { command, requestId, payload } = message;
+        const path = "C:/Users/hodaya/Documents/simply-view-image-for-python-debugging/watch-view.png";
+        const contents = await fs.readFile(path, { encoding: 'base64' });
+        console.log(this.webview)
+        await this.sendToWebview({
+                message: "Foo",
+                imageBase64: contents,
+            });
 
-        // Do something with the payload
-        console.log(payload);
+    //     message = JSON.parse(message);
 
-        switch (command) {
-            case "hello":
-                window.showInformationMessage(payload);
-                return;
-            default:
-                // Send a response back to the webview
-                return this.webview.postMessage({
-                    command,
-                    requestId, // The requestId is used to identify the response
-                    payload: `Hello from the extension!`,
-                });
-        }
+    //     const { command, requestId, payload } = message;
+
+    //     // Do something with the payload
+    //     console.log(payload);
+
+    //     switch (command) {
+    //         case "hello":
+    //             window.showInformationMessage(payload);
+    //             return;
+    //         default:
+    //             // Send a response back to the webview
+    //             return this.webview.postMessage({
+    //                 command,
+    //                 requestId, // The requestId is used to identify the response
+    //                 payload: `Hello from the extension!`,
+    //             });
+        // }
     }
 }

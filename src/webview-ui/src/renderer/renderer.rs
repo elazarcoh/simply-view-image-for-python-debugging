@@ -1,10 +1,10 @@
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator, rc::Rc};
 
 use wasm_bindgen::prelude::*;
-use web_sys::{HtmlElement, WebGl2RenderingContext, HtmlCanvasElement};
+use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext};
 use yew::NodeRef;
 
-use super::{InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType};
+use super::{InDualViewName, InQuadViewName, InSingleViewName, InViewName, ViewsType, ImageCache};
 
 fn views(vt: ViewsType) -> Vec<String> {
     match vt {
@@ -22,9 +22,23 @@ fn views(vt: ViewsType) -> Vec<String> {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(PartialEq)]
+struct ViewData {
+    pub image_id: Option<String>,
+}
+
+impl Default for ViewData {
+    fn default() -> Self {
+        Self {
+            image_id: None,
+        }
+    }
+}
+
+#[derive(PartialEq)]
 struct ViewHolder {
     node: NodeRef,
+    data: ViewData,
 }
 
 #[derive(PartialEq)]
@@ -59,16 +73,18 @@ impl ViewHolders {
 pub struct Renderer {
     gl: Option<WebGl2RenderingContext>,
     view_holders: Rc<RefCell<ViewHolders>>,
+    image_cache: Rc<RefCell<ImageCache>>,
 }
 
 impl Renderer {
-    pub fn new() -> Self {
+    pub fn new(image_cache: Rc<RefCell<ImageCache>>) -> Self {
         let make_map = |vt: ViewsType| -> HashMap<String, ViewHolder> {
             HashMap::from_iter(views(vt).into_iter().map(|v| {
                 (
                     v,
                     ViewHolder {
                         node: NodeRef::default(),
+                        data: ViewData::default(),
                     },
                 )
             }))
@@ -80,6 +96,7 @@ impl Renderer {
                     .into_iter()
                     .map(|vt| (vt, make_map(vt))),
             )))),
+            image_cache,
         }
     }
 
@@ -132,6 +149,24 @@ impl Renderer {
         self.view_holders.borrow_mut().register(view_id, node);
     }
 
+    pub fn put_image_to_view(&mut self, view_id: InViewName, image_id: &str) {
+        log::debug!("Renderer::put_image_to_view({:?}, {})", view_id, image_id);
+        let view_id = match view_id {
+            InViewName::Single(v) => (ViewsType::Single, v.to_string()),
+            InViewName::Dual(v) => (ViewsType::Dual, v.to_string()),
+            InViewName::Quad(v) => (ViewsType::Quad, v.to_string()),
+        };
+        self.view_holders
+            .borrow_mut()
+            .0
+            .get_mut(&view_id.0)
+            .unwrap()
+            .get_mut(&view_id.1)
+            .unwrap()
+            .data
+            .image_id = Some(image_id.to_string());
+    }
+
     fn render(gl: &WebGl2RenderingContext, view_holders: &Rc<RefCell<ViewHolders>>) {
         view_holders
             .borrow()
@@ -145,19 +180,29 @@ impl Renderer {
     }
 
     fn render_view(gl: &WebGl2RenderingContext, v: &ViewHolder, e: &HtmlElement) {
-        let canvas = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
+        let canvas = gl
+            .canvas()
+            .unwrap()
+            .dyn_into::<HtmlCanvasElement>()
+            .unwrap();
         let rect = e.get_bounding_client_rect();
 
-   // The following two lines set the size (in CSS pixels) of
-    // the drawing buffer to be identical to the size of the
-    // canvas HTML element, as determined by CSS.
+        // The following two lines set the size (in CSS pixels) of
+        // the drawing buffer to be identical to the size of the
+        // canvas HTML element, as determined by CSS.
         canvas.set_width(canvas.client_width() as u32);
         canvas.set_height(canvas.client_height() as u32);
 
         let width = rect.right() - rect.left();
         let height = rect.bottom() - rect.top();
         let left = rect.left();
-        let bottom = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().client_height() as f64 - rect.bottom();
+        let bottom = gl
+            .canvas()
+            .unwrap()
+            .dyn_into::<HtmlCanvasElement>()
+            .unwrap()
+            .client_height() as f64
+            - rect.bottom();
 
         gl.viewport(left as i32, bottom as i32, width as i32, height as i32);
         gl.scissor(left as i32, bottom as i32, width as i32, height as i32);
@@ -165,5 +210,4 @@ impl Renderer {
         gl.clear_color(1.0, 0.0, 0.0, 1.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
-
 }

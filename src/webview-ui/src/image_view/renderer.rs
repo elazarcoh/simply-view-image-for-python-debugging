@@ -1,3 +1,4 @@
+use std::iter::FromIterator;
 use std::ops::{Deref, IndexMut};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -25,9 +26,11 @@ use crate::{math_utils, webgl_utils};
 
 use super::camera::Camera;
 use super::constants::VIEW_SIZE;
+use super::pixel_text_rendering::{
+    PixelLoc, PixelTextCache, PixelTextRenderer, PixelTextRenderingData, PixelValue,
+};
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::text_rendering::TextRenderer;
-use super::types::TextureImage;
+use super::types::{all_views, InViewName, TextureImage};
 
 struct Programs {
     basic: ProgramBundle,
@@ -35,9 +38,11 @@ struct Programs {
 }
 
 struct RenderingData {
+    pixel_text_cache_per_view: HashMap<InViewName, PixelTextCache>,
+
     gl: GL,
     programs: Programs,
-    text_renderer: TextRenderer,
+    text_renderer: PixelTextRenderer,
 
     image_plane_buffer: BufferInfo,
 }
@@ -190,9 +195,16 @@ impl Renderer {
             create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
                 .unwrap();
 
-        let text_renderer = TextRenderer::try_new(gl.clone()).unwrap();
+        let text_renderer = PixelTextRenderer::try_new(&gl).unwrap();
+
+        let pixel_text_cache_per_view = HashMap::from_iter(
+            all_views()
+                .into_iter()
+                .map(|v| (v, text_renderer.make_pixel_text_cache())),
+        );
 
         let mut rendering_data = RenderingData {
+            pixel_text_cache_per_view,
             gl: gl.clone(),
             programs,
             text_renderer,
@@ -214,7 +226,7 @@ impl Renderer {
                     return;
                 } else {
                     Renderer::render(&gl, &mut rendering_data, rendering_context.as_ref());
-                    // Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
                 }
             }
         }) as Box<dyn FnMut()>));
@@ -263,7 +275,13 @@ impl Renderer {
             .iter()
             .map(|image_view| {
                 let view_data = rendering_context.view_data(*image_view);
-                Renderer::render_view(gl, rendering_data, &view_data, rendering_context)
+                Renderer::render_view(
+                    gl,
+                    rendering_data,
+                    &view_data,
+                    rendering_context,
+                    image_view,
+                )
             })
             .collect::<Result<Vec<_>, _>>();
 
@@ -337,6 +355,7 @@ impl Renderer {
         rendering_data: &mut RenderingData,
         image_view_data: &ImageViewData,
         rendering_context: &dyn RenderingContext,
+        view_name: &InViewName,
     ) -> Result<(), String> {
         let canvas = Renderer::canvas(gl);
 
@@ -354,60 +373,13 @@ impl Renderer {
         };
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
-        // let basic_program = &rendering_data.programs.basic;
-        // gl.use_program(Some(&basic_program.program));
-
-        // let mut mat = glam::Mat4::IDENTITY;
-        // *mat.col_mut(0).index_mut(0) = 0.5;
-
-        // set_uniforms(
-        //     &basic_program,
-        //     &HashMap::from([
-        //         ("u_time", UniformValue::Float(&0.5)),
-        //         ("u_transform", UniformValue::Mat4(&mat)),
-        //     ]),
-        // );
-
-        // if let Some(image_id) = &image_view.model.image_id {
-        //     let t = rendering_context.texture_by_id(&image_id).ok_or(
-        //         "Could not find texture for image_id. This should not happen, please report a bug.",
-        //     )?;
-        //     let texture = &t.texture;
-        //     set_uniforms(
-        //         &basic_program,
-        //         &HashMap::from([("u_texture", UniformValue::Texture(&texture))]),
-        //     );
-        // }
-
-        // let array_info: ArraySpec<&[f32]> = ArraySpec {
-        //     name: "a_position".to_string(),
-        //     data: (&[
-        //         -0.5_f32, -0.5, // bottom left
-        //         0.5, -0.5, // bottom right
-        //         0.0, 0.5, // top
-        //     ]),
-        //     num_components: 2,
-        //     normalized: true,
-        //     stride: None,
-        //     target: BindingPoint::ArrayBuffer,
-        // };
-        // let attr = webgl_utils::attributes::create_attributes_from_array(gl, array_info)?;
-        // (basic_program
-        //     .attribute_setters
-        //     .get("a_position")
-        //     .ok_or("Could not find attribute setter for a_position")?
-        //     .setter)(&gl, &attr);
-
-        // // Attach the time as a uniform for the GL context.
-        // gl.draw_arrays(GL::TRIANGLES, 0, 6);
-
         let image_id = image_view_data.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
         let texture = rendering_context.texture_by_id(&image_id).ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",
         )?;
-        Renderer::render_image(rendering_data, texture, image_view_data);
+        Renderer::render_image(rendering_data, texture, image_view_data, view_name);
 
         Ok(())
     }
@@ -416,6 +388,7 @@ impl Renderer {
         rendering_data: &mut RenderingData,
         texture: Rc<TextureImage>,
         image_view_data: &ImageViewData,
+        view_name: &InViewName,
     ) {
         let gl = &rendering_data.gl;
         let program = &rendering_data.programs.image;
@@ -426,10 +399,7 @@ impl Renderer {
             height: canvas.height() as f32,
         };
         let camera = &image_view_data.camera;
-        // let camera = &Camera {
-        //     zoom: 6.0,
-        //     translation: Vec2::new(-50.0, 0.0),
-        // };
+
         let view_projection = camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, camera);
 
         let pixels_info = Renderer::calculate_pixels_information(gl, camera, &texture.image_size());
@@ -450,78 +420,29 @@ impl Renderer {
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
+        let pixel_text_cache = rendering_data
+            .pixel_text_cache_per_view
+            .get_mut(view_name)
+            .unwrap();
+
         for x in pixels_info.lower_x_px..pixels_info.upper_x_px {
             for y in pixels_info.lower_y_px..pixels_info.upper_y_px {
-                let formatted_pixel_value =
-                    PixelValueFormatter::format_pixel_value(&texture.image, x, y);
-
-                // rendering_data
-                //     .text_renderer
-                //     .queue_section(formatted_pixel_value.section.to_borrowed());
                 let image_pixels_to_view = Mat3::from_scale(Vec2::new(
                     VIEW_SIZE.width / texture.image_size().width,
                     VIEW_SIZE.height / texture.image_size().height,
                 ));
-                // // rescale the font to a single pixel
-                let image_to_view = image_pixels_to_view;
-                
-                rendering_data
-                    .text_renderer
-                    .render(&image_to_view, &view_projection);
-                break;
+
+                let pixel = PixelLoc::new(x as _, y as _);
+                let pixel_value = PixelValue::from_image(&texture.image, &pixel);
+
+                rendering_data.text_renderer.render(PixelTextRenderingData {
+                    pixel_text_cache,
+                    pixel_loc: &pixel,
+                    pixel_value: &pixel_value,
+                    image_coords_to_view_coord_mat: &image_pixels_to_view,
+                    view_projection: &view_projection,
+                });
             }
-            break;
         }
-        // render text
-        // let font_scale = 100.0;
-        // let num_rows = 3_f32;
-        // let num_cols = 5_f32;
-        // let max_rows_cols = f32::max(num_rows, num_cols);
-        // let letters_offset_inside_pixel = max_rows_cols / 2.0;
-        // let pixel_offset = max_rows_cols;
-        // let px = 0.0;
-        // let py = 0.0;
-        // let text = ("M".repeat(num_cols as usize) + "\n").repeat(num_rows as usize);
-        // rendering_data.text_renderer.queue_section(
-        //     glyph_brush::Section::default()
-        //         .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
-        //         // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
-        //         .with_layout(
-        //             glyph_brush::Layout::default()
-        //                 .h_align(glyph_brush::HorizontalAlign::Center)
-        //                 .v_align(glyph_brush::VerticalAlign::Center),
-        //         )
-        //         .with_screen_position((
-        //             (px * pixel_offset + letters_offset_inside_pixel) * font_scale,
-        //             (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
-        //         )),
-        // );
-        // rendering_data.text_renderer.queue_section(
-        //     glyph_brush::Section::default()
-        //         .add_text(glyph_brush::Text::new(&text).with_scale(font_scale))
-        //         // .with_bounds((pixels_info.image_pixel_size_device as f32, pixels_info.image_pixel_size_device as f32))
-        //         .with_layout(
-        //             glyph_brush::Layout::default()
-        //                 .h_align(glyph_brush::HorizontalAlign::Center)
-        //                 .v_align(glyph_brush::VerticalAlign::Center),
-        //         )
-        //         .with_screen_position((
-        //             ((px + 1.0) * pixel_offset + letters_offset_inside_pixel) * font_scale,
-        //             (py * pixel_offset + letters_offset_inside_pixel) * font_scale,
-        //         )),
-        // );
-        // let image_pixels_to_view = Mat3::from_scale(Vec2::new(
-        //     VIEW_SIZE.width / texture.image_size().width,
-        //     VIEW_SIZE.height / texture.image_size().height,
-        // ));
-        // // rescale the font to a single pixel
-        // let text_to_image = Mat3::from_scale(Vec2::new(
-        //     (1.0 / max_rows_cols) / (font_scale),
-        //     (1.0 / max_rows_cols) / (font_scale),
-        // ));
-        // let text_to_view = image_pixels_to_view * text_to_image;
-        // rendering_data
-        //     .text_renderer
-        //     .render(&text_to_view, &view_projection);
     }
 }

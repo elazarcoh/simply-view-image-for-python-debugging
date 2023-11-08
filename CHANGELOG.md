@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.0.13] - Patch
+
+### Fixed
+
+-   Various issues regarding setup-code.
+
+
 ## [3.0.12] - Patch
 
 ### Added

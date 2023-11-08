@@ -58,7 +58,7 @@ impl ImageViews {
     pub fn get_image_id(&self, view_id: ViewId) -> Option<ImageId> {
         self.0.get(&view_id).unwrap().0.clone()
     }
-
+    
     pub fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
         view.0 = Some(image_id);

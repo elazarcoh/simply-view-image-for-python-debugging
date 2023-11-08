@@ -72,7 +72,7 @@ pub fn RefreshButton(props: &RefreshButtonProps) -> Html {
                 let is_loading = is_loading.clone();
                 move |_| {
                     let id = server_requests_ctx.requests_images();
-                    is_loading.set(true);
+                    // is_loading.set(true);
                 }})}
             spin={*is_loading}
             />
@@ -139,7 +139,6 @@ pub fn Sidebar(props: &SidebarProps) -> Html {
             on_state_changed={
                 let pinned = pinned.clone();
                 Callback::from(move |(state, e): (_, MouseEvent)| {
-
                     pinned.set(state == ToggleState::On)
                 })
             } />

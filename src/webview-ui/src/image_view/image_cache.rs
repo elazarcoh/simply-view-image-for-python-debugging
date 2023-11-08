@@ -13,6 +13,10 @@ impl ImageCache {
         }
     }
 
+    pub fn has(&self, id: &ImageId) -> bool {
+        self.cache.contains_key(id)
+    }
+
     pub fn get(&self, id: &ImageId) -> Option<&Rc<TextureImage>> {
         self.cache.get(id)
     }

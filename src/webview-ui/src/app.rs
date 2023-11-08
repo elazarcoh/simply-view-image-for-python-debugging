@@ -162,8 +162,8 @@ fn income_message_handler() -> impl IncomeMessageHandler {
                             ImageId::generate(),
                             ImageData::new(ImageInfo {
                                 expression: info.name,
-                                shape: vec![10, 10, 4],
-                                data_type: "uint8".to_string(),
+                                shape: vec![0, 0, 0],
+                                data_type: "TODO".to_string(),
                                 value_variable_kind: ValueVariableKind::Variable,
                             }),
                         )

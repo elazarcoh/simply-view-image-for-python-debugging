@@ -45,6 +45,29 @@ pub struct Images {
     pub by_id: HashMap<ImageId, ImageData>,
 }
 
+struct ImagesFetcher;
+
+impl Listener for ImagesFetcher {
+    type Store = AppState;
+
+    fn on_change(&mut self, state: Rc<Self::Store>) {
+        let currently_viewing_image_ids = state
+            .image_views
+            .borrow()
+            .visible_views()
+            .iter()
+            .filter_map(|view_id| state.image_views.borrow().get_image_id(*view_id))
+            .collect::<Vec<_>>();
+
+        for image_id in currently_viewing_image_ids {
+            if !state.image_cache.borrow().has(&image_id) {
+                log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                // TODO: fetch image
+            }
+        }
+    }
+}
+
 #[derive(Store, Clone)]
 pub struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
@@ -56,11 +79,29 @@ pub struct AppState {
     pub view_cameras: Mrc<ViewsCameras>,
 
     // pub message_service: Option<Rc<dyn OutgoingMessageSender>>,
-
     pub configuration: configurations::Configuration,
 }
 
 impl AppState {
+    pub fn new(
+        gl: Option<WebGl2RenderingContext>,
+        images: Mrc<Images>,
+        image_views: Mrc<ImageViews>,
+        image_cache: Mrc<ImageCache>,
+        view_cameras: Mrc<ViewsCameras>,
+        configuration: configurations::Configuration,
+    ) -> Self {
+        init_listener(ImagesFetcher);
+        Self {
+            gl,
+            images,
+            image_views,
+            image_cache,
+            view_cameras,
+            configuration,
+        }
+    }
+
     pub fn image_views(&self) -> Mrc<ImageViews> {
         self.image_views.clone()
     }

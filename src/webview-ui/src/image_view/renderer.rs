@@ -198,14 +198,14 @@ impl Renderer {
         let render_result = rendering_context
             .visible_nodes()
             .iter()
-            .map(|image_view| {
-                let view_data = rendering_context.view_data(*image_view);
+            .map(|view_id| {
+                let view_data = rendering_context.view_data(*view_id);
                 Renderer::render_view(
                     gl,
                     rendering_data,
                     &view_data,
                     rendering_context,
-                    image_view,
+                    view_id,
                 )
             })
             .collect::<Result<Vec<_>, _>>();
@@ -277,6 +277,9 @@ impl Renderer {
         rendering_context: &dyn RenderingContext,
         view_name: &ViewId,
     ) -> Result<(), String> {
+        if image_view_data.image_id.is_none() {
+            return Ok(());
+        }
         let canvas = Renderer::canvas(gl);
 
         // The following two lines set the size (in CSS pixels) of

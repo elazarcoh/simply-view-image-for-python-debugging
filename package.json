@@ -326,6 +326,16 @@
           "default": "tmp",
           "description": "Location to save images."
         },
+        "svifpd.useExperimentalDataTransfer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to use the new data-transfer protocol (using a socket server, instead of a file)."
+        },
+        "svifpd.useExperimentalViewer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to use the new experimental viewer."
+        },
         "svifpd.useTmpPathToSave": {
           "type": "boolean",
           "default": true,

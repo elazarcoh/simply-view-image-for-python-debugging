@@ -10,7 +10,7 @@ use crate::{
         camera::ViewsCameras,
         image_cache::ImageCache,
         image_views::ImageViews,
-        types::{ImageId, TextureImage, ViewId},
+        types::{ImageId, ViewId},
     },
 };
 

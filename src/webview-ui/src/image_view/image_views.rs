@@ -1,4 +1,4 @@
-use std::{collections::HashMap, default, iter::FromIterator};
+use std::{collections::HashMap, iter::FromIterator};
 
 use web_sys::HtmlElement;
 use yew::NodeRef;

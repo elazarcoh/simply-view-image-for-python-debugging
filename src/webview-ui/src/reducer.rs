@@ -1,12 +1,11 @@
 use std::{borrow::BorrowMut, collections::HashMap, rc::Rc};
 
-use js_sys::Math::random;
+
 use web_sys::WebGl2RenderingContext;
 use yewdux::prelude::*;
 
 use crate::{
     image_view::types::{ImageId, TextureImage, ViewId},
-    math_utils,
     store::{AppState, ImageData},
 };
 

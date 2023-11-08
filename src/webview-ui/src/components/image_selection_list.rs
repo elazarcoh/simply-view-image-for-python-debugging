@@ -1,12 +1,12 @@
 use stylist::yew::use_style;
-use yew::{html::Scope, prelude::*};
+use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
     components::image_list_item::ImageListItem,
     image_view::types::{ImageId, ViewId},
     reducer,
-    store::{AppState, ImageInfo},
+    store::AppState,
 };
 
 #[derive(PartialEq, Properties)]
@@ -37,14 +37,14 @@ pub fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 let selected_entry = selected_entry.clone();
 
                 let dispatch = Dispatch::<AppState>::new();
-                let cb = dispatch.apply_callback({
+
+                dispatch.apply_callback({
                     let id = id.clone();
-                    move |_|  {
+                    move |_| {
                         selected_entry.set(Some(id.clone()));
                         reducer::StoreAction::SetImageToView(id.clone(), ViewId::Primary)
                     }
-                });
-                cb
+                })
             };
 
             let is_selected = *selected_entry == Some(id.clone());

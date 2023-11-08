@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate derive_builder;
+#[macro_use]
+extern crate lazy_static;
 
 mod communication;
 use base64::{engine::general_purpose, Engine as _};

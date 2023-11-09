@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 
 use ab_glyph::{FontArc, Glyph, GlyphId, PxScale, Rect};
 use glam::{Mat3, UVec2, Vec4};
@@ -66,66 +66,6 @@ fn format_pixel_value(pixel_value: &PixelValue) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
-}
-
-fn text_color(pixel_value: &PixelValue, invert: bool, ignoring_alpha: bool) -> Vec4 {
-    let multipliers: [f32; 3] = match pixel_value.num_channels {
-        Channels::One => [1.0, 0.0, 0.0],
-        Channels::Two => [0.51, 0.49, 0.0],
-        Channels::Three | Channels::Four => [0.299, 0.587, 0.114],
-    };
-    let mut gray = 0.0;
-    let bytes_per_element = pixel_value.datatype.num_bytes();
-    let cs = usize::min(pixel_value.num_channels as usize, 3);
-    #[rustfmt::skip]
-    (0..cs).for_each(|c| {
-        let start = c * bytes_per_element;
-        let end = start + bytes_per_element;
-        let bytes = &pixel_value.bytes[start..end];
-        match pixel_value.datatype {
-            Datatype::Uint8 => gray += multipliers[c] * u8::from_ne_bytes([bytes[0]]) as f32 / u8::MAX as f32,
-            Datatype::Int8 => gray += multipliers[c] * i8::from_ne_bytes([bytes[0]]) as f32 / i8::MAX as f32,
-            Datatype::Float32 =>  gray += multipliers[c] * f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
-            Datatype::Bool => gray += (bytes[0] != 0) as u8 as f32,
-            Datatype::Uint16 => gray += multipliers[c] * u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / u16::MAX as f32,
-            Datatype::Uint32 => gray += multipliers[c] * u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / u32::MAX as f32,
-            Datatype::Int16 => gray += multipliers[c] * i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / i16::MAX as f32,
-            Datatype::Int32 => gray += multipliers[c] * i32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / i32::MAX as f32,
-        }
-    });
-
-    #[rustfmt::skip]
-    let alpha = if pixel_value.num_channels < Channels::Four || ignoring_alpha {
-        1.0
-    } else {
-        let start = 3 * bytes_per_element;
-        let end = start + bytes_per_element;
-        let bytes = &pixel_value.bytes[start..end];
-        match pixel_value.datatype {
-            Datatype::Uint8 => u8::from_ne_bytes([bytes[0]]) as f32 / u8::MAX as f32,
-            Datatype::Int8 => i8::from_ne_bytes([bytes[0]]) as f32 / i8::MAX as f32,
-            Datatype::Float32 => f32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
-            Datatype::Bool => (bytes[0] != 0) as u8 as f32,
-            Datatype::Uint16 => u16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / u16::MAX as f32,
-            Datatype::Uint32 => u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / u32::MAX as f32,
-            Datatype::Int16 => i16::from_ne_bytes([bytes[0], bytes[1]]) as f32 / i16::MAX as f32,
-            Datatype::Int32 => i32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / i32::MAX as f32,
-        }
-    };
-
-    if f32::is_nan(gray) {  // nan is drawn as black
-        gray = 0.0;
-    } 
-
-    if alpha < 0.5 {
-        Vec4::new(0.0, 0.0, 0.0, 1.0)
-    } else {
-        let mut text_color = 1.0 - f32::floor(gray + 0.5);
-        if invert {
-            text_color = 1.0 - text_color;
-        }
-        Vec4::new(text_color, text_color, text_color, 1.0)
-    }
 }
 
 struct PixelTextData {
@@ -348,9 +288,7 @@ pub(super) struct PixelTextRenderingData<'a> {
     pub pixel_value: &'a PixelValue,
     pub image_coords_to_view_coord_mat: &'a Mat3,
     pub view_projection: &'a Mat3,
-    // data from DrawingOptions
-    pub invert: bool,
-    pub ignoring_alpha: bool,
+    pub text_color: &'a Vec4,
 }
 
 impl PixelTextRenderer {
@@ -496,14 +434,7 @@ impl PixelTextRenderer {
                     "u_gylphTexture",
                     UniformValue::Texture(&self.glyph_texture.texture),
                 ),
-                (
-                    "u_textColor",
-                    UniformValue::Vec4(&text_color(
-                        data.pixel_value,
-                        data.invert,
-                        data.ignoring_alpha,
-                    )),
-                ),
+                ("u_textColor", UniformValue::Vec4(&data.text_color)),
                 (
                     "u_imageToScreenMatrix",
                     UniformValue::Mat3(&(*data.image_coords_to_view_coord_mat * text_to_image)),

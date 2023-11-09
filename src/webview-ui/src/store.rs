@@ -176,16 +176,20 @@ impl AppState {
             .set_image_to_view(image_id, view_id);
     }
 
+    pub(crate) fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>, String> {
+        Ok(self
+            .color_map_registry
+            .borrow()
+            .get(name)
+            .ok_or_else(|| format!("ColorMap {} not found", name))?)
+    }
+
     pub(crate) fn get_color_map_texture(
         &self,
         name: &str,
     ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>, String> {
         let gl = self.gl.as_ref().ok_or("WebGL context not initialized")?;
-        let colormap = self
-            .color_map_registry
-            .borrow()
-            .get(name)
-            .ok_or_else(|| format!("ColorMap {} not found", name))?;
+        let colormap = self.get_color_map(name)?;
         self.color_map_textures_cache
             .borrow_mut()
             .get_or_create(gl, &colormap)

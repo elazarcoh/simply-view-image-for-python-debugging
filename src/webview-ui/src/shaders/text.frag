@@ -8,11 +8,6 @@ layout(location = 0) out vec4 fout_color;
 uniform vec4 u_textColor;
 uniform sampler2D u_gylphTexture;
 
-// vec3 textColor(vec3 c) {
-//   float gray = c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
-//   return vec3(1.0 - floor(gray + 0.5));
-// }
-
 void main()
 {
   vec4 gylph=texture(u_gylphTexture, vout_uv);

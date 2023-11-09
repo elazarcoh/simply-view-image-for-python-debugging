@@ -6,7 +6,7 @@ use crate::{configurations::RenderingConfiguration, webgl_utils, common::Size};
 
 use super::{
     camera::Camera,
-    types::{DrawingOptions, ImageId, TextureImage, ViewId},
+    types::{DrawingOptions, ImageId, TextureImage, ViewId}, colormap,
 };
 
 pub(crate) struct ImageViewData {
@@ -22,6 +22,7 @@ pub(crate) trait RenderingContext {
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
     fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions;
+    fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>, String> ;
     fn get_color_map_texture(
         &self,
         colormap_name: &str,

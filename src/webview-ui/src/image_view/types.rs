@@ -94,6 +94,23 @@ impl PixelValue {
             *self.get_mut::<T>(channel) = value;
         }
     }
+
+    pub(crate) fn as_rgba_f32(&self) -> [f32; 4] {
+        let mut res = [0_f32; 4];
+        for channel in 0..self.num_channels.into() {
+            res[channel as usize] = match self.datatype {
+                Datatype::Uint8 => *self.get::<u8>(channel) as f32,
+                Datatype::Uint16 => *self.get::<u16>(channel) as f32,
+                Datatype::Uint32 => *self.get::<u32>(channel) as f32,
+                Datatype::Float32 => *self.get::<f32>(channel),
+                Datatype::Int8 => *self.get::<i8>(channel) as f32,
+                Datatype::Int16 => *self.get::<i16>(channel) as f32,
+                Datatype::Int32 => *self.get::<i32>(channel) as f32,
+                Datatype::Bool => *self.get::<u8>(channel) as f32,
+            }
+        }
+        res
+    }
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

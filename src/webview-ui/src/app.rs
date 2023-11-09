@@ -102,6 +102,11 @@ fn rendering_context() -> impl RenderingContext {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().get_color_map_texture(colormap_name)
         }
+
+        fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>, String>  {
+            let dispatch = Dispatch::<AppState>::new();
+            dispatch.get().get_color_map(name)
+        }
     }
 
     RenderingContextImpl {}

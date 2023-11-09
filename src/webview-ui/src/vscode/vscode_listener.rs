@@ -98,7 +98,7 @@ impl VSCodeListener {
         let images = image_objects
             .objects
             .into_iter()
-            .map(|info| (ImageId::generate(), info))
+            .map(|info| (info.image_id.clone(), info))
             .collect();
 
         dispatch.apply(StoreAction::UpdateImages(images));

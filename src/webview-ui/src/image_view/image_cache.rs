@@ -21,12 +21,6 @@ impl ImageCache {
         self.cache.get(id)
     }
 
-    pub(crate) fn add(&mut self, image: TextureImage) -> ImageId {
-        let key = ImageId::generate();
-        self.cache.insert(key.clone(), Rc::new(image));
-        key
-    }
-
     pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
         self.cache.insert(id.clone(), Rc::new(image));
     }

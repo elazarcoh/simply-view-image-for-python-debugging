@@ -4,6 +4,7 @@ import { RequestsManager } from "./RequestsManager";
 import { MessageChunkHeader, splitHeaderContentRest } from "./protocol";
 import { MessageChunks } from "./MessageChunks";
 import { logDebug } from "../../Logging";
+import { Except } from "../../utils/Except";
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -109,13 +110,13 @@ export class SocketServer {
                 }
 
                 const parsed = splitHeaderContentRest(data);
-                if (parsed === undefined) {
+                if (Except.isError(parsed)) {
                     logDebug("Waiting for more data");
                     waitingForHandling = data;
                     return;
                 }
 
-                const [header, content, rest] = parsed;
+                const [header, content, rest] = parsed.result;
                 if (rest.length > 0) {
                     logDebug("Received more data than expected");
                     waitingForHandling = rest;

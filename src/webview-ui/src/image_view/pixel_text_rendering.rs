@@ -333,7 +333,7 @@ impl PixelTextRenderer {
         let py = 0.0;
 
         let pixel_text = format_pixel_value(pixel_value);
-        log::debug!("Pixel text: {}", pixel_text);
+        // log::debug!("Pixel text: {}", pixel_text);
 
         let glyphs = Layout::default()
             .v_align(glyph_brush_layout::VerticalAlign::Center)

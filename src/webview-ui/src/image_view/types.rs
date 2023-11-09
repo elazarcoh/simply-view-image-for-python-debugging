@@ -149,16 +149,16 @@ impl Default for DrawingOptions {
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct ImageId(String);
 
-impl Display for ImageId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+#[cfg(debug_assertions)]
+impl ImageId {
+    pub(crate) fn new(id: &str) -> Self {
+        Self(id.to_owned())
     }
 }
 
-impl ImageId {
-    pub(crate) fn generate() -> Self {
-        let uuid = uuid::Uuid::new_v4();
-        Self(uuid.to_string())
+impl Display for ImageId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
     }
 }
 

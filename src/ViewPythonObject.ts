@@ -12,10 +12,9 @@ import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { Except } from "./utils/Except";
 import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
 import { getConfiguration } from "./config";
-import { serializePythonObjectUsingSocketServer } from "./from-python-serialization/SocketSerialization";
-import { logDebug } from "./Logging";
-import { parseMessage } from "./python-communication/socket-based/protocol";
+import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
 import { WebviewClient } from "./webview/communication/WebviewClient";
+import { WebviewResponses } from "./webview/communication/createMessages";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
@@ -25,42 +24,21 @@ export async function viewObject(
     openInPreview?: boolean
 ): Promise<void> {
     if (getConfiguration("useExperimentalViewer", undefined, false) === true) {
-        const response = await serializePythonObjectUsingSocketServer(
+        // TODO: currently only works for images
+        const response = await serializeImageUsingSocketServer(
             obj,
             viewable,
             session
         );
-        if (response !== undefined) {
-            // parse response
-            const { header, data } = response;
-            const message = parseMessage(header, data);
-            logDebug("Parsed message from client", message);
-            if (Except.isError(message)) {
-                throw new Error("Error parsing message from client");
-            }
-            const arrayInfo = message.result;
-            const len = arrayInfo.dimensions.reduce((a, b) => a * b, 1) * 4;
-            const arrayBuffer = new ArrayBuffer(len);
-            const arrayData = new Uint8Array(arrayBuffer);
-            arrayData.set(arrayInfo.data);
-
-            // @ts-expect-error  // TODO: fix this
-            const channels: 1 | 2 | 3 | 4 = arrayInfo.dimensions[2] ?? 1;
+        if (Except.isError(response)) {
+        } else {
             const webviewClient = Container.get(WebviewClient);
             webviewClient.reveal();
-            webviewClient.sendResponse("foobar-id", {
-                type: "ImageData",
-                width: arrayInfo.dimensions[1],
-                height: arrayInfo.dimensions[0],
-                channels,
-                // TODO: variable or expression?
-                value_variable_kind: "variable",
-                image_id: "foobar-id",
-                expression: "foobar-expression",
-                datatype: "float32",
-                bytes: arrayBuffer,
-                additional_info: {},
-            });
+            // TODO: use sendRequest instead
+            webviewClient.sendResponse(
+                "random-id",
+                WebviewResponses.imageData(response.result)
+            );
         }
     } else {
         const resPath = await serializePythonObjectToDisk(

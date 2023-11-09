@@ -51,7 +51,7 @@ export const createDebugAdapterTracker = (
 
     const updateWebview = async () => {
         const webviewClient = Container.get(WebviewClient);
-        webviewClient.sendRequest(WebviewRequests.replaceDataMessage());
+        webviewClient.sendRequest(WebviewRequests.replaceData());
     };
 
     const onScopeChange = debounce(async () => {

@@ -73,7 +73,7 @@ enum ByteOrder {
     LittleEndian = 0x01,
     BigEndian = 0x02,
 }
-enum ArrayDataType {
+export enum ArrayDataType {
     Float32 = 0x01,
     Float64 = 0x02,
     Int8 = 0x03,
@@ -87,12 +87,40 @@ enum ArrayDataType {
     Bool = 0x0b,
 }
 
+export function datatypeToString(datatype: ArrayDataType) {
+    switch (datatype) {
+        case ArrayDataType.Float32:
+            return "float32";
+        case ArrayDataType.Float64:
+            return "float64";
+        case ArrayDataType.Int8:
+            return "int8";
+        case ArrayDataType.Int16:
+            return "int16";
+        case ArrayDataType.Int32:
+            return "int32";
+        case ArrayDataType.Int64:
+            return "int64";
+        case ArrayDataType.Uint8:
+            return "uint8";
+        case ArrayDataType.Uint16:
+            return "uint16";
+        case ArrayDataType.Uint32:
+            return "uint32";
+        case ArrayDataType.Uint64:
+            return "uint64";
+        case ArrayDataType.Bool:
+            return "bool";
+    }
+}
+
 export function splitHeaderContentRest(
     buffer: Buffer
-): [MessageChunkHeader, Buffer, Buffer] | undefined {
+): Except<[MessageChunkHeader, Buffer, Buffer]> {
     if (buffer.length < HEADER_LENGTH) {
-        console.log("Buffer too short:", buffer.length);
-        return undefined;
+        return Except.error(
+            `Buffer shorter than header length: ${buffer.length} < ${HEADER_LENGTH}`
+        );
     }
     const reader = new StatefulBufferReader(buffer);
     const messageLength = reader.readUInt32();
@@ -115,12 +143,14 @@ export function splitHeaderContentRest(
     };
     const data = buffer.subarray(HEADER_LENGTH);
     if (data.length < chunkLength) {
-        return undefined;
+        return Except.error(
+            `Buffer shorter than chunk length: ${data.length} < ${chunkLength}`
+        );
     } else if (data.length > chunkLength) {
         const rest = data.subarray(chunkLength);
-        return [header, data.subarray(0, chunkLength), rest];
+        return Except.result([header, data.subarray(0, chunkLength), rest]);
     } else {
-        return [header, data, Buffer.alloc(0)];
+        return Except.result([header, data, Buffer.alloc(0)]);
     }
 }
 
@@ -159,16 +189,12 @@ function parseNumpyArrayMessage(buffer: Buffer): Except<ArrayInfo> {
     try {
         const reader = new StatefulBufferReader(buffer);
         const dataType = reader.readUInt8();
-        logDebug("Data type (ui8): ", dataType, "; ");
         const byteOrder = reader.readUInt8();
-        logDebug("Byte order (ui8): ", byteOrder, "; ");
         const numberOfDimensions = reader.readUInt8();
-        logDebug("Number of dimensions (ui8): ", numberOfDimensions, "; ");
         const dimensions = [];
         for (let i = 0; i < numberOfDimensions; i++) {
             dimensions.push(reader.readUInt32());
         }
-        logDebug("Dimensions (ui32): ", dimensions, "; ", reader.currentBuffer);
         const data = reader.currentBuffer;
         return Except.result({
             dataType,
@@ -184,7 +210,6 @@ function parseNumpyArrayMessage(buffer: Buffer): Except<ArrayInfo> {
 function parsePythonSendingObjectMessage(buffer: Buffer) {
     const reader = new StatefulBufferReader(buffer);
     const objectType = reader.readUInt8();
-    logDebug("Object type (ui8): ", objectType, "; ", reader.currentBuffer);
     switch (objectType) {
         case ObjectType.NumpyArray:
             return parseNumpyArrayMessage(reader.currentBuffer);
@@ -203,8 +228,4 @@ export function parseMessage(header: MessageChunkHeader, data: Buffer) {
         default:
             throw new Error(`Unknown message type ${messageType}`);
     }
-}
-
-function logDebug(...args: any[]) {
-    console.log(...args);
 }

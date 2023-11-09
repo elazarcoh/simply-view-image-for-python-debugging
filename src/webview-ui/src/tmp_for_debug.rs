@@ -8861,7 +8861,7 @@ fn image_data_with(
 ) -> ImageData {
     ImageData {
         info: ImageInfo {
-            image_id: ImageId::generate(),
+            image_id: ImageId::new(name),
             value_variable_kind: ValueVariableKind::Variable,
             expression: name.to_string(),
             width,

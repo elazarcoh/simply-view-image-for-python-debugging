@@ -3,6 +3,8 @@ import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
 import { hasValue } from "../../utils/Utils";
 import {
     ExtensionRequest,
+    ExtensionResponse,
+    ImageData,
     ImageInfo,
     ImageObjects,
     ValueVariableKind,
@@ -46,14 +48,35 @@ function imageObjects(): ImageObjects {
 }
 
 export class WebviewRequests {
-    static replaceDataMessage(): ExtensionRequest & {
+    static replaceData(): ExtensionRequest & {
         type: "ReplaceData";
     } {
-        const replacement_images = imageObjects();
+        const replacementImages = imageObjects();
         return {
             type: "ReplaceData",
             replacement_data: {},
-            replacement_images,
+            replacement_images: replacementImages,
+        };
+    }
+}
+
+export class WebviewResponses {
+    static imagesObjects(): ExtensionResponse & {
+        type: "ImageObjects";
+    } {
+        const objects = imageObjects();
+        return {
+            type: "ImageObjects",
+            ...objects,
+        };
+    }
+
+    static imageData(imageData: ImageData): ExtensionResponse & {
+        type: "ImageData";
+    } {
+        return {
+            type: "ImageData",
+            ...imageData,
         };
     }
 }

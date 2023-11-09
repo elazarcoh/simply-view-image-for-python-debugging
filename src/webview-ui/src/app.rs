@@ -166,7 +166,7 @@ pub(crate) fn App() -> Html {
 
         move || {
             // send message to VSCode that the webview is ready
-            // VSCodeRequests::webview_ready();
+            VSCodeRequests::webview_ready();
 
             let message_listener = VSCodeListener::install_incoming_message_handler();
 

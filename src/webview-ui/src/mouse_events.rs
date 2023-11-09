@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use glam::{Mat3, Vec2, Vec3Swizzles};
+use glam::{Mat3, UVec2, Vec2, Vec3Swizzles};
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, MouseEvent};
@@ -249,6 +249,68 @@ impl ZoomHandler {
         let options = EventListenerOptions::enable_prevent_default();
         EventListener::new_with_options(view_element, "wheel", options, move |e| {
             wheel.emit(e.clone())
+        })
+    }
+}
+
+pub(crate) struct MouseHoverHandler;
+
+impl MouseHoverHandler {
+    pub(crate) fn install(
+        view_id: ViewId,
+        view_element: &web_sys::HtmlElement,
+        camera_context: Rc<dyn ViewContext>,
+        callback: Callback<Option<UVec2>>,
+    ) -> EventListener {
+        let mousemove = {
+            let camera_context = Rc::clone(&camera_context);
+            let view_element = view_element.clone();
+
+            Callback::from(move |event: Event| {
+                let event = event
+                    .dyn_ref::<web_sys::MouseEvent>()
+                    .expect("Unable to cast event to MouseEvent");
+                let camera = camera_context.get_camera_for_view(view_id);
+                let element_size = Size {
+                    width: view_element.client_width() as f32,
+                    height: view_element.client_height() as f32,
+                };
+
+                let clip_coordinates = get_clip_space_mouse_position(event.clone(), &view_element);
+
+                let view_projection =
+                    camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera);
+                let view_projection_matrix_inv = view_projection.inverse();
+                let image_size = match camera_context.get_image_size_for_view(view_id) {
+                    Some(it) => it,
+                    None => return,
+                };
+
+                let mouse_position = (view_projection_matrix_inv * clip_coordinates.to_hom());
+
+                let mouse_position_pixels = Vec2::new(
+                    mouse_position.x * image_size.width as f32,
+                    mouse_position.y * image_size.height as f32,
+                );
+                let mouse_position_pixels = mouse_position_pixels.floor();
+
+                if mouse_position_pixels.x < 0.0
+                    || mouse_position_pixels.y < 0.0
+                    || mouse_position_pixels.x >= image_size.width as f32
+                    || mouse_position_pixels.y >= image_size.height as f32
+                {
+                    callback.emit(None);
+                } else {
+                    callback.emit(Some(UVec2::new(
+                        mouse_position_pixels.x as u32,
+                        mouse_position_pixels.y as u32,
+                    )));
+                }
+            })
+        };
+
+        EventListener::new(view_element, "mousemove", move |e| {
+            mousemove.emit(e.clone())
         })
     }
 }

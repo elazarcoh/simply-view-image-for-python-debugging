@@ -28,6 +28,7 @@ use crate::image_view::types::DrawingOptions;
 use crate::image_view::types::ImageId;
 use crate::image_view::types::TextureImage;
 use crate::image_view::types::ViewId;
+use crate::mouse_events::MouseHoverHandler;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::reducer::StoreAction;
@@ -186,27 +187,25 @@ pub(crate) fn App() -> Html {
                 PanHandler::install(view_id, &view_element, Rc::clone(&camera_context_rc))
             };
 
-            // let mouse_hover_listener = {
-            //     let canvas_ref = canvas_ref.clone();
-            //     let view_element = my_node_ref
-            //         .cast::<HtmlElement>()
-            //         .expect("Unable to cast node ref to HtmlElement");
-            //     MouseHoverHandler::install(
-            //         canvas_ref,
-            //         view_id,
-            //         &view_element,
-            //         Rc::clone(&camera_context_rc),
-            //         Callback::from(move |hovered_pixel| {
-            //             log::debug!("Hovered pixel: {:?}", hovered_pixel);
-            //         }),
-            //     )
-            // };
+            let mouse_hover_listener = {
+                let view_element = my_node_ref
+                    .cast::<HtmlElement>()
+                    .expect("Unable to cast node ref to HtmlElement");
+                MouseHoverHandler::install(
+                    view_id,
+                    &view_element,
+                    Rc::clone(&camera_context_rc),
+                    Callback::from(move |hovered_pixel| {
+                        log::debug!("Hovered pixel: {:?}", hovered_pixel);
+                    }),
+                )
+            };
 
             move || {
                 drop(message_listener);
                 drop(zoom_listener);
                 drop(pan_listener);
-                // drop(mouse_hover_listener);
+                drop(mouse_hover_listener);
             }
         }
     });

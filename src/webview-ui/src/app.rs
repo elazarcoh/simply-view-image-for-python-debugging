@@ -1,3 +1,4 @@
+use glam::IVec2;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
@@ -103,7 +104,7 @@ fn rendering_context() -> impl RenderingContext {
             dispatch.get().get_color_map_texture(colormap_name)
         }
 
-        fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>, String>  {
+        fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>, String> {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().get_color_map(name)
         }
@@ -161,7 +162,6 @@ pub(crate) fn App() -> Html {
     let gl_view_node_ref = dispatch.get().image_views().borrow().get_node_ref(view_id);
 
     use_effect({
-        let canvas_ref = canvas_ref.clone();
         let my_node_ref = gl_view_node_ref.clone();
 
         move || {
@@ -173,38 +173,40 @@ pub(crate) fn App() -> Html {
             let camera_context_rc = Rc::new(camera_context()) as Rc<dyn ViewContext>;
 
             let zoom_listener = {
-                let canvas_ref = canvas_ref.clone();
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                ZoomHandler::install(
-                    canvas_ref,
-                    view_id,
-                    &view_element,
-                    Rc::clone(&camera_context_rc),
-                )
+                ZoomHandler::install(view_id, &view_element, Rc::clone(&camera_context_rc))
             };
 
             let pan_listener = {
-                let canvas_ref = canvas_ref.clone();
                 let view_element = my_node_ref
                     .cast::<HtmlElement>()
                     .expect("Unable to cast node ref to HtmlElement");
-                PanHandler::install(
-                    canvas_ref,
-                    view_id,
-                    &view_element,
-                    Rc::clone(&camera_context_rc),
-                )
+                PanHandler::install(view_id, &view_element, Rc::clone(&camera_context_rc))
             };
 
-            // Request images from VSCode on startup
-            // VSCodeRequests::request_images();
+            // let mouse_hover_listener = {
+            //     let canvas_ref = canvas_ref.clone();
+            //     let view_element = my_node_ref
+            //         .cast::<HtmlElement>()
+            //         .expect("Unable to cast node ref to HtmlElement");
+            //     MouseHoverHandler::install(
+            //         canvas_ref,
+            //         view_id,
+            //         &view_element,
+            //         Rc::clone(&camera_context_rc),
+            //         Callback::from(move |hovered_pixel| {
+            //             log::debug!("Hovered pixel: {:?}", hovered_pixel);
+            //         }),
+            //     )
+            // };
 
             move || {
                 drop(message_listener);
                 drop(zoom_listener);
                 drop(pan_listener);
+                // drop(mouse_hover_listener);
             }
         }
     });
@@ -280,6 +282,8 @@ pub(crate) fn App() -> Html {
         width: 100%;
         height: 100%;
         z-index: -1;
+        border: 0;
+        padding: 0;
     "#,
     );
     html! {

@@ -94,7 +94,5 @@ pub(crate) fn calculate_view_projection(
         ))
     };
 
-    
-
     canvas_projection * center_in_canvas_matrix * view_to_canvas * view_matrix
 }

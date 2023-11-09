@@ -3,8 +3,8 @@ use std::{cell::RefCell, rc::Rc};
 use glam::{Mat3, Vec2, Vec3Swizzles};
 use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::JsCast;
-use web_sys::{Event, HtmlCanvasElement, MouseEvent};
-use yew::{Callback, NodeRef};
+use web_sys::{Event, MouseEvent};
+use yew::Callback;
 
 use crate::{
     common::{constants::MAX_PIXEL_SIZE_DEVICE, Size},
@@ -17,17 +17,14 @@ use crate::{
     math_utils::{image_calculations::calculate_pixels_information, ToHom},
 };
 
-fn get_clip_space_mouse_position(e: MouseEvent, canvas: &web_sys::HtmlCanvasElement) -> Vec2 {
-    // get canvas relative css position
-    let rect = canvas.get_bounding_client_rect();
+fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) -> Vec2 {
+    let rect = element.get_bounding_client_rect();
     let css_x = e.client_x() as f32 - rect.left() as f32;
     let css_y = e.client_y() as f32 - rect.top() as f32;
 
-    // get normalized 0 to 1 position across and down canvas
-    let normalized_x = css_x / canvas.client_width() as f32;
-    let normalized_y = css_y / canvas.client_height() as f32;
+    let normalized_x = css_x / element.client_width() as f32;
+    let normalized_y = css_y / element.client_height() as f32;
 
-    // convert to clip space
     let clip_x = normalized_x * 2.0 - 1.0;
     let clip_y = normalized_y * -2.0 + 1.0;
 
@@ -52,7 +49,6 @@ impl PanHandler {
     }
 
     pub(crate) fn install(
-        canvas_ref: NodeRef,
         view_id: ViewId,
         view_element: &web_sys::HtmlElement,
         camera_context: Rc<dyn ViewContext>,
@@ -60,25 +56,23 @@ impl PanHandler {
         let handler = Rc::new(RefCell::new(Self::new()));
 
         let mousedown = {
-            let canvas_element = canvas_ref
-                .cast::<HtmlCanvasElement>()
-                .expect("canvas_ref not attached to a canvas element");
             let camera_context = Rc::clone(&camera_context);
             let self_handler = Rc::clone(&handler);
+            let view_element = view_element.clone();
             Callback::from(move |event: Event| {
                 let event = event
                     .dyn_ref::<web_sys::MouseEvent>()
                     .expect("Unable to cast event to MouseEvent");
                 let camera = camera_context.get_camera_for_view(view_id);
-                let canvas_size = Size {
-                    width: canvas_element.width() as f32,
-                    height: canvas_element.height() as f32,
+                let element_size = Size {
+                    width: view_element.client_width() as f32,
+                    height: view_element.client_height() as f32,
                 };
 
                 let start_in_view_projection_matrix =
-                    camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &camera).inverse();
+                    camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera).inverse();
                 let start_mouse_position_clip_space =
-                    get_clip_space_mouse_position(event.clone(), &canvas_element);
+                    get_clip_space_mouse_position(event.clone(), &view_element);
                 let start_mouse_position =
                     start_in_view_projection_matrix * start_mouse_position_clip_space.to_hom();
 
@@ -117,9 +111,7 @@ impl PanHandler {
             })
         };
         let mousemove = {
-            let canvas_element = canvas_ref
-                .cast::<HtmlCanvasElement>()
-                .expect("canvas_ref not attached to a canvas element");
+            let view_element = view_element.clone();
             let camera_context = Rc::clone(&camera_context);
             let self_handler = Rc::clone(&handler);
 
@@ -133,7 +125,7 @@ impl PanHandler {
                     .expect("Unable to cast event to MouseEvent");
                 let camera = camera_context.get_camera_for_view(view_id);
                 let mouse_position_clip_space =
-                    get_clip_space_mouse_position(event.clone(), &canvas_element);
+                    get_clip_space_mouse_position(event.clone(), &view_element);
                 let mouse_position = (self_handler.borrow().start_in_view_projection_matrix
                     * mouse_position_clip_space.to_hom())
                 .xy();
@@ -175,15 +167,11 @@ pub(crate) struct ZoomHandler {}
 
 impl ZoomHandler {
     pub(crate) fn install(
-        canvas_ref: NodeRef,
         view_id: ViewId,
         view_element: &web_sys::HtmlElement,
         camera_context: Rc<dyn ViewContext>,
     ) -> EventListener {
         let wheel = {
-            let canvas_element = canvas_ref
-                .cast::<HtmlCanvasElement>()
-                .expect("canvas_ref not attached to a canvas element");
             let camera_context = Rc::clone(&camera_context);
 
             Callback::from({
@@ -195,14 +183,14 @@ impl ZoomHandler {
                         width: view_element.client_width() as f32,
                         height: view_element.client_height() as f32,
                     };
-                    let canvas_size = Size {
-                        width: canvas_element.width() as f32,
-                        height: canvas_element.height() as f32,
+                    let element_size = Size {
+                        width: view_element.client_width() as f32,
+                        height: view_element.client_height() as f32,
                     };
                     let camera = camera_context.get_camera_for_view(view_id);
 
                     let view_projection =
-                        camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &camera);
+                        camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera);
                     let view_projection_matrix_inv = view_projection.inverse();
                     let image_size = match camera_context.get_image_size_for_view(view_id) {
                         Some(it) => it,
@@ -226,7 +214,7 @@ impl ZoomHandler {
 
                     let clip_coordinates = get_clip_space_mouse_position(
                         event.clone().dyn_into().unwrap(),
-                        &canvas_element,
+                        &view_element,
                     );
 
                     let pre_zoom_position =
@@ -241,7 +229,7 @@ impl ZoomHandler {
                     };
 
                     let view_projection_matrix_inv =
-                        camera::calculate_view_projection(&canvas_size, &VIEW_SIZE, &new_camera)
+                        camera::calculate_view_projection(&element_size, &VIEW_SIZE, &new_camera)
                             .inverse();
                     let post_zoom_position =
                         (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();

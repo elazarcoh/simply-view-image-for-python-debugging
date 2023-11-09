@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub(crate) struct Size {
     pub width: f32,
     pub height: f32,

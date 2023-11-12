@@ -50,20 +50,20 @@ impl PanHandler {
 
     pub(crate) fn install(
         view_id: ViewId,
-        view_element: &web_sys::HtmlElement,
-        camera_context: Rc<dyn ViewContext>,
+        view_context: Rc<dyn ViewContext>,
     ) -> Vec<EventListener> {
         let handler = Rc::new(RefCell::new(Self::new()));
+        let view_element = view_context.get_view_element(view_id);
 
         let mousedown = {
-            let camera_context = Rc::clone(&camera_context);
+            let view_context = Rc::clone(&view_context);
             let self_handler = Rc::clone(&handler);
             let view_element = view_element.clone();
             Callback::from(move |event: Event| {
                 let event = event
                     .dyn_ref::<web_sys::MouseEvent>()
                     .expect("Unable to cast event to MouseEvent");
-                let camera = camera_context.get_camera_for_view(view_id);
+                let camera = view_context.get_camera_for_view(view_id);
                 let element_size = Size {
                     width: view_element.client_width() as f32,
                     height: view_element.client_height() as f32,
@@ -112,7 +112,7 @@ impl PanHandler {
         };
         let mousemove = {
             let view_element = view_element.clone();
-            let camera_context = Rc::clone(&camera_context);
+            let view_context = Rc::clone(&view_context);
             let self_handler = Rc::clone(&handler);
 
             Callback::from(move |event: Event| {
@@ -123,7 +123,7 @@ impl PanHandler {
                 let event = event
                     .dyn_ref::<web_sys::MouseEvent>()
                     .expect("Unable to cast event to MouseEvent");
-                let camera = camera_context.get_camera_for_view(view_id);
+                let camera = view_context.get_camera_for_view(view_id);
                 let mouse_position_clip_space =
                     get_clip_space_mouse_position(event.clone(), &view_element);
                 let mouse_position = (self_handler.borrow().start_in_view_projection_matrix
@@ -138,25 +138,25 @@ impl PanHandler {
                     ..camera
                 };
 
-                camera_context.set_camera_for_view(view_id, new_camera);
+                view_context.set_camera_for_view(view_id, new_camera);
             })
         };
 
         let options = EventListenerOptions::enable_prevent_default();
         vec![
-            EventListener::new_with_options(view_element, "mousedown", options, move |e| {
+            EventListener::new_with_options(&view_element, "mousedown", options, move |e| {
                 mousedown.emit(e.clone())
             }),
-            EventListener::new_with_options(view_element, "mouseup", options, move |e| {
+            EventListener::new_with_options(&view_element, "mouseup", options, move |e| {
                 mouseup.emit(e.clone())
             }),
-            EventListener::new_with_options(view_element, "mousemove", options, move |e| {
+            EventListener::new_with_options(&view_element, "mousemove", options, move |e| {
                 mousemove.emit(e.clone())
             }),
-            // EventListener::new_with_options(view_element, "mouseleave", options, move |e| {
+            // EventListener::new_with_options(&view_element, "mouseleave", options, move |e| {
             //     mouseleave.emit(e.clone())
             // }),
-            EventListener::new_with_options(view_element, "mouseenter", options, move |e| {
+            EventListener::new_with_options(&view_element, "mouseenter", options, move |e| {
                 mouseenter.emit(e.clone())
             }),
         ]
@@ -166,13 +166,11 @@ impl PanHandler {
 pub(crate) struct ZoomHandler {}
 
 impl ZoomHandler {
-    pub(crate) fn install(
-        view_id: ViewId,
-        view_element: &web_sys::HtmlElement,
-        camera_context: Rc<dyn ViewContext>,
-    ) -> EventListener {
+    pub(crate) fn install(view_id: ViewId, view_context: Rc<dyn ViewContext>) -> EventListener {
+        let view_element = view_context.get_view_element(view_id);
+
         let wheel = {
-            let camera_context = Rc::clone(&camera_context);
+            let view_context = Rc::clone(&view_context);
 
             Callback::from({
                 let view_element = view_element.clone();
@@ -187,12 +185,12 @@ impl ZoomHandler {
                         width: view_element.client_width() as f32,
                         height: view_element.client_height() as f32,
                     };
-                    let camera = camera_context.get_camera_for_view(view_id);
+                    let camera = view_context.get_camera_for_view(view_id);
 
                     let view_projection =
                         camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera);
                     let view_projection_matrix_inv = view_projection.inverse();
-                    let image_size = match camera_context.get_image_size_for_view(view_id) {
+                    let image_size = match view_context.get_image_size_for_view(view_id) {
                         Some(it) => it,
                         None => return,
                     };
@@ -241,36 +239,38 @@ impl ZoomHandler {
                         ..new_camera
                     };
 
-                    camera_context.set_camera_for_view(view_id, new_camera);
+                    view_context.set_camera_for_view(view_id, new_camera);
                 }
             })
         };
 
         let options = EventListenerOptions::enable_prevent_default();
-        EventListener::new_with_options(view_element, "wheel", options, move |e| {
+        EventListener::new_with_options(&view_element, "wheel", options, move |e| {
             wheel.emit(e.clone())
         })
     }
 }
 
-pub(crate) struct MouseHoverHandler;
+pub(crate) struct PixelHoverHandler;
 
-impl MouseHoverHandler {
+impl PixelHoverHandler {
     pub(crate) fn install(
         view_id: ViewId,
-        view_element: &web_sys::HtmlElement,
-        camera_context: Rc<dyn ViewContext>,
+        view_context: Rc<dyn ViewContext>,
         callback: Callback<Option<UVec2>>,
-    ) -> EventListener {
+    ) -> Vec<EventListener> {
+        let view_element = view_context.get_view_element(view_id);
+
         let mousemove = {
-            let camera_context = Rc::clone(&camera_context);
+            let view_context = Rc::clone(&view_context);
             let view_element = view_element.clone();
+            let callback = callback.clone();
 
             Callback::from(move |event: Event| {
                 let event = event
                     .dyn_ref::<web_sys::MouseEvent>()
                     .expect("Unable to cast event to MouseEvent");
-                let camera = camera_context.get_camera_for_view(view_id);
+                let camera = view_context.get_camera_for_view(view_id);
                 let element_size = Size {
                     width: view_element.client_width() as f32,
                     height: view_element.client_height() as f32,
@@ -281,7 +281,7 @@ impl MouseHoverHandler {
                 let view_projection =
                     camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera);
                 let view_projection_matrix_inv = view_projection.inverse();
-                let image_size = match camera_context.get_image_size_for_view(view_id) {
+                let image_size = match view_context.get_image_size_for_view(view_id) {
                     Some(it) => it,
                     None => return,
                 };
@@ -309,8 +309,20 @@ impl MouseHoverHandler {
             })
         };
 
-        EventListener::new(view_element, "mousemove", move |e| {
-            mousemove.emit(e.clone())
-        })
+        let mouseleave = {
+            let callback = callback.clone();
+            Callback::from(move |_event: Event| {
+                callback.emit(None);
+            })
+        };
+
+        vec![
+            EventListener::new(&view_element, "mousemove", move |e| {
+                mousemove.emit(e.clone())
+            }),
+            EventListener::new(&view_element, "mouseleave", move |e| {
+                mouseleave.emit(e.clone())
+            }),
+        ]
     }
 }

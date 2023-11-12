@@ -13,7 +13,6 @@ use crate::common::Size;
 use crate::communication::incoming_messages::{Channels, Datatype};
 use crate::image_view::camera;
 use crate::math_utils::image_calculations::calculate_pixels_information;
-use crate::math_utils::ToHom;
 use crate::webgl_utils;
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
 use crate::webgl_utils::constants::*;

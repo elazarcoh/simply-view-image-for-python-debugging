@@ -19,6 +19,7 @@ use crate::components::main::Main;
 use crate::configurations;
 use crate::image_view;
 
+use crate::image_view::camera;
 use crate::image_view::color_matix::calculate_color_matrix;
 use crate::image_view::renderer::Renderer;
 use crate::image_view::rendering_context::ImageViewData;
@@ -28,8 +29,8 @@ use crate::image_view::types::DrawingOptions;
 use crate::image_view::types::ImageId;
 use crate::image_view::types::TextureImage;
 use crate::image_view::types::ViewId;
-use crate::mouse_events::MouseHoverHandler;
 use crate::mouse_events::PanHandler;
+use crate::mouse_events::PixelHoverHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::reducer::StoreAction;
 use crate::store::AppState;
@@ -114,7 +115,7 @@ fn rendering_context() -> impl RenderingContext {
     RenderingContextImpl {}
 }
 
-fn camera_context() -> impl ViewContext {
+fn view_context() -> impl ViewContext {
     struct CameraContextImpl {}
 
     impl ViewContext for CameraContextImpl {
@@ -145,6 +146,35 @@ fn camera_context() -> impl ViewContext {
                     height: image.height as _,
                 })
         }
+
+        fn get_view_element(&self, view_id: ViewId) -> HtmlElement {
+            let dispatch = Dispatch::<AppState>::new();
+            dispatch
+                .get()
+                .image_views()
+                .borrow()
+                .get_node_ref(view_id)
+                .cast::<HtmlElement>()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Unable to cast node ref to HtmlElement for view {:?}",
+                        view_id
+                    )
+                })
+        }
+
+        fn get_image_for_view(&self, view_id: ViewId) -> Option<Rc<TextureImage>> {
+            let dispatch = Dispatch::<AppState>::new();
+            let image_id = dispatch.get().image_views().borrow().get_image_id(view_id);
+            image_id.and_then(|image_id| {
+                dispatch
+                    .get()
+                    .image_cache
+                    .borrow()
+                    .get(&image_id)
+                    .map(Rc::clone)
+            })
+        }
     }
 
     CameraContextImpl {}
@@ -160,10 +190,11 @@ pub(crate) fn App() -> Html {
 
     // TODO: move from here
     let view_id = ViewId::Primary;
-    let gl_view_node_ref = dispatch.get().image_views().borrow().get_node_ref(view_id);
+
+    let view_context_rc = Rc::new(view_context()) as Rc<dyn ViewContext>;
 
     use_effect({
-        let my_node_ref = gl_view_node_ref.clone();
+        let view_context_rc = Rc::clone(&view_context_rc);
 
         move || {
             // send message to VSCode that the webview is ready
@@ -171,41 +202,13 @@ pub(crate) fn App() -> Html {
 
             let message_listener = VSCodeListener::install_incoming_message_handler();
 
-            let camera_context_rc = Rc::new(camera_context()) as Rc<dyn ViewContext>;
-
-            let zoom_listener = {
-                let view_element = my_node_ref
-                    .cast::<HtmlElement>()
-                    .expect("Unable to cast node ref to HtmlElement");
-                ZoomHandler::install(view_id, &view_element, Rc::clone(&camera_context_rc))
-            };
-
-            let pan_listener = {
-                let view_element = my_node_ref
-                    .cast::<HtmlElement>()
-                    .expect("Unable to cast node ref to HtmlElement");
-                PanHandler::install(view_id, &view_element, Rc::clone(&camera_context_rc))
-            };
-
-            let mouse_hover_listener = {
-                let view_element = my_node_ref
-                    .cast::<HtmlElement>()
-                    .expect("Unable to cast node ref to HtmlElement");
-                MouseHoverHandler::install(
-                    view_id,
-                    &view_element,
-                    Rc::clone(&camera_context_rc),
-                    Callback::from(move |hovered_pixel| {
-                        log::debug!("Hovered pixel: {:?}", hovered_pixel);
-                    }),
-                )
-            };
+            let zoom_listener = ZoomHandler::install(view_id, Rc::clone(&view_context_rc));
+            let pan_listener = PanHandler::install(view_id, Rc::clone(&view_context_rc));
 
             move || {
                 drop(message_listener);
                 drop(zoom_listener);
                 drop(pan_listener);
-                drop(mouse_hover_listener);
             }
         }
     });
@@ -253,21 +256,6 @@ pub(crate) fn App() -> Html {
         }
     });
 
-    // let onclick_get_image = Callback::from({
-    //     let coordinator = Rc::clone(&coordinator);
-    //     move |_| {
-    //         coordinator.send_message(OutgoingMessage::RequestImageMessage(RequestImageMessage {}));
-    //     }
-    // });
-
-    // let onclick_view_image = Callback::from({
-    //     // let renderer = coordinator.renderer.clone();
-    //     move |_| {
-    //         // (*renderer.borrow_mut())
-    //         //     .put_image_to_view(InViewName::Single(InSingleViewName::Single), "test")
-    //     }
-    // });
-
     let main_style = use_style!(
         r#"
 
@@ -285,10 +273,11 @@ pub(crate) fn App() -> Html {
         padding: 0;
     "#,
     );
+
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
-            <Main gl_view_node_ref={gl_view_node_ref} />
+            <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
         </div>
     }
 }

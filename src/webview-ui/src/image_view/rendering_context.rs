@@ -30,7 +30,9 @@ pub(crate) trait RenderingContext {
 }
 
 pub(crate) trait ViewContext {
+    fn get_view_element(&self, view_id: ViewId) -> HtmlElement;
     fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size>;
+    fn get_image_for_view(&self, view_id: ViewId) -> Option<Rc<TextureImage>>;
     fn get_camera_for_view(&self, view_id: ViewId) -> Camera;
     fn set_camera_for_view(&self, view_id: ViewId, camera: Camera);
 }

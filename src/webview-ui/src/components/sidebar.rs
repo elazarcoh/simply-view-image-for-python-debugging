@@ -1,5 +1,5 @@
 use gloo::events::EventListener;
-use stylist::{yew::use_style, css};
+use stylist::{css, yew::use_style};
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
@@ -7,8 +7,10 @@ use yewdux::prelude::*;
 
 use crate::{
     components::{
-        icon_button::{IconButton, IconToggleButton, ToggleState}, image_selection_list::ImageSelectionList,
-    }, vscode::vscode_requests::VSCodeRequests,
+        icon_button::{IconButton, IconToggleButton, ToggleState},
+        image_selection_list::ImageSelectionList,
+    },
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 #[derive(PartialEq, Properties)]
@@ -71,11 +73,14 @@ pub(crate) fn RefreshButton(props: &RefreshButtonProps) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
-pub(crate) struct SidebarProps {}
+pub(crate) struct SidebarProps {
+    #[prop_or_default]
+    pub class: Classes,
+}
 
 #[function_component]
 pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
-    let SidebarProps {} = props;
+    let SidebarProps { class } = props;
 
     let node_ref = use_node_ref();
 
@@ -165,6 +170,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         r#"
         top: 0;
         background-color: var(--vscode-sideBar-background);
+        border-right: 1px solid var(--vscode-sideBar-border);
         width: 200px;
         height: 100%;
     "#,
@@ -218,7 +224,8 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         display: flex;
         flex-direction: column;
         padding: 2px;
-        background-color: var(--vscode-panel-background);
+        background-color: var(--vscode-sideBar-background);
+        border-right: 1px solid var(--vscode-sideBar-border);
         height: 100%;
         "#,
     );
@@ -230,7 +237,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     };
 
     html! {
-        <div ref={node_ref}>
+        <div ref={node_ref} class={class.clone()}>
         if *collapsed {{collapsed_html}}
         else {{expanded_html}}
         </div>

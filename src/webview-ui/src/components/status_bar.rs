@@ -38,9 +38,9 @@ pub(crate) fn StatusBar(props: &StatusBarProps) -> Html {
 
     html! {
         <div class={style}>
-            <div class="item">{pixel.map(|p| format!("x: {}", p.x)).unwrap_or("A".to_string())}</div>
-            <div class="item">{pixel.map(|p| format!("y: {}", p.y)).unwrap_or("A".to_string())}</div>
-            <div class="item">{pixel_value.map(|p| format!("{}", p)).unwrap_or("A".to_string())}</div>
+            <div class="item">{pixel.map(|p| format!("x: {}", p.x)).unwrap_or_default()}</div>
+            <div class="item">{pixel.map(|p| format!("y: {}", p.y)).unwrap_or_default()}</div>
+            <div class="item">{pixel_value.map(|p| format!("{}", p)).unwrap_or_default()}</div>
         </div>
     }
 }

@@ -171,7 +171,6 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         top: 0;
         background-color: var(--vscode-sideBar-background);
         border-right: 1px solid var(--vscode-sideBar-border);
-        width: 200px;
         height: 100%;
     "#,
     );
@@ -227,6 +226,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         background-color: var(--vscode-sideBar-background);
         border-right: 1px solid var(--vscode-sideBar-border);
         height: 100%;
+        width: fit-content;
         "#,
     );
     let collapsed_html = html! {

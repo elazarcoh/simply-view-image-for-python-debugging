@@ -101,14 +101,23 @@ pub(crate) fn Main(props: &MainProps) -> Html {
 
     let main_style = use_style!(
         r#"
-        display: flex;
+        display: grid;
         height: 100vh;
+        grid-template-areas:
+            "sidebar main"
+            "sidebar footer";
+        grid-template-rows: 1fr auto;
+        grid-template-columns: fit-content(200px) 1fr;
   
         .main {
-            display: flex;
-            flex-direction: column;
+            grid-area: main;
             width: 100%;
             height: 100%;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            max-width: 200px;
         }
        
         .main-toolbar {
@@ -117,6 +126,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
         }
 
         .status-bar {
+            grid-area: footer;
             width: 100%;
         }
 
@@ -129,12 +139,12 @@ pub(crate) fn Main(props: &MainProps) -> Html {
 
     html! {
         <div class={main_style}>
-            <Sidebar />
+            <Sidebar class="sidebar" />
             <div class={"main"}>
                 <div ref={gl_view_node_ref} class={"gl-view"} />
-                <div class={"status-bar"}>
-                    <StatusBarWrapper view_id={*view_id} view_context={view_context.clone()} />
-                </div>
+            </div>
+            <div class={"status-bar"}>
+                <StatusBarWrapper view_id={*view_id} view_context={view_context.clone()} />
             </div>
         </div>
     }

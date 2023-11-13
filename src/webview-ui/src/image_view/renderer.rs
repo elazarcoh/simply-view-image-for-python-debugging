@@ -304,6 +304,13 @@ impl Renderer {
         rendering_context: &dyn RenderingContext,
         view_name: &ViewId,
     ) -> Result<(), String> {
+
+        Renderer::scissor_view(gl, &image_view_data.html_element);
+
+        // Clean the canvas
+        gl.clear_color(0.0, 0.0, 0.0, 0.0);
+        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+
         if image_view_data.image_id.is_none()
             || rendering_context
                 .texture_by_id(image_view_data.image_id.as_ref().unwrap())
@@ -318,12 +325,6 @@ impl Renderer {
         // canvas HTML element, as determined by CSS.
         canvas.set_width(canvas.client_width() as _);
         canvas.set_height(canvas.client_height() as _);
-
-        Renderer::scissor_view(gl, &image_view_data.html_element);
-
-        // Clean the canvas
-        gl.clear_color(0.0, 0.0, 0.0, 0.0);
-        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
         let image_id = image_view_data.image_id.as_ref().ok_or(
             "Could not find texture for image_id. This should not happen, please report a bug.",

@@ -124,13 +124,13 @@ fn calculate_pixel_color_from_colormap(
     drawing_options: &DrawingOptions,
 ) -> Vec4 {
     let mut rgba = Vec4::from(pixel_value.as_rgba_f32());
-    let color = color_multiplier * rgba + color_addition;
-    let colormap_sampling_value = color.x.clamp(0.0, 1.0);
+    rgba = color_multiplier * rgba + color_addition;
     if drawing_options.invert {
         rgba.x = 1.0 - rgba.x;
         rgba.y = 1.0 - rgba.y;
         rgba.z = 1.0 - rgba.z;
     }
+    let colormap_sampling_value = rgba.x.clamp(0.0, 1.0);
     let colormap_index =
         (colormap_sampling_value * (colormap.map.len() - 1) as f32).round() as usize;
     let colormap_color = colormap.map[colormap_index];

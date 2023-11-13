@@ -245,9 +245,6 @@ pub(crate) fn App() -> Html {
                 .borrow_mut()
                 .set_rendering_context(Rc::new(rendering_context()));
 
-            // TODO: remove this
-            crate::tmp_for_debug::set_debug_images(&gl);
-
             move || {
                 dispatch.reduce_mut(|state| {
                     state.gl = None;

@@ -33,11 +33,9 @@ export async function viewObject(
         if (Except.isError(response)) {
         } else {
             const webviewClient = Container.get(WebviewClient);
-            webviewClient.reveal();
-            // TODO: use sendRequest instead
-            webviewClient.sendResponse(
-                "random-id",
-                WebviewResponses.imageData(response.result)
+            await webviewClient.reveal();
+            webviewClient.sendRequest(
+                WebviewResponses.showImage(response.result)
             );
         }
     } else {

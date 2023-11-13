@@ -7,10 +7,12 @@ import {
     MessageId,
 } from "../webview";
 import { ImageViewPanel } from "../panels/ImageViewPanel";
+import { logDebug } from "../../Logging";
 
 @Service()
 export class WebviewClient {
     webview?: vscode.Webview;
+    isReady = false;
 
     constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -21,12 +23,28 @@ export class WebviewClient {
     setWebview(webview: vscode.Webview) {
         this.webview = webview;
     }
+    setReady() {
+        this.isReady = true;
+    }
 
-    reveal() {
+    unsetWebview() {
+        this.webview = undefined;
+        this.isReady = false;
+    }
+
+    async reveal() {
         ImageViewPanel.render(this.context);
+        // wait for the webview to be ready
+        let maxTries = 100;
+        while (!this.isReady && maxTries > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            maxTries--;
+        }
     }
 
     private sendToWebview(message: FromExtensionMessageWithId) {
+        logDebug(`webview === undefined: ${this.webview === undefined}`);
+        logDebug(`message: ${JSON.stringify(message)}`);
         return this.webview?.postMessage(message);
     }
 

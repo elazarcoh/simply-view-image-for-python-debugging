@@ -140,7 +140,7 @@ fn create_uniform_setters(
         .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
         .as_f64()
         .unwrap() as u32;
-    log::debug!("Num uniforms: {}", num_uniforms);
+    // log::debug!("Num uniforms: {}", num_uniforms);
 
     let mut uniform_setters: HashMap<String, UniformSetter> = HashMap::new();
     let mut texture_unit = 0;
@@ -159,7 +159,7 @@ fn create_uniform_setters(
             &name
         };
         let gl_type = uniform_info.type_();
-        log::debug!("Uniform: {} type: {}", name, gl_type);
+        // log::debug!("Uniform: {} type: {}", name, gl_type);
         if let Some(location) = gl.get_uniform_location(program, uniform_info.name().as_str()) {
             let setter = if [
                 GL::SAMPLER_2D,
@@ -175,7 +175,7 @@ fn create_uniform_setters(
             .contains(&gl_type)
             {
                 let unit = texture_unit;
-                log::debug!("Creating sampler setter for: {} at unit: {}", name, unit);
+                // log::debug!("Creating sampler setter for: {} at unit: {}", name, unit);
                 texture_unit += uniform_info.size();
                 make_sampler_setter(gl_type, unit, location)
             } else {

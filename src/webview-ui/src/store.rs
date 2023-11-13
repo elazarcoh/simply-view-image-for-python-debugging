@@ -176,6 +176,10 @@ impl AppState {
             .set_image_to_view(image_id, view_id);
     }
 
+    pub(crate) fn get_image_in_view(&self, view_id: ViewId) -> Option<ImageId> {
+        self.image_views.borrow().get_image_id(view_id)
+    }
+
     pub(crate) fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>, String> {
         Ok(self
             .color_map_registry

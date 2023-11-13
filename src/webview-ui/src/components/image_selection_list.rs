@@ -15,12 +15,11 @@ pub(crate) struct ImageSelectionListProps {}
 
 #[function_component]
 pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
-    let images_data = use_selector(|state: &AppState| state.images.clone());
-
     let ImageSelectionListProps {} = props;
 
-    let selected_entry = use_state::<Option<ImageId>, _>(|| None);
-
+    let images_data = use_selector(|state: &AppState| state.images.clone());
+    let selected_entry = use_selector(|state: &AppState| state.get_image_in_view(ViewId::Primary));
+    
     let entry_style = use_style!(
         r#"
         padding: 5px;
@@ -34,14 +33,11 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
         .iter()
         .map(|(id, info)| {
             let onclick = {
-                let selected_entry = selected_entry.clone();
-
                 let dispatch = Dispatch::<AppState>::new();
 
                 dispatch.apply_callback({
                     let id = id.clone();
                     move |_| {
-                        selected_entry.set(Some(id.clone()));
                         reducer::StoreAction::SetImageToView(id.clone(), ViewId::Primary)
                     }
                 })

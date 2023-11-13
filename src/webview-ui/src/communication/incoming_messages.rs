@@ -183,10 +183,16 @@ pub(crate) struct ImageObjects {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
+pub(crate) struct ReplaceData {
+    pub replacement_images: ImageObjects,
+    pub replacement_data: HashMap<ImageId, ImageData>,
+}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
 #[serde(tag = "type")]
 pub(crate) enum ExtensionResponse {
     ImageData(ImageData),
-    ImageObjects(ImageObjects),
+    ReplaceData(ReplaceData),
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
@@ -196,13 +202,10 @@ pub(crate) struct ShowImageOptions {}
 #[serde(tag = "type")]
 pub(crate) enum ExtensionRequest {
     ShowImage {
-        info: ImageInfo,
+        image_data: ImageData,
         options: ShowImageOptions,
     },
-    ReplaceData {
-        replacement_images: ImageObjects,
-        replacement_data: HashMap<ImageId, ImageData>,
-    },
+    ReplaceData(ReplaceData),
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

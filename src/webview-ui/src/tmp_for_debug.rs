@@ -11,7 +11,7 @@ use crate::store::AppState;
 
 use crate::{
     communication::incoming_messages::{Datatype, ImageData, ImageInfo, ValueVariableKind},
-    image_view::types::{ImageId, TextureImage},
+    image_view::types::ImageId,
 };
 
 #[cfg(debug_assertions)]
@@ -8874,37 +8874,35 @@ fn image_data_with(
     }
 }
 
-fn image_texture_rgba_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgba_u8() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
-    let image_data = image_data_with(
+    image_data_with(
         bytes_rgba,
         Datatype::Uint8,
         Channels::Four,
         "image_rgba_u8",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_rgb_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgb_u8() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
         .flat_map(|chunk| chunk[0..3].to_vec())
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Uint8,
         Channels::Three,
         "image_rgb_u8",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_rg_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rg_u8() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8922,18 +8920,17 @@ fn image_texture_rg_u8(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, a]
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Uint8,
         Channels::Two,
         "image_rg_u8",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_gray_u8() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8945,18 +8942,17 @@ fn image_texture_gray_u8(gl: &WebGl2RenderingContext) -> TextureImage {
             (r * 0.3 + g * 0.59 + b * 0.11) as u8
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Uint8,
         Channels::One,
         "image_gray_u8",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_rgba_int8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgba_int8() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8968,18 +8964,17 @@ fn image_texture_rgba_int8(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b, a]
         })
         .collect::<Vec<i8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Int8,
         Channels::Four,
         "image_rgba_i8",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_rgba_f32(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgba_f32() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8991,18 +8986,17 @@ fn image_texture_rgba_f32(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b, a]
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Float32,
         Channels::Four,
         "image_rgba_f32",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_rgb_f32(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_rgb_f32() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9013,18 +9007,17 @@ fn image_texture_rgb_f32(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b]
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Float32,
         Channels::Three,
         "image_rgb_f32",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_gray_f32() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9035,22 +9028,20 @@ fn image_texture_gray_f32(gl: &WebGl2RenderingContext) -> TextureImage {
             (r * 0.3 + g * 0.59 + b * 0.11)
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Float32,
         Channels::One,
         "image_gray_f32",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
 fn image_texture_gray_f32_not_normalized(
-    gl: &WebGl2RenderingContext,
     min_value: f32,
     max_value: f32,
-) -> TextureImage {
+) -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9062,22 +9053,20 @@ fn image_texture_gray_f32_not_normalized(
             gray * (max_value - min_value) + min_value
         })
         .collect::<Vec<f32>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Float32,
         Channels::One,
         format!("image_gray_f32_not_normalized_{}_{}", min_value, max_value).as_str(),
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
 fn image_texture_gray_u8_not_normalized(
-    gl: &WebGl2RenderingContext,
     min_value: u8,
     max_value: u8,
-) -> TextureImage {
+) -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9089,18 +9078,17 @@ fn image_texture_gray_u8_not_normalized(
             (gray * (max_value - min_value) as f32 + min_value as f32) as u8
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Uint8,
         Channels::One,
         format!("image_gray_u8_not_normalized_{}_{}", min_value, max_value).as_str(),
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_with_transparency(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_with_transparency() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9120,18 +9108,17 @@ fn image_texture_with_transparency(gl: &WebGl2RenderingContext) -> TextureImage 
             vec![r, g, b, a]
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Uint8,
         Channels::Four,
         "image_with_transparency",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_fully_transparent(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_fully_transparent() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9143,18 +9130,17 @@ fn image_fully_transparent(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b, a]
         })
         .collect::<Vec<u8>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Uint8,
         Channels::Four,
         "transparent_image",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_bool_rgba(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_bool_rgba() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9166,54 +9152,50 @@ fn image_texture_bool_rgba(gl: &WebGl2RenderingContext) -> TextureImage {
             vec![r, g, b, a]
         })
         .collect::<Vec<bool>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Bool,
         Channels::Four,
         "image_bool_rgba",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn image_texture_bool_gray(gl: &WebGl2RenderingContext) -> TextureImage {
+fn image_texture_bool_gray() -> ImageData {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
         .map(|chunk| chunk[0] > 127)
         .collect::<Vec<bool>>();
-    let image_data = image_data_with(
+    image_data_with(
         bytemuck::cast_slice(&data),
         Datatype::Bool,
         Channels::One,
         "image_bool_gray",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn heatmap_texture_u16(gl: &WebGl2RenderingContext) -> TextureImage {
+fn heatmap_texture_u16() -> ImageData {
     let (data, w, h) = heatmap_gray_data_u16();
-    let image_data = image_data_with(data, Datatype::Uint16, Channels::One, "heatmap_u16", w, h);
-    TextureImage::try_new(image_data, gl).unwrap()
+    image_data_with(data, Datatype::Uint16, Channels::One, "heatmap_u16", w, h)
 }
 
-fn segmentation_texture_u8(gl: &WebGl2RenderingContext) -> TextureImage {
+fn segmentation_texture_u8() -> ImageData {
     let (data, w, h) = segmentation_gray_data_u8();
-    let image_data = image_data_with(
+    image_data_with(
         data,
         Datatype::Uint8,
         Channels::One,
         "segmentation_u8",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
-fn matrix_4x4_with_scientific_nan_inf(gl: &WebGl2RenderingContext) -> TextureImage {
+fn matrix_4x4_with_scientific_nan_inf() -> ImageData {
     let matrix: &[f32] = &[
         0.0,
         1.0,
@@ -9234,57 +9216,54 @@ fn matrix_4x4_with_scientific_nan_inf(gl: &WebGl2RenderingContext) -> TextureIma
     ];
 
     let (data, w, h) = (bytemuck::cast_slice(matrix), 4, 4);
-    let image_data = image_data_with(
+    image_data_with(
         data,
         Datatype::Float32,
         Channels::One,
         "matrix_4x4_with_scientific_nan_inf",
         w,
         h,
-    );
-    TextureImage::try_new(image_data, gl).unwrap()
+    )
 }
 
 #[cfg(debug_assertions)]
-pub(crate) fn set_debug_images(gl: &WebGl2RenderingContext) {
+pub(crate) fn set_debug_images() {
+    use crate::communication::incoming_messages::ImageObjects;
+
     let dispatch = Dispatch::<AppState>::new();
 
     log::debug!("creating debug image texture");
-    let images = vec![
-        image_texture_bool_rgba(gl),
-        image_texture_rgba_u8(gl),
-        image_texture_rgb_u8(gl),
-        image_texture_rg_u8(gl),
-        image_texture_gray_u8(gl),
-        image_texture_rgba_int8(gl),
-        image_texture_rgba_f32(gl),
-        image_texture_rgb_f32(gl),
-        image_texture_gray_f32(gl),
-        image_texture_gray_f32_not_normalized(gl, 0.0, 0.5),
-        image_texture_gray_f32_not_normalized(gl, -100.0, 100.0),
-        image_texture_gray_u8_not_normalized(gl, 50, 100),
-        image_texture_with_transparency(gl),
-        image_fully_transparent(gl),
-        image_texture_bool_gray(gl),
-        heatmap_texture_u16(gl),
-        segmentation_texture_u8(gl),
-        matrix_4x4_with_scientific_nan_inf(gl),
+    let images: Vec<ImageData> = vec![
+        image_texture_bool_rgba(),
+        image_texture_rgba_u8(),
+        image_texture_rgb_u8(),
+        image_texture_rg_u8(),
+        image_texture_gray_u8(),
+        image_texture_rgba_int8(),
+        image_texture_rgba_f32(),
+        image_texture_rgb_f32(),
+        image_texture_gray_f32(),
+        image_texture_gray_f32_not_normalized(0.0, 0.5),
+        image_texture_gray_f32_not_normalized(-100.0, 100.0),
+        image_texture_gray_u8_not_normalized(50, 100),
+        image_texture_with_transparency(),
+        image_fully_transparent(),
+        image_texture_bool_gray(),
+        heatmap_texture_u16(),
+        segmentation_texture_u8(),
+        matrix_4x4_with_scientific_nan_inf(),
     ];
-    dispatch.apply(StoreAction::UpdateImages(
-        images
-            .iter()
-            .map(|image| (image.image.info.image_id.clone(), image.image.info.clone()))
-            .collect(),
-    ));
 
+    let mut replacement_images: ImageObjects = ImageObjects { objects: vec![] };
+    let mut replacement_data: HashMap<ImageId, ImageData> = HashMap::new();
     for image in images {
-        let image_id = image.image.info.image_id.clone();
-        dispatch.apply(StoreAction::AddTextureImage(
-            image_id.clone(),
-            Box::new(image),
-        ));
-        log::debug!("setting image to view");
-        let view_id = ViewId::Primary;
-        dispatch.apply(StoreAction::SetImageToView(image_id, view_id));
+        let image_id = image.info.image_id.clone();
+        replacement_images.objects.push(image.info.clone());
+        replacement_data.insert(image_id, image);
     }
+
+    dispatch.apply(StoreAction::ReplaceData {
+        replacement_images,
+        replacement_data,
+    });
 }

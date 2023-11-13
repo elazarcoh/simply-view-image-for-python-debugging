@@ -20,7 +20,6 @@ pub(crate) enum UpdateDrawingOptions {
 }
 
 pub(crate) enum StoreAction {
-    UpdateImages(Vec<(ImageId, ImageInfo)>),
     SetImageToView(ImageId, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
@@ -36,10 +35,6 @@ impl Reducer<AppState> for StoreAction {
         let state = Rc::make_mut(&mut app_state);
 
         match self {
-            StoreAction::UpdateImages(images) => {
-                log::debug!("UpdateImages");
-                state.images.borrow_mut().update(images);
-            }
 
             StoreAction::SetImageToView(image_id, view_id) => {
                 log::debug!("SetImageToView: {:?} {:?}", image_id, view_id);

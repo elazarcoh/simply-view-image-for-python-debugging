@@ -103,6 +103,8 @@ export class ImageViewPanel {
     public dispose() {
         ImageViewPanel.currentPanel = undefined;
 
+        Container.get(WebviewClient).unsetWebview();
+
         // Dispose of the current webview panel
         this._panel.dispose();
 

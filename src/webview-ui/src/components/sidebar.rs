@@ -10,6 +10,7 @@ use crate::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
     },
+    tmp_for_debug::set_debug_images,
     vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -165,6 +166,20 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         <RefreshButton />
     };
 
+    #[cfg(debug_assertions)]
+    let debug_images_button = html! {
+        <IconButton
+            title={"Debug images"}
+            aria_label={"Debug images"}
+            icon={"codicon codicon-debug"}
+            onclick={Callback::from({
+                |_| set_debug_images()
+            })}
+            />
+    };
+    #[cfg(not(debug_assertions))]
+    let debug_images_button = html! {};
+
     /* Expanded sidebar */
     let expanded_style = use_style!(
         r#"
@@ -208,6 +223,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
                     else {classes!(expanded_style.clone(), sidebar_unpinned_style.clone(), not_dragging_style.clone())}
         }>
             <Toolbar>
+                {debug_images_button}
                 {refresh_button.clone()}
                 {pin_toggle_button}
                 {collapse_toggle_button}

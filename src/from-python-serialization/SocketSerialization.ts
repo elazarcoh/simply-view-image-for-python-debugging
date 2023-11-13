@@ -118,7 +118,6 @@ export async function serializeImageUsingSocketServer(
         // parse response
         const { header, data } = response.result;
         const arrayOrError = parseMessage(header, data);
-        logDebug("Parsed message from client", arrayOrError);
         if (arrayOrError.isError) {
             return arrayOrError;
         }

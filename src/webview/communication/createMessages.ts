@@ -61,13 +61,24 @@ export class WebviewRequests {
 }
 
 export class WebviewResponses {
-    static imagesObjects(): ExtensionResponse & {
-        type: "ImageObjects";
+    static showImage(image_data: ImageData): ExtensionRequest & {
+        type: "ShowImage";
     } {
-        const objects = imageObjects();
         return {
-            type: "ImageObjects",
-            ...objects,
+            type: "ShowImage",
+            image_data,
+            options: {},
+        };
+    }
+
+    static imagesObjects(): ExtensionResponse & {
+        type: "ReplaceData";
+    } {
+        const replacementImages = imageObjects();
+        return {
+            type: "ReplaceData",
+            replacement_data: {},
+            replacement_images: replacementImages,
         };
     }
 

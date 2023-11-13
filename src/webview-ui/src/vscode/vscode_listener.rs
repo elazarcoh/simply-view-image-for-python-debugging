@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use js_sys::Reflect;
+use yewdux::dispatch;
 use yewdux::prelude::Dispatch;
 
 use gloo::events::EventListener;
@@ -50,16 +51,24 @@ impl VSCodeListener {
         match message {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
-                ExtensionResponse::ImageObjects(msg) => Self::handle_image_objects_response(msg),
+                ExtensionResponse::ReplaceData(replacement_data) => {
+                    Self::handle_replace_data_request(
+                        replacement_data.replacement_images,
+                        replacement_data.replacement_data,
+                    )
+                }
             },
             FromExtensionMessage::Request(message) => match message {
-                incoming_messages::ExtensionRequest::ShowImage { info, options } => {
-                    Self::handle_show_image_request(info, options)
+                incoming_messages::ExtensionRequest::ShowImage {
+                    image_data,
+                    options,
+                } => Self::handle_show_image_request(image_data, options),
+                incoming_messages::ExtensionRequest::ReplaceData(replacement_data) => {
+                    Self::handle_replace_data_request(
+                        replacement_data.replacement_images,
+                        replacement_data.replacement_data,
+                    )
                 }
-                incoming_messages::ExtensionRequest::ReplaceData {
-                    replacement_images,
-                    replacement_data,
-                } => Self::handle_replace_data_request(replacement_images, replacement_data),
             },
         }
     }
@@ -71,44 +80,16 @@ impl VSCodeListener {
         let tex_image = TextureImage::try_new(image_data, dispatch.get().gl.as_ref().unwrap())
             .expect("Unable to create texture image");
         dispatch.apply(StoreAction::AddTextureImage(image_id, Box::new(tex_image)));
-
-        // let _width = image.width();
-        // let _height = image.height();
-        // let _channels = image.color().channel_count();
-
-        // // TODO: remove this
-        // let _image = image::DynamicImage::ImageRgba8(image.to_rgba8());
-
-        // let image = TextureImage::try_new(image, self.gl.borrow().as_ref().unwrap())
-        //     .expect("Unable to create texture image");
-
-        // let image_id = self.texture_image_cache.borrow_mut().add(image);
-
-        // let _view_id = ViewId::Primary;
-
-        // self.image_views
-        //     .borrow_mut()
-        //     .set_image_to_view(image_id, view_id);
-    }
-
-    fn handle_image_objects_response(image_objects: ImageObjects) {
-        log::debug!("Received image objects response");
-        let dispatch = Dispatch::<AppState>::new();
-
-        let images = image_objects
-            .objects
-            .into_iter()
-            .map(|info| (info.image_id.clone(), info))
-            .collect();
-
-        dispatch.apply(StoreAction::UpdateImages(images));
     }
 
     fn handle_show_image_request(
-        info: incoming_messages::ImageInfo,
+        image_data: incoming_messages::ImageData,
         options: incoming_messages::ShowImageOptions,
     ) {
-        todo!()
+        let image_id = image_data.info.image_id.clone();
+        Self::handle_image_data_response(image_data);
+        let dispatch = Dispatch::<AppState>::new();
+        dispatch.apply(StoreAction::SetImageToView(image_id, ViewId::Primary));
     }
 
     fn handle_replace_data_request(

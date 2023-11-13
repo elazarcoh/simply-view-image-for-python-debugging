@@ -57,6 +57,7 @@ export class WebviewMessageHandler {
     }
 
     async handleWebviewReady(id: MessageId) {
+        this.client.setReady();
         this.client.sendResponse(id, WebviewResponses.imagesObjects());
     }
 
@@ -66,6 +67,7 @@ export class WebviewMessageHandler {
         const { id, message } = messageWithId;
 
         const type = message.type;
+        logTrace("Received message type", type);
         switch (type) {
             case "WebviewReady":
                 return this.handleWebviewReady(id);

@@ -138,13 +138,28 @@ fn view_context() -> impl ViewContext {
             let image_id = dispatch.get().image_views().borrow().get_image_id(view_id);
             dispatch
                 .get()
-                .images
+                .image_cache
                 .borrow()
-                .get(&image_id?)
-                .map(|image| Size {
-                    width: image.width as _,
-                    height: image.height as _,
-                })
+                .get(&image_id.clone()?)
+                .map_or_else(
+                    || {
+                        dispatch
+                            .get()
+                            .images
+                            .borrow()
+                            .get(&image_id?)
+                            .map(|image| Size {
+                                width: image.width as _,
+                                height: image.height as _,
+                            })
+                    },
+                    |texture| {
+                        Some(Size {
+                            width: texture.image.info.width as _,
+                            height: texture.image.info.height as _,
+                        })
+                    },
+                )
         }
 
         fn get_view_element(&self, view_id: ViewId) -> HtmlElement {

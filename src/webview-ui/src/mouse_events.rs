@@ -68,9 +68,19 @@ impl PanHandler {
                     width: view_element.client_width() as f32,
                     height: view_element.client_height() as f32,
                 };
+                let image_size = match view_context.get_image_size_for_view(view_id) {
+                    Some(it) => it,
+                    None => return,
+                };
+                let aspect_ratio = image_size.width as f32 / image_size.height as f32;
 
-                let start_in_view_projection_matrix =
-                    camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera).inverse();
+                let start_in_view_projection_matrix = camera::calculate_view_projection(
+                    &element_size,
+                    &VIEW_SIZE,
+                    &camera,
+                    aspect_ratio,
+                )
+                .inverse();
                 let start_mouse_position_clip_space =
                     get_clip_space_mouse_position(event.clone(), &view_element);
                 let start_mouse_position =
@@ -186,9 +196,18 @@ impl ZoomHandler {
                         height: view_element.client_height() as f32,
                     };
                     let camera = view_context.get_camera_for_view(view_id);
+                    let image_size = match view_context.get_image_size_for_view(view_id) {
+                        Some(it) => it,
+                        None => return,
+                    };
+                    let aspect_ratio = image_size.width as f32 / image_size.height as f32;
 
-                    let view_projection =
-                        camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera);
+                    let view_projection = camera::calculate_view_projection(
+                        &element_size,
+                        &VIEW_SIZE,
+                        &camera,
+                        aspect_ratio,
+                    );
                     let view_projection_matrix_inv = view_projection.inverse();
                     let image_size = match view_context.get_image_size_for_view(view_id) {
                         Some(it) => it,
@@ -226,9 +245,13 @@ impl ZoomHandler {
                         ..camera
                     };
 
-                    let view_projection_matrix_inv =
-                        camera::calculate_view_projection(&element_size, &VIEW_SIZE, &new_camera)
-                            .inverse();
+                    let view_projection_matrix_inv = camera::calculate_view_projection(
+                        &element_size,
+                        &VIEW_SIZE,
+                        &new_camera,
+                        aspect_ratio,
+                    )
+                    .inverse();
                     let post_zoom_position =
                         (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
 
@@ -270,6 +293,12 @@ impl PixelHoverHandler {
                 let event = event
                     .dyn_ref::<web_sys::MouseEvent>()
                     .expect("Unable to cast event to MouseEvent");
+                let image_size = match view_context.get_image_size_for_view(view_id) {
+                    Some(it) => it,
+                    None => return,
+                };
+                let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+
                 let camera = view_context.get_camera_for_view(view_id);
                 let element_size = Size {
                     width: view_element.client_width() as f32,
@@ -278,15 +307,19 @@ impl PixelHoverHandler {
 
                 let clip_coordinates = get_clip_space_mouse_position(event.clone(), &view_element);
 
-                let view_projection =
-                    camera::calculate_view_projection(&element_size, &VIEW_SIZE, &camera);
+                let view_projection = camera::calculate_view_projection(
+                    &element_size,
+                    &VIEW_SIZE,
+                    &camera,
+                    aspect_ratio,
+                );
                 let view_projection_matrix_inv = view_projection.inverse();
                 let image_size = match view_context.get_image_size_for_view(view_id) {
                     Some(it) => it,
                     None => return,
                 };
 
-                let mouse_position = (view_projection_matrix_inv * clip_coordinates.to_hom());
+                let mouse_position = view_projection_matrix_inv * clip_coordinates.to_hom();
 
                 let mouse_position_pixels = Vec2::new(
                     mouse_position.x * image_size.width as f32,

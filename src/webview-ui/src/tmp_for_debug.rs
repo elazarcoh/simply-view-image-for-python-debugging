@@ -9226,6 +9226,33 @@ fn matrix_4x4_with_scientific_nan_inf() -> ImageData {
     )
 }
 
+fn rectangle_image() -> ImageData {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let target_w = (w / 2) as usize;
+    let target_h = h as usize;
+    let mut data = vec![0; target_w * target_h * 4];
+    for y in 0..target_h {
+        for x in 0..target_w {
+            let source_x = x + target_w;
+            let source_y = y;
+            let source_index = (source_y * w as usize + source_x) * 4;
+            let target_index = (y * target_w + x) * 4;
+            data[target_index] = bytes_rgba[source_index];
+            data[target_index + 1] = bytes_rgba[source_index + 1];
+            data[target_index + 2] = bytes_rgba[source_index + 2];
+            data[target_index + 3] = bytes_rgba[source_index + 3];
+        }
+    }
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Uint8,
+        Channels::Four,
+        "rectangle_image",
+        target_w as u32,
+        target_h as u32,
+    )
+}
+
 #[cfg(debug_assertions)]
 pub(crate) fn set_debug_images() {
     use crate::communication::incoming_messages::ImageObjects;
@@ -9252,6 +9279,7 @@ pub(crate) fn set_debug_images() {
         heatmap_texture_u16(),
         segmentation_texture_u8(),
         matrix_4x4_with_scientific_nan_inf(),
+        rectangle_image(),
     ];
 
     let mut replacement_images: ImageObjects = ImageObjects { objects: vec![] };

@@ -58,10 +58,10 @@ pub(crate) fn calculate_view_projection(
     canvas_size: &Size,
     view_size: &Size,
     camera: &Camera,
+    aspect_ratio: f32,
 ) -> glam::Mat3 {
-    let view_aspect_ratio: f32 = view_size.width / view_size.height;
     let canvas_aspect_ratio = canvas_size.width / canvas_size.height;
-    let scale = canvas_aspect_ratio / view_aspect_ratio;
+    let scale = canvas_aspect_ratio / aspect_ratio;
 
     let camera_matrix = camera.as_matrix();
     let view_matrix = camera_matrix.inverse();

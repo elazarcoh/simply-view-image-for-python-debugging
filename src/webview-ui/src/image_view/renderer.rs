@@ -369,11 +369,14 @@ impl Renderer {
         };
         let camera = &image_view_data.camera;
 
+        let image_size = texture.image_size();
+        let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+
         let view_projection =
-            camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera);
+            camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera, aspect_ratio);
 
         let pixels_info = calculate_pixels_information(
-            &texture.image_size(),
+            &image_size,
             &view_projection,
             &html_element_size,
         );

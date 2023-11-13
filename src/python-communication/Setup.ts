@@ -19,17 +19,17 @@ export function setSetupIsNotOkay(): void {
 }
 
 async function checkSetupOkay(session: DebugSession) {
-    const res =  await runPython(verifyModuleExistsCode(), true, session, {
+    const res = await runPython(verifyModuleExistsCode(), true, session, {
         context: "repl",
     });
     return Except.join(res);
 }
 
-export async function runSetup(session: DebugSession): Promise<void> {
+export async function runSetup(session: DebugSession): Promise<boolean> {
     const debugSessionData = activeDebugSessionData(session);
     let maxTries = 5;
 
-    const trySetupExtensionAndRunAgainIfFailed = async (): Promise<void> => {
+    const trySetupExtensionAndRunAgainIfFailed = async (): Promise<boolean> => {
         logDebug("Checks setup is okay or not");
         const isSetupOkay = await checkSetupOkay(session);
 
@@ -49,6 +49,7 @@ export async function runSetup(session: DebugSession): Promise<void> {
         } else {
             logDebug("Setup is okay");
             debugSessionData.setupOkay = true;
+            return true;
         }
     };
 

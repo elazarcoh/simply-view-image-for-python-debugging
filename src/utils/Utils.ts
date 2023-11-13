@@ -27,11 +27,17 @@ export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
 export function debounce<
     F extends (...args: Args) => ReturnType<F>,
     Args extends unknown[] = Parameters<F>
->(func: F, waitFor: number): (...args: Args) => void {
+>(func: F, waitFor: number): (...args: Args) => FlattenedPromise<ReturnType<F>> {
     let timeout: NodeJS.Timeout;
-    return (...args: Args): void => {
+    return (...args: Args): FlattenedPromise<ReturnType<F>> => {
         clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), waitFor);
+        const promise = new Promise<ReturnType<F>>((resolve) => {
+            timeout = setTimeout(async () => {
+                const res = await func(...args);
+                resolve(res);
+            }, waitFor);
+        });
+        return promise as FlattenedPromise<ReturnType<F>>;
     };
 }
 

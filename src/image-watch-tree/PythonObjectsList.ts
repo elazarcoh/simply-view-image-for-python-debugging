@@ -2,7 +2,7 @@ import Container, { Service } from "typedi";
 import * as vscode from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
-import { logError } from "../Logging";
+import { logDebug, logError } from "../Logging";
 import {
     combineMultiEvalCodePython,
     constructRunSameExpressionWithMultipleEvaluatorsCode,
@@ -183,6 +183,7 @@ export class CurrentPythonObjectsList {
         }
         this._variablesList.length = 0;
         const variables = await this.retrieveVariables();
+        logDebug(`Got ${variables.length} variables: ${variables}`);
         this._variablesList.push(
             ...variables.map(
                 (v) => [v, Except.error("Not ready")] as ExpressingWithInfo
@@ -192,10 +193,15 @@ export class CurrentPythonObjectsList {
         const information = await this.retrieveInformation();
         const validVariables: { [index: number]: [string, InfoOrError] } = {};
         for (let i = 0; i < this._variablesList.length; i++) {
+            const variable = this._variablesList[i];
+            const name = variable[0];
             const info = information.variables[i];
             if (!info.isError) {
-                validVariables[i] = this._variablesList[i];
+                logDebug(`Got information for variable '${name}': ${JSON.stringify(info.result[1])}`);
+                validVariables[i] = variable;
                 validVariables[i][1] = info;
+            } else {
+                logDebug(`Error while getting information for variable '${name}': ${info.errorMessage}`);
             }
         }
         // filter variables that are not viewable

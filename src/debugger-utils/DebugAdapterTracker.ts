@@ -41,7 +41,6 @@ export const createDebugAdapterTracker = (
     const trackedPythonObjects = debugSessionData.trackedPythonObjects;
 
     const updateWatchTree = async () => {
-        await currentPythonObjectsList.update();
         watchTreeProvider.refresh();
     };
 
@@ -55,6 +54,8 @@ export const createDebugAdapterTracker = (
     };
 
     const onScopeChange = debounce(async () => {
+        logDebug("Scope changed. Update current python objects list");
+        await currentPythonObjectsList.update();
         await updateWatchTree();
         await Promise.all([updateWebview(), saveTracked()]);
     }, 500);
@@ -65,8 +66,9 @@ export const createDebugAdapterTracker = (
             return;
         }
         isSetupRunning = true;
-        await runSetup(session);
+        const res = await runSetup(session);
         isSetupRunning = false;
+        return res;
     }, 500);
 
     return {
@@ -111,7 +113,11 @@ export const createDebugAdapterTracker = (
                 logDebug("Breakpoint hit");
                 debugSessionData.isStopped = true;
 
-                await debounce(runSetupIfNotRunning, 250)();
+                await runSetupIfNotRunning().then((ok) => {
+                    if (ok === true) {
+                        return onScopeChange();
+                    }
+                });
             } else if (msg.type === "response" && msg.command === "variables") {
                 // Add context to debug variable. This is a workaround.
                 if (
@@ -129,8 +135,11 @@ export const createDebugAdapterTracker = (
             } else if (msg.type === "response" && msg.command === "scopes") {
                 debugVariablesTracker.onScopesResponse(msg);
                 // scope has changed. Make sure setup is okay
-                await runSetupIfNotRunning();
-                await onScopeChange();
+                await runSetupIfNotRunning().then((ok) => {
+                    if (ok === true) {
+                        return onScopeChange();
+                    }
+                });
             }
         },
 

@@ -166,12 +166,13 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     };
 
     /* Expanded sidebar */
-    let sidebar_style = use_style!(
+    let expanded_style = use_style!(
         r#"
         top: 0;
         background-color: var(--vscode-sideBar-background);
         border-right: 1px solid var(--vscode-sideBar-border);
         height: 100%;
+        min-width: 200px;
     "#,
     );
     let sidebar_unpinned_style = use_style!(
@@ -202,9 +203,9 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     );
 
     let expanded_html = html! {
-        <div class={if *pinned {classes!(sidebar_style.clone(), sidebar_pinned_style.clone())}
-                    else if *dragging {classes!(sidebar_style.clone(), sidebar_unpinned_style.clone(), dragging_style.clone())}
-                    else {classes!(sidebar_style.clone(), sidebar_unpinned_style.clone(), not_dragging_style.clone())}
+        <div class={if *pinned {classes!(expanded_style.clone(), sidebar_pinned_style.clone())}
+                    else if *dragging {classes!(expanded_style.clone(), sidebar_unpinned_style.clone(), dragging_style.clone())}
+                    else {classes!(expanded_style.clone(), sidebar_unpinned_style.clone(), not_dragging_style.clone())}
         }>
             <Toolbar>
                 {refresh_button.clone()}

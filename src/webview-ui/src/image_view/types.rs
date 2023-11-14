@@ -1,14 +1,12 @@
+use anyhow::{anyhow, Result};
 use std::fmt::Display;
 
-use crate::communication::incoming_messages::{Datatype, LocalImageData};
 use bytemuck::Pod;
 use glam::UVec2;
 use strum::EnumCount;
-use webgl_utils::types::{ElementType, Format, InternalFormat};
 
 use crate::{
-    common::Size,
-    communication::incoming_messages::Channels,
+    common::{Channels, Datatype, ImageData, Size},
     webgl_utils::{self, types::GLGuard},
 };
 
@@ -55,7 +53,7 @@ impl PixelValue {
         }
     }
 
-    pub(crate) fn from_image(image: &LocalImageData, pixel: &UVec2) -> Self {
+    pub(crate) fn from_image(image: &ImageData, pixel: &UVec2) -> Self {
         let c = image.info.channels;
         let pixel_index = (pixel.x + pixel.y * image.info.width) as usize;
         let bytes_per_element = image.info.datatype.num_bytes();
@@ -172,15 +170,12 @@ pub(crate) fn all_views() -> Vec<ViewId> {
 }
 
 pub(crate) struct TextureImage {
-    pub image: LocalImageData,
+    pub image: ImageData,
     pub texture: GLGuard<web_sys::WebGlTexture>,
 }
 
 impl TextureImage {
-    pub(crate) fn try_new(
-        image: crate::communication::incoming_messages::ImageData,
-        gl: &web_sys::WebGl2RenderingContext,
-    ) -> Result<Self, String> {
+    pub(crate) fn try_new(image: ImageData, gl: &web_sys::WebGl2RenderingContext) -> Result<Self> {
         let texture = webgl_utils::textures::create_texture_from_bytes(
             gl,
             &image.bytes,
@@ -196,7 +191,7 @@ impl TextureImage {
                 .build()
                 .unwrap(),
         )?;
-        let image = LocalImageData::from(image);
+        let image = ImageData::from(image);
         Ok(Self { image, texture })
     }
 
@@ -207,112 +202,3 @@ impl TextureImage {
         }
     }
 }
-
-// // TODO: move from here
-
-// #[rustfmt::skip]
-// lazy_static! {
-//     static ref FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS: std::collections::HashMap<(Datatype, u32), (InternalFormat, Format, ElementType)> = {
-//         let mut m = std::collections::HashMap::new();
-//         // rustfmt
-//         m.insert((Datatype::Uint8, 1), (InternalFormat::R8UI, Format::RedInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Uint8, 2), (InternalFormat::RG8UI, Format::RgInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Uint8, 3), (InternalFormat::RGB8UI, Format::RgbInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Uint8, 4), (InternalFormat::RGBA8UI, Format::RgbaInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Int8, 1), (InternalFormat::R8I, Format::RedInteger, ElementType::Byte));
-//         m.insert((Datatype::Int8, 2), (InternalFormat::RG8I, Format::RgInteger, ElementType::Byte));
-//         m.insert((Datatype::Int8, 3), (InternalFormat::RGB8I, Format::RgbInteger, ElementType::Byte));
-//         m.insert((Datatype::Int8, 4), (InternalFormat::RGBA8I, Format::RgbaInteger, ElementType::Byte));
-//         m.insert((Datatype::Uint16, 1), (InternalFormat::R16UI, Format::RedInteger, ElementType::UnsignedShort));
-//         m.insert((Datatype::Uint16, 2), (InternalFormat::RG16UI, Format::RgInteger, ElementType::UnsignedShort));
-//         m.insert((Datatype::Uint16, 3), (InternalFormat::RGB16UI, Format::RgbInteger, ElementType::UnsignedShort));
-//         m.insert((Datatype::Uint16, 4), (InternalFormat::RGBA16UI, Format::RgbaInteger, ElementType::UnsignedShort));
-//         m.insert((Datatype::Int16, 1), (InternalFormat::R16I, Format::RedInteger, ElementType::Short));
-//         m.insert((Datatype::Int16, 2), (InternalFormat::RG16I, Format::RgInteger, ElementType::Short));
-//         m.insert((Datatype::Int16, 3), (InternalFormat::RGB16I, Format::RgbInteger, ElementType::Short));
-//         m.insert((Datatype::Int16, 4), (InternalFormat::RGBA16I, Format::RgbaInteger, ElementType::Short));
-//         m.insert((Datatype::Uint32, 1), (InternalFormat::R32UI, Format::RedInteger, ElementType::UnsignedInt));
-//         m.insert((Datatype::Uint32, 2), (InternalFormat::RG32UI, Format::RgInteger, ElementType::UnsignedInt));
-//         m.insert((Datatype::Uint32, 3), (InternalFormat::RGB32UI, Format::RgbInteger, ElementType::UnsignedInt));
-//         m.insert((Datatype::Uint32, 4), (InternalFormat::RGBA32UI, Format::RgbaInteger, ElementType::UnsignedInt));
-//         m.insert((Datatype::Int32, 1), (InternalFormat::R32I, Format::RedInteger, ElementType::Int));
-//         m.insert((Datatype::Int32, 2), (InternalFormat::RG32I, Format::RgInteger, ElementType::Int));
-//         m.insert((Datatype::Int32, 3), (InternalFormat::RGB32I, Format::RgbInteger, ElementType::Int));
-//         m.insert((Datatype::Int32, 4), (InternalFormat::RGBA32I, Format::RgbaInteger, ElementType::Int));
-//         m.insert((Datatype::Float32, 1), (InternalFormat::R32F, Format::Red, ElementType::Float));
-//         m.insert((Datatype::Float32, 2), (InternalFormat::RG32F, Format::RG, ElementType::Float));
-//         m.insert((Datatype::Float32, 3), (InternalFormat::RGB32F, Format::Rgb, ElementType::Float));
-//         m.insert((Datatype::Float32, 4), (InternalFormat::RGBA32F, Format::Rgba, ElementType::Float));
-//         m.insert((Datatype::Bool, 1), (InternalFormat::R8UI, Format::RedInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Bool, 2), (InternalFormat::RG8UI, Format::RgInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Bool, 3), (InternalFormat::RGB8UI, Format::RgbInteger, ElementType::UnsignedByte));
-//         m.insert((Datatype::Bool, 4), (InternalFormat::RGBA8UI, Format::RgbaInteger, ElementType::UnsignedByte));
-
-//         m
-//     };
-// }
-
-// fn create_texture_from_image_data(
-//     gl: &web_sys::WebGl2RenderingContext,
-//     image: &crate::communication::incoming_messages::ImageData,
-//     parameters: webgl_utils::CreateTextureParameters,
-// ) -> Result<GLGuard<web_sys::WebGlTexture>, String> {
-//     let tex = webgl_utils::gl_guarded(gl.clone(), |gl| {
-//         gl.create_texture().ok_or("Could not create texture")
-//     })?;
-//     let width = image.info.width;
-//     let height = image.info.height;
-//     gl.bind_texture(webgl_utils::TextureTarget::Texture2D as _, Some(&tex));
-//     let (internal_format, format, type_) = *FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS
-//         .get(&(image.info.datatype, image.info.channels as _))
-//         .ok_or_else(|| {
-//             format!(
-//                 "Could not find internal format for datatype {:?} and channels {}",
-//                 image.info.datatype, image.info.channels,
-//             )
-//         })?;
-//     gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
-//         webgl_utils::TextureTarget::Texture2D as _,
-//         0,
-//         internal_format as _,
-//         width as i32,
-//         height as i32,
-//         0,
-//         format as _,
-//         type_ as _,
-//         &webgl_utils::utils::js_typed_array_from_bytes(&image.bytes, type_)?,
-//         0,
-//     )
-//     .map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;
-
-//     if let Some(mag_filter) = parameters.mag_filter {
-//         gl.tex_parameteri(
-//             webgl_utils::TextureTarget::Texture2D as _,
-//             web_sys::WebGl2RenderingContext::TEXTURE_MAG_FILTER,
-//             mag_filter as i32,
-//         );
-//     }
-//     if let Some(min_filter) = parameters.min_filter {
-//         gl.tex_parameteri(
-//             webgl_utils::TextureTarget::Texture2D as _,
-//             web_sys::WebGl2RenderingContext::TEXTURE_MIN_FILTER,
-//             min_filter as i32,
-//         );
-//     }
-//     if let Some(wrap_s) = parameters.wrap_s {
-//         gl.tex_parameteri(
-//             webgl_utils::TextureTarget::Texture2D as _,
-//             web_sys::WebGl2RenderingContext::TEXTURE_WRAP_S,
-//             wrap_s as i32,
-//         );
-//     }
-//     if let Some(wrap_t) = parameters.wrap_t {
-//         gl.tex_parameteri(
-//             webgl_utils::TextureTarget::Texture2D as _,
-//             web_sys::WebGl2RenderingContext::TEXTURE_WRAP_T,
-//             wrap_t as i32,
-//         );
-//     }
-
-//     Ok(tex)
-// }

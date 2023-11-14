@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
-use super::types::*;
+use super::{error::WebGlError, types::*};
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
@@ -256,4 +256,35 @@ pub(crate) enum WebGlExtension {
     OesTextureFloat,
     OesTextureFloatLinear,
     ExtColorBufferFloat,
+}
+
+#[derive(Debug)]
+#[repr(u32)]
+pub(crate) enum WebGlErrorCode {
+    NoError = WebGl2RenderingContext::NO_ERROR as _,
+    InvalidEnum = WebGl2RenderingContext::INVALID_ENUM as _,
+    InvalidValue = WebGl2RenderingContext::INVALID_VALUE as _,
+    InvalidOperation = WebGl2RenderingContext::INVALID_OPERATION as _,
+    InvalidFramebufferOperation = WebGl2RenderingContext::INVALID_FRAMEBUFFER_OPERATION as _,
+    OutOfMemory = WebGl2RenderingContext::OUT_OF_MEMORY as _,
+    ContextLost = WebGl2RenderingContext::CONTEXT_LOST_WEBGL as _,
+}
+
+impl TryFrom<GLConstant> for WebGlErrorCode {
+    type Error = WebGlError;
+
+    fn try_from(value: GLConstant) -> Result<Self, Self::Error> {
+        match value {
+            WebGl2RenderingContext::NO_ERROR => Ok(WebGlErrorCode::NoError),
+            WebGl2RenderingContext::INVALID_ENUM => Ok(WebGlErrorCode::InvalidEnum),
+            WebGl2RenderingContext::INVALID_VALUE => Ok(WebGlErrorCode::InvalidValue),
+            WebGl2RenderingContext::INVALID_OPERATION => Ok(WebGlErrorCode::InvalidOperation),
+            WebGl2RenderingContext::INVALID_FRAMEBUFFER_OPERATION => {
+                Ok(WebGlErrorCode::InvalidFramebufferOperation)
+            }
+            WebGl2RenderingContext::OUT_OF_MEMORY => Ok(WebGlErrorCode::OutOfMemory),
+            WebGl2RenderingContext::CONTEXT_LOST_WEBGL => Ok(WebGlErrorCode::ContextLost),
+            _ => Err(WebGlError::UnknownConstant(value, "WebGlErrorCode")),
+        }
+    }
 }

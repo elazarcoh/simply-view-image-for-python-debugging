@@ -8,8 +8,7 @@ use glyph_brush_layout::{GlyphPositioner, Layout, SectionGeometry, SectionText};
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
-    common::Size,
-    communication::incoming_messages::{Channels, Datatype, ImageData},
+    common::{Size, Datatype},
     webgl_utils::{
         self,
         draw::draw_buffer_info,

@@ -1,16 +1,17 @@
 use std::iter::FromIterator;
+use anyhow::Result;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use glam::{Mat3, Mat4, UVec2, Vec2, Vec3, Vec4};
+use glam::{Mat3, Mat4, UVec2, Vec2, Vec4};
 
 use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
 };
 
+use crate::common::Datatype;
 use crate::common::Size;
-use crate::communication::incoming_messages::{Channels, Datatype};
 use crate::image_view::camera;
 use crate::math_utils::image_calculations::calculate_pixels_information;
 use crate::webgl_utils;
@@ -97,7 +98,7 @@ fn create_image_plane_attributes(
     )
 }
 
-fn create_placeholder_texture(gl: &GL) -> Result<GLGuard<web_sys::WebGlTexture>, String> {
+fn create_placeholder_texture(gl: &GL) -> Result<GLGuard<web_sys::WebGlTexture>> {
     const PLACEHOLDER_BYTES: &[u8] = &[0, 0, 0, 0];
     webgl_utils::textures::create_texture_from_bytes(
         gl,
@@ -304,7 +305,6 @@ impl Renderer {
         rendering_context: &dyn RenderingContext,
         view_name: &ViewId,
     ) -> Result<(), String> {
-
         Renderer::scissor_view(gl, &image_view_data.html_element);
 
         // Clean the canvas
@@ -375,11 +375,8 @@ impl Renderer {
         let view_projection =
             camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera, aspect_ratio);
 
-        let pixels_info = calculate_pixels_information(
-            &image_size,
-            &view_projection,
-            &html_element_size,
-        );
+        let pixels_info =
+            calculate_pixels_information(&image_size, &view_projection, &html_element_size);
         let enable_borders =
             pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_border as _;
         let image_size = texture.image_size();

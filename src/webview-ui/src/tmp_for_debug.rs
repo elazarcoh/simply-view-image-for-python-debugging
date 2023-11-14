@@ -4,15 +4,13 @@ use glam::Mat4;
 use web_sys::WebGl2RenderingContext;
 use yewdux::prelude::Dispatch;
 
-use crate::communication::incoming_messages::Channels;
+use crate::common::{Channels, Datatype, ValueVariableKind};
 use crate::image_view::types::ViewId;
 use crate::reducer::StoreAction;
 use crate::store::AppState;
 
-use crate::{
-    communication::incoming_messages::{Datatype, ImageData, ImageInfo, ValueVariableKind},
-    image_view::types::ImageId,
-};
+use crate::image_view::types::ImageId;
+use crate::vscode::messages::ImageMessage;
 
 #[cfg(debug_assertions)]
 fn image_rgba_data_u8() -> (&'static [u8], u32, u32) {
@@ -8858,23 +8856,21 @@ fn image_data_with(
     name: &str,
     width: u32,
     height: u32,
-) -> ImageData {
-    ImageData {
-        info: ImageInfo {
-            image_id: ImageId::new(name),
-            value_variable_kind: ValueVariableKind::Variable,
-            expression: name.to_string(),
-            width,
-            height,
-            channels,
-            datatype,
-            additional_info: HashMap::new(),
-        },
-        bytes: bytes.to_vec(),
+) -> ImageMessage {
+    ImageMessage {
+        image_id: ImageId::new(name),
+        value_variable_kind: ValueVariableKind::Variable,
+        expression: name.to_string(),
+        width,
+        height,
+        channels,
+        datatype,
+        additional_info: HashMap::new(),
+        bytes: Some(bytes.to_vec()),
     }
 }
 
-fn image_texture_rgba_u8() -> ImageData {
+fn image_texture_rgba_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     image_data_with(
         bytes_rgba,
@@ -8886,7 +8882,7 @@ fn image_texture_rgba_u8() -> ImageData {
     )
 }
 
-fn image_texture_rgb_u8() -> ImageData {
+fn image_texture_rgb_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8902,7 +8898,7 @@ fn image_texture_rgb_u8() -> ImageData {
     )
 }
 
-fn image_texture_rg_u8() -> ImageData {
+fn image_texture_rg_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8930,7 +8926,7 @@ fn image_texture_rg_u8() -> ImageData {
     )
 }
 
-fn image_texture_gray_u8() -> ImageData {
+fn image_texture_gray_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8952,7 +8948,7 @@ fn image_texture_gray_u8() -> ImageData {
     )
 }
 
-fn image_texture_rgba_int8() -> ImageData {
+fn image_texture_rgba_int8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8974,7 +8970,7 @@ fn image_texture_rgba_int8() -> ImageData {
     )
 }
 
-fn image_texture_rgba_f32() -> ImageData {
+fn image_texture_rgba_f32() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8996,7 +8992,7 @@ fn image_texture_rgba_f32() -> ImageData {
     )
 }
 
-fn image_texture_rgb_f32() -> ImageData {
+fn image_texture_rgb_f32() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9017,7 +9013,7 @@ fn image_texture_rgb_f32() -> ImageData {
     )
 }
 
-fn image_texture_gray_f32() -> ImageData {
+fn image_texture_gray_f32() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9038,10 +9034,7 @@ fn image_texture_gray_f32() -> ImageData {
     )
 }
 
-fn image_texture_gray_f32_not_normalized(
-    min_value: f32,
-    max_value: f32,
-) -> ImageData {
+fn image_texture_gray_f32_not_normalized(min_value: f32, max_value: f32) -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9063,10 +9056,7 @@ fn image_texture_gray_f32_not_normalized(
     )
 }
 
-fn image_texture_gray_u8_not_normalized(
-    min_value: u8,
-    max_value: u8,
-) -> ImageData {
+fn image_texture_gray_u8_not_normalized(min_value: u8, max_value: u8) -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9088,7 +9078,7 @@ fn image_texture_gray_u8_not_normalized(
     )
 }
 
-fn image_texture_with_transparency() -> ImageData {
+fn image_texture_with_transparency() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9118,7 +9108,7 @@ fn image_texture_with_transparency() -> ImageData {
     )
 }
 
-fn image_fully_transparent() -> ImageData {
+fn image_fully_transparent() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9140,7 +9130,7 @@ fn image_fully_transparent() -> ImageData {
     )
 }
 
-fn image_texture_bool_rgba() -> ImageData {
+fn image_texture_bool_rgba() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9162,7 +9152,7 @@ fn image_texture_bool_rgba() -> ImageData {
     )
 }
 
-fn image_texture_bool_gray() -> ImageData {
+fn image_texture_bool_gray() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9178,12 +9168,12 @@ fn image_texture_bool_gray() -> ImageData {
     )
 }
 
-fn heatmap_texture_u16() -> ImageData {
+fn heatmap_texture_u16() -> ImageMessage {
     let (data, w, h) = heatmap_gray_data_u16();
     image_data_with(data, Datatype::Uint16, Channels::One, "heatmap_u16", w, h)
 }
 
-fn segmentation_texture_u8() -> ImageData {
+fn segmentation_texture_u8() -> ImageMessage {
     let (data, w, h) = segmentation_gray_data_u8();
     image_data_with(
         data,
@@ -9195,7 +9185,7 @@ fn segmentation_texture_u8() -> ImageData {
     )
 }
 
-fn matrix_4x4_with_scientific_nan_inf() -> ImageData {
+fn matrix_4x4_with_scientific_nan_inf() -> ImageMessage {
     let matrix: &[f32] = &[
         0.0,
         1.0,
@@ -9226,7 +9216,7 @@ fn matrix_4x4_with_scientific_nan_inf() -> ImageData {
     )
 }
 
-fn rectangle_image() -> ImageData {
+fn rectangle_image() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let target_w = (w / 2) as usize;
     let target_h = h as usize;
@@ -9255,12 +9245,16 @@ fn rectangle_image() -> ImageData {
 
 #[cfg(debug_assertions)]
 pub(crate) fn set_debug_images() {
-    use crate::communication::incoming_messages::ImageObjects;
+    use std::convert::TryFrom;
+
+    use itertools::Itertools;
+
+    use crate::reducer::ImageObject;
 
     let dispatch = Dispatch::<AppState>::new();
 
     log::debug!("creating debug image texture");
-    let images: Vec<ImageData> = vec![
+    let images: Vec<ImageMessage> = vec![
         image_texture_bool_rgba(),
         image_texture_rgba_u8(),
         image_texture_rgb_u8(),
@@ -9282,16 +9276,15 @@ pub(crate) fn set_debug_images() {
         rectangle_image(),
     ];
 
-    let mut replacement_images: ImageObjects = ImageObjects { objects: vec![] };
-    let mut replacement_data: HashMap<ImageId, ImageData> = HashMap::new();
-    for image in images {
-        let image_id = image.info.image_id.clone();
-        replacement_images.objects.push(image.info.clone());
-        replacement_data.insert(image_id, image);
+    let dispatch = Dispatch::<AppState>::new();
+    let (images, errors): (Vec<_>, Vec<_>) = images
+        .into_iter()
+        .map(ImageObject::try_from)
+        .partition_result();
+
+    if !errors.is_empty() {
+        log::error!("Unable to parse images: {:?}", errors);
     }
 
-    dispatch.apply(StoreAction::ReplaceData {
-        replacement_images,
-        replacement_data,
-    });
+    dispatch.apply(StoreAction::ReplaceData(images));
 }

@@ -49,7 +49,7 @@ pub(crate) fn create_texture_for_colormap(
         0,
         format as _,
         type_ as _,
-        &webgl_utils::utils::js_typed_array_from_bytes(bytemuck::cast_slice(&colormap.map), type_)?,
+        &webgl_utils::utils::js_typed_array_from_bytes(bytemuck::cast_slice(&colormap.map), type_),
         0,
     )
     .map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;

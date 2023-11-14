@@ -1,8 +1,7 @@
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::{
-    communication::incoming_messages::{Channels, ComputedInfo, Datatype, ImageInfo},
-    math_utils::mat4::transpose,
+    math_utils::mat4::transpose, common::{Datatype, ImageInfo, ComputedInfo, Channels},
 };
 
 use super::types::{Coloring, DrawingOptions};

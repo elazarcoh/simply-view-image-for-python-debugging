@@ -1,5 +1,8 @@
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
+use itertools::Itertools;
 use js_sys::Reflect;
 use yewdux::dispatch;
 use yewdux::prelude::Dispatch;
@@ -10,14 +13,11 @@ use gloo_utils::format::JsValueSerdeExt;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
-use crate::communication::common::MessageId;
-use crate::communication::incoming_messages::{
-    self, FromExtensionMessage, FromExtensionMessageWithId, ImageData,
-};
-
+use crate::common::ImageData;
 use crate::image_view::types::TextureImage;
+use crate::reducer::ImageObject;
+use crate::vscode::messages::*;
 use crate::{
-    communication::incoming_messages::{ExtensionResponse, ImageObjects},
     image_view::types::{ImageId, ViewId},
     reducer::StoreAction,
     store::AppState,
@@ -48,58 +48,68 @@ impl VSCodeListener {
     }
 
     fn handle_incoming_message(message: FromExtensionMessage) {
-        match message {
+        let handle_result: Result<()> = match message {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
-                ExtensionResponse::ReplaceData(replacement_data) => {
-                    Self::handle_replace_data_request(
-                        replacement_data.replacement_images,
-                        replacement_data.replacement_data,
-                    )
-                }
+                ExtensionResponse::ReplaceData(replacement_data) => Ok(
+                    Self::handle_replace_data_request(replacement_data.replacement_images),
+                ),
             },
             FromExtensionMessage::Request(message) => match message {
-                incoming_messages::ExtensionRequest::ShowImage {
+                ExtensionRequest::ShowImage {
                     image_data,
                     options,
                 } => Self::handle_show_image_request(image_data, options),
-                incoming_messages::ExtensionRequest::ReplaceData(replacement_data) => {
-                    Self::handle_replace_data_request(
-                        replacement_data.replacement_images,
-                        replacement_data.replacement_data,
-                    )
-                }
+                ExtensionRequest::ReplaceData(replacement_data) => Ok(
+                    Self::handle_replace_data_request(replacement_data.replacement_images),
+                ),
             },
+        };
+    }
+
+    fn handle_image_data_response(image_message: ImageMessage) -> Result<()> {
+        let image_id = image_message.image_id.clone();
+        if image_message.bytes.is_some() {
+            let dispatch = Dispatch::<AppState>::new();
+            let image_data = ImageData::try_from(image_message)?;
+
+            dispatch.apply(StoreAction::AddTextureImage(
+                image_id.clone(),
+                Box::new(TextureImage::try_new(
+                    image_data,
+                    dispatch.get().gl.as_ref().unwrap(),
+                )?),
+            ));
+            Ok(())
+        } else {
+            Err(anyhow!("ImageMessage without image data (`bytes` field)"))
         }
     }
 
-    fn handle_image_data_response(image_data: incoming_messages::ImageData) {
-        let image_id = image_data.info.image_id.clone();
-
-        let dispatch = Dispatch::<AppState>::new();
-        let tex_image = TextureImage::try_new(image_data, dispatch.get().gl.as_ref().unwrap())
-            .expect("Unable to create texture image");
-        dispatch.apply(StoreAction::AddTextureImage(image_id, Box::new(tex_image)));
-    }
-
     fn handle_show_image_request(
-        image_data: incoming_messages::ImageData,
-        options: incoming_messages::ShowImageOptions,
-    ) {
-        let image_id = image_data.info.image_id.clone();
-        Self::handle_image_data_response(image_data);
+        image_data: ImageMessage,
+        options: ShowImageOptions,
+    ) -> Result<()> {
+        let image_id = image_data.image_id.clone();
+        Self::handle_image_data_response(image_data)?;
+
         let dispatch = Dispatch::<AppState>::new();
         dispatch.apply(StoreAction::SetImageToView(image_id, ViewId::Primary));
+        Ok(())
     }
 
-    fn handle_replace_data_request(
-        replacement_images: ImageObjects,
-        replacement_data: HashMap<ImageId, ImageData>,
-    ) {
+    fn handle_replace_data_request(replacement_images: ImageObjects) {
         let dispatch = Dispatch::<AppState>::new();
-        dispatch.apply(StoreAction::ReplaceData {
-            replacement_images,
-            replacement_data,
-        });
+        let (images, errors): (Vec<_>, Vec<_>) = replacement_images
+            .0
+            .into_iter()
+            .map(ImageObject::try_from)
+            .partition_result();
+
+        if !errors.is_empty() {
+            log::error!("Unable to parse images: {:?}", errors);
+        }
+
+        dispatch.apply(StoreAction::ReplaceData(images));
     }
 }

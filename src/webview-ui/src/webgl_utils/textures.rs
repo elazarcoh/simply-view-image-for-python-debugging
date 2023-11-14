@@ -1,13 +1,9 @@
-use web_sys::WebGl2RenderingContext as GL;
-use web_sys::*;
+use crate::common::Datatype;
+use anyhow::{anyhow, Result};
 
-// TODO: move Datatype to a more general place
-use crate::communication::incoming_messages::Datatype;
-
+use super::error::WebGlError;
 use super::types::*;
 use super::utils::js_typed_array_from_bytes;
-
-// TODO: move from here
 
 #[rustfmt::skip]
 lazy_static! {
@@ -59,20 +55,20 @@ pub(crate) fn create_texture_from_bytes(
     channels: u8,
     datatype: Datatype,
     parameters: CreateTextureParameters,
-) -> Result<GLGuard<web_sys::WebGlTexture>, String> {
+) -> Result<GLGuard<web_sys::WebGlTexture>> {
     let tex = gl_guarded(gl.clone(), |gl| {
-        gl.create_texture().ok_or("Could not create texture")
+        gl.create_texture()
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_texture"))
     })?;
     gl.bind_texture(TextureTarget::Texture2D as _, Some(&tex));
     let (internal_format, format, type_) = *FORMAT_AND_TYPE_FOR_DATATYPE_AND_CHANNELS
         .get(&(datatype, channels as _))
-        .ok_or_else(|| {
-            format!(
-                "Could not find internal format for datatype {:?} and channels {}",
-                datatype, channels,
-            )
-        })?;
-    gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
+        .ok_or(anyhow!(
+            "Could not find internal format for datatype {:?} and channels {}",
+            datatype,
+            channels,
+        ))?;
+    let val = gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
         TextureTarget::Texture2D as _,
         0,
         internal_format as _,
@@ -81,10 +77,11 @@ pub(crate) fn create_texture_from_bytes(
         0,
         format as _,
         type_ as _,
-        &js_typed_array_from_bytes(bytes, type_)?,
+        &js_typed_array_from_bytes(bytes, type_),
         0,
     )
-    .map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;
+    .map_err(|jsvalue| WebGlError::from_js_value(&jsvalue, "tex_image_2d"));
+
 
     if let Some(mag_filter) = parameters.mag_filter {
         gl.tex_parameteri(

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
 use super::ElementType;
@@ -19,12 +20,9 @@ pub(crate) fn buffer_content_as_vec(
     content
 }
 
-pub(crate) fn js_typed_array_from_bytes(
-    bytes: &[u8],
-    element_type: ElementType,
-) -> Result<js_sys::Object, String> {
+pub(crate) fn js_typed_array_from_bytes(bytes: &[u8], element_type: ElementType) -> js_sys::Object {
     let array_buffer = js_sys::Uint8Array::from(bytes).buffer();
-    let array = match element_type {
+    match element_type {
         ElementType::Byte => js_sys::Int8Array::new(&array_buffer).into(),
         ElementType::UnsignedByte => js_sys::Uint8Array::new(&array_buffer).into(),
         ElementType::Short => js_sys::Int16Array::new(&array_buffer).into(),
@@ -32,6 +30,5 @@ pub(crate) fn js_typed_array_from_bytes(
         ElementType::Int => js_sys::Int32Array::new(&array_buffer).into(),
         ElementType::UnsignedInt => js_sys::Uint32Array::new(&array_buffer).into(),
         ElementType::Float => js_sys::Float32Array::new(&array_buffer).into(),
-    };
-    Ok(array)
+    }
 }

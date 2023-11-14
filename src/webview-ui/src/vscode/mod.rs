@@ -1,5 +1,11 @@
-pub(crate) mod vscode_requests;
+#[cfg(debug_assertions)]
+pub(crate) mod messages;
+#[cfg(not(debug_assertions))]
+mod messages;
+
+mod parse_messages;
 pub(crate) mod vscode_listener;
+pub(crate) mod vscode_requests;
 
 use wasm_bindgen::prelude::*;
 

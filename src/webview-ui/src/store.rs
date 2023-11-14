@@ -1,10 +1,10 @@
-use std::{borrow::BorrowMut, collections::HashMap, fmt::Debug, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
 
 use crate::{
-    communication::incoming_messages::ImageInfo,
+    common::ImageInfo,
     configurations,
     image_view::{
         builtin_colormaps::BUILTIN_COLORMAPS,
@@ -24,6 +24,10 @@ pub(crate) struct Images(HashMap<ImageId, ImageInfo>);
 impl Images {
     pub fn get(&self, image_id: &ImageId) -> Option<&ImageInfo> {
         self.0.get(image_id)
+    }
+
+    pub fn insert(&mut self, image_id: ImageId, image_info: ImageInfo) {
+        self.0.insert(image_id, image_info);
     }
 
     pub fn clear(&mut self) {

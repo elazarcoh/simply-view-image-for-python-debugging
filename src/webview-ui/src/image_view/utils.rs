@@ -1,4 +1,4 @@
-use crate::communication::incoming_messages::{Channels, Datatype};
+use crate::common::{Channels, Datatype};
 
 use super::types::PixelValue;
 

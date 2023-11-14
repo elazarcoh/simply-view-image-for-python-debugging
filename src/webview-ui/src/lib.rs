@@ -9,16 +9,15 @@ extern crate cfg_if;
 
 mod app;
 mod common;
-mod communication;
 mod components;
 mod configurations;
 mod image_view;
 mod math_utils;
 mod mouse_events;
+mod reducer;
+mod store;
 mod vscode;
 mod webgl_utils;
-mod store;
-mod reducer;
 
 #[cfg(debug_assertions)]
 mod tmp_for_debug;
@@ -54,7 +53,8 @@ fn run() -> Result<(), JsValue> {
     #[cfg(debug_assertions)]
     web_sys::console::clear();
 
-    let _ = global_style!(r#"
+    let _ = global_style!(
+        r#"
         body {
             margin: 0;
             padding: 0;
@@ -62,7 +62,8 @@ fn run() -> Result<(), JsValue> {
             height: 100%;
             overflow: hidden;
         }
-    "#);
+    "#
+    );
 
     yew::Renderer::<App>::new().render();
 

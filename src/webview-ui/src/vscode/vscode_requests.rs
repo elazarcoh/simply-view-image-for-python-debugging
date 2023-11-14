@@ -5,9 +5,10 @@ use wasm_bindgen::JsValue;
 
 use yewdux::prelude::*;
 
-use crate::communication::common::MessageId;
 use crate::image_view::types::ImageId;
 use crate::vscode::WebviewApi;
+
+use super::messages::MessageId;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct WebviewReady {}

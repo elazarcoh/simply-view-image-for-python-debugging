@@ -1,6 +1,7 @@
 // based on twgl
 pub(crate) mod types;
 pub(crate) mod general;
+pub mod error;
 pub(crate) use types::*;
 pub(crate) mod constants;
 pub(crate) mod program;

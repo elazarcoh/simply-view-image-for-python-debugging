@@ -29,21 +29,32 @@ where
     T: MinMax<T> + Copy + PartialOrd,
     Out: From<T>,
 {
+
+    // let start = instant::Instant::now();
+
     let mut min: [T; Ch] = [T::MAX; Ch];
     let mut max: [T; Ch] = [T::MIN; Ch];
 
-    values.chunks_exact(Ch).for_each(|pixel: &[T]| {
-        for (channel, value) in pixel.iter().enumerate() {
+    let num_pixels = values.len() / Ch;
+    let mut index = 0;
+    for _ in 0..num_pixels {
+        for channel in 0..Ch {
+            let value = values[index];
             let current_min = &mut min[channel];
             let current_max = &mut max[channel];
-            if value < current_min {
-                *current_min = *value;
+            if value < *current_min {
+                *current_min = value;
             }
-            if value > current_max {
-                *current_max = *value;
+            if value > *current_max {
+                *current_max = value;
             }
+            index += 1;
         }
-    });
+    }
+
+
+    // let end = instant::Instant::now();
+    // log::debug!("minmax took {:?}", end - start);
 
     let min: [Out; Ch] = min.map(|v| Out::from(v));
     let max: [Out; Ch] = max.map(|v| Out::from(v));
@@ -105,7 +116,6 @@ pub(crate) fn image_minmax_on_bytes(
     datatype: Datatype,
     channels: Channels,
 ) -> (PixelValue, PixelValue) {
-    let start = instant::Instant::now();
 
     let (min, max) = match datatype {
         Datatype::Uint8 => make_minmax_pixel_value_from_bytes::<u8>(channels, bytes),
@@ -118,8 +128,6 @@ pub(crate) fn image_minmax_on_bytes(
         Datatype::Bool => make_minmax_pixel_value_from_bytes::<u8>(channels, bytes),
     };
 
-    let end = instant::Instant::now();
-    log::debug!("minmax took {:?}", end - start);
 
     log::debug!("min: {}, max: {}", min, max);
 

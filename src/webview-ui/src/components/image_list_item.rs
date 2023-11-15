@@ -6,10 +6,10 @@ use yewdux::{
 };
 
 use crate::{
+    common::ImageInfo,
     components::icon_button::{IconToggleButton, ToggleState},
-    image_view::types::{Coloring, DrawingOptionsBuilder},
     reducer::{StoreAction, UpdateDrawingOptions},
-    store::AppState, common::ImageInfo,
+    store::AppState, rendering::coloring::Coloring,
 };
 
 use super::icon_button::IconButton;
@@ -22,12 +22,11 @@ pub(crate) struct DisplayOptionProps {
 mod features {
     use enumset::{EnumSet, EnumSetType};
 
-    use crate::common::{Datatype, Channels};
-
+    use crate::common::{Channels, Datatype};
 
     #[derive(EnumSetType, Debug)]
     #[allow(clippy::upper_case_acronyms)]
-    pub(crate)enum Feature {
+    pub(crate) enum Feature {
         HighContrast,
         Grayscale,
         SwapRgbBgr,

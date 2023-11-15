@@ -1,15 +1,12 @@
 use std::collections::HashMap;
 
-use glam::Mat4;
-use web_sys::WebGl2RenderingContext;
 use yewdux::prelude::Dispatch;
 
 use crate::common::{Channels, Datatype, ValueVariableKind};
-use crate::image_view::types::ViewId;
 use crate::reducer::StoreAction;
 use crate::store::AppState;
 
-use crate::image_view::types::ImageId;
+use crate::common::ImageId;
 use crate::vscode::messages::ImageMessage;
 
 #[cfg(debug_assertions)]

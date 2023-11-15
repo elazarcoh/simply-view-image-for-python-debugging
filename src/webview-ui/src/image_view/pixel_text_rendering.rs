@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-use super::types::PixelValue;
+use crate::common::pixel_value::PixelValue;
 
 pub(crate) struct PixelTextRenderer {
     gl: WebGl2RenderingContext,

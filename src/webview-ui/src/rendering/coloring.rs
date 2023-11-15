@@ -4,7 +4,40 @@ use crate::{
     math_utils::mat4::transpose, common::{Datatype, ImageInfo, ComputedInfo, Channels},
 };
 
-use super::types::{Coloring, DrawingOptions};
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) enum Coloring {
+    Default,
+    Grayscale,
+    R,
+    G,
+    B,
+    SwapRgbBgr,
+    Segmentation { name: String },
+    Heatmap { name: String },
+}
+
+#[derive(
+    Builder, tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash,
+)]
+pub(crate) struct DrawingOptions {
+    pub coloring: Coloring,
+    pub invert: bool,
+    pub high_contrast: bool,
+    pub ignore_alpha: bool,
+}
+
+impl Default for DrawingOptions {
+    fn default() -> Self {
+        Self {
+            coloring: Coloring::Default,
+            invert: false,
+            high_contrast: false,
+            ignore_alpha: false,
+        }
+    }
+}
+
 
 const IDENTITY: Mat4 = Mat4::IDENTITY;
 const DEFAULT: Mat4 = Mat4::IDENTITY;

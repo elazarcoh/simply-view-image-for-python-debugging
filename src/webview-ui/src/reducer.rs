@@ -1,14 +1,12 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use yewdux::prelude::*;
 
 use crate::{
-    common::{ImageData, ImageInfo},
-    image_view::{
-        image_cache,
-        types::{Coloring, DrawingOptions, ImageId, TextureImage, ViewId},
-    },
-    store::AppState,
+    common::{ImageData, ImageId, ImageInfo},
+    image_view::types::ViewId,
+    rendering::coloring::{Coloring, DrawingOptions},
+    store::AppState, app_state::datasetructures::image_cache::TextureImage,
 };
 
 pub(crate) enum UpdateDrawingOptions {

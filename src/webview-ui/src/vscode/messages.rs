@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    common::{Channels, Datatype, ValueVariableKind},
-    image_view::types::ImageId,
-};
+use crate::common::{Channels, Datatype, ImageId, ValueVariableKind};
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub(crate) struct MessageId(String);

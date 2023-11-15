@@ -6,11 +6,9 @@ use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
 use crate::{
+    common::pixel_value::PixelValue,
     components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar},
-    image_view::{
-        rendering_context::ViewContext,
-        types::{PixelValue, ViewId},
-    },
+    image_view::{rendering_context::ViewContext, types::ViewId},
     mouse_events::PixelHoverHandler,
     store::AppState,
 };

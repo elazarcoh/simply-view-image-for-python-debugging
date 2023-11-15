@@ -8,6 +8,7 @@ extern crate lazy_static;
 extern crate cfg_if;
 
 mod app;
+mod app_state;
 mod common;
 mod components;
 mod configurations;
@@ -21,6 +22,7 @@ mod webgl_utils;
 
 #[cfg(debug_assertions)]
 mod tmp_for_debug;
+mod rendering;
 
 use app::App;
 use cfg_if::cfg_if;

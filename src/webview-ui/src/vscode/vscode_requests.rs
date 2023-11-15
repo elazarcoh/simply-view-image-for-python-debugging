@@ -5,7 +5,7 @@ use wasm_bindgen::JsValue;
 
 use yewdux::prelude::*;
 
-use crate::image_view::types::ImageId;
+use crate::common::ImageId;
 use crate::vscode::WebviewApi;
 
 use super::messages::MessageId;

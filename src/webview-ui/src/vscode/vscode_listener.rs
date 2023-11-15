@@ -13,15 +13,11 @@ use gloo_utils::format::JsValueSerdeExt;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
+use crate::app_state::datasetructures::image_cache::TextureImage;
 use crate::common::ImageData;
-use crate::image_view::types::TextureImage;
 use crate::reducer::ImageObject;
 use crate::vscode::messages::*;
-use crate::{
-    image_view::types::{ImageId, ViewId},
-    reducer::StoreAction,
-    store::AppState,
-};
+use crate::{image_view::types::ViewId, reducer::StoreAction, store::AppState};
 
 pub(crate) struct VSCodeListener;
 

@@ -11,10 +11,15 @@ use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
 };
 
+use crate::app_state::datasetructures::image_cache::TextureImage;
 use crate::common::Datatype;
 use crate::common::Size;
+use crate::common::pixel_value::PixelValue;
 use crate::image_view::camera;
 use crate::math_utils::image_calculations::calculate_pixels_information;
+use crate::rendering::coloring::Coloring;
+use crate::rendering::coloring::DrawingOptions;
+use crate::rendering::coloring::calculate_color_matrix;
 use crate::webgl_utils;
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
 use crate::webgl_utils::constants::*;
@@ -22,12 +27,12 @@ use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
-use super::color_matix::calculate_color_matrix;
 use super::colormap;
 use super::constants::VIEW_SIZE;
 use super::pixel_text_rendering::{PixelTextCache, PixelTextRenderer, PixelTextRenderingData};
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::types::{all_views, Coloring, DrawingOptions, PixelValue, TextureImage, ViewId};
+use super::types::ViewId;
+use super::types::all_views;
 
 struct Programs {
     normalized_image: ProgramBundle,

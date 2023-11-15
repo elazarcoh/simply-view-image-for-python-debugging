@@ -5,16 +5,14 @@ use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
 
 use crate::{
-    common::ImageInfo,
+    app_state::datasetructures::image_cache::ImageCache,
+    common::{ImageId, ImageInfo},
     configurations,
     image_view::{
-        builtin_colormaps::BUILTIN_COLORMAPS,
-        camera::ViewsCameras,
-        colormap,
-        image_cache::ImageCache,
-        image_views::ImageViews,
-        types::{DrawingOptions, ImageId, ViewId},
+        builtin_colormaps::BUILTIN_COLORMAPS, camera::ViewsCameras, colormap,
+        image_views::ImageViews, types::ViewId,
     },
+    rendering::coloring::DrawingOptions,
     vscode::vscode_requests::VSCodeRequests,
     webgl_utils::GLGuard,
 };

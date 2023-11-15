@@ -3,7 +3,8 @@ use std::{collections::HashMap, iter::FromIterator};
 use web_sys::HtmlElement;
 use yew::NodeRef;
 
-use super::types::{all_views, ImageId, ViewId};
+use crate::common::ImageId;
+use super::types::{all_views, ViewId};
 
 // fn views(vt: ViewsType) -> Vec<InViewName> {
 //     match vt {
@@ -58,13 +59,11 @@ impl ImageViews {
     pub(crate) fn get_image_id(&self, view_id: ViewId) -> Option<ImageId> {
         self.0.get(&view_id).unwrap().0.clone()
     }
-    
+
     pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
         view.0 = Some(image_id);
     }
-
-
 }
 
 impl Default for ImageViews {

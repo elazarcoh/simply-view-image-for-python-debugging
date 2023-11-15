@@ -2,7 +2,7 @@ use glam::UVec2;
 use stylist::yew::use_style;
 use yew::prelude::*;
 
-use crate::image_view::types::PixelValue;
+use crate::common::pixel_value::PixelValue;
 
 #[derive(PartialEq, Properties)]
 pub(crate) struct StatusBarProps {

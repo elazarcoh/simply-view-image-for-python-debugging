@@ -3,12 +3,9 @@ use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
-use crate::{configurations::RenderingConfiguration, webgl_utils, common::Size};
+use crate::{common::{Size, ImageId}, configurations::RenderingConfiguration, webgl_utils, app_state::datasetructures::image_cache::TextureImage, rendering::coloring::DrawingOptions};
 
-use super::{
-    camera::Camera,
-    types::{DrawingOptions, ImageId, TextureImage, ViewId}, colormap,
-};
+use super::{camera::Camera, colormap, types::ViewId};
 
 pub(crate) struct ImageViewData {
     pub html_element: HtmlElement,
@@ -23,7 +20,7 @@ pub(crate) trait RenderingContext {
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
     fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions;
-    fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> ;
+    fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>>;
     fn get_color_map_texture(
         &self,
         colormap_name: &str,

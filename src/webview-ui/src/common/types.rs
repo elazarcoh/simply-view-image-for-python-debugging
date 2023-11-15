@@ -1,9 +1,22 @@
 use std::{convert::TryFrom, fmt::Display};
 
-use crate::image_view::{
-    types::{ImageId, PixelValue},
-    utils::image_minmax_on_bytes,
-};
+use super::pixel_value::PixelValue;
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct ImageId(String);
+
+#[cfg(debug_assertions)]
+impl ImageId {
+    pub(crate) fn new(id: &str) -> Self {
+        Self(id.to_owned())
+    }
+}
+
+impl Display for ImageId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 #[derive(Debug)]
 pub(crate) struct Size {

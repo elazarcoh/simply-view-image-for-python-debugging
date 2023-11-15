@@ -4,10 +4,7 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    components::image_list_item::ImageListItem,
-    image_view::types::{ImageId, ViewId},
-    reducer,
-    store::AppState,
+    components::image_list_item::ImageListItem, image_view::types::ViewId, reducer, store::AppState,
 };
 
 #[derive(PartialEq, Properties)]
@@ -19,7 +16,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
 
     let images_data = use_selector(|state: &AppState| state.images.clone());
     let selected_entry = use_selector(|state: &AppState| state.get_image_in_view(ViewId::Primary));
-    
+
     let entry_style = use_style!(
         r#"
         padding: 5px;

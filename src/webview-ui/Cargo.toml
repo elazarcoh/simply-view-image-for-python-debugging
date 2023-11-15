@@ -71,6 +71,8 @@ static_assertions = "1.1.0"
 strum = "0.25"
 strum_macros = "0.25"
 float-pretty-print = "0.1.1"
+anyhow = "1.0.75"
+thiserror = "1.0.50"
 
 
 [dependencies.web-sys]

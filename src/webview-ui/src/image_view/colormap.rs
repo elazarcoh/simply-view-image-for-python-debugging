@@ -1,6 +1,7 @@
+use anyhow::Result;
 use std::borrow::Cow;
 
-use crate::webgl_utils::{self, GLGuard};
+use crate::webgl_utils::{self, GLGuard, error::WebGlError};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum ColorMapKind {
@@ -17,7 +18,11 @@ pub(crate) struct ColorMap {
 }
 
 impl ColorMap {
-    pub(crate)const fn new(name: &'static str, kind: ColorMapKind, map: &'static [[f32; 3]]) -> Self {
+    pub(crate) const fn new(
+        name: &'static str,
+        kind: ColorMapKind,
+        map: &'static [[f32; 3]],
+    ) -> Self {
         Self {
             name: Cow::Borrowed(name),
             kind,
@@ -29,9 +34,10 @@ impl ColorMap {
 pub(crate) fn create_texture_for_colormap(
     gl: &web_sys::WebGl2RenderingContext,
     colormap: &ColorMap,
-) -> Result<GLGuard<web_sys::WebGlTexture>, String> {
+) -> Result<GLGuard<web_sys::WebGlTexture>> {
     let tex = webgl_utils::gl_guarded(gl.clone(), |gl| {
-        gl.create_texture().ok_or("Could not create texture")
+        gl.create_texture()
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_texture"))
     })?;
     let width = colormap.map.len() as u32;
     let height = 1;
@@ -52,7 +58,7 @@ pub(crate) fn create_texture_for_colormap(
         &webgl_utils::utils::js_typed_array_from_bytes(bytemuck::cast_slice(&colormap.map), type_),
         0,
     )
-    .map_err(|jsvalue| format!("Could not create texture from image: {:?}", jsvalue))?;
+    .map_err(|jsvalue| WebGlError::from_js_value(&jsvalue, "tex_image_2d"))?;
 
     gl.tex_parameteri(
         webgl_utils::TextureTarget::Texture2D as _,

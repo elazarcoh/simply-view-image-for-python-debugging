@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
@@ -22,11 +23,11 @@ pub(crate) trait RenderingContext {
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
     fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions;
-    fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>, String> ;
+    fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> ;
     fn get_color_map_texture(
         &self,
         colormap_name: &str,
-    ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>, String>;
+    ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>>;
 }
 
 pub(crate) trait ViewContext {

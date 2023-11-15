@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::convert::TryInto;
 
@@ -6,13 +7,10 @@ use web_sys::WebGl2RenderingContext as GL;
 use web_sys::*;
 
 use super::constants::GL_ATTRIBUTE_SETTER_FOR_TYPE;
+use super::error::WebGlError;
 use super::types::*;
 
-fn check_shader_status(
-    gl: &GL,
-    shader_type: GLConstant,
-    shader: &WebGlShader,
-) -> Result<(), String> {
+fn check_shader_status(gl: &GL, shader_type: GLConstant, shader: &WebGlShader) -> Result<()> {
     // Check the compile status
     let compiled = gl.get_shader_parameter(shader, GL::COMPILE_STATUS);
     if !compiled {
@@ -24,19 +22,18 @@ fn check_shader_status(
         // Something went wrong during compilation; get the error
         let last_error = gl.get_shader_info_log(shader);
         let shader_source = gl.get_shader_source(shader);
-        let msg = format!(
+        Err(anyhow!(
             "Error compiling `{}` shader: {}\nsource:\n{}",
             shader_type_str,
             last_error.unwrap_or("unknown error".to_string()),
             shader_source.unwrap_or("unknown source".to_string())
-        );
-        Err(msg)
+        ))
     } else {
         Ok(())
     }
 }
 
-fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
+fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<()> {
     // Check the link status
     gl.validate_program(program);
 
@@ -49,7 +46,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
         let last_error = gl.get_program_info_log(program);
         let errors = gl
             .get_attached_shaders(program)
-            .ok_or("Could not get attached shaders")?
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "get_attached_shaders"))?
             .iter()
             .map(|shader| {
                 let shader: &WebGlShader = shader.dyn_ref::<WebGlShader>().unwrap();
@@ -65,7 +62,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
             .map(|result| result.unwrap_err())
             .collect::<Vec<_>>();
 
-        let message = format!(
+        Err(anyhow!(
             "{}\n{}",
             last_error.unwrap_or("unknown error".to_string()),
             errors
@@ -73,9 +70,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<(), String> {
                 .map(|error| error.to_string())
                 .collect::<Vec<_>>()
                 .join("\n")
-        );
-
-        Err(message)
+        ))
     } else {
         Ok(())
     }
@@ -120,7 +115,7 @@ fn make_sampler_setter(
 }
 
 trait GLVerifyType {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String>;
+    fn verify(&self, gl_type: GLConstant) -> Result<()>;
 }
 /**
  * Creates setter functions for all uniforms of a shader
@@ -135,7 +130,7 @@ trait GLVerifyType {
 fn create_uniform_setters(
     gl: &GL,
     program: &WebGlProgram,
-) -> Result<HashMap<String, UniformSetter>, String> {
+) -> Result<HashMap<String, UniformSetter>> {
     let num_uniforms = gl
         .get_program_parameter(program, GL::ACTIVE_UNIFORMS)
         .as_f64()
@@ -147,7 +142,7 @@ fn create_uniform_setters(
     for ii in 0..num_uniforms {
         let uniform_info = gl
             .get_active_uniform(program, ii)
-            .ok_or("Could not get uniform info")?;
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "get_active_uniform"))?;
 
         let name = uniform_info.name();
         // remove the array suffix.
@@ -196,7 +191,7 @@ fn is_built_in(attrib_info: &WebGlActiveInfo) -> bool {
 fn create_attributes_setters(
     gl: &GL,
     program: &WebGlProgram,
-) -> Result<HashMap<String, AttributeSetter>, String> {
+) -> Result<HashMap<String, AttributeSetter>> {
     let num_attribs = gl
         .get_program_parameter(program, GL::ACTIVE_ATTRIBUTES)
         .as_f64()
@@ -206,7 +201,7 @@ fn create_attributes_setters(
     for ii in 0..num_attribs {
         let attrib_info = gl
             .get_active_attrib(program, ii)
-            .ok_or("Could not get active attribute")?;
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "get_active_attrib"))?;
 
         if is_built_in(&attrib_info) {
             continue;
@@ -267,17 +262,18 @@ pub(crate) fn create_program_bundle(
     vertex_shader: &str,
     fragment_shader: &str,
     opt_attribs: Option<Vec<&str>>,
-) -> Result<ProgramBundle, String> {
+) -> Result<ProgramBundle> {
     let binding = opt_attribs.unwrap_or_default();
     let attribute_locations = binding.iter().enumerate().collect::<Vec<(usize, &&str)>>();
 
     let program = gl_guarded(gl.clone(), |gl| {
-        gl.create_program().ok_or("Could not create program")
+        gl.create_program()
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_program"))
     })?;
 
     let gl_vertex_shader = gl_guarded(gl.clone(), |gl| {
         gl.create_shader(WebGl2RenderingContext::VERTEX_SHADER)
-            .ok_or("Could not create vertex shader")
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_shader"))
             .map(|shader| {
                 gl.shader_source(&shader, vertex_shader);
                 gl.compile_shader(&shader);
@@ -288,7 +284,7 @@ pub(crate) fn create_program_bundle(
 
     let gl_fragment_shader = gl_guarded(gl.clone(), |gl| {
         gl.create_shader(WebGl2RenderingContext::FRAGMENT_SHADER)
-            .ok_or("Could not create fragment shader")
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_shader"))
             .map(|shader| {
                 gl.shader_source(&shader, fragment_shader);
                 gl.compile_shader(&shader);
@@ -353,9 +349,9 @@ impl<'a> GLProgramBuilder<'a> {
 }
 
 impl<'a> GLProgramBuilderBuilder<'a> {
-    pub(crate) fn build(self) -> Result<ProgramBundle, String> {
+    pub(crate) fn build(self) -> Result<ProgramBundle> {
         self.fallible_build()
-            .map_err(|e| format!("GLProgramBuilder error: {}", e))
+            .map_err(|e| anyhow!("GLProgramBuilder error: {}", e))
             .and_then(|b| {
                 create_program_bundle(b.gl, b.vertex_shader, b.fragment_shader, Some(b.attributes))
             })

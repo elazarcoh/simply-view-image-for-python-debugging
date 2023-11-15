@@ -129,7 +129,7 @@ pub(crate) fn image_minmax_on_bytes(
     };
 
 
-    log::debug!("min: {}, max: {}", min, max);
+    // log::debug!("min: {}, max: {}", min, max);
 
     (min, max)
 }

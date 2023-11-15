@@ -1,3 +1,4 @@
+use anyhow::Result;
 use glam::IVec2;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -101,12 +102,12 @@ fn rendering_context() -> impl RenderingContext {
         fn get_color_map_texture(
             &self,
             colormap_name: &str,
-        ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>, String> {
+        ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>> {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().get_color_map_texture(colormap_name)
         }
 
-        fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>, String> {
+        fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>> {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().get_color_map(name)
         }

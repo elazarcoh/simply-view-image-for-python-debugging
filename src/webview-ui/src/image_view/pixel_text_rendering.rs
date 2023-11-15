@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::collections::HashMap;
 
 use ab_glyph::{FontArc, Glyph, GlyphId, PxScale, Rect};
@@ -8,10 +9,11 @@ use glyph_brush_layout::{GlyphPositioner, Layout, SectionGeometry, SectionText};
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
-    common::{Size, Datatype},
+    common::{Datatype, Size},
     webgl_utils::{
         self,
         draw::draw_buffer_info,
+        error::WebGlError,
         program::{set_buffers_and_attributes, set_uniforms},
         reusable_buffer::ReusableBuffer,
         *,
@@ -80,7 +82,7 @@ fn calculate_text_to_image(font_scale: f32, max_rows_cols: f32) -> Mat3 {
 }
 
 impl PixelTextData {
-    fn try_new(gl: &WebGl2RenderingContext, pixel_value: &PixelValue) -> Result<Self, String> {
+    fn try_new(gl: &WebGl2RenderingContext, pixel_value: &PixelValue) -> Result<Self> {
         let buffer_info = BufferInfo {
             num_elements: 6,
             attribs: vec![
@@ -114,7 +116,7 @@ impl PixelTextData {
         })
     }
 
-    fn create_buffer_for_pixel(gl: &WebGl2RenderingContext) -> Result<ReusableBuffer, String> {
+    fn create_buffer_for_pixel(gl: &WebGl2RenderingContext) -> Result<ReusableBuffer> {
         ReusableBuffer::new(gl.clone(), 1024)
     }
 
@@ -139,7 +141,7 @@ struct GlyphTexture {
 }
 
 impl GlyphTexture {
-    fn try_new(gl: WebGl2RenderingContext) -> Result<Self, String> {
+    fn try_new(gl: WebGl2RenderingContext) -> Result<Self> {
         let draw_cache = DrawCache::builder().build();
         let glyphs = HashMap::new();
         let texture = Self::create_texture(
@@ -154,13 +156,10 @@ impl GlyphTexture {
         })
     }
 
-    fn create_texture(
-        gl: &WebGl2RenderingContext,
-        size: Size,
-    ) -> Result<GLGuard<WebGlTexture>, String> {
+    fn create_texture(gl: &WebGl2RenderingContext, size: Size) -> Result<GLGuard<WebGlTexture>> {
         let texture = gl
             .create_texture()
-            .ok_or("Could not create texture.".to_string())?;
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_texture"))?;
         gl.bind_texture(TextureTarget::Texture2D as _, Some(&texture));
         gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
             TextureTarget::Texture2D as _,
@@ -173,7 +172,7 @@ impl GlyphTexture {
             WebGl2RenderingContext::UNSIGNED_BYTE,
             None,
         )
-        .map_err(|jsvalue| format!("Could not create texture: {:?}", jsvalue))?;
+        .map_err(|jsvalue| WebGlError::from_js_value(&jsvalue, "tex_image_2d"))?;
 
         gl.pixel_storei(WebGl2RenderingContext::UNPACK_ALIGNMENT, 1);
         gl.tex_parameteri(
@@ -291,10 +290,9 @@ pub(super) struct PixelTextRenderingData<'a> {
 }
 
 impl PixelTextRenderer {
-    pub(crate) fn try_new(gl: &WebGl2RenderingContext) -> Result<Self, String> {
+    pub(crate) fn try_new(gl: &WebGl2RenderingContext) -> Result<Self> {
         let font =
-            FontArc::try_from_slice(include_bytes!("../../assets/fonts/ChakraPetch-Regular.ttf"))
-                .map_err(|e| e.to_string())?;
+            FontArc::try_from_slice(include_bytes!("../../assets/fonts/ChakraPetch-Regular.ttf"))?;
 
         let text_program = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/text.vert"))
@@ -381,10 +379,7 @@ impl PixelTextRenderer {
         pixel_data.buffer_info.num_elements = 6 * num_rendered_glyphs;
     }
 
-    fn get_cache_pixel<'a>(
-        &self,
-        data: PixelTextRenderingData<'a>,
-    ) -> Result<&'a PixelTextData, String> {
+    fn get_cache_pixel<'a>(&self, data: PixelTextRenderingData<'a>) -> Result<&'a PixelTextData> {
         if let Some(pixel_data) = data.pixel_text_cache.0.get_mut(data.pixel_loc) {
             if pixel_data.pixel_value != *data.pixel_value {
                 Self::pixel_value_into_buffers(

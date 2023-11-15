@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use std::{collections::HashMap, rc::Rc};
 
 use web_sys::WebGl2RenderingContext;
@@ -78,7 +79,7 @@ impl ColorMapTexturesCache {
         &mut self,
         gl: &WebGl2RenderingContext,
         colormap: &colormap::ColorMap,
-    ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>, String> {
+    ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>> {
         let name = colormap.name.to_string();
         if self.0.contains_key(&name) {
             return Ok(self.0.get(&name).unwrap().clone());
@@ -184,19 +185,21 @@ impl AppState {
         self.image_views.borrow().get_image_id(view_id)
     }
 
-    pub(crate) fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>, String> {
-        Ok(self
-            .color_map_registry
+    pub(crate) fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
+        self.color_map_registry
             .borrow()
             .get(name)
-            .ok_or_else(|| format!("ColorMap {} not found", name))?)
+            .ok_or(anyhow!("Color map {} not found", name))
     }
 
     pub(crate) fn get_color_map_texture(
         &self,
         name: &str,
-    ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>, String> {
-        let gl = self.gl.as_ref().ok_or("WebGL context not initialized")?;
+    ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>> {
+        let gl = self
+            .gl
+            .as_ref()
+            .ok_or(anyhow!("WebGL context not initialized"))?;
         let colormap = self.get_color_map(name)?;
         self.color_map_textures_cache
             .borrow_mut()

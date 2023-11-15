@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use enum_dispatch::enum_dispatch;
 use std::collections::HashMap;
 
@@ -283,15 +284,12 @@ impl GLSet for &glam::Mat4 {
 
 // #[enum_dispatch]
 pub(crate) trait GLVerifyType {
-    fn verify(&self, expected_type: GLConstant) -> Result<(), String>;
+    fn verify(&self, expected_type: GLConstant) -> Result<()>;
 }
 
-fn impl_gl_verify_type(
-    actual_gl_type: GLConstant,
-    expected_gl_type: GLConstant,
-) -> Result<(), String> {
+fn impl_gl_verify_type(actual_gl_type: GLConstant, expected_gl_type: GLConstant) -> Result<()> {
     if expected_gl_type != actual_gl_type {
-        Err(format!(
+        Err(anyhow!(
             "expected type in shader: {}, actual type: {}",
             GL_CONSTANT_NAMES
                 .get(&expected_gl_type)
@@ -304,55 +302,55 @@ fn impl_gl_verify_type(
 }
 
 impl GLVerifyType for &i32 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::INT, gl_type)
     }
 }
 
 impl GLVerifyType for &f32 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT, gl_type)
     }
 }
 
 impl GLVerifyType for &bool {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::BOOL, gl_type)
     }
 }
 
 impl GLVerifyType for &WebGlTexture {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::SAMPLER_2D, gl_type)
     }
 }
 
 impl GLVerifyType for &glam::Vec2 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_VEC2, gl_type)
     }
 }
 
 impl GLVerifyType for &glam::Vec3 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_VEC3, gl_type)
     }
 }
 
 impl GLVerifyType for &glam::Vec4 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_VEC4, gl_type)
     }
 }
 
 impl GLVerifyType for &glam::Mat3 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_MAT3, gl_type)
     }
 }
 
 impl GLVerifyType for &glam::Mat4 {
-    fn verify(&self, gl_type: GLConstant) -> Result<(), String> {
+    fn verify(&self, gl_type: GLConstant) -> Result<()> {
         impl_gl_verify_type(WebGl2RenderingContext::FLOAT_MAT4, gl_type)
     }
 }

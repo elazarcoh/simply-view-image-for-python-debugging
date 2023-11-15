@@ -1,5 +1,6 @@
-use std::iter::FromIterator;
+use anyhow::Ok;
 use anyhow::Result;
+use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -51,7 +52,7 @@ fn create_image_plane_attributes(
     y: f32,
     width: f32,
     height: f32,
-) -> Result<BufferInfo, String> {
+) -> Result<BufferInfo> {
     #[rustfmt::skip]
     let a_image_plane_position = ArraySpec {
         name: "vin_position".to_string(),
@@ -235,7 +236,7 @@ impl Renderer {
         Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
     }
 
-    fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs, String> {
+    fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs> {
         let normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
             .fragment_shader(include_str!("../shaders/image-normalized.frag"))
@@ -304,20 +305,13 @@ impl Renderer {
         image_view_data: &ImageViewData,
         rendering_context: &dyn RenderingContext,
         view_name: &ViewId,
-    ) -> Result<(), String> {
+    ) -> Result<()> {
         Renderer::scissor_view(gl, &image_view_data.html_element);
 
         // Clean the canvas
         gl.clear_color(0.0, 0.0, 0.0, 0.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
-        if image_view_data.image_id.is_none()
-            || rendering_context
-                .texture_by_id(image_view_data.image_id.as_ref().unwrap())
-                .is_none()
-        {
-            return Ok(());
-        }
         let canvas = Renderer::canvas(gl);
 
         // The following two lines set the size (in CSS pixels) of
@@ -326,19 +320,17 @@ impl Renderer {
         canvas.set_width(canvas.client_width() as _);
         canvas.set_height(canvas.client_height() as _);
 
-        let image_id = image_view_data.image_id.as_ref().ok_or(
-            "Could not find texture for image_id. This should not happen, please report a bug.",
-        )?;
-        let texture = rendering_context.texture_by_id(image_id).ok_or(
-            "Could not find texture for image_id. This should not happen, please report a bug.",
-        )?;
-        Renderer::render_image(
-            rendering_context,
-            rendering_data,
-            texture,
-            image_view_data,
-            view_name,
-        );
+        if let Some(image_id) = &image_view_data.image_id {
+            if let Some(texture) = rendering_context.texture_by_id(image_id) {
+                Renderer::render_image(
+                    rendering_context,
+                    rendering_data,
+                    texture,
+                    image_view_data,
+                    view_name,
+                );
+            }
+        };
 
         Ok(())
     }

@@ -134,7 +134,7 @@ impl Reducer<AppState> for StoreAction {
                 //     .objects
                 //     .iter()
                 //     .map(|info| info.image_id.clone())
-                //     .map(|image_id| -> Result<(), String> {
+                //     .map(|image_id| -> Result<()> {
                 //         if let Some(image_data) = replacement_data.remove(&image_id) {
                 //             let tex_image =
                 //                 TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;

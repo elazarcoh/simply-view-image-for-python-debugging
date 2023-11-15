@@ -1,6 +1,6 @@
+use anyhow::{Result, anyhow};
 
-
-use super::{types::*};
+use super::{error::WebGlError, types::*};
 
 use web_sys::{WebGl2RenderingContext as GL, WebGlBuffer};
 /**
@@ -87,9 +87,10 @@ pub(crate) fn create_buffer_from_data<T: IntoJsArray>(
     data: T,
     buffer_type: BindingPoint,
     draw_type: Option<GLConstant>,
-) -> Result<GLGuard<WebGlBuffer>, String> {
+) -> Result<GLGuard<WebGlBuffer>> {
     let buffer = gl_guarded(gl.clone(), |gl| {
-        gl.create_buffer().ok_or("Could not create buffer")
+        gl.create_buffer()
+            .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_buffer"))
     })?;
     let draw_type_ = draw_type.unwrap_or(GL::STATIC_DRAW);
     gl.bind_buffer(buffer_type as GLConstant, Some(&buffer));
@@ -99,7 +100,7 @@ pub(crate) fn create_buffer_from_data<T: IntoJsArray>(
     Ok(buffer)
 }
 
-pub(crate) fn create_attributes_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<Attrib, String>
+pub(crate) fn create_attributes_from_array<T>(gl: &GL, array: ArraySpec<T>) -> Result<Attrib>
 where
     T: IntoJsArray + ElementTypeFor,
 {
@@ -134,7 +135,7 @@ where
 /**
   Heuristically guess the number of elements based on the length of the arrays
 */
-fn num_elements_from_attributes(gl: &GL, attribs: &[Attrib]) -> Result<usize, String> {
+fn num_elements_from_attributes(gl: &GL, attribs: &[Attrib]) -> Result<usize> {
     let attrib = &attribs[0];
     gl.bind_buffer(GL::ARRAY_BUFFER, Some(&attrib.buffer));
     let num_bytes = gl
@@ -150,7 +151,7 @@ fn num_elements_from_attributes(gl: &GL, attribs: &[Attrib]) -> Result<usize, St
     if num_elements.floor() == num_elements {
         Ok(num_elements as usize)
     } else {
-        Err(format!(
+        Err(anyhow!(
             "Got non-integer number of elements. bytes_per_element: {}, num_bytes: {}, num_elements: {}",
             bytes_per_element, num_bytes, num_elements
         ))
@@ -161,7 +162,7 @@ pub(crate) fn create_buffer_info_from_arrays<TF32, TU8>(
     gl: &GL,
     arrays: Arrays<TF32, TU8>,
     indices: Option<ArraySpec<&[u16]>>,
-) -> Result<BufferInfo, String>
+) -> Result<BufferInfo>
 where
     TF32: IntoJsArray + ElementTypeFor,
     TU8: IntoJsArray + ElementTypeFor,

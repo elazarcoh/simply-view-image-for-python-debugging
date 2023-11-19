@@ -6,11 +6,11 @@ use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
 use crate::{
+    app_state::app_state::AppState,
     common::pixel_value::PixelValue,
     components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar},
     image_view::{rendering_context::ViewContext, types::ViewId},
     mouse_events::PixelHoverHandler,
-    store::AppState,
 };
 
 #[derive(Properties)]
@@ -92,7 +92,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
 
     let gl_view_node_ref = Dispatch::<AppState>::new()
         .get()
-        .image_views()
+        .image_views
         .borrow()
         .get_node_ref(*view_id)
         .clone();

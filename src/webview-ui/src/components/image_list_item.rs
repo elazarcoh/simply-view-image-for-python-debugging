@@ -6,10 +6,9 @@ use yewdux::{
 };
 
 use crate::{
+    app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
     common::ImageInfo,
-    components::icon_button::{IconToggleButton, ToggleState},
-    reducer::{StoreAction, UpdateDrawingOptions},
-    store::AppState, rendering::coloring::Coloring,
+    rendering::coloring::Coloring,
 };
 
 use super::icon_button::IconButton;

@@ -1,13 +1,132 @@
-use std::rc::Rc;
-
-use yewdux::prelude::*;
-
+use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
+use super::images::{ImageCache, Images, ImagesDrawingOptions};
+use crate::common::texture_image::TextureImage;
+use crate::common::{ImageData, ImageId, ImageInfo};
+use crate::image_view::types::ViewId;
+use crate::rendering::coloring::{Coloring, DrawingOptions};
 use crate::{
-    common::{ImageData, ImageId, ImageInfo},
-    image_view::types::ViewId,
-    rendering::coloring::{Coloring, DrawingOptions},
-    store::AppState, app_state::datasetructures::image_cache::TextureImage,
+    configurations,
+    image_view::{camera::ViewsCameras, image_views::ImageViews},
+    vscode::vscode_requests::VSCodeRequests,
 };
+use anyhow::{anyhow, Result};
+use std::rc::Rc;
+use web_sys::WebGl2RenderingContext;
+use yewdux::{mrc::Mrc, prelude::*};
+
+struct ImagesFetcher;
+
+impl Listener for ImagesFetcher {
+    type Store = AppState;
+
+    fn on_change(&mut self, state: Rc<Self::Store>) {
+        let currently_viewing_image_ids = state
+            .image_views
+            .borrow()
+            .visible_views()
+            .iter()
+            .filter_map(|view_id| state.image_views.borrow().get_image_id(*view_id))
+            .collect::<Vec<_>>();
+
+        for image_id in currently_viewing_image_ids {
+            if !state.image_cache.borrow().has(&image_id) {
+                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                if let Some(image_info) = state.images.borrow().get(&image_id) {
+                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                    VSCodeRequests::request_image_data(image_id, image_info.expression.clone());
+                }
+            }
+        }
+    }
+}
+
+#[derive(Store, Clone)]
+#[store(listener(ImagesFetcher))]
+pub(crate) struct AppState {
+    pub gl: Option<WebGl2RenderingContext>,
+
+    pub images: Mrc<Images>,
+    pub image_views: Mrc<ImageViews>,
+    pub image_cache: Mrc<ImageCache>,
+    pub drawing_options: Mrc<ImagesDrawingOptions>,
+
+    pub color_map_registry: Mrc<ColorMapRegistry>,
+    pub color_map_textures_cache: Mrc<ColorMapTexturesCache>,
+
+    pub view_cameras: Mrc<ViewsCameras>,
+
+    pub configuration: configurations::Configuration,
+}
+
+impl AppState {
+    pub(crate) fn gl(&self) -> Result<&WebGl2RenderingContext> {
+        self.gl
+            .as_ref()
+            .ok_or(anyhow!("WebGL context not initialized"))
+    }
+
+    // pub(crate) fn image_views(&self) -> Mrc<ImageViews> {
+    //     self.image_views.clone()
+    // }
+
+    // pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
+    //     self.image_views
+    //         .borrow_mut()
+    //         .set_image_to_view(image_id, view_id);
+    // }
+
+    // pub(crate) fn get_image_in_view(&self, view_id: ViewId) -> Option<ImageId> {
+    //     self.image_views.borrow().get_image_id(view_id)
+    // }
+
+    // pub(crate) fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
+    //     self.color_map_registry
+    //         .borrow()
+    //         .get(name)
+    //         .ok_or(anyhow!("Color map {} not found", name))
+    // }
+
+    // pub(crate) fn get_color_map_texture(
+    //     &self,
+    //     name: &str,
+    // ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>> {
+    //     let gl = self
+    //         .gl
+    //         .as_ref()
+    //         .ok_or(anyhow!("WebGL context not initialized"))?;
+    //     let colormap = self.get_color_map(name)?;
+    //     self.color_map_textures_cache
+    //         .borrow_mut()
+    //         .get_or_create(gl, &colormap)
+    // }
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            gl: None,
+            images: Default::default(),
+            image_views: Default::default(),
+            image_cache: Default::default(),
+            view_cameras: Default::default(),
+            color_map_registry: Default::default(),
+            color_map_textures_cache: Default::default(),
+            configuration: Default::default(),
+            drawing_options: Default::default(),
+        }
+    }
+}
+
+impl PartialEq for AppState {
+    fn eq(&self, other: &Self) -> bool {
+        self.images == other.images
+            && self.image_views == other.image_views
+            && self.image_cache == other.image_cache
+            && self.view_cameras == other.view_cameras
+            && self.configuration == other.configuration
+            && self.gl == other.gl
+    }
+}
 
 pub(crate) enum UpdateDrawingOptions {
     Reset,
@@ -21,6 +140,7 @@ pub(crate) enum ImageObject {
     InfoOnly(ImageInfo),
     WithData(ImageData),
 }
+
 impl ImageObject {
     fn image_id(&self) -> &ImageId {
         match self {
@@ -45,13 +165,14 @@ pub(crate) enum StoreAction {
 
 impl Reducer<AppState> for StoreAction {
     fn apply(self, mut app_state: Rc<AppState>) -> Rc<AppState> {
-        log::debug!("Reducer for StoreAction called");
         let state = Rc::make_mut(&mut app_state);
 
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
-                log::debug!("SetImageToView: {:?} {:?}", image_id, view_id);
-                state.set_image_to_view(image_id, view_id);
+                state
+                    .image_views
+                    .borrow_mut()
+                    .set_image_to_view(image_id, view_id);
             }
 
             StoreAction::AddTextureImage(image_id, texture_image) => {

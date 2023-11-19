@@ -2,8 +2,7 @@ use std::convert::TryFrom;
 
 use crate::{
     common::{ComputedInfo, ImageData, ImageInfo},
-    math_utils::image_calculations::image_minmax_on_bytes,
-    reducer::ImageObject,
+    math_utils::image_calculations::image_minmax_on_bytes, app_state::app_state::ImageObject,
 };
 
 use super::messages::ImageMessage;

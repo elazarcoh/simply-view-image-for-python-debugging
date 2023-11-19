@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
-use crate::{common::{Size, ImageId}, configurations::RenderingConfiguration, webgl_utils, app_state::datasetructures::image_cache::TextureImage, rendering::coloring::DrawingOptions};
+use crate::{common::{Size, ImageId, texture_image::TextureImage}, configurations::RenderingConfiguration, webgl_utils, rendering::coloring::DrawingOptions};
 
 use super::{camera::Camera, colormap, types::ViewId};
 

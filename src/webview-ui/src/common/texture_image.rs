@@ -1,10 +1,7 @@
+use crate::webgl_utils::{self, GLGuard};
 use anyhow::Result;
-use std::{collections::HashMap, rc::Rc};
 
-use crate::{
-    common::{ImageData, ImageId, Size},
-    webgl_utils::{self, GLGuard},
-};
+use super::{ImageData, Size};
 
 pub(crate) struct TextureImage {
     pub image: ImageData,
@@ -37,43 +34,5 @@ impl TextureImage {
             width: self.image.info.width as f32,
             height: self.image.info.height as f32,
         }
-    }
-}
-
-pub(crate) struct ImageCache {
-    cache: HashMap<ImageId, Rc<TextureImage>>,
-}
-
-impl ImageCache {
-    pub(crate) fn new() -> Self {
-        Self {
-            cache: HashMap::new(),
-        }
-    }
-
-    pub(crate) fn has(&self, id: &ImageId) -> bool {
-        self.cache.contains_key(id)
-    }
-
-    pub(crate) fn get(&self, id: &ImageId) -> Option<&Rc<TextureImage>> {
-        self.cache.get(id)
-    }
-
-    pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
-        self.cache.insert(id.clone(), Rc::new(image));
-    }
-
-    pub(crate) fn len(&self) -> usize {
-        self.cache.len()
-    }
-
-    pub(crate) fn clear(&mut self) {
-        self.cache.clear();
-    }
-}
-
-impl Default for ImageCache {
-    fn default() -> Self {
-        Self::new()
     }
 }

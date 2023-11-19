@@ -1,23 +1,15 @@
+use crate::app_state::app_state::{AppState, ImageObject, StoreAction};
+use crate::common::texture_image::TextureImage;
+use crate::common::ImageData;
+use crate::image_view::types::ViewId;
+use crate::vscode::messages::*;
 use anyhow::{anyhow, Result};
-use std::collections::HashMap;
-use std::convert::TryFrom;
-
-use itertools::Itertools;
-use js_sys::Reflect;
-use yewdux::dispatch;
-use yewdux::prelude::Dispatch;
-
 use gloo::events::EventListener;
-use gloo_utils::format::JsValueSerdeExt;
-
+use itertools::Itertools;
+use std::convert::TryFrom;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
-
-use crate::app_state::datasetructures::image_cache::TextureImage;
-use crate::common::ImageData;
-use crate::reducer::ImageObject;
-use crate::vscode::messages::*;
-use crate::{image_view::types::ViewId, reducer::StoreAction, store::AppState};
+use yewdux::prelude::Dispatch;
 
 pub(crate) struct VSCodeListener;
 

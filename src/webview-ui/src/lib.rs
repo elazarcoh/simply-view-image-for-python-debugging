@@ -15,8 +15,6 @@ mod configurations;
 mod image_view;
 mod math_utils;
 mod mouse_events;
-mod reducer;
-mod store;
 mod vscode;
 mod webgl_utils;
 

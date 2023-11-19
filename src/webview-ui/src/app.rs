@@ -1,27 +1,21 @@
-use anyhow::Result;
-use glam::IVec2;
+use anyhow::{anyhow, Result};
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
-
+use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 use web_sys::HtmlElement;
-
 use web_sys::WebGl2RenderingContext;
-
-use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
-use crate::app_state::datasetructures::image_cache::TextureImage;
+use crate::app_state::app_state::AppState;
+use crate::common::texture_image::TextureImage;
 use crate::common::ImageId;
 use crate::common::Size;
-// use crate::communication::websocket_client::try_websocket;
 use crate::components::main::Main;
-
 use crate::configurations;
 use crate::image_view;
-
 use crate::image_view::renderer::Renderer;
 use crate::image_view::rendering_context::ImageViewData;
 use crate::image_view::rendering_context::RenderingContext;
@@ -30,7 +24,6 @@ use crate::image_view::types::ViewId;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::rendering::coloring::DrawingOptions;
-use crate::store::AppState;
 use crate::vscode;
 use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
@@ -58,7 +51,7 @@ fn rendering_context() -> impl RenderingContext {
 
         fn visible_nodes(&self) -> Vec<ViewId> {
             let dispatch = Dispatch::<AppState>::new();
-            dispatch.get().image_views().borrow().visible_views()
+            dispatch.get().image_views.borrow().visible_views()
         }
 
         fn view_data(&self, view_id: ViewId) -> ImageViewData {
@@ -67,7 +60,7 @@ fn rendering_context() -> impl RenderingContext {
                 camera: dispatch.get().view_cameras.borrow().get(view_id),
                 html_element: dispatch
                     .get()
-                    .image_views()
+                    .image_views
                     .borrow()
                     .get_node_ref(view_id)
                     .cast::<HtmlElement>()
@@ -77,7 +70,7 @@ fn rendering_context() -> impl RenderingContext {
                             view_id
                         )
                     }),
-                image_id: dispatch.get().image_views().borrow().get_image_id(view_id),
+                image_id: dispatch.get().image_views.borrow().get_image_id(view_id),
             }
         }
 
@@ -100,12 +93,24 @@ fn rendering_context() -> impl RenderingContext {
             colormap_name: &str,
         ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>> {
             let dispatch = Dispatch::<AppState>::new();
-            dispatch.get().get_color_map_texture(colormap_name)
+            let state = dispatch.get();
+            let gl = state.gl()?;
+            let colormap = self.get_color_map(colormap_name)?;
+            dispatch
+                .get()
+                .color_map_textures_cache
+                .borrow_mut()
+                .get_or_create(gl, &colormap)
         }
 
         fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>> {
             let dispatch = Dispatch::<AppState>::new();
-            dispatch.get().get_color_map(name)
+            dispatch
+                .get()
+                .color_map_registry
+                .borrow()
+                .get(name)
+                .ok_or(anyhow!("Color map {} not found", name))
         }
     }
 
@@ -132,7 +137,7 @@ fn view_context() -> impl ViewContext {
 
         fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size> {
             let dispatch = Dispatch::<AppState>::new();
-            let image_id = dispatch.get().image_views().borrow().get_image_id(view_id);
+            let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
             dispatch
                 .get()
                 .image_cache
@@ -163,7 +168,7 @@ fn view_context() -> impl ViewContext {
             let dispatch = Dispatch::<AppState>::new();
             dispatch
                 .get()
-                .image_views()
+                .image_views
                 .borrow()
                 .get_node_ref(view_id)
                 .cast::<HtmlElement>()
@@ -177,7 +182,7 @@ fn view_context() -> impl ViewContext {
 
         fn get_image_for_view(&self, view_id: ViewId) -> Option<Rc<TextureImage>> {
             let dispatch = Dispatch::<AppState>::new();
-            let image_id = dispatch.get().image_views().borrow().get_image_id(view_id);
+            let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
             image_id.and_then(|image_id| {
                 dispatch
                     .get()

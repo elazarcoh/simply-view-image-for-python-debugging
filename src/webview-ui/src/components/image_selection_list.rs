@@ -4,7 +4,9 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    components::image_list_item::ImageListItem, image_view::types::ViewId, reducer, store::AppState,
+    app_state::app_state::{AppState, StoreAction},
+    components::image_list_item::ImageListItem,
+    image_view::types::ViewId,
 };
 
 #[derive(PartialEq, Properties)]
@@ -15,7 +17,8 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let ImageSelectionListProps {} = props;
 
     let images_data = use_selector(|state: &AppState| state.images.clone());
-    let selected_entry = use_selector(|state: &AppState| state.get_image_in_view(ViewId::Primary));
+    let selected_entry =
+        use_selector(|state: &AppState| state.image_views.borrow().get_image_id(ViewId::Primary));
 
     let entry_style = use_style!(
         r#"
@@ -35,7 +38,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 dispatch.apply_callback({
                     let id = id.clone();
                     move |_| {
-                        reducer::StoreAction::SetImageToView(id.clone(), ViewId::Primary)
+                        StoreAction::SetImageToView(id.clone(), ViewId::Primary)
                     }
                 })
             };

@@ -11,10 +11,10 @@ use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
 };
 
-use crate::app_state::datasetructures::image_cache::TextureImage;
 use crate::common::Datatype;
 use crate::common::Size;
 use crate::common::pixel_value::PixelValue;
+use crate::common::texture_image::TextureImage;
 use crate::image_view::camera;
 use crate::math_utils::image_calculations::calculate_pixels_information;
 use crate::rendering::coloring::Coloring;

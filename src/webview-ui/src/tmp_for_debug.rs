@@ -1,13 +1,9 @@
-use std::collections::HashMap;
-
-use yewdux::prelude::Dispatch;
-
-use crate::common::{Channels, Datatype, ValueVariableKind};
-use crate::reducer::StoreAction;
-use crate::store::AppState;
-
+use crate::app_state::app_state::StoreAction;
 use crate::common::ImageId;
+use crate::common::{Channels, Datatype, ValueVariableKind};
 use crate::vscode::messages::ImageMessage;
+use std::collections::HashMap;
+use yewdux::prelude::Dispatch;
 
 #[cfg(debug_assertions)]
 fn image_rgba_data_u8() -> (&'static [u8], u32, u32) {
@@ -9018,7 +9014,7 @@ fn image_texture_gray_f32() -> ImageMessage {
             let r = chunk[0] as f32 / 255.0;
             let g = chunk[1] as f32 / 255.0;
             let b = chunk[2] as f32 / 255.0;
-            (r * 0.3 + g * 0.59 + b * 0.11)
+            r * 0.3 + g * 0.59 + b * 0.11
         })
         .collect::<Vec<f32>>();
     image_data_with(
@@ -9246,7 +9242,7 @@ pub(crate) fn set_debug_images() {
 
     use itertools::Itertools;
 
-    use crate::reducer::ImageObject;
+    use crate::app_state::app_state::{AppState, ImageObject};
 
     let dispatch = Dispatch::<AppState>::new();
 

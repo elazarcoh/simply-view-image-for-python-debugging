@@ -5,8 +5,7 @@ use yewdux::prelude::*;
 
 use crate::{
     app_state::app_state::{AppState, StoreAction},
-    components::image_list_item::ImageListItem,
-    image_view::types::ViewId,
+    components::image_list_item::ImageListItem, common::ViewId,
 };
 
 #[derive(PartialEq, Properties)]

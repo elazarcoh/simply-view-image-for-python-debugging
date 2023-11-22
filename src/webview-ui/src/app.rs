@@ -1,3 +1,23 @@
+use crate::app_state::app_state::AppState;
+use crate::colormap::colormap;
+use crate::common::camera;
+use crate::common::texture_image::TextureImage;
+use crate::common::ImageId;
+use crate::common::Size;
+use crate::common::ViewId;
+use crate::components::main::Main;
+use crate::configurations;
+use crate::mouse_events::PanHandler;
+use crate::mouse_events::ZoomHandler;
+use crate::rendering::coloring::DrawingOptions;
+use crate::rendering::renderer::Renderer;
+use crate::rendering::rendering_context::ImageViewData;
+use crate::rendering::rendering_context::RenderingContext;
+use crate::rendering::rendering_context::ViewContext;
+use crate::vscode;
+use crate::vscode::vscode_listener::VSCodeListener;
+use crate::vscode::vscode_requests::VSCodeRequests;
+use crate::webgl_utils;
 use anyhow::{anyhow, Result};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -9,26 +29,6 @@ use web_sys::WebGl2RenderingContext;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
-use crate::app_state::app_state::AppState;
-use crate::common::texture_image::TextureImage;
-use crate::common::ImageId;
-use crate::common::Size;
-use crate::components::main::Main;
-use crate::configurations;
-use crate::image_view;
-use crate::image_view::renderer::Renderer;
-use crate::image_view::rendering_context::ImageViewData;
-use crate::image_view::rendering_context::RenderingContext;
-use crate::image_view::rendering_context::ViewContext;
-use crate::image_view::types::ViewId;
-use crate::mouse_events::PanHandler;
-use crate::mouse_events::ZoomHandler;
-use crate::rendering::coloring::DrawingOptions;
-use crate::vscode;
-use crate::vscode::vscode_listener::VSCodeListener;
-use crate::vscode::vscode_requests::VSCodeRequests;
-use crate::webgl_utils;
-
 fn rendering_context() -> impl RenderingContext {
     struct RenderingContextImpl {}
 
@@ -36,15 +36,9 @@ fn rendering_context() -> impl RenderingContext {
         fn gl(&self) -> WebGl2RenderingContext {
             let state = Dispatch::<AppState>::new().get();
             state.gl.clone().unwrap()
-            // self.gl
-            //     .borrow()
-            //     .as_ref()
-            //     .expect("GL context not set")
-            //     .clone()
         }
 
         fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>> {
-            // log::debug!("Getting texture by id {:?}", id);
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().image_cache.borrow().get(id).map(Rc::clone)
         }
@@ -103,7 +97,7 @@ fn rendering_context() -> impl RenderingContext {
                 .get_or_create(gl, &colormap)
         }
 
-        fn get_color_map(&self, name: &str) -> Result<Rc<image_view::colormap::ColorMap>> {
+        fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
             let dispatch = Dispatch::<AppState>::new();
             dispatch
                 .get()
@@ -121,12 +115,12 @@ fn view_context() -> impl ViewContext {
     struct CameraContextImpl {}
 
     impl ViewContext for CameraContextImpl {
-        fn get_camera_for_view(&self, view_id: ViewId) -> image_view::camera::Camera {
+        fn get_camera_for_view(&self, view_id: ViewId) -> camera::Camera {
             let dispatch = Dispatch::<AppState>::new();
             dispatch.get().view_cameras.borrow().get(view_id)
         }
 
-        fn set_camera_for_view(&self, view_id: ViewId, camera: image_view::camera::Camera) {
+        fn set_camera_for_view(&self, view_id: ViewId, camera: camera::Camera) {
             let dispatch = Dispatch::<AppState>::new();
             dispatch
                 .get()

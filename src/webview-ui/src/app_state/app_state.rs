@@ -1,14 +1,11 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
+use super::views::ImageViews;
+use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageData, ImageId, ImageInfo};
-use crate::image_view::types::ViewId;
+use crate::common::{ImageData, ImageId, ImageInfo, ViewId};
 use crate::rendering::coloring::{Coloring, DrawingOptions};
-use crate::{
-    configurations,
-    image_view::{camera::ViewsCameras, image_views::ImageViews},
-    vscode::vscode_requests::VSCodeRequests,
-};
+use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
@@ -64,41 +61,6 @@ impl AppState {
             .as_ref()
             .ok_or(anyhow!("WebGL context not initialized"))
     }
-
-    // pub(crate) fn image_views(&self) -> Mrc<ImageViews> {
-    //     self.image_views.clone()
-    // }
-
-    // pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
-    //     self.image_views
-    //         .borrow_mut()
-    //         .set_image_to_view(image_id, view_id);
-    // }
-
-    // pub(crate) fn get_image_in_view(&self, view_id: ViewId) -> Option<ImageId> {
-    //     self.image_views.borrow().get_image_id(view_id)
-    // }
-
-    // pub(crate) fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
-    //     self.color_map_registry
-    //         .borrow()
-    //         .get(name)
-    //         .ok_or(anyhow!("Color map {} not found", name))
-    // }
-
-    // pub(crate) fn get_color_map_texture(
-    //     &self,
-    //     name: &str,
-    // ) -> Result<Rc<GLGuard<web_sys::WebGlTexture>>> {
-    //     let gl = self
-    //         .gl
-    //         .as_ref()
-    //         .ok_or(anyhow!("WebGL context not initialized"))?;
-    //     let colormap = self.get_color_map(name)?;
-    //     self.color_map_textures_cache
-    //         .borrow_mut()
-    //         .get_or_create(gl, &colormap)
-    // }
 }
 
 impl Default for AppState {

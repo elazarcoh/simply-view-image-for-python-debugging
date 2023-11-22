@@ -7,10 +7,10 @@ use yewdux::prelude::Dispatch;
 
 use crate::{
     app_state::app_state::AppState,
-    common::pixel_value::PixelValue,
-    components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar},
-    image_view::{rendering_context::ViewContext, types::ViewId},
+    common::{pixel_value::PixelValue, ViewId},
+    components::{sidebar::Sidebar, status_bar::StatusBar},
     mouse_events::PixelHoverHandler,
+    rendering::rendering_context::ViewContext,
 };
 
 #[derive(Properties)]

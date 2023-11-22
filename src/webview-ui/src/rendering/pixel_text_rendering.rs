@@ -278,9 +278,9 @@ impl GlyphTexture {
     }
 }
 
-pub(super) struct PixelTextCache(HashMap<UVec2, PixelTextData>);
+pub(crate) struct PixelTextCache(HashMap<UVec2, PixelTextData>);
 
-pub(super) struct PixelTextRenderingData<'a> {
+pub(crate) struct PixelTextRenderingData<'a> {
     pub pixel_text_cache: &'a mut PixelTextCache,
     pub pixel_loc: &'a UVec2,
     pub pixel_value: &'a PixelValue,
@@ -408,11 +408,11 @@ impl PixelTextRenderer {
         Ok(data.pixel_text_cache.0.get(data.pixel_loc).unwrap())
     }
 
-    pub(super) fn make_pixel_text_cache(&self) -> PixelTextCache {
+    pub(crate) fn make_pixel_text_cache(&self) -> PixelTextCache {
         PixelTextCache(HashMap::new())
     }
 
-    pub(super) fn render(&self, data: PixelTextRenderingData) {
+    pub(crate) fn render(&self, data: PixelTextRenderingData) {
         let gl = &self.gl;
         let program = &self.program;
 

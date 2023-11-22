@@ -4,7 +4,7 @@ use std::{collections::HashMap, rc::Rc};
 use web_sys::WebGl2RenderingContext;
 
 use crate::{
-    image_view::{builtin_colormaps::BUILTIN_COLORMAPS, colormap},
+    colormap::{builtin_colormaps::BUILTIN_COLORMAPS, colormap},
     webgl_utils::GLGuard,
 };
 

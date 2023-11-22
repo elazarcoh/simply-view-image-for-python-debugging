@@ -170,7 +170,7 @@ pub(crate) enum Capability {
 
 lazy_static! {
     // to_string for gl constants
-    pub(crate)static ref GL_CONSTANT_NAMES: HashMap<GLConstant, &'static str> = {
+    pub(crate) static ref GL_CONSTANT_NAMES: HashMap<GLConstant, &'static str> = {
         let mut m = HashMap::new();
         m.insert(WebGl2RenderingContext::FLOAT, "FLOAT");
         m.insert(WebGl2RenderingContext::FLOAT_VEC2, "FLOAT_VEC2");

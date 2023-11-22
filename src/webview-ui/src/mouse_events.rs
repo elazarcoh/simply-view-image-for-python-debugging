@@ -7,14 +7,9 @@ use web_sys::{Event, MouseEvent};
 use yew::Callback;
 
 use crate::{
-    common::{constants::MAX_PIXEL_SIZE_DEVICE, Size},
-    image_view::{
-        camera::{self, Camera},
-        constants::VIEW_SIZE,
-        rendering_context::ViewContext,
-        types::ViewId,
-    },
+    common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId},
     math_utils::{image_calculations::calculate_pixels_information, ToHom},
+    rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
 };
 
 fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) -> Vec2 {
@@ -33,7 +28,7 @@ fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) 
 
 pub(crate) struct PanHandler {
     is_panning: bool,
-    start_camera: Camera,
+    start_camera: camera::Camera,
     start_in_view_projection_matrix: Mat3,
     start_mouse_position: Vec2,
 }
@@ -42,7 +37,7 @@ impl PanHandler {
     fn new() -> Self {
         Self {
             is_panning: false,
-            start_camera: Camera::default(),
+            start_camera: camera::Camera::default(),
             start_in_view_projection_matrix: Mat3::IDENTITY,
             start_mouse_position: [0.0, 0.0].into(),
         }
@@ -143,7 +138,7 @@ impl PanHandler {
                 let translation = self_handler.borrow().start_camera.translation
                     + (self_handler.borrow().start_mouse_position - mouse_position);
 
-                let new_camera = Camera {
+                let new_camera = camera::Camera {
                     translation,
                     ..camera
                 };
@@ -240,7 +235,7 @@ impl ZoomHandler {
                     let new_zoom = camera.zoom * (f32::powf(2.0, delta_y as f32 / 100.0));
                     let new_zoom = f32::max(new_zoom, 0.5);
 
-                    let new_camera = Camera {
+                    let new_camera = camera::Camera {
                         zoom: new_zoom,
                         ..camera
                     };
@@ -257,7 +252,7 @@ impl ZoomHandler {
 
                     let translation = camera.translation + (pre_zoom_position - post_zoom_position);
 
-                    let new_camera = Camera {
+                    let new_camera = camera::Camera {
                         translation,
                         ..new_camera
                     };

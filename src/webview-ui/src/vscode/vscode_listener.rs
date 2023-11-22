@@ -1,7 +1,6 @@
 use crate::app_state::app_state::{AppState, ImageObject, StoreAction};
 use crate::common::texture_image::TextureImage;
-use crate::common::ImageData;
-use crate::image_view::types::ViewId;
+use crate::common::{ImageData, ViewId};
 use crate::vscode::messages::*;
 use anyhow::{anyhow, Result};
 use gloo::events::EventListener;

@@ -174,3 +174,9 @@ pub(crate) struct ImageData {
     pub computed_info: ComputedInfo,
     pub bytes: Vec<u8>,
 }
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub(crate) enum ViewId {
+    Primary,
+}
+

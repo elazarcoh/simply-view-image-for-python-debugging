@@ -12,15 +12,15 @@ mod app_state;
 mod common;
 mod components;
 mod configurations;
-mod image_view;
 mod math_utils;
 mod mouse_events;
 mod vscode;
 mod webgl_utils;
 
+mod colormap;
+mod rendering;
 #[cfg(debug_assertions)]
 mod tmp_for_debug;
-mod rendering;
 
 use app::App;
 use cfg_if::cfg_if;

@@ -1,8 +1,7 @@
 use glam::{Mat3, Vec2, Vec3};
 
 use crate::{
-    common::{pixel_value::PixelValue, Channels, Datatype, Size},
-    image_view::constants::VIEW_SIZE,
+    common::{pixel_value::PixelValue, Channels, Datatype, Size}, rendering::constants::VIEW_SIZE,
 };
 
 use super::ToHom;

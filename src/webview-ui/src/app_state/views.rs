@@ -3,24 +3,7 @@ use std::{collections::HashMap, iter::FromIterator};
 use web_sys::HtmlElement;
 use yew::NodeRef;
 
-use crate::common::ImageId;
-use super::types::{all_views, ViewId};
-
-// fn views(vt: ViewsType) -> Vec<InViewName> {
-//     match vt {
-//         ViewsType::Single => vec![InViewName::Single(InSingleViewName::Single)],
-//         ViewsType::Dual => vec![
-//             InViewName::Dual(InDualViewName::Left),
-//             InViewName::Dual(InDualViewName::Right),
-//         ],
-//         ViewsType::Quad => vec![
-//             InViewName::Quad(InQuadViewName::TopLeft),
-//             InViewName::Quad(InQuadViewName::TopRight),
-//             InViewName::Quad(InQuadViewName::BottomLeft),
-//             InViewName::Quad(InQuadViewName::BottomRight),
-//         ],
-//     }
-// }
+use crate::common::{ImageId, ViewId, constants::all_views};
 
 pub(crate) struct ImageViews(HashMap<ViewId, (Option<ImageId>, NodeRef)>);
 

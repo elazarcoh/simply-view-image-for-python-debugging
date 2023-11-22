@@ -1,9 +1,0 @@
-pub(crate) mod builtin_colormaps;
-pub(crate) mod camera;
-pub(crate) mod colormap;
-pub(crate) mod constants;
-pub(crate) mod image_views;
-pub(crate) mod pixel_text_rendering;
-pub(crate) mod renderer;
-pub(crate) mod rendering_context;
-pub(crate) mod types;

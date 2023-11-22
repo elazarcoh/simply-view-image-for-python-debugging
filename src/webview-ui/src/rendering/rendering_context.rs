@@ -3,14 +3,17 @@ use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
-use crate::{common::{Size, ImageId, texture_image::TextureImage}, configurations::RenderingConfiguration, webgl_utils, rendering::coloring::DrawingOptions};
-
-use super::{camera::Camera, colormap, types::ViewId};
+use crate::{
+    common::{camera, texture_image::TextureImage, ImageId, Size, ViewId},
+    configurations::RenderingConfiguration,
+    rendering::coloring::DrawingOptions,
+    webgl_utils, colormap::colormap,
+};
 
 pub(crate) struct ImageViewData {
     pub html_element: HtmlElement,
     pub image_id: Option<ImageId>,
-    pub camera: Camera,
+    pub camera: camera::Camera,
 }
 
 pub(crate) trait RenderingContext {
@@ -31,6 +34,6 @@ pub(crate) trait ViewContext {
     fn get_view_element(&self, view_id: ViewId) -> HtmlElement;
     fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size>;
     fn get_image_for_view(&self, view_id: ViewId) -> Option<Rc<TextureImage>>;
-    fn get_camera_for_view(&self, view_id: ViewId) -> Camera;
-    fn set_camera_for_view(&self, view_id: ViewId, camera: Camera);
+    fn get_camera_for_view(&self, view_id: ViewId) -> camera::Camera;
+    fn set_camera_for_view(&self, view_id: ViewId, camera: camera::Camera);
 }

@@ -157,6 +157,12 @@ def create_numpy_message(
 
     return message_pack
 
+def create_pillow_message(
+    image,
+):
+    image_np = np.asarray(image)
+    return create_numpy_message(image_np)
+
 def create_exception_message(
     exception: Exception,
 ):
@@ -249,8 +255,10 @@ def open_send_and_close(port, request_id, obj):
         try:
             if isinstance(obj, np.ndarray):
                 message = create_numpy_message(obj)
+            elif is_pillow_image(obj):
+                message = create_pillow_message(obj)
             else:
-                raise ValueError(f'Unknown type {type}')
+                raise ValueError(f'Cant send object of type {type(obj)}')
         except Exception as e:
             # message = create_exception_message(e)
             import traceback

@@ -28,4 +28,6 @@ try:
 
     is_pillow_image, pillow_image_info, pillow_image_save = pillow()
 except:
+    def is_pillow_image(img):
+        return False
     pass

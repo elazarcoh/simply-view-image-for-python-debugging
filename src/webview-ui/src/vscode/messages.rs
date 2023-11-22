@@ -24,7 +24,7 @@ pub(crate) struct ImageMessage {
     pub datatype: Datatype,
     pub additional_info: HashMap<String, String>,
 
-    #[tsify(type = "ArrayBuffer | undefined")]
+    #[tsify(type = "ArrayBuffer | null")]
     #[serde(with = "serde_bytes")]
     pub bytes: Option<Vec<u8>>,
 }

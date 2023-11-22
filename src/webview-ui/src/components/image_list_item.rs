@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use stylist::{css, yew::use_style, Style};
 use yew::prelude::*;
 use yewdux::{
@@ -321,15 +322,21 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
 }
 
-fn shape_to_string(shape: &[u32]) -> String {
-    let mut shape_string = String::new();
-    for (i, dim) in shape.iter().enumerate() {
-        if i > 0 {
-            shape_string.push('x');
-        }
-        shape_string.push_str(&dim.to_string());
+fn make_item_tooltip(entry: &ImageInfo) -> String {
+    let mut tooltip = String::new();
+    tooltip.push_str(&entry.expression);
+    tooltip
+}
+
+fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html {
+    html! {
+    <>
+        <vscode-data-grid-row>
+            <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{label}</vscode-data-grid-cell>
+            <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{value}</vscode-data-grid-cell>
+        </vscode-data-grid-row>
+    </>
     }
-    shape_string
 }
 
 #[derive(PartialEq, Properties, Clone)]
@@ -353,22 +360,25 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         r#"
         padding-top: 1px;
         padding-bottom: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     "#,
     );
+
+    let rows = entry
+        .additional_info
+        .iter()
+        .sorted()
+        .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style));
 
     html! {
         <>
             <label title={entry.expression.clone()}>{&entry.expression}</label>
-            <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
-                <vscode-data-grid-row>
-                    <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Shape"}</vscode-data-grid-cell>
-                    // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{shape_to_string(&entry.shape)}</vscode-data-grid-cell>
-                </vscode-data-grid-row>
-                <vscode-data-grid-row>
-                    <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{"Data Type"}</vscode-data-grid-cell>
-                    // <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{&entry.data_type}</vscode-data-grid-cell>
-                </vscode-data-grid-row>
-            </vscode-data-grid>
+                <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
+                {for rows}
+                </vscode-data-grid>
+
             if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
         </>
     }

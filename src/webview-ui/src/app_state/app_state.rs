@@ -139,10 +139,12 @@ impl Reducer<AppState> for StoreAction {
 
             StoreAction::AddTextureImage(image_id, texture_image) => {
                 log::debug!("AddTextureImage: {:?}", image_id);
+                let info = texture_image.image.info.clone();
                 state
                     .image_cache
                     .borrow_mut()
                     .set(&image_id, *texture_image);
+                state.images.borrow_mut().insert(image_id, info);
             }
 
             StoreAction::UpdateDrawingOptions(image_id, update) => {

@@ -4,8 +4,7 @@ import { hasValue } from "../../utils/Utils";
 import {
     ExtensionRequest,
     ExtensionResponse,
-    ImageData,
-    ImageInfo,
+    ImageMessage,
     ImageObjects,
     ValueVariableKind,
 } from "../webview";
@@ -14,7 +13,7 @@ function expressingWithInfoIntoImageInfo(
     exp: string,
     infoOrError: InfoOrError,
     valueVariableKind: ValueVariableKind
-): ImageInfo | undefined {
+): ImageMessage | undefined {
     if (infoOrError.isError) {
         return undefined;
     }
@@ -30,21 +29,20 @@ function expressingWithInfoIntoImageInfo(
         channels: 1,
         datatype: "float32",
         additional_info: info,
+        bytes: null,
     };
 }
 
 function imageObjects(): ImageObjects {
-    const validVariables: ImageInfo[] =
+    const validVariables: ImageMessage[] =
         activeDebugSessionData()
             ?.currentPythonObjectsList?.variablesList.map(([exp, info]) =>
                 expressingWithInfoIntoImageInfo(exp, info, "variable")
             )
             .filter(hasValue) ?? [];
-    const validExpressions: ImageInfo[] = []; // TODO: Implement this
+    const validExpressions: ImageMessage[] = []; // TODO: Implement this
     const objects = validVariables.concat(validExpressions);
-    return {
-        objects,
-    };
+    return objects;
 }
 
 export class WebviewRequests {
@@ -54,14 +52,13 @@ export class WebviewRequests {
         const replacementImages = imageObjects();
         return {
             type: "ReplaceData",
-            replacement_data: {},
             replacement_images: replacementImages,
         };
     }
 }
 
 export class WebviewResponses {
-    static showImage(image_data: ImageData): ExtensionRequest & {
+    static showImage(image_data: ImageMessage): ExtensionRequest & {
         type: "ShowImage";
     } {
         return {
@@ -77,12 +74,11 @@ export class WebviewResponses {
         const replacementImages = imageObjects();
         return {
             type: "ReplaceData",
-            replacement_data: {},
             replacement_images: replacementImages,
         };
     }
 
-    static imageData(imageData: ImageData): ExtensionResponse & {
+    static imageData(imageData: ImageMessage): ExtensionResponse & {
         type: "ImageData";
     } {
         return {

@@ -17,6 +17,7 @@ impl From<ImageMessage> for ImageInfo {
             height: image_message.height,
             channels: image_message.channels,
             datatype: image_message.datatype,
+            additional_info: image_message.additional_info,
         }
     }
 }
@@ -35,6 +36,7 @@ impl TryFrom<ImageMessage> for ImageData {
                 height: image_message.height,
                 channels: image_message.channels,
                 datatype: image_message.datatype,
+                additional_info: image_message.additional_info,
             };
 
             let (min, max) =

@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fmt::Display};
+use std::{convert::TryFrom, fmt::Display, collections::HashMap};
 
 use super::pixel_value::PixelValue;
 
@@ -161,6 +161,7 @@ pub(crate) struct ImageInfo {
     pub height: u32,
     pub channels: Channels,
     pub datatype: Datatype,
+    pub additional_info: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -8858,7 +8858,13 @@ fn image_data_with(
         height,
         channels,
         datatype,
-        additional_info: HashMap::new(),
+        additional_info: HashMap::from([
+            (
+                "Shape".to_string(),
+                format!("({}, {}, {})", width, height, channels),
+            ),
+            ("Datatype".to_string(), format!("{:?}", datatype)),
+        ]),
         bytes: Some(bytes.to_vec()),
     }
 }

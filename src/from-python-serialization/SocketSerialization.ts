@@ -14,7 +14,8 @@ import {
     datatypeToString,
     parseMessage,
 } from "../python-communication/socket-based/protocol";
-import { Datatype, ImageData } from "../webview/webview";
+import { Datatype, ImageMessage } from "../webview/webview";
+import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
     [key in ArrayDataType]: Datatype | undefined;
@@ -106,7 +107,7 @@ export async function serializeImageUsingSocketServer(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
     session: vscode.DebugSession
-): Promise<Except<ImageData>> {
+): Promise<Except<ImageMessage>> {
     const response = await serializePythonObjectUsingSocketServer(
         obj,
         viewable,
@@ -115,6 +116,7 @@ export async function serializeImageUsingSocketServer(
     if (Except.isError(response)) {
         return Except.error("Error retrieving image using socket");
     } else {
+        const expression = selectionString(obj);
         // parse response
         const { header, data } = response.result;
         const arrayOrError = parseMessage(header, data);
@@ -127,6 +129,19 @@ export async function serializeImageUsingSocketServer(
         const arrayData = new Uint8Array(arrayBuffer);
         arrayData.set(arrayInfo.data);
 
+        const debugSessionData = activeDebugSessionData(session);
+        const infoOrError =
+            debugSessionData.currentPythonObjectsList?.variablesList.find(
+                ([exp]) => exp === selectionString(obj)
+            )?.[1];
+
+        let additionalInfo;
+        if (infoOrError === undefined || infoOrError.isError) {
+            additionalInfo = {};
+        } else {
+            additionalInfo = infoOrError.result[1];
+        }
+
         const datatype =
             SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE[arrayInfo.dataType];
         if (datatype === undefined) {
@@ -135,7 +150,6 @@ export async function serializeImageUsingSocketServer(
             return Except.error(msg);
         }
 
-        const expression = selectionString(obj);
         const { height, width, channels } = guessDimensions(
             arrayInfo.dimensions
         );
@@ -149,8 +163,8 @@ export async function serializeImageUsingSocketServer(
             height,
             channels,
             datatype,
-            additional_info: {},
+            additional_info: additionalInfo,
             bytes: arrayBuffer,
-        });
+        } as ImageMessage);
     }
 }

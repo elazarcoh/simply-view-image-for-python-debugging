@@ -244,6 +244,13 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
+    let heatmap_selection_dropdown = html! {
+        <vscode-dropdown>
+            <vscode-option>{"Option Label #1"}</vscode-option>
+            <vscode-option>{"Option Label #2"}</vscode-option>
+            <vscode-option>{"Option Label #3"}</vscode-option>
+        </vscode-dropdown>
+    };
     let segmentation_button = html! {
         <IconButton
             class={ if let Coloring::Segmentation{..} = drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
@@ -308,6 +315,11 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
 
     let style = use_style!(
         r#"
+        "#
+    );
+
+    let toolbar_style = use_style!(
+        r#"
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-start;
@@ -316,8 +328,16 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     );
 
     html! {
-        <div class={style}>
-            {for buttons.into_iter()}
+        <div class={style.clone()}>
+            <div class={toolbar_style}>
+                {for buttons.into_iter()}
+            </div>
+            if let Coloring::Heatmap{name} = &drawing_options.coloring {
+                <div>
+                    <label>{"Heatmap"}</label>
+                    {heatmap_selection_dropdown}
+                </div>
+            }
         </div>
     }
 }

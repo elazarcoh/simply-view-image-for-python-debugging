@@ -42,6 +42,10 @@ export class SocketServer {
         this.started = true;
     }
 
+    get isListening() {
+        return this.server.listening;
+    }
+
     get portNumber() {
         if (!this.started) {
             throw new Error("SocketServer is not started");
@@ -54,34 +58,6 @@ export class SocketServer {
 
     onClientConnected(socket: net.Socket): void {
         const outgoingRequestsManager = this.outgoingRequestsManager;
-        // const helloReqId = RequestsManager.randomRequestId();
-        // const helloMessage = composeHelloMessage(helloReqId, Sender.Server);
-        // logDebug(`Sending hello message to client with reqId ${helloReqId}`);
-        // outgoingRequestsManager.subscribeRequest(
-        //     helloReqId,
-        //     (header: MessageChunkHeader, _) => {
-        //         logDebug("Received hello response from client");
-        //         if (header.requestId !== helloReqId) {
-        //             throw new Error(
-        //                 `Expected hello reqId ${helloReqId} but got ${header.requestId}`
-        //             );
-        //         }
-        //         if (header.sender === Sender.Webview) {
-        //             if (this.webviewClient !== undefined) {
-        //                 logDebug("Closing previous webview client");
-        //                 this.webviewClient.socket.end();
-        //             }
-        //             this.webviewClient = new WebviewClient(socket);
-        //             this.webviewClient.socket.on("close", () => {
-        //                 logDebug("Webview client closed connection");
-        //                 this.webviewClient = undefined;
-        //             });
-        //         }
-        //         outgoingRequestsManager.unsubscribeRequest(helloReqId);
-        //     }
-        // );
-        // socket.write(helloMessage);
-
         const handleMessage = (header: MessageChunkHeader, data: Buffer) => {
             logDebug(
                 "Received message from client. Request id:",

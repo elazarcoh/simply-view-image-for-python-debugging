@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { constructObjectShapeCode } from "./python-communication/BuildPythonCode";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { Except } from "./utils/Except";
+import { joinResult } from "./utils/Result";
 
 function shapeToString(shape: PythonObjectShape): string {
     if (Array.isArray(shape)) {
@@ -39,13 +39,13 @@ export class HoverProvider implements vscode.HoverProvider {
         }
 
         const code = constructObjectShapeCode(selectedVariable);
-        const shape = Except.join(await evaluateInPython(code, debugSession));
-        if (shape.isError) {
+        const shape = joinResult(await evaluateInPython(code, debugSession));
+        if (shape.err) {
             // We don't want to show an error message, just don't show a hover
             return undefined;
         }
 
-        const shapeString = shapeToString(shape.result);
+        const shapeString = shapeToString(shape.safeUnwrap());
         return new vscode.Hover(new vscode.MarkdownString(shapeString), range);
     }
 }

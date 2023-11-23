@@ -5,12 +5,12 @@ import {
     RequestImageData,
 } from "../webview";
 import { findExpressionViewables } from "../../PythonObjectInfo";
-import { Except } from "../../utils/Except";
 import { logError, logTrace } from "../../Logging";
 import { serializeImageUsingSocketServer } from "../../from-python-serialization/SocketSerialization";
 import Container from "typedi";
 import { WebviewClient } from "../communication/WebviewClient";
 import { WebviewResponses } from "../communication/createMessages";
+import { errorMessage } from "../../utils/Result";
 
 export class WebviewMessageHandler {
     readonly client = Container.get(WebviewClient);
@@ -30,29 +30,26 @@ export class WebviewMessageHandler {
             debugSession
         );
 
-        if (
-            Except.isError(objectViewables) ||
-            objectViewables.result.length === 0
-        ) {
+        if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
             return undefined;
         }
 
         const response = await serializeImageUsingSocketServer(
             { expression: args.expression },
-            objectViewables.result[0],
+            objectViewables.safeUnwrap()[0],
             debugSession
         );
-        if (Except.isError(response)) {
+        if (response.err) {
             logError(
                 "Error retrieving image using socket",
-                response.errorMessage
+                errorMessage(response)
             );
             return undefined;
         }
 
         this.client.sendResponse(
             id,
-            WebviewResponses.imageData(response.result)
+            WebviewResponses.imageData(response.safeUnwrap())
         );
     }
 

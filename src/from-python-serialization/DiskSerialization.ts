@@ -5,13 +5,13 @@ import { logDebug, logError } from "../Logging";
 import { isExpressionSelection } from "../utils/VSCodeUtils";
 import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../python-communication/RunPythonCode";
-import { Except } from "../utils/Except";
+import { errorMessage, joinResult } from "../utils/Result";
 
 export async function serializePythonObjectToDisk(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
     session: vscode.DebugSession,
-    path?: string,
+    path?: string
 ): Promise<string | undefined> {
     const debugSessionData = activeDebugSessionData(session);
     path = path ?? debugSessionData.savePathHelper.savePathFor(obj);
@@ -26,24 +26,20 @@ export async function serializePythonObjectToDisk(
         pathWithSuffix
     );
     const mkdirRes = debugSessionData.savePathHelper.mkdir();
-    if (mkdirRes.isError) {
-        const message = `Failed to create directory for saving object: ${mkdirRes.errorMessage}`;
+    if (mkdirRes.err) {
+        const message = `Failed to create directory for saving object: ${errorMessage(
+            mkdirRes
+        )}`;
         logError(message);
         vscode.window.showErrorMessage(message);
-        return
+        return;
     }
-    const result = await evaluateInPython(saveObjectCode, session);
-    const errorMessage = Except.isError(result)
-        ? result.errorMessage
-        : Except.isError(result.result)
-        ? result.result.errorMessage
-        : undefined;
-    if (errorMessage !== undefined) {
-        const message =
-            `Error saving viewable of type ${viewable.type}: ${errorMessage}`.replaceAll(
-                "\\n",
-                "\n"
-            );
+    const result = joinResult(await evaluateInPython(saveObjectCode, session));
+
+    if (result.err) {
+        const message = `Error saving viewable of type ${
+            viewable.type
+        }: ${errorMessage(result)}`.replaceAll("\\n", "\n");
         logError(message);
         vscode.window.showErrorMessage(message);
     } else {

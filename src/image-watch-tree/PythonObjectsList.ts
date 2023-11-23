@@ -12,9 +12,9 @@ import {
     findExpressionsViewables,
     findExpressionViewables,
 } from "../PythonObjectInfo";
-import { Except } from "../utils/Except";
 import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
+import { Err, Ok, Result, errorMessage, isOkay } from "../utils/Result";
 
 // ExpressionsList is global to all debug sessions
 @Service()
@@ -25,7 +25,7 @@ class ExpressionsList {
 export const globalExpressionsList: ReadonlyArray<string> =
     Container.get(ExpressionsList).expressions;
 
-export type InfoOrError = Except<
+export type InfoOrError = Result<
     [NonEmptyArray<Viewable>, PythonObjectInformation]
 >;
 type ExpressingWithInfo = [string, InfoOrError];
@@ -66,9 +66,9 @@ export class CurrentPythonObjectsList {
             variables,
             this.debugSession
         ).then((r) =>
-            r.isError
+            r.err
                 ? Array<typeof r>(variables.length).fill(r)
-                : r.result.map((v) => Except.result(v))
+                : r.safeUnwrap().map((v) => Ok(v))
         );
 
         // expressions are evaluated separately, to avoid case of syntax error in one expression
@@ -77,33 +77,29 @@ export class CurrentPythonObjectsList {
                 findExpressionViewables(exp, this.debugSession)
             )
         ).then((r) =>
-            r.map((v) =>
-                v.status === "fulfilled"
-                    ? v.value
-                    : Except.error<Viewable[]>(v.reason)
-            )
+            r.map((v) => (v.status === "fulfilled" ? v.value : Err(v.reason)))
         );
 
         const allViewables = [
             ...variablesViewables,
             ...expressionsViewables,
         ].map((evs) =>
-            Except.isOkay(evs)
-                ? evs.result.length > 0
+            evs.ok
+                ? evs.safeUnwrap().length > 0
                     ? evs
-                    : Except.error<typeof evs.result>("Not viewable")
+                    : Err("Not viewable")
                 : evs
         );
 
         const informationEvalCode = allViewables.map((evs) =>
-            Except.map(evs, (vs) => vs.map((v) => v.infoPythonCode))
+            evs.map((vs) => vs.map((v) => v.infoPythonCode))
         );
 
         const allExpressions = [...variables, ...globalExpressionsList];
 
         const codeOrErrors = zip(allExpressions, informationEvalCode).map(
             ([exp, infoEvalCodes]) =>
-                Except.map(infoEvalCodes, (codes) =>
+                infoEvalCodes.map((codes) =>
                     constructRunSameExpressionWithMultipleEvaluatorsCode(
                         exp,
                         codes
@@ -113,17 +109,19 @@ export class CurrentPythonObjectsList {
         const codesWithIndices = codeOrErrors.map((c, i) => [i, c] as const);
         const codes = codesWithIndices
             .map(([, c]) => c)
-            .filter(Except.isOkay)
-            .map((e) => e.result);
+            .filter(isOkay)
+            .map((e) => e.safeUnwrap());
         const validIndices = codesWithIndices
-            .filter(([, c]) => Except.isOkay(c))
+            .filter(([, c]) => c.ok)
             .map(([i]) => i);
         const code = combineMultiEvalCodePython(codes);
         const res = await evaluateInPython(code, this.debugSession);
 
-        if (Except.isError(res)) {
+        if (res.err) {
             logError(
-                `Error while retrieving information for variables and expressions: ${res.errorMessage}`
+                `Error while retrieving information for variables and expressions: ${errorMessage(
+                    res
+                )}`
             );
             return {
                 variables: [],
@@ -131,26 +129,32 @@ export class CurrentPythonObjectsList {
             };
         } else {
             const validExpressionsInformation = Object.fromEntries(
-                zip(validIndices, res.result.map(combineValidInfoErrorIfNone))
+                zip(
+                    validIndices,
+                    res.safeUnwrap().map(combineValidInfoErrorIfNone)
+                )
             );
             const allExpressionsInformation = codesWithIndices.map(([i]) =>
-                Except.isOkay(codeOrErrors[i])
+                codeOrErrors[i].ok
                     ? validExpressionsInformation[i]
                     : codeOrErrors[i]
             );
 
-            const sanitize = ([viewables, info]: [
-                Except<Viewable[]>,
-                Except<PythonObjectInformation>
+            const sanitize = ([maybeViewables, info]: [
+                Result<Viewable[]>,
+                Result<PythonObjectInformation>
             ]): InfoOrError => {
-                if (Except.isError(viewables)) {
-                    return viewables;
-                } else if (Except.isError(info)) {
+                if (maybeViewables.err) {
+                    return maybeViewables;
+                } else if (info.err) {
                     return info;
-                } else if (notEmptyArray(viewables.result)) {
-                    return Except.result([viewables.result, info.result]);
                 } else {
-                    return Except.error("Not viewable");
+                    const viewables = maybeViewables.safeUnwrap();
+                    if (notEmptyArray(viewables)) {
+                        return Ok([viewables, info.safeUnwrap()]);
+                    } else {
+                        return Err("Not viewable");
+                    }
                 }
             };
 
@@ -178,16 +182,17 @@ export class CurrentPythonObjectsList {
 
     public async update(): Promise<void> {
         const debugSessionData = activeDebugSessionData(this.debugSession);
-        if (debugSessionData.isStopped === false || debugSessionData.setupOkay === false) {
+        if (
+            debugSessionData.isStopped === false ||
+            debugSessionData.setupOkay === false
+        ) {
             return;
         }
         this._variablesList.length = 0;
         const variables = await this.retrieveVariables();
         logDebug(`Got ${variables.length} variables: ${variables}`);
         this._variablesList.push(
-            ...variables.map(
-                (v) => [v, Except.error("Not ready")] as ExpressingWithInfo
-            )
+            ...variables.map((v) => [v, Err("Not ready")] as ExpressingWithInfo)
         );
 
         const information = await this.retrieveInformation();
@@ -196,12 +201,20 @@ export class CurrentPythonObjectsList {
             const variable = this._variablesList[i];
             const name = variable[0];
             const info = information.variables[i];
-            if (!info.isError) {
-                logDebug(`Got information for variable '${name}': ${JSON.stringify(info.result[1])}`);
+            if (!info.err) {
+                logDebug(
+                    `Got information for variable '${name}': ${JSON.stringify(
+                        info.safeUnwrap()[1]
+                    )}`
+                );
                 validVariables[i] = variable;
                 validVariables[i][1] = info;
             } else {
-                logDebug(`Error while getting information for variable '${name}': ${info.errorMessage}`);
+                logDebug(
+                    `Error while getting information for variable '${name}': ${errorMessage(
+                        info
+                    )}`
+                );
             }
         }
         // filter variables that are not viewable
@@ -270,18 +283,16 @@ export class CurrentPythonObjectsList {
 }
 
 function combineValidInfoErrorIfNone(
-    infoOrErrors: Except<Record<string, string>>[]
-): Except<Record<string, string>> {
-    const validRecords = infoOrErrors
-        .filter(Except.isOkay)
-        .map((p) => p.result);
+    infoOrErrors: Result<Record<string, string>>[]
+): Result<Record<string, string>> {
+    const validRecords = infoOrErrors.filter(isOkay).map((p) => p.safeUnwrap());
 
     if (validRecords.length === 0) {
-        return Except.error("Invalid expression");
+        return Err("Invalid expression");
     } else {
         const allEntries = validRecords.flatMap((o) => Object.entries(o));
         const merged = Object.fromEntries(allEntries);
-        return Except.result(merged);
+        return Ok(merged);
     }
 }
 

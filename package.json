@@ -406,6 +406,7 @@
     "reflect-metadata": "^0.1.13",
     "sharp": "^0.31.3",
     "tmp": "^0.2.1",
+    "ts-results": "^3.3.0",
     "typedi": "^0.10.0",
     "uuid": "^9.0.0",
     "vscode-debugprotocol": "^1.49.0",

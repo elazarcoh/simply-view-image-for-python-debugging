@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { findExpressionViewables } from "../PythonObjectInfo";
-import { Except } from "../utils/Except";
 import { viewObject } from "../ViewPythonObject";
 
 // update currently selected frame, using a hacky way (because the vscode API is lacking).
@@ -66,15 +65,15 @@ export async function viewVariableFromVSCodeDebugViewAsImage({
     );
 
     if (
-        Except.isError(objectViewables) ||
-        objectViewables.result.length === 0
+        objectViewables.err ||
+        objectViewables.safeUnwrap().length === 0
     ) {
         return undefined;
     }
 
     return viewObject(
         { variable: variable.evaluateName },
-        objectViewables.result[0],
+        objectViewables.safeUnwrap()[0],
         debugSession
     );
 }

@@ -1,5 +1,5 @@
 import * as P from "parsimmon";
-import { Except } from "../utils/Except";
+import { Err, Ok, Result } from "../utils/Result";
 
 const ListOf = <T>(parser: P.Parser<T>) =>
     parser
@@ -68,24 +68,21 @@ const PythonConstructs = P.createLanguage({
         ),
     ValidPythonResult: (r) =>
         P.alt(
-            r.Error.map(({ error }) => Except.error(error)),
-            r.Value.map(({ result }) => Except.result<unknown>(result)),
-            r.None.map(() => Except.result(null)),
+            r.Error.map(({ error }) => Err(error)),
+            r.Value.map(({ result }) => Ok<unknown>(result)),
+            r.None.map(() => Ok(null)),
             ListOf(r.ValidPythonResult)
         ),
     ValidPythonResultStringified: (r) =>
         r.Quote.chain((quote) => r.ValidPythonResult.skip(P.string(quote))),
 });
 
-export function parsePythonResult<T = unknown>(value: string): Except<T> {
+export function parsePythonResult<T = unknown>(value: string): Result<T> {
     const res = PythonConstructs.ValidPythonResultStringified.parse(value);
 
     if (res.status) {
-        return {
-            isError: false,
-            result: res.value,
-        };
+        return Ok(res.value);
     } else {
-        return Except.error(res.expected[0]);
+        return Err(res.expected[0]);
     }
 }

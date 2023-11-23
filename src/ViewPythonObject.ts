@@ -9,7 +9,6 @@ import { Viewable } from "./viewable/Viewable";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import Container from "typedi";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { Except } from "./utils/Except";
 import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
 import { getConfiguration } from "./config";
 import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
@@ -30,12 +29,12 @@ export async function viewObject(
             viewable,
             session
         );
-        if (Except.isError(response)) {
+        if (response.err) {
         } else {
             const webviewClient = Container.get(WebviewClient);
             await webviewClient.reveal();
             webviewClient.sendRequest(
-                WebviewResponses.showImage(response.result)
+                WebviewResponses.showImage(response.safeUnwrap())
             );
         }
     } else {
@@ -76,14 +75,15 @@ export async function viewObjectUnderCursor(): Promise<unknown> {
         selectionString(userSelection),
         debugSession
     );
-    if (
-        Except.isError(objectViewables) ||
-        objectViewables.result.length === 0
-    ) {
+    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
         return undefined;
     }
 
-    return viewObject(userSelection, objectViewables.result[0], debugSession);
+    return viewObject(
+        userSelection,
+        objectViewables.safeUnwrap()[0],
+        debugSession
+    );
 }
 
 export async function trackObjectUnderCursor(): Promise<unknown> {
@@ -122,7 +122,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
         );
     }
     let savePath: string | undefined = undefined;
-    if (Except.isOkay(objectViewables) && objectViewables.result.length > 0) {
+    if (objectViewables.ok && objectViewables.safeUnwrap().length > 0) {
         const trackedPythonObjects = debugSessionData.trackedPythonObjects;
         const trackingId = trackedPythonObjects.trackingIdIfTracked({
             expression: userSelectionAsString,
@@ -135,7 +135,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
             debugSessionData.savePathHelper.savePathFor(userSelection);
         trackedPythonObjects.track(
             { expression: userSelectionAsString },
-            objectViewables.result[0],
+            objectViewables.safeUnwrap()[0],
             savePath,
             trackingId
         );
@@ -143,16 +143,13 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
 
     Container.get(WatchTreeProvider).refresh();
 
-    if (
-        Except.isError(objectViewables) ||
-        objectViewables.result.length === 0
-    ) {
+    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
         return undefined;
     }
 
     return viewObject(
         userSelection,
-        objectViewables.result[0],
+        objectViewables.safeUnwrap()[0],
         debugSession,
         savePath,
         false

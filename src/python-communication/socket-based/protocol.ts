@@ -1,4 +1,4 @@
-import { Except } from "../../utils/Except";
+import { Err, Ok, Result, errorFromUnknown } from "../../utils/Result";
 import { StatefulBufferReader } from "./BufferReader";
 import { StatefulBufferWriter } from "./BufferWriter";
 
@@ -65,7 +65,7 @@ export enum MessageType {
     PythonSendingObject = 0x01,
 }
 
-enum ObjectType {
+export enum ObjectType {
     NumpyArray = 0x01,
     Exception = 0xff,
 }
@@ -116,9 +116,9 @@ export function datatypeToString(datatype: ArrayDataType) {
 
 export function splitHeaderContentRest(
     buffer: Buffer
-): Except<[MessageChunkHeader, Buffer, Buffer]> {
+): Result<[MessageChunkHeader, Buffer, Buffer]> {
     if (buffer.length < HEADER_LENGTH) {
-        return Except.error(
+        return Err(
             `Buffer shorter than header length: ${buffer.length} < ${HEADER_LENGTH}`
         );
     }
@@ -143,14 +143,14 @@ export function splitHeaderContentRest(
     };
     const data = buffer.subarray(HEADER_LENGTH);
     if (data.length < chunkLength) {
-        return Except.error(
+        return Err(
             `Buffer shorter than chunk length: ${data.length} < ${chunkLength}`
         );
     } else if (data.length > chunkLength) {
         const rest = data.subarray(chunkLength);
-        return Except.result([header, data.subarray(0, chunkLength), rest]);
+        return Ok([header, data.subarray(0, chunkLength), rest]);
     } else {
-        return Except.result([header, data, Buffer.alloc(0)]);
+        return Ok([header, data, Buffer.alloc(0)]);
     }
 }
 
@@ -185,7 +185,7 @@ type ArrayInfo = {
     dimensions: number[];
     data: Buffer;
 };
-function parseNumpyArrayMessage(buffer: Buffer): Except<ArrayInfo> {
+function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
     try {
         const reader = new StatefulBufferReader(buffer);
         const dataType = reader.readUInt8();
@@ -196,25 +196,53 @@ function parseNumpyArrayMessage(buffer: Buffer): Except<ArrayInfo> {
             dimensions.push(reader.readUInt32());
         }
         const data = reader.currentBuffer;
-        return Except.result({
+        return Ok({
             dataType,
             byteOrder,
             dimensions,
             data,
         });
     } catch (e) {
-        return Except.errorFromUnknown(e);
+        return errorFromUnknown(e);
     }
 }
 
-function parsePythonSendingObjectMessage(buffer: Buffer) {
+type ExceptionInfo = {
+    type: string;
+    message: string;
+};
+function parseExceptionMessage(buffer: Buffer): Result<ExceptionInfo> {
+    try {
+        const reader = new StatefulBufferReader(buffer);
+        const type = reader.readString();
+        const message = reader.readString();
+        return Ok({
+            type,
+            message,
+        });
+    } catch (e) {
+        return errorFromUnknown(e);
+    }
+}
+
+type PythonObject =
+    | { type: ObjectType.NumpyArray; object: ArrayInfo }
+    | { type: ObjectType.Exception; object: ExceptionInfo };
+
+function parsePythonSendingObjectMessage(buffer: Buffer): Result<PythonObject> {
     const reader = new StatefulBufferReader(buffer);
     const objectType = reader.readUInt8();
     switch (objectType) {
         case ObjectType.NumpyArray:
-            return parseNumpyArrayMessage(reader.currentBuffer);
-        // case ObjectType.Exception:
-        //     return parseExceptionMessage(reader.currentBuffer);
+            return parseNumpyArrayMessage(reader.currentBuffer).map((v) => ({
+                type: objectType,
+                object: v,
+            }));
+        case ObjectType.Exception:
+            return parseExceptionMessage(reader.currentBuffer).map((v) => ({
+                type: objectType,
+                object: v,
+            }));
         default:
             throw new Error("Unknown object type: " + objectType);
     }

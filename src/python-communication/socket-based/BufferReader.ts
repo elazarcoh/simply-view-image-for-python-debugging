@@ -49,4 +49,11 @@ export class StatefulBufferReader {
     readInt16() {
         return this.read(this.functions.readInt16);
     }
+    readString() {
+        const length = this.readUInt32();
+        const result = this.buffer.toString("utf-8", 0, length);
+        const newBuffer = this.buffer.subarray(length);
+        this.buffer = newBuffer;
+        return result;
+    }
 }

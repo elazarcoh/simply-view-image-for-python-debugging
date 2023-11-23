@@ -7,7 +7,7 @@ import { EXTENSION_NAME } from "./globals";
 import { getConfiguration } from "./config";
 import { chmodSync, existsSync, mkdirSync } from "fs";
 import { logDebug } from "./Logging";
-import { Except } from "./utils/Except";
+import { Err, Ok, Result } from "./utils/Result";
 
 function defaultSaveDir(): string {
     return (
@@ -60,15 +60,15 @@ export class SavePathHelper {
         this.mkdir();
     }
 
-    public mkdir(): Except<void> {
+    public mkdir(): Result<void> {
         try {
             mkdirSync(this.saveDir, { recursive: true });
-            return Except.result(undefined);
+            return Ok(undefined);
         } catch (error) {
             if (error instanceof Error) {
-                return Except.error(error);
+                return Err(error);
             } else {
-                return Except.error(JSON.stringify(error));
+                return Err(JSON.stringify(error));
             }
         }
     }

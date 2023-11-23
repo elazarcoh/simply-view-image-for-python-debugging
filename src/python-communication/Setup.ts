@@ -1,7 +1,6 @@
 import { DebugSession } from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logDebug, logTrace } from "../Logging";
-import { Except } from "../utils/Except";
 import { debounce } from "../utils/Utils";
 import {
     moduleSetupCode,
@@ -9,6 +8,7 @@ import {
     viewablesSetupCode,
 } from "./BuildPythonCode";
 import { execInPython, runPython } from "./RunPythonCode";
+import { joinResult } from "../utils/Result";
 
 export function setSetupIsNotOkay(): void {
     logTrace("Manual set 'setup is not okay'");
@@ -22,7 +22,7 @@ async function checkSetupOkay(session: DebugSession) {
     const res = await runPython(verifyModuleExistsCode(), true, session, {
         context: "repl",
     });
-    return Except.join(res);
+    return joinResult(res);
 }
 
 export async function runSetup(session: DebugSession): Promise<boolean> {
@@ -33,7 +33,7 @@ export async function runSetup(session: DebugSession): Promise<boolean> {
         logDebug("Checks setup is okay or not");
         const isSetupOkay = await checkSetupOkay(session);
 
-        if (Except.isError(isSetupOkay) || isSetupOkay.result === false) {
+        if (isSetupOkay.err || isSetupOkay.safeUnwrap() === false) {
             if (maxTries <= 0) {
                 throw new Error("Setup failed");
             }

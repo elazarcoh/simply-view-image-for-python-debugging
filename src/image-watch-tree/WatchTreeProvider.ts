@@ -12,8 +12,8 @@ import {
 } from "./WatchTreeItem";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
-import { Except } from "../utils/Except";
 import { isOf, zip } from "../utils/Utils";
+import { Err, errorMessage } from "../utils/Result";
 
 class ItemsRootTreeItem extends vscode.TreeItem {
     constructor(
@@ -59,34 +59,38 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             const variableItems =
                 debugSessionData?.currentPythonObjectsList.variablesList.map(
                     ([exp, info]) =>
-                        info.isError
+                        info.err
                             ? new ErrorWatchTreeItem(
                                   exp,
-                                  info.error,
+                                  errorMessage(info),
                                   "variable"
                               )
                             : new VariableWatchTreeItem(
                                   exp,
-                                  info.result[0],
-                                  info.result[1]
+                                  info.safeUnwrap()[0],
+                                  info.safeUnwrap()[1]
                               )
                 ) ?? [];
             const expressionsInfoOrNotReady =
                 debugSessionData?.currentPythonObjectsList.expressionsInfo ??
                 (Array(globalExpressionsList.length).fill(
-                    Except.error("Not ready") as InfoOrError
+                    Err("Not ready") as InfoOrError
                 ) as InfoOrError[]);
 
             const expressionsItems = zip(
                 globalExpressionsList,
                 expressionsInfoOrNotReady
             ).map(([exp, info]) =>
-                info.isError
-                    ? new ErrorWatchTreeItem(exp, info.error, "expression")
+                info.err
+                    ? new ErrorWatchTreeItem(
+                          exp,
+                          errorMessage(info),
+                          "expression"
+                      )
                     : new ExpressionWatchTreeItem(
                           exp,
-                          info.result[0],
-                          info.result[1]
+                          info.safeUnwrap()[0],
+                          info.safeUnwrap()[1]
                       )
             );
 

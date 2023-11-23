@@ -14,10 +14,10 @@ function expressingWithInfoIntoImageInfo(
     infoOrError: InfoOrError,
     valueVariableKind: ValueVariableKind
 ): ImageMessage | undefined {
-    if (infoOrError.isError) {
+    if (infoOrError.err) {
         return undefined;
     }
-    const info = infoOrError.result[1];
+    const info = infoOrError.safeUnwrap()[1];
 
     return {
         image_id: exp,

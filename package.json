@@ -85,6 +85,11 @@
         "icon": "$(timeline-refresh)"
       },
       {
+        "command": "svifpd.open-image-webview",
+        "title": "Open Image Webview",
+        "icon": "$(browser)"
+      },
+      {
         "command": "svifpd.open-settings",
         "title": "Configure...",
         "icon": "$(settings-gear)"
@@ -157,6 +162,10 @@
           "when": "false"
         },
         {
+          "command": "svifpd.open-image-webview",
+          "when": "inDebugMode"
+        },
+        {
           "command": "svifpd.view-debug-variable",
           "when": "false"
         },
@@ -188,6 +197,11 @@
           "command": "svifpd.open-settings",
           "when": "view == pythonDebugImageWatch",
           "group": "navigation@30"
+        },
+        {
+          "command": "svifpd.open-image-webview",
+          "when": "view == pythonDebugImageWatch",
+          "group": "navigation@40"
         }
       ],
       "debug/variables/context": [

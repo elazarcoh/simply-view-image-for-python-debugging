@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import * as vscode from "vscode";
-import { initLog, logDebug, logTrace } from "./Logging";
+import { initLog, logDebug, logError, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 import Container from "typedi";
@@ -110,15 +110,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...registerExtensionCommands(context));
 
-    const socketServer = Container.get(SocketServer);
-    socketServer.start();
+    try {
+        const socketServer = Container.get(SocketServer);
+        socketServer.start();
+    } catch (e) {
+        logError("Failed to start socket server", e);
+    }
 
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand("svifpd.open-settings", async () => {
-            Container.get(WebviewClient).reveal();
-        })
-    );
 }

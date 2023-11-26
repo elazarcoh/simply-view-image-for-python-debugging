@@ -244,13 +244,6 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
-    let heatmap_selection_dropdown = html! {
-        <vscode-dropdown>
-            <vscode-option>{"Option Label #1"}</vscode-option>
-            <vscode-option>{"Option Label #2"}</vscode-option>
-            <vscode-option>{"Option Label #3"}</vscode-option>
-        </vscode-dropdown>
-    };
     let segmentation_button = html! {
         <IconButton
             class={ if let Coloring::Segmentation{..} = drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
@@ -264,6 +257,49 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Segmentation{name: "glasbey".to_string()}))); }
             }}
         />
+    };
+
+    let heatmap_selection_dropdown = {
+        let style = use_style!(
+            r#"
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-direction: row;
+            gap: 10px;
+
+            .label {
+                display: block;
+                color: var(--vscode-foreground);
+                cursor: pointer;
+                font-size: var(--vscode-font-size);
+                line-height: normal;
+            }
+            .dropdown-container {
+                display: flex;
+                justify-content: flex-start;
+                flex-direction: row;
+                gap: 10px;
+                flex-wrap: nowrap;
+                align-items: flex-start;
+            }
+            .dropdown {
+                position: absolute;
+            }
+            "#
+        );
+        html! {
+            <div class={style}>
+                <label class={"label"} for={"heatmap-dropdown"}>{"Heatmap"}</label>
+                <div class={"dropdown-container"}>
+                    <vscode-dropdown id={"heatmap-dropdown"} class={"dropdown"}>
+                        <vscode-option>{"Option Label #1"}</vscode-option>
+                        <vscode-option>{"Option Label #2"}</vscode-option>
+                        <vscode-option>{"Option Label #3"}</vscode-option>
+                    </vscode-dropdown>
+                </div>
+            </div>
+        }
     };
 
     // let transpose_button = html! {
@@ -333,10 +369,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
                 {for buttons.into_iter()}
             </div>
             if let Coloring::Heatmap{name} = &drawing_options.coloring {
-                <div>
-                    <label>{"Heatmap"}</label>
-                    {heatmap_selection_dropdown}
-                </div>
+                {heatmap_selection_dropdown}
             }
         </div>
     }

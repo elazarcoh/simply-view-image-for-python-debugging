@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use enumset::EnumSet;
 use std::{collections::HashMap, rc::Rc};
 
 use web_sys::WebGl2RenderingContext;
@@ -41,6 +42,17 @@ pub(crate) struct ColorMapRegistry(HashMap<String, Rc<colormap::ColorMap>>);
 impl ColorMapRegistry {
     pub(crate) fn new() -> Self {
         Self(HashMap::new())
+    }
+
+    pub(crate) fn all_with_kind(
+        &self,
+        kinds: EnumSet<colormap::ColorMapKind>,
+    ) -> Vec<Rc<colormap::ColorMap>> {
+        self.0
+            .values()
+            .filter(|c| kinds.contains(c.kind))
+            .cloned()
+            .collect()
     }
 
     pub(crate) fn get(&self, name: &str) -> Option<Rc<colormap::ColorMap>> {

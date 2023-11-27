@@ -1,5 +1,8 @@
+use std::{cell::RefCell, iter::FromIterator, rc::Rc};
+
 use itertools::Itertools;
 use stylist::{css, yew::use_style, Style};
+use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
 use yewdux::{
     dispatch,
@@ -8,6 +11,7 @@ use yewdux::{
 
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
+    colormap::colormap::ColorMapKind,
     common::ImageInfo,
     rendering::coloring::Coloring,
 };
@@ -260,6 +264,21 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
 
     let heatmap_selection_dropdown = {
+        let color_map_registry =
+            use_selector(move |state: &AppState| state.color_map_registry.clone());
+        let options = color_map_registry
+            .borrow()
+            .all_with_kind(enumset::enum_set!(
+                ColorMapKind::Linear | ColorMapKind::Diverging
+            ))
+            .iter()
+            .map(|c| c.name.clone())
+            .sorted()
+            .map(|name| {
+                html! {
+                    <vscode-option value={name.clone()}>{name.clone()}</vscode-option>
+                }
+            });
         let style = use_style!(
             r#"
             display: flex;
@@ -268,37 +287,72 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             flex-direction: row;
             gap: 10px;
 
-            .label {
-                display: block;
-                color: var(--vscode-foreground);
-                cursor: pointer;
-                font-size: var(--vscode-font-size);
-                line-height: normal;
-            }
             .dropdown-container {
-                display: flex;
-                justify-content: flex-start;
-                flex-direction: row;
-                gap: 10px;
-                flex-wrap: nowrap;
-                align-items: flex-start;
+                height: calc(var(--input-height) * 1px);
             }
-            .dropdown {
+            .open {
                 position: absolute;
             }
             "#
         );
-        html! {
-            <div class={style}>
-                <label class={"label"} for={"heatmap-dropdown"}>{"Heatmap"}</label>
-                <div class={"dropdown-container"}>
-                    <vscode-dropdown id={"heatmap-dropdown"} class={"dropdown"}>
-                        <vscode-option>{"Option Label #1"}</vscode-option>
-                        <vscode-option>{"Option Label #2"}</vscode-option>
-                        <vscode-option>{"Option Label #3"}</vscode-option>
-                    </vscode-dropdown>
+        let node_ref = NodeRef::default();
+        move |current_name: String| {
+            let cb: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+            let node_ref = node_ref.clone();
+            let get_current_value = {
+                let node_ref = node_ref.clone();
+                move || {
+                    node_ref
+                        .cast::<web_sys::HtmlElement>()
+                        .unwrap()
+                        .get_attribute("current-value")
+                        .filter(|v| !v.is_empty())
+                }
+            };
+
+            *cb.borrow_mut() = Some(Box::new({
+                let cb = Rc::clone(&cb);
+                move || {
+                    let current_value = get_current_value();
+                    match current_value {
+                        Some(name) => {
+                            let image_id = image_id.clone();
+                            let dispatch = Dispatch::<AppState>::new();
+                            dispatch.apply(StoreAction::UpdateDrawingOptions(
+                                image_id.clone(),
+                                UpdateDrawingOptions::Coloring(Coloring::Heatmap { name }),
+                            ));
+                        }
+                        None => {
+                            let timer = gloo::timers::callback::Timeout::new(100, {
+                                let cb = Rc::clone(&cb);
+                                move || {
+                                    cb.borrow().as_ref().unwrap()();
+                                }
+                            });
+                            timer.forget();
+                        }
+                    }
+                }
+            }) as Box<dyn Fn()>);
+
+            let onchange = Callback::from({
+                move |_: Event| {
+                    cb.borrow().as_ref().unwrap()();
+                }
+            });
+
+            html! {
+                <div class={style}>
+                    <div class={"dropdown-container"}>
+                        <vscode-dropdown id={"heatmap-dropdown"} current-value={current_name}  ref={node_ref.clone()}
+                        {onchange}
+                        >
+                            {for options}
+                        </vscode-dropdown>
+                    </div>
                 </div>
-            </div>
+            }
         }
     };
 
@@ -351,6 +405,12 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
 
     let style = use_style!(
         r#"
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 10px;
         "#
     );
 
@@ -369,7 +429,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
                 {for buttons.into_iter()}
             </div>
             if let Coloring::Heatmap{name} = &drawing_options.coloring {
-                {heatmap_selection_dropdown}
+                {heatmap_selection_dropdown(name.clone())}
             }
         </div>
     }

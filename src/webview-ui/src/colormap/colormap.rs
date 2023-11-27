@@ -1,9 +1,10 @@
 use anyhow::Result;
+use enumset::EnumSetType;
 use std::borrow::Cow;
 
 use crate::webgl_utils::{self, GLGuard, error::WebGlError};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(EnumSetType, Debug)]
 pub(crate) enum ColorMapKind {
     Linear,
     Diverging,

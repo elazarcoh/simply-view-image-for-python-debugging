@@ -4,13 +4,12 @@ use itertools::Itertools;
 use stylist::{css, yew::use_style, Style};
 use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
-use yewdux::{
-    dispatch,
-    prelude::{use_selector, Dispatch},
-};
+use yewdux::prelude::{use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
+    app_state::app_state::{
+        AppState, StoreAction, UpdateDrawingOptions, UpdateGlobalDrawingOptions,
+    },
     colormap::colormap::ColorMapKind,
     common::ImageInfo,
     rendering::coloring::Coloring,
@@ -236,7 +235,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let heatmap_button = html! {
         <IconButton
-            class={ if let Coloring::Heatmap{..} = drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
+            class={ if Coloring::Heatmap == drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Heatmap"}
             title={"Heatmap"}
             // icon={"svifpd-icons svifpd-icons-heatmap"}
@@ -244,13 +243,13 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
-                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Heatmap{name: "fire".to_string()}))); }
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Heatmap))); }
             }}
         />
     };
     let segmentation_button = html! {
         <IconButton
-            class={ if let Coloring::Segmentation{..} = drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
+            class={ if Coloring::Segmentation == drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Segmentation"}
             title={"Segmentation"}
             // icon={"svifpd-icons svifpd-icons-segmentation"}
@@ -258,102 +257,9 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
-                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Segmentation{name: "glasbey".to_string()}))); }
+                move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Segmentation))); }
             }}
         />
-    };
-
-    let heatmap_selection_dropdown = {
-        let color_map_registry =
-            use_selector(move |state: &AppState| state.color_map_registry.clone());
-        let options = color_map_registry
-            .borrow()
-            .all_with_kind(enumset::enum_set!(
-                ColorMapKind::Linear | ColorMapKind::Diverging
-            ))
-            .iter()
-            .map(|c| c.name.clone())
-            .sorted()
-            .map(|name| {
-                html! {
-                    <vscode-option value={name.clone()}>{name.clone()}</vscode-option>
-                }
-            });
-        let style = use_style!(
-            r#"
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            flex-direction: row;
-            gap: 10px;
-
-            .dropdown-container {
-                height: calc(var(--input-height) * 1px);
-            }
-            .open {
-                position: absolute;
-            }
-            "#
-        );
-        let node_ref = NodeRef::default();
-        move |current_name: String| {
-            let cb: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
-            let node_ref = node_ref.clone();
-            let get_current_value = {
-                let node_ref = node_ref.clone();
-                move || {
-                    node_ref
-                        .cast::<web_sys::HtmlElement>()
-                        .unwrap()
-                        .get_attribute("current-value")
-                        .filter(|v| !v.is_empty())
-                }
-            };
-
-            *cb.borrow_mut() = Some(Box::new({
-                let cb = Rc::clone(&cb);
-                move || {
-                    let current_value = get_current_value();
-                    match current_value {
-                        Some(name) => {
-                            let image_id = image_id.clone();
-                            let dispatch = Dispatch::<AppState>::new();
-                            dispatch.apply(StoreAction::UpdateDrawingOptions(
-                                image_id.clone(),
-                                UpdateDrawingOptions::Coloring(Coloring::Heatmap { name }),
-                            ));
-                        }
-                        None => {
-                            let timer = gloo::timers::callback::Timeout::new(100, {
-                                let cb = Rc::clone(&cb);
-                                move || {
-                                    cb.borrow().as_ref().unwrap()();
-                                }
-                            });
-                            timer.forget();
-                        }
-                    }
-                }
-            }) as Box<dyn Fn()>);
-
-            let onchange = Callback::from({
-                move |_: Event| {
-                    cb.borrow().as_ref().unwrap()();
-                }
-            });
-
-            html! {
-                <div class={style}>
-                    <div class={"dropdown-container"}>
-                        <vscode-dropdown id={"heatmap-dropdown"} current-value={current_name}  ref={node_ref.clone()}
-                        {onchange}
-                        >
-                            {for options}
-                        </vscode-dropdown>
-                    </div>
-                </div>
-            }
-        }
     };
 
     // let transpose_button = html! {
@@ -428,9 +334,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             <div class={toolbar_style}>
                 {for buttons.into_iter()}
             </div>
-            if let Coloring::Heatmap{name} = &drawing_options.coloring {
-                {heatmap_selection_dropdown(name.clone())}
-            }
+
         </div>
     }
 }

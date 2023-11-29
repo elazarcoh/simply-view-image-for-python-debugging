@@ -13,8 +13,8 @@ pub(crate) enum Coloring {
     G,
     B,
     SwapRgbBgr,
-    Segmentation { name: String },
-    Heatmap { name: String },
+    Segmentation,
+    Heatmap,
 }
 
 #[derive(

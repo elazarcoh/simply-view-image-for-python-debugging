@@ -1,13 +1,16 @@
 use anyhow::Result;
+use js_sys::WebAssembly::Global;
 use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
 use crate::{
+    app_state::app_state::GlobalDrawingOptions,
+    colormap::colormap,
     common::{camera, texture_image::TextureImage, ImageId, Size, ViewId},
     configurations::RenderingConfiguration,
     rendering::coloring::DrawingOptions,
-    webgl_utils, colormap::colormap,
+    webgl_utils,
 };
 
 pub(crate) struct ImageViewData {
@@ -22,7 +25,7 @@ pub(crate) trait RenderingContext {
     fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>>;
     fn view_data(&self, view_id: ViewId) -> ImageViewData;
     fn rendering_configuration(&self) -> RenderingConfiguration;
-    fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions;
+    fn drawing_options(&self, image_id: &ImageId) -> (DrawingOptions, GlobalDrawingOptions);
     fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>>;
     fn get_color_map_texture(
         &self,

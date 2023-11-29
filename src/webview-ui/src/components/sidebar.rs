@@ -26,6 +26,7 @@ fn Toolbar(props: &ToolbarProps) -> Html {
     let toolbar_style = use_style!(
         r#"
         width: 100%;
+        height: calc(var(--input-height) * 1px);
 
         display: inline-flex;
         flex-direction: row;

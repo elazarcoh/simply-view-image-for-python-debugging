@@ -37,6 +37,21 @@ impl Listener for ImagesFetcher {
     }
 }
 
+#[derive(Clone, PartialEq)]
+pub(crate) struct GlobalDrawingOptions {
+    pub heatmap_colormap_name: String,
+    pub segmentation_colormap_name: String,
+}
+
+impl Default for GlobalDrawingOptions {
+    fn default() -> Self {
+        Self {
+            heatmap_colormap_name: "fire".to_string(),
+            segmentation_colormap_name: "glasbey".to_string(),
+        }
+    }
+}
+
 #[derive(Store, Clone)]
 #[store(listener(ImagesFetcher))]
 pub(crate) struct AppState {
@@ -46,6 +61,7 @@ pub(crate) struct AppState {
     pub image_views: Mrc<ImageViews>,
     pub image_cache: Mrc<ImageCache>,
     pub drawing_options: Mrc<ImagesDrawingOptions>,
+    pub global_drawing_options: GlobalDrawingOptions,
 
     pub color_map_registry: Mrc<ColorMapRegistry>,
     pub color_map_textures_cache: Mrc<ColorMapTexturesCache>,
@@ -75,6 +91,7 @@ impl Default for AppState {
             color_map_textures_cache: Default::default(),
             configuration: Default::default(),
             drawing_options: Default::default(),
+            global_drawing_options: Default::default(),
         }
     }
 }
@@ -87,6 +104,8 @@ impl PartialEq for AppState {
             && self.view_cameras == other.view_cameras
             && self.configuration == other.configuration
             && self.gl == other.gl
+            && self.drawing_options == other.drawing_options
+            && self.global_drawing_options == other.global_drawing_options
     }
 }
 
@@ -96,6 +115,11 @@ pub(crate) enum UpdateDrawingOptions {
     Invert(bool),
     HighContrast(bool),
     IgnoreAlpha(bool),
+}
+
+pub(crate) enum UpdateGlobalDrawingOptions {
+    GlobalHeatmapColormap(String),
+    GlobalSegmentationColormap(String),
 }
 
 pub(crate) enum ImageObject {
@@ -122,6 +146,7 @@ pub(crate) enum StoreAction {
     SetImageToView(ImageId, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
+    UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
 }
 
@@ -206,31 +231,15 @@ impl Reducer<AppState> for StoreAction {
                         }
                     }
                 }
-                // let images = replacement_images
-                //     .objects
-                //     .iter()
-                //     .map(|info| (info.image_id.clone(), info.clone()))
-                //     .collect();
-                // state.images.borrow_mut().update(images);
-
-                // let res = replacement_images
-                //     .objects
-                //     .iter()
-                //     .map(|info| info.image_id.clone())
-                //     .map(|image_id| -> Result<()> {
-                //         if let Some(image_data) = replacement_data.remove(&image_id) {
-                //             let tex_image =
-                //                 TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;
-
-                //             state.image_cache.borrow_mut().set(&image_id, tex_image);
-                //         };
-                //         Ok(())
-                //     })
-                //     .collect::<Result<Vec<_>, _>>();
-                // if let Err(e) = res {
-                //     log::error!("Error while updating image cache: {:?}", e);
-                // }
             }
+            StoreAction::UpdateGlobalDrawingOptions(opts) => match opts {
+                UpdateGlobalDrawingOptions::GlobalHeatmapColormap(name) => {
+                    state.global_drawing_options.heatmap_colormap_name = name;
+                }
+                UpdateGlobalDrawingOptions::GlobalSegmentationColormap(name) => {
+                    state.global_drawing_options.segmentation_colormap_name = name;
+                }
+            },
         };
 
         app_state

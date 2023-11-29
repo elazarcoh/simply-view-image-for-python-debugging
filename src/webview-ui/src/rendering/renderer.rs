@@ -12,13 +12,13 @@ use web_sys::{
 };
 
 use crate::colormap::colormap;
-use crate::common::ViewId;
 use crate::common::camera;
 use crate::common::constants::all_views;
 use crate::common::pixel_value::PixelValue;
 use crate::common::texture_image::TextureImage;
 use crate::common::Datatype;
 use crate::common::Size;
+use crate::common::ViewId;
 use crate::math_utils::image_calculations::calculate_pixels_information;
 use crate::rendering::coloring::calculate_color_matrix;
 use crate::rendering::coloring::Coloring;
@@ -380,7 +380,7 @@ impl Renderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
-        let drawing_options =
+        let (drawing_options, global_drawing_options) =
             rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
         let (color_multiplier, color_addition) = calculate_color_matrix(
             &texture.image.info,
@@ -398,16 +398,16 @@ impl Renderer {
             ("u_invert", UniformValue::Bool(&drawing_options.invert)),
         ]);
 
-        let colormap_texture = if let Coloring::Heatmap { ref name } = drawing_options.coloring {
+        let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context
-                .get_color_map_texture(&name)
+                .get_color_map_texture(&global_drawing_options.heatmap_colormap_name)
                 .expect("Could not get color map texture");
 
             let tex = color_map_texture.obj.clone();
             Some(tex)
-        } else if let Coloring::Segmentation { ref name } = drawing_options.coloring {
+        } else if Coloring::Segmentation == drawing_options.coloring {
             let color_map_texture = rendering_context
-                .get_color_map_texture(&name)
+                .get_color_map_texture(&global_drawing_options.segmentation_colormap_name)
                 .expect("Could not get color map texture");
 
             let tex = color_map_texture.obj.clone();
@@ -455,9 +455,16 @@ impl Renderer {
 
                     // The actual pixel color might be different from the pixel value, depending on drawing options
                     let text_color = match drawing_options.coloring {
-                        Coloring::Heatmap { ref name } | Coloring::Segmentation { ref name } => {
+                        Coloring::Heatmap | Coloring::Segmentation => {
+                            let name = match drawing_options.coloring {
+                                Coloring::Heatmap => &global_drawing_options.heatmap_colormap_name,
+                                Coloring::Segmentation => {
+                                    &global_drawing_options.segmentation_colormap_name
+                                }
+                                _ => unreachable!(),
+                            };
                             let colormap = rendering_context
-                                .get_color_map(&name)
+                                .get_color_map(name)
                                 .expect("Could not get color map");
                             let pixel_color = calculate_pixel_color_from_colormap(
                                 &pixel_value,

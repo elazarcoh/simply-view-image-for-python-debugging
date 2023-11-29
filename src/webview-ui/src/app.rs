@@ -1,4 +1,5 @@
 use crate::app_state::app_state::AppState;
+use crate::app_state::app_state::GlobalDrawingOptions;
 use crate::colormap::colormap;
 use crate::common::camera;
 use crate::common::texture_image::TextureImage;
@@ -73,13 +74,12 @@ fn rendering_context() -> impl RenderingContext {
             dispatch.get().configuration.rendering.clone()
         }
 
-        fn drawing_options(&self, image_id: &ImageId) -> DrawingOptions {
+        fn drawing_options(&self, image_id: &ImageId) -> (DrawingOptions, GlobalDrawingOptions) {
             let dispatch = Dispatch::<AppState>::new();
-            dispatch
-                .get()
-                .drawing_options
-                .borrow()
-                .get_or_default(image_id)
+            let state = dispatch.get();
+            let drawing_options = state.drawing_options.borrow().get_or_default(image_id);
+            let global_drawing_options = state.global_drawing_options.clone();
+            (drawing_options, global_drawing_options)
         }
 
         fn get_color_map_texture(

@@ -8,7 +8,7 @@ use yewdux::prelude::Dispatch;
 use crate::{
     app_state::app_state::AppState,
     common::{pixel_value::PixelValue, ViewId},
-    components::{sidebar::Sidebar, status_bar::StatusBar},
+    components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar},
     mouse_events::PixelHoverHandler,
     rendering::rendering_context::ViewContext,
 };
@@ -102,9 +102,10 @@ pub(crate) fn Main(props: &MainProps) -> Html {
         display: grid;
         height: 100vh;
         grid-template-areas:
+            "sidebar main-toolbar"
             "sidebar main"
             "sidebar footer";
-        grid-template-rows: 1fr auto;
+        grid-template-rows: auto 1fr auto;
         grid-template-columns: fit-content(200px) 1fr;
   
         .main {
@@ -119,8 +120,8 @@ pub(crate) fn Main(props: &MainProps) -> Html {
         }
        
         .main-toolbar {
+            grid-area: main-toolbar;
             width: 100%;
-            height: 2em;
         }
 
         .status-bar {
@@ -137,6 +138,9 @@ pub(crate) fn Main(props: &MainProps) -> Html {
 
     html! {
         <div class={main_style}>
+            <div class={"main-toolbar"}>
+                <MainToolbar />
+            </div>
             <Sidebar class="sidebar" />
             <div class={"main"}>
                 <div ref={gl_view_node_ref} class={"gl-view"} />

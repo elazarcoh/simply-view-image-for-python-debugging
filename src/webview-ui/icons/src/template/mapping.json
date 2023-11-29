@@ -1,3 +1,11 @@
 {
-  "contrast": 60001
+  "contrast": 60001,
+  "B": 60002,
+  "G": 60003,
+  "R": 60004,
+  "grayscale": 60005,
+  "invert": 60006,
+  "BGR": 60007,
+  "toggle-transparency": 60008,
+  "heatmap": 60009
 }

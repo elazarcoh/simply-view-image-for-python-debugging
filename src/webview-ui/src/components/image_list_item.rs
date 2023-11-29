@@ -7,10 +7,7 @@ use yew::prelude::*;
 use yewdux::prelude::{use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{
-        AppState, StoreAction, UpdateDrawingOptions, UpdateGlobalDrawingOptions,
-    },
-    colormap::colormap::ColorMapKind,
+    app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
     common::ImageInfo,
     rendering::coloring::Coloring,
 };
@@ -145,7 +142,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             class={if drawing_options.coloring == Coloring::Grayscale { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Grayscale"}
             title={"Grayscale"}
-            icon={"codicon svifpd-icons-Grayscale"}
+            icon={"svifpd-icons svifpd-icons-grayscale"}
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
@@ -224,7 +221,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             class={if drawing_options.ignore_alpha { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Ignore Alpha"}
             title={"Ignore Alpha"}
-            icon={"codicon codicon-filter-filled"}
+            icon={"svifpd-icons svifpd-icons-toggle-transparency"}
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();
@@ -238,8 +235,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             class={ if Coloring::Heatmap == drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Heatmap"}
             title={"Heatmap"}
-            // icon={"svifpd-icons svifpd-icons-heatmap"}
-            icon={"codicon codicon-table"}
+            icon={"svifpd-icons svifpd-icons-heatmap"}
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();

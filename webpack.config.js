@@ -117,7 +117,7 @@ const WebviewConfig = {
                 },
                 {
                     from: path.posix.join(
-                        webviewPath,
+                        webviewPath.replace(/\\/g, "/"),
                         "icons",
                         "dist",
                         "svifpd-icons.{ttf,css}"

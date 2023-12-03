@@ -1,7 +1,11 @@
+use std::array;
+
 use glam::{Mat3, Vec2, Vec3};
+use ndarray_stats::QuantileExt;
 
 use crate::{
-    common::{pixel_value::PixelValue, Channels, Datatype, Size}, rendering::constants::VIEW_SIZE,
+    common::{pixel_value::PixelValue, Channels, Datatype, Size},
+    rendering::constants::VIEW_SIZE,
 };
 
 use super::ToHom;
@@ -164,11 +168,101 @@ where
     }
 }
 
+enum DynamicFlatChannelsArrayView<'a> {
+    U8(ndarray::ArrayView<'a, u8, ndarray::IxDyn>),
+    U16(ndarray::ArrayView<'a, u16, ndarray::IxDyn>),
+    U32(ndarray::ArrayView<'a, u32, ndarray::IxDyn>),
+    I8(ndarray::ArrayView<'a, i8, ndarray::IxDyn>),
+    I16(ndarray::ArrayView<'a, i16, ndarray::IxDyn>),
+    I32(ndarray::ArrayView<'a, i32, ndarray::IxDyn>),
+    F32(ndarray::ArrayView<'a, f32, ndarray::IxDyn>),
+}
+
+impl<'a> DynamicFlatChannelsArrayView<'a> {
+    fn from_bytes(bytes: &'a [u8], datatype: Datatype, channels: Channels) -> Self {
+        let bytes_per_element = datatype.num_bytes();
+        let num_elements = bytes.len() / bytes_per_element;
+        let shape = match channels {
+            Channels::One => ndarray::IxDyn(&[num_elements]),
+            Channels::Two => ndarray::IxDyn(&[2, num_elements / 2]),
+            Channels::Three => ndarray::IxDyn(&[3, num_elements / 3]),
+            Channels::Four => ndarray::IxDyn(&[4, num_elements / 4]),
+        };
+
+        match datatype {
+            Datatype::Uint8 => Self::U8(ndarray::ArrayView::from_shape(shape, bytes).unwrap()),
+            Datatype::Uint16 => Self::U16(
+                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
+            ),
+            Datatype::Uint32 => Self::U32(
+                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
+            ),
+            Datatype::Float32 => Self::F32(
+                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
+            ),
+            Datatype::Int8 => Self::I8(
+                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
+            ),
+            Datatype::Int16 => Self::I16(
+                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
+            ),
+            Datatype::Int32 => Self::I32(
+                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
+            ),
+            Datatype::Bool => Self::U8(ndarray::ArrayView::from_shape(shape, bytes).unwrap()),
+        }
+    }
+
+    fn map_axis<F, Out>(&self, axis: ndarray::Axis, f: F) -> ndarray::Array<Out, ndarray::IxDyn>
+    where
+        F: FnMut(ndarray::ArrayView<'a, Out, ndarray::IxDyn>) -> Out,
+        Out: ndarray::NdFloat,
+    {
+        match self {
+            Self::U8(array_view) => array_view.map_axis(axis, f),
+            Self::U16(array_view) => array_view.map_axis(axis, f),
+            Self::U32(array_view) => array_view.map_axis(axis, f),
+            Self::I8(array_view) => array_view.map_axis(axis, f),
+            Self::I16(array_view) => array_view.map_axis(axis, f),
+            Self::I32(array_view) => array_view.map_axis(axis, f),
+            Self::F32(array_view) => array_view.map_axis(axis, f),
+        }
+    }
+}
+
 pub(crate) fn image_minmax_on_bytes(
     bytes: &[u8],
     datatype: Datatype,
     channels: Channels,
 ) -> (PixelValue, PixelValue) {
+    let array_view = DynamicFlatChannelsArrayView::from_bytes(bytes, datatype, channels);
+    array_view.map_axis(ndarray::Axis(0), |col| {
+        let x = col.min().unwrap();
+        log::debug!("x: {:?}", x);
+    });
+    // match channels {
+    //     Channels::One => {
+    //         let array_view = ndarray::ArrayView::from_shape((bytes.len(),), bytes).unwrap();
+    //         let x = array_view.min().unwrap();
+    //         log::debug!("x: {:?}", x);
+    //     }
+    //     Channels::Two | Channels::Three | Channels::Four => {
+    //         let array_view = ndarray::ArrayView::from_shape(
+    //             (channels as usize, bytes.len() / channels as usize),
+    //             bytes,
+    //         )
+    //         .unwrap();
+    //         let a = ndarray::array![[1., 3., 5.], [2., 0., 6.]];
+    //         let x = array_view.map_axis(ndarray::Axis(0), |col| {
+    //             log::debug!("col: {:?}", col);
+    //         });
+    //     }
+    // };
+
+    // let x = a.min();
+    // log::debug!("x: {:?}", x);
+    // let x = array_view.map_axis(ndarray::Axis(0), |col| col.min().clone());
+
     let (min, max) = match datatype {
         Datatype::Uint8 => make_minmax_pixel_value_from_bytes::<u8>(channels, bytes),
         Datatype::Uint16 => make_minmax_pixel_value_from_bytes::<u16>(channels, bytes),

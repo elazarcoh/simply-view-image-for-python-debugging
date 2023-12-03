@@ -73,6 +73,8 @@ strum_macros = "0.25"
 float-pretty-print = "0.1.1"
 anyhow = "1.0.75"
 thiserror = "1.0.50"
+ndarray = "0.15.6"
+ndarray-stats = "0.5.1"
 
 
 [dependencies.web-sys]

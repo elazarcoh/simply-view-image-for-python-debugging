@@ -1,5 +1,4 @@
 use glam::{Mat3, Vec2, Vec3};
-use ndarray_stats::QuantileExt;
 
 use crate::{
     common::{pixel_value::PixelValue, Channels, Datatype, Size},
@@ -166,130 +165,11 @@ where
     }
 }
 
-enum DynamicFlatChannelsArrayView<'a> {
-    U8(ndarray::ArrayView<'a, u8, ndarray::Ix2>),
-    U16(ndarray::ArrayView<'a, u16, ndarray::Ix2>),
-    U32(ndarray::ArrayView<'a, u32, ndarray::Ix2>),
-    I8(ndarray::ArrayView<'a, i8, ndarray::Ix2>),
-    I16(ndarray::ArrayView<'a, i16, ndarray::Ix2>),
-    I32(ndarray::ArrayView<'a, i32, ndarray::Ix2>),
-    F32(ndarray::ArrayView<'a, f32, ndarray::Ix2>),
-}
-
-impl<'a> DynamicFlatChannelsArrayView<'a> {
-    fn from_bytes(bytes: &'a [u8], datatype: Datatype, channels: Channels) -> Self {
-        let bytes_per_element = datatype.num_bytes();
-        let num_elements = bytes.len() / bytes_per_element;
-        let shape = match channels {
-            Channels::One => ndarray::Ix2(num_elements, 1),
-            Channels::Two => ndarray::Ix2(num_elements / 2, 2),
-            Channels::Three => ndarray::Ix2(num_elements / 3, 3),
-            Channels::Four => ndarray::Ix2(num_elements / 4, 4),
-        };
-
-        match datatype {
-            Datatype::Uint8 => Self::U8(ndarray::ArrayView::from_shape(shape, bytes).unwrap()),
-            Datatype::Uint16 => Self::U16(
-                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
-            ),
-            Datatype::Uint32 => Self::U32(
-                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
-            ),
-            Datatype::Float32 => Self::F32(
-                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
-            ),
-            Datatype::Int8 => Self::I8(
-                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
-            ),
-            Datatype::Int16 => Self::I16(
-                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
-            ),
-            Datatype::Int32 => Self::I32(
-                ndarray::ArrayView::from_shape(shape, bytemuck::cast_slice(bytes)).unwrap(),
-            ),
-            Datatype::Bool => Self::U8(ndarray::ArrayView::from_shape(shape, bytes).unwrap()),
-        }
-    }
-
-    fn shape(&self) -> &[usize] {
-        match self {
-            Self::U8(array_view) => array_view.shape(),
-            Self::U16(array_view) => array_view.shape(),
-            Self::U32(array_view) => array_view.shape(),
-            Self::I8(array_view) => array_view.shape(),
-            Self::I16(array_view) => array_view.shape(),
-            Self::I32(array_view) => array_view.shape(),
-            Self::F32(array_view) => array_view.shape(),
-        }
-    }
-
-    fn _generic_minmax_integrals<T>(
-        channels: Channels,
-        array_view: &ndarray::ArrayView<T, ndarray::Ix2>,
-    ) -> (PixelValue, PixelValue)
-    where
-        T: Copy
-            + PartialOrd
-            + num_traits::Num
-            + num_traits::NumAssignOps
-            + num_traits::AsPrimitive<f64>,
-    {
-        let start = instant::Instant::now();
-        let minmax = array_view.map_axis(ndarray::Axis(0), |col| {
-            let min = col.min().unwrap();
-            let max = col.max().unwrap();
-            (min.as_(), max.as_())
-        });
-        let end = instant::Instant::now();
-        log::debug!("minmax took {:?}", end - start);
-        let (min, max) = minmax
-            .iter()
-            .map(|(min, max)| (*min, *max))
-            .unzip::<_, _, Vec<_>, Vec<_>>();
-        f32_pixel_value_from_minmax(channels, &min, &max)
-    }
-
-    fn _generic_minmax_floats<T>(
-        channels: Channels,
-        array_view: &ndarray::ArrayView<T, ndarray::Ix2>,
-    ) -> (PixelValue, PixelValue)
-    where
-        T: Copy + PartialOrd + ndarray_stats::MaybeNan + num_traits::AsPrimitive<f64>,
-        <T as ndarray_stats::MaybeNan>::NotNan: Ord,
-    {
-        let minmax = array_view.map_axis(ndarray::Axis(0), |col| {
-            let min = col.min_skipnan();
-            let max = col.max_skipnan();
-            (min.as_(), max.as_())
-        });
-        let (min, max) = minmax
-            .iter()
-            .map(|(min, max)| (*min, *max))
-            .unzip::<_, _, Vec<_>, Vec<_>>();
-        f32_pixel_value_from_minmax(channels, &min, &max)
-    }
-
-    fn minmax(&self, channels: Channels) -> (PixelValue, PixelValue) {
-        match self {
-            Self::U8(array_view) => Self::_generic_minmax_integrals(channels, array_view),
-            Self::U16(array_view) => Self::_generic_minmax_integrals(channels, array_view),
-            Self::U32(array_view) => Self::_generic_minmax_integrals(channels, array_view),
-            Self::I8(array_view) => Self::_generic_minmax_integrals(channels, array_view),
-            Self::I16(array_view) => Self::_generic_minmax_integrals(channels, array_view),
-            Self::I32(array_view) => Self::_generic_minmax_integrals(channels, array_view),
-            Self::F32(array_view) => Self::_generic_minmax_floats(channels, array_view),
-        }
-    }
-}
-
 pub(crate) fn image_minmax_on_bytes(
     bytes: &[u8],
     datatype: Datatype,
     channels: Channels,
 ) -> (PixelValue, PixelValue) {
-    let array_view = DynamicFlatChannelsArrayView::from_bytes(bytes, datatype, channels);
-    // let (min, max) = array_view.minmax(channels);
-
     let (min, max) = match datatype {
         Datatype::Uint8 => make_minmax_pixel_value_from_bytes::<u8>(channels, bytes),
         Datatype::Uint16 => make_minmax_pixel_value_from_bytes::<u16>(channels, bytes),

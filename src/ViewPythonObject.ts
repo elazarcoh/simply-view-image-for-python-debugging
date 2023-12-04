@@ -14,6 +14,7 @@ import { getConfiguration } from "./config";
 import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewResponses } from "./webview/communication/createMessages";
+import { logError } from "./Logging";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
@@ -22,14 +23,17 @@ export async function viewObject(
     path?: string,
     openInPreview?: boolean
 ): Promise<void> {
-    if (getConfiguration("useExperimentalViewer", undefined, false) === true) {
-        // TODO: currently only works for images
+    if (
+        viewable.supportsImageViewer === true &&
+        getConfiguration("useExperimentalViewer", undefined, false) === true
+    ) {
         const response = await serializeImageUsingSocketServer(
             obj,
             viewable,
             session
         );
         if (response.err) {
+            logError(response.val);
         } else {
             const webviewClient = Container.get(WebviewClient);
             await webviewClient.reveal();

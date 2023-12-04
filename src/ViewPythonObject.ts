@@ -14,16 +14,18 @@ import { getConfiguration } from "./config";
 import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewResponses } from "./webview/communication/createMessages";
-import { logError } from "./Logging";
+import { logWarn } from "./Logging";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
     session: vscode.DebugSession,
     path?: string,
-    openInPreview?: boolean
+    openInPreview?: boolean,
+    forceDiskSerialization?: boolean
 ): Promise<void> {
     if (
+        !(forceDiskSerialization ?? false) &&
         viewable.supportsImageViewer === true &&
         getConfiguration("useExperimentalViewer", undefined, false) === true
     ) {
@@ -33,7 +35,15 @@ export async function viewObject(
             session
         );
         if (response.err) {
-            logError(response.val);
+            logWarn(response.val);
+            return viewObject(
+                obj,
+                viewable,
+                session,
+                path,
+                openInPreview,
+                true
+            );
         } else {
             const webviewClient = Container.get(WebviewClient);
             await webviewClient.reveal();

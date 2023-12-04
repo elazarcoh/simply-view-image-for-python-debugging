@@ -12,7 +12,6 @@ PythonSender = 0x02
 PythonSendingObject = 0x01
 # ObjectType
 NumpyArray = 0x01
-Json = 0x02
 ExceptionObject = 0xff
 # ByteOrderType
 LittleEndian = 0x01
@@ -50,6 +49,7 @@ ChunkLengthType = np.uint32
 
 ObjectIdType = np.uint32
 ObjectType = np.uint8
+StringLengthType = np.uint32
 NumDimsType = np.uint8
 DimType = np.uint32
 ByteOrderType = np.uint8
@@ -163,14 +163,37 @@ def create_pillow_message(
     image_np = np.asarray(image)
     return create_numpy_message(image_np)
 
+def string_to_message(s):
+    length = StringLengthType(len(s))
+    bytes = s.encode()
+    return (length, bytes)
+
 def create_exception_message(
     exception: Exception,
 ):
-    # Create the message header
-    message_type = MessageType(PythonSendingObject)
-    request_id = RequestIdType(request_id)
-    object_id = ObjectIdType(id(exception))
+    exception_type_name = getattr(type(exception), '__name__', 'Unknown')
+    exception_message = str(exception)
+
     object_type = ObjectType(ExceptionObject)
+    (exception_type_length, exception_type) = string_to_message(exception_type_name)
+    (exception_message_length, exception_message) = string_to_message(exception_message)
+
+    message = [
+        object_type,
+        exception_type_length,
+        exception_type,
+        exception_message_length,
+        exception_message,
+    ]
+    
+    # Create the message format string
+    message_format = f'!BI{exception_type_length}sI{exception_message_length}s'
+
+    # Pack the message
+    message_pack = struct.pack(message_format, *message)
+
+    return message_pack
+
 
     # Create the message body
     exception_type = ExceptionTypes.get(type(exception), ExceptionTypes[None])
@@ -188,36 +211,6 @@ def create_exception_message(
 
     # Create the message format string
     message_format = f'!BIIBB{len(exception_message)}s'
-
-    # Pack the message
-    message_pack = struct.pack(message_format, *message)
-
-    return message_pack
-
-def create_json_message(
-    request_id: RequestIdType,
-    obj: str,
-):
-    # Create the message header
-    message_type = MessageType(PythonSendingObject)
-    request_id = RequestIdType(request_id)
-    object_id = ObjectIdType(id(obj))
-    object_type = ObjectType(Json)
-
-    # Create the message body
-    json_message = obj.encode()
-    
-    # Create the message
-    message = [
-        message_type,
-        request_id,
-        object_id,
-        object_type,
-        json_message,
-    ]
-
-    # Create the message format string
-    message_format = f'!BIIB{len(json_message)}s'
 
     # Pack the message
     message_pack = struct.pack(message_format, *message)
@@ -260,10 +253,7 @@ def open_send_and_close(port, request_id, obj):
             else:
                 raise ValueError(f'Cant send object of type {type(obj)}')
         except Exception as e:
-            # message = create_exception_message(e)
-            import traceback
-            traceback.print_exc()
-            return
+            message = create_exception_message(e)
         
         message_length = len(message)
 
@@ -278,10 +268,6 @@ def open_send_and_close(port, request_id, obj):
         for chunk in chunks:
             s.sendall(chunk)
             all_data += chunk
-
-        # print(f'Sent {len(all_data)} bytes')
-        # buffer = list(np.frombuffer(all_data, dtype=np.uint8))
-        # print([hex(x) for x in buffer])
 
         # Close the socket
         s.close()

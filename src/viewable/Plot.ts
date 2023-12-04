@@ -14,7 +14,7 @@ export const PlotlyFigure: Viewable = {
     setupPythonCode: {
         setupCode: () => PLOTLY_CODE,
         testSetupCode:
-            "is_plotly_figure, plotly_figure_info, plotly_figure_save", // require all three functions to be defined
+            "is_plotly_figure, plotly_figure_info, plotly_figure_save",
         id: "plotly_figure",
     },
     testTypePythonCode: {
@@ -30,6 +30,7 @@ export const PlotlyFigure: Viewable = {
             `${m("plotly_figure_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };
 
 export const PyplotFigure: Viewable = {
@@ -61,6 +62,7 @@ export const PyplotFigure: Viewable = {
             `${m("pyplot_figure_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };
 
 export const PyplotAxes: Viewable = {
@@ -90,4 +92,5 @@ export const PyplotAxes: Viewable = {
             `${m("pyplot_ax_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };

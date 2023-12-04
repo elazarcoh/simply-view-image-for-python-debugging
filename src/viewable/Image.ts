@@ -13,13 +13,13 @@ export const NumpyImage: Viewable = {
     title: "Image",
     setupPythonCode: {
         setupCode: () => NUMPY_CODE,
-        testSetupCode: "(is_numpy_image, numpy_image_info, numpy_image_save)", // require all three functions to be defined
+        testSetupCode: "(is_numpy_image, numpy_image_info, numpy_image_save)",
         id: "numpy_image",
     },
     testTypePythonCode: {
         evalCode: (expression: string) => {
             // prettier-ignore
-            return `${m('is_numpy_image')}(${expression}, restrict_types=${convertBoolToPython(getConfiguration('restrictImageTypes') ?? false)})`
+            return `${m('is_numpy_image')}(${expression}, restrict_types=${convertBoolToPython(getConfiguration('restrictImageTypes') ?? false)})`;
         },
     },
     infoPythonCode: {
@@ -32,6 +32,7 @@ export const NumpyImage: Viewable = {
             `${m("numpy_image_save")}('${savePath}', ${expression}, backend='${getConfiguration('preferredBackend', undefined, Backends.Standalone)}', preprocess='${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))}')`,
     },
     suffix: ".png",
+    supportsImageViewer: true,
 };
 
 export const PillowImage: Viewable = {
@@ -57,4 +58,5 @@ export const PillowImage: Viewable = {
             `${m("pillow_image_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: true,
 };

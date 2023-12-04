@@ -25,6 +25,7 @@ export const NumpyTensor: Viewable = {
             `${m("numpy_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };
 
 export const TorchTensor: Viewable = {
@@ -49,4 +50,5 @@ export const TorchTensor: Viewable = {
             `${m("torch_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };

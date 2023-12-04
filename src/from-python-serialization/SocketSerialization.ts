@@ -123,6 +123,18 @@ export async function serializeImageUsingSocketServer(
             return Err(msg);
         }
         const arrayInfo = object.object;
+        if (
+            [
+                ArrayDataType.Int64,
+                ArrayDataType.Uint64,
+                ArrayDataType.Float64,
+            ].includes(arrayInfo.dataType)
+        ) {
+            const msg = `Datatype ${datatypeToString(
+                arrayInfo.dataType
+            )} not supported.`;
+            return Err(msg);
+        }
         const len = arrayInfo.dimensions.reduce((a, b) => a * b, 1) * 4;
         const arrayBuffer = new ArrayBuffer(len);
         const arrayData = new Uint8Array(arrayBuffer);

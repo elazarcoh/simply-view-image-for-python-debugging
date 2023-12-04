@@ -17,13 +17,6 @@ Every message should have the following format:
    Chunk length (4 bytes)
    Chunk data (variable length)
 
-
-Hello message:
-    (no content)
-
-Request Python object message:
-    Python expression (variable length)
-
 */
 
 export type RequestId = number;

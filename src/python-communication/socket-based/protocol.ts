@@ -1,6 +1,7 @@
 import { Err, Ok, Result, errorFromUnknown } from "../../utils/Result";
 import { StatefulBufferReader } from "./BufferReader";
 import { StatefulBufferWriter } from "./BufferWriter";
+import { ArrayDataType as ArrayDataTypeString } from "../../common/datatype";
 
 /**
 Protocol
@@ -66,7 +67,7 @@ enum ByteOrder {
     LittleEndian = 0x01,
     BigEndian = 0x02,
 }
-export enum ArrayDataType {
+enum ArrayDataType {
     Float32 = 0x01,
     Float64 = 0x02,
     Int8 = 0x03,
@@ -80,30 +81,30 @@ export enum ArrayDataType {
     Bool = 0x0b,
 }
 
-export function datatypeToString(datatype: ArrayDataType) {
+export function datatypeToString(datatype: ArrayDataType) : ArrayDataTypeString {
     switch (datatype) {
         case ArrayDataType.Float32:
-            return "float32";
+            return ArrayDataTypeString.Float32;
         case ArrayDataType.Float64:
-            return "float64";
+            return ArrayDataTypeString.Float64;
         case ArrayDataType.Int8:
-            return "int8";
+            return ArrayDataTypeString.Int8;
         case ArrayDataType.Int16:
-            return "int16";
+            return ArrayDataTypeString.Int16;
         case ArrayDataType.Int32:
-            return "int32";
+            return ArrayDataTypeString.Int32;
         case ArrayDataType.Int64:
-            return "int64";
+            return ArrayDataTypeString.Int64;
         case ArrayDataType.Uint8:
-            return "uint8";
+            return ArrayDataTypeString.UInt8;
         case ArrayDataType.Uint16:
-            return "uint16";
+            return ArrayDataTypeString.UInt16;
         case ArrayDataType.Uint32:
-            return "uint32";
+            return ArrayDataTypeString.UInt32;
         case ArrayDataType.Uint64:
-            return "uint64";
+            return ArrayDataTypeString.UInt64;
         case ArrayDataType.Bool:
-            return "bool";
+            return ArrayDataTypeString.Bool;
     }
 }
 
@@ -173,7 +174,7 @@ export function composeHelloMessage(requestId: RequestId, sender: Sender) {
 }
 
 type ArrayInfo = {
-    dataType: ArrayDataType;
+    dataType: ArrayDataTypeString;
     byteOrder: ByteOrder;
     dimensions: number[];
     data: Buffer;
@@ -190,7 +191,7 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
         }
         const data = reader.currentBuffer;
         return Ok({
-            dataType,
+            dataType: datatypeToString(dataType),
             byteOrder,
             dimensions,
             data,

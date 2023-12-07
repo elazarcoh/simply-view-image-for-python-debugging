@@ -8,22 +8,21 @@ import Container from "typedi";
 import { SocketServer } from "../python-communication/socket-based/Server";
 import { RequestsManager } from "../python-communication/socket-based/RequestsManager";
 import {
-    ArrayDataType,
     MessageChunkHeader,
     ObjectType,
-    datatypeToString,
     parseMessage,
 } from "../python-communication/socket-based/protocol";
-import { Datatype, ImageMessage } from "../webview/webview";
+import { Datatype as WebviewDatatype, ImageMessage } from "../webview/webview";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
+import { ArrayDataType } from "../common/datatype";
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
-    [key in ArrayDataType]: Datatype | undefined;
+    [key in ArrayDataType]: WebviewDatatype | undefined;
 } = {
-    [ArrayDataType.Uint8]: "uint8",
-    [ArrayDataType.Uint16]: "uint16",
-    [ArrayDataType.Uint32]: "uint32",
+    [ArrayDataType.UInt8]: "uint8",
+    [ArrayDataType.UInt16]: "uint16",
+    [ArrayDataType.UInt32]: "uint32",
     [ArrayDataType.Float32]: "float32",
     [ArrayDataType.Int8]: "int8",
     [ArrayDataType.Int16]: "int16",
@@ -31,7 +30,7 @@ const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
     [ArrayDataType.Bool]: "bool",
     [ArrayDataType.Float64]: undefined,
     [ArrayDataType.Int64]: undefined,
-    [ArrayDataType.Uint64]: undefined,
+    [ArrayDataType.UInt64]: undefined,
 };
 
 export async function serializePythonObjectUsingSocketServer(
@@ -126,13 +125,11 @@ export async function serializeImageUsingSocketServer(
         if (
             [
                 ArrayDataType.Int64,
-                ArrayDataType.Uint64,
+                ArrayDataType.UInt64,
                 ArrayDataType.Float64,
             ].includes(arrayInfo.dataType)
         ) {
-            const msg = `Datatype ${datatypeToString(
-                arrayInfo.dataType
-            )} not supported.`;
+            const msg = `Datatype ${arrayInfo.dataType} not supported.`;
             return Err(msg);
         }
         const len = arrayInfo.dimensions.reduce((a, b) => a * b, 1) * 4;
@@ -156,8 +153,7 @@ export async function serializeImageUsingSocketServer(
         const datatype =
             SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE[arrayInfo.dataType];
         if (datatype === undefined) {
-            const datatypeName = datatypeToString(arrayInfo.dataType);
-            const msg = `Datatype ${datatypeName} not supported.`;
+            const msg = `Datatype ${arrayInfo.dataType} not supported.`;
             return Err(msg);
         }
 

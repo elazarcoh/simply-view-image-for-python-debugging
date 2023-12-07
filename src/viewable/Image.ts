@@ -6,8 +6,15 @@ import {
     atModule as m,
     convertBoolToPython,
 } from "../python-communication/BuildPythonCode";
+import { ArrayDataType } from "../common/datatype";
 
-export const NumpyImage: Viewable = {
+export type NumpyImageInfo = {
+    type: string;
+    shape: string;
+    dtype: ArrayDataType;
+};
+
+export const NumpyImage: Viewable<NumpyImageInfo> = {
     group: "image",
     type: "numpy_image",
     title: "Image",
@@ -35,7 +42,9 @@ export const NumpyImage: Viewable = {
     supportsImageViewer: true,
 };
 
-export const PillowImage: Viewable = {
+export type PillowImageInfo = NumpyImageInfo;
+
+export const PillowImage: Viewable<PillowImageInfo> = {
     group: "image",
     type: "pillow_image",
     title: "Image",

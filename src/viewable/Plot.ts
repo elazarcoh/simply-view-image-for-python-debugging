@@ -7,7 +7,7 @@ import {
 } from "../python-communication/BuildPythonCode";
 import { getConfiguration } from "../config";
 
-export const PlotlyFigure: Viewable = {
+export const PlotlyFigure: Viewable<{ type: string }> = {
     group: "plot",
     type: "plotly_figure",
     title: "Figure (plotly)",
@@ -33,7 +33,7 @@ export const PlotlyFigure: Viewable = {
     supportsImageViewer: false,
 };
 
-export const PyplotFigure: Viewable = {
+export const PyplotFigure: Viewable<{ type: string }> = {
     group: "plot",
     type: "pyplot_figure",
     title: "Figure (pyplot)",
@@ -65,7 +65,7 @@ export const PyplotFigure: Viewable = {
     supportsImageViewer: false,
 };
 
-export const PyplotAxes: Viewable = {
+export const PyplotAxes: Viewable<{ type: string }> = {
     group: "plot",
     type: "pyplot_axes",
     title: "Axes (pyplot)",

@@ -1,16 +1,16 @@
-export interface Viewable {
+export interface Viewable<T = unknown> {
     group: string;
     type: string;
     title: string;
     setupPythonCode: SetupCode;
     testTypePythonCode: EvalCode<boolean>;
-    infoPythonCode: EvalCode<Record<string, string>>;
+    infoPythonCode: EvalCode<T>;
     serializeObjectPythonCode: EvalCode<null, [string]>;
     suffix: string;
     onShow?: (path: string) => void | Promise<void>;
     supportsImageViewer: boolean;
 }
 
-export interface PluginViewable extends Viewable {
+export interface PluginViewable<T = unknown> extends Viewable<T> {
     extensionId: string;
 }

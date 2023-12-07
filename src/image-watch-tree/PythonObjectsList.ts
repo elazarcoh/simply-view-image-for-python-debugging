@@ -283,14 +283,18 @@ export class CurrentPythonObjectsList {
 }
 
 function combineValidInfoErrorIfNone(
-    infoOrErrors: Result<Record<string, string>>[]
+    infoOrErrors: Result<unknown>[]
 ): Result<Record<string, string>> {
     const validRecords = infoOrErrors.filter(isOkay).map((p) => p.safeUnwrap());
 
     if (validRecords.length === 0) {
         return Err("Invalid expression");
     } else {
-        const allEntries = validRecords.flatMap((o) => Object.entries(o));
+        const allEntries = validRecords
+            .flatMap((o) =>
+                typeof o === "object" && o !== null ? Object.entries(o) : []
+            )
+            .map(([k, v]) => [k, JSON.stringify(v)] as const);
         const merged = Object.fromEntries(allEntries);
         return Ok(merged);
     }

@@ -2,6 +2,7 @@ import { Err, Ok, Result, errorFromUnknown } from "../../utils/Result";
 import { StatefulBufferReader } from "./BufferReader";
 import { StatefulBufferWriter } from "./BufferWriter";
 import { ArrayDataType as ArrayDataTypeString } from "../../common/datatype";
+import { logDebug } from "../../Logging";
 
 /**
 Protocol
@@ -68,6 +69,7 @@ enum ByteOrder {
     BigEndian = 0x02,
 }
 enum ArrayDataType {
+    Undefined = 0x00,
     Float32 = 0x01,
     Float64 = 0x02,
     Int8 = 0x03,
@@ -81,7 +83,7 @@ enum ArrayDataType {
     Bool = 0x0b,
 }
 
-export function datatypeToString(datatype: ArrayDataType) : ArrayDataTypeString {
+function datatypeToString(datatype: ArrayDataType): ArrayDataTypeString {
     switch (datatype) {
         case ArrayDataType.Float32:
             return ArrayDataTypeString.Float32;
@@ -105,6 +107,10 @@ export function datatypeToString(datatype: ArrayDataType) : ArrayDataTypeString 
             return ArrayDataTypeString.UInt64;
         case ArrayDataType.Bool:
             return ArrayDataTypeString.Bool;
+        case ArrayDataType.Undefined:
+            throw new Error(
+                "Undefined datatype. This function should not be called with this value."
+            );
     }
 }
 
@@ -175,6 +181,7 @@ export function composeHelloMessage(requestId: RequestId, sender: Sender) {
 
 type ArrayInfo = {
     dataType: ArrayDataTypeString;
+    actualDataType: ArrayDataTypeString | undefined; // Sometimes the actual data type is different, because some data types need to be converted.
     byteOrder: ByteOrder;
     dimensions: number[];
     data: Buffer;
@@ -183,6 +190,9 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
     try {
         const reader = new StatefulBufferReader(buffer);
         const dataType = reader.readUInt8();
+        logDebug("dataType", dataType);
+        const actualDataType = reader.readUInt8();
+        logDebug("actualDataType", actualDataType);
         const byteOrder = reader.readUInt8();
         const numberOfDimensions = reader.readUInt8();
         const dimensions = [];
@@ -192,6 +202,10 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
         const data = reader.currentBuffer;
         return Ok({
             dataType: datatypeToString(dataType),
+            actualDataType:
+                actualDataType === ArrayDataType.Undefined
+                    ? undefined
+                    : datatypeToString(actualDataType),
             byteOrder,
             dimensions,
             data,

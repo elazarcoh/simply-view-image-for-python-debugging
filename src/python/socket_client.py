@@ -4,6 +4,20 @@ import traceback
 import struct
 import numpy as np
 
+MIN_INT32 = np.iinfo(np.int32).min
+MAX_INT32 = np.iinfo(np.int32).max
+MIN_UINT32 = np.iinfo(np.uint32).min
+MAX_UINT32 = np.iinfo(np.uint32).max
+MIN_FLOAT32 = np.finfo(np.float32).min
+MAX_FLOAT32 = np.finfo(np.float32).max
+
+DATATYPE_64BIT = ("int64", "uint64", "float64")
+CORRESPONDING_32BIT_TYPE = {
+    "int64": np.int32,
+    "uint64": np.uint32,
+    "float64": np.float32,
+}
+
 CHUNK_SIZE = 4 * 1024  # 4KB
 
 # See webview/communication/protocol.ts for message format
@@ -17,6 +31,7 @@ ExceptionObject = 0xff
 LittleEndian = 0x01
 BigEndian = 0x02
 # ArrayDataType
+UndefinedDatatype = 0x00
 Float32 = 0x01
 Float64 = 0x02
 Int8 = 0x03
@@ -118,20 +133,40 @@ def chunk_header(
 
     return struct.pack(header_format, *header)
 
+def is_64bit(array):
+    return str(array.dtype) in DATATYPE_64BIT
+
+def check_can_fit_in_32bit(array_64bit):
+    corresponding_32bit_type = CORRESPONDING_32BIT_TYPE.get(str(array_64bit.dtype), None)
+    if corresponding_32bit_type is None:
+        return False
+    array_min = np.min(array_64bit)
+    array_max = np.max(array_64bit)
+    return array_min >= MIN_INT32 and array_max <= MAX_INT32
+
+
 def create_numpy_message(
     array: np.ndarray,
 ):
 
-    object_type = ObjectType(NumpyArray)
-    array_dtype =   array_dtype_to_array_data_type[str(array.dtype)]
-    byte_order =    ByteOrderType(BYTE_ORDER)
-    num_dimensions = NumDimsType(len(array.shape))
-    array_shape =   np.array(array.shape, dtype=DimType)
-    array_data =    array.tobytes()
+    object_type     = ObjectType(NumpyArray)
+    array_dtype     = array_dtype_to_array_data_type[str(array.dtype)]
+    actual_datatype = UndefinedDatatype
+    byte_order      = ByteOrderType(BYTE_ORDER)
+    num_dimensions  = NumDimsType(len(array.shape))
+    array_shape     = np.array(array.shape, dtype=DimType)
+
+    # The webview only supports up to 32 bit integers and floats. If the array is 64 bit, try to convert it to 32 bit.
+    if is_64bit(array) and check_can_fit_in_32bit(array):
+        array = array.astype(CORRESPONDING_32BIT_TYPE[str(array.dtype)])
+        actual_datatype = array_dtype_to_array_data_type[str(array.dtype)]
+
+    array_data = array.tobytes()
 
     metadata = [
         object_type,
         array_dtype,
+        actual_datatype,
         byte_order,
         num_dimensions,
         *array_shape,
@@ -150,7 +185,7 @@ def create_numpy_message(
     ]
 
     # Create the message format string
-    message_format = f'!BBBB{num_dimensions}I{len(array_data)}s'
+    message_format = f'!BBBBB{num_dimensions}I{len(array_data)}s'
 
     # Pack the message
     message_pack = struct.pack(message_format, *message)

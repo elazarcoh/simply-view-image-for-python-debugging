@@ -122,16 +122,15 @@ export async function serializeImageUsingSocketServer(
             return Err(msg);
         }
         const arrayInfo = object.object;
-        if (
-            [
-                ArrayDataType.Int64,
-                ArrayDataType.UInt64,
-                ArrayDataType.Float64,
-            ].includes(arrayInfo.dataType)
-        ) {
-            const msg = `Datatype ${arrayInfo.dataType} not supported.`;
+
+        const arrayDataType = arrayInfo.actualDataType ?? arrayInfo.dataType;
+        const webviewDatatype =
+            SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE[arrayDataType];
+        if (webviewDatatype === undefined) {
+            const msg = `Datatype ${arrayDataType} not supported.`;
             return Err(msg);
         }
+
         const len = arrayInfo.dimensions.reduce((a, b) => a * b, 1) * 4;
         const arrayBuffer = new ArrayBuffer(len);
         const arrayData = new Uint8Array(arrayBuffer);
@@ -150,13 +149,6 @@ export async function serializeImageUsingSocketServer(
             additionalInfo = infoOrError.safeUnwrap()[1];
         }
 
-        const datatype =
-            SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE[arrayInfo.dataType];
-        if (datatype === undefined) {
-            const msg = `Datatype ${arrayInfo.dataType} not supported.`;
-            return Err(msg);
-        }
-
         const { height, width, channels } = guessDimensions(
             arrayInfo.dimensions
         );
@@ -169,7 +161,7 @@ export async function serializeImageUsingSocketServer(
             width,
             height,
             channels,
-            datatype,
+            datatype: webviewDatatype,
             additional_info: additionalInfo,
             bytes: arrayBuffer,
         } as ImageMessage);

@@ -70,32 +70,6 @@ export async function serializePythonObjectUsingSocketServer(
     }
 }
 
-function guessDimensions(shape: number[]): {
-    height: number;
-    width: number;
-    channels: 1 | 2 | 3 | 4;
-} {
-    if (shape.length === 2) {
-        return {
-            height: shape[0],
-            width: shape[1],
-            channels: 1,
-        };
-    } else if (shape.length === 3) {
-        return {
-            height: shape[0],
-            width: shape[1],
-            channels: shape[2] as 1 | 2 | 3 | 4,
-        };
-    } else {
-        return {
-            height: 1,
-            width: 1,
-            channels: 1,
-        };
-    }
-}
-
 export async function serializeImageUsingSocketServer(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
@@ -117,7 +91,12 @@ export async function serializeImageUsingSocketServer(
             return arrayOrError;
         }
         const object = arrayOrError.safeUnwrap();
+        if (object.type === ObjectType.Exception) {
+            const msg = `Exception: ${object.object.type}: ${object.object.message}`;
+            return Err(msg);
+        }
         if (object.type !== ObjectType.NumpyArray) {
+            // @ts-expect-error. Currently, we have only two types. Left here for future.
             const msg = `Expected array, got ${object.type}`;
             return Err(msg);
         }
@@ -149,20 +128,19 @@ export async function serializeImageUsingSocketServer(
             additionalInfo = infoOrError.safeUnwrap()[1];
         }
 
-        const { height, width, channels } = guessDimensions(
-            arrayInfo.dimensions
-        );
         return Ok({
             image_id: expression,
             value_variable_kind: isExpressionSelection(obj)
                 ? "expression"
                 : "variable",
             expression: expression,
-            width,
-            height,
-            channels,
+            width: arrayInfo.width,
+            height: arrayInfo.height,
+            channels: arrayInfo.channels,
             datatype: webviewDatatype,
             additional_info: additionalInfo,
+            min: arrayInfo.mins,
+            max: arrayInfo.maxs,
             bytes: arrayBuffer,
         } as ImageMessage);
     }

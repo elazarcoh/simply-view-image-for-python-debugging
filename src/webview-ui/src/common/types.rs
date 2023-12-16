@@ -66,14 +66,14 @@ impl From<Channels> for u32 {
     }
 }
 impl TryFrom<u32> for Channels {
-    type Error = &'static str;
+    type Error = anyhow::Error;
     fn try_from(v: u32) -> Result<Self, Self::Error> {
         match v {
             1 => Ok(Channels::One),
             2 => Ok(Channels::Two),
             3 => Ok(Channels::Three),
             4 => Ok(Channels::Four),
-            _ => Err("Invalid value for Channels"),
+            _ => Err(anyhow::anyhow!("Invalid number of channels: {}", v)),
         }
     }
 }

@@ -82,6 +82,11 @@ enum ArrayDataType {
     Uint64 = 0x0a,
     Bool = 0x0b,
 }
+enum DimensionOrder {
+    HW = 0x01,
+    HWC = 0x02,
+    CHW = 0x03,
+}
 
 function datatypeToString(datatype: ArrayDataType): ArrayDataTypeString {
     switch (datatype) {
@@ -184,6 +189,12 @@ type ArrayInfo = {
     actualDataType: ArrayDataTypeString | undefined; // Sometimes the actual data type is different, because some data types need to be converted.
     byteOrder: ByteOrder;
     dimensions: number[];
+    width: number | undefined;
+    height: number | undefined;
+    channels: number | undefined;
+    dimensionOrder: DimensionOrder;
+    mins: number[];
+    maxs: number[];
     data: Buffer;
 };
 function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
@@ -199,6 +210,22 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
         for (let i = 0; i < numberOfDimensions; i++) {
             dimensions.push(reader.readUInt32());
         }
+
+        const width = reader.readUInt32();
+        const height = reader.readUInt32();
+        const channels = reader.readUInt32();
+        const dimensionOrder = reader.readUInt8();
+
+        const numStats = reader.readUInt8();
+        const mins = [];
+        for (let i = 0; i < numStats; i++) {
+            mins.push(reader.readFloat32());
+        }
+        const maxs = [];
+        for (let i = 0; i < numStats; i++) {
+            maxs.push(reader.readFloat32());
+        }
+
         const data = reader.currentBuffer;
         return Ok({
             dataType: datatypeToString(dataType),
@@ -208,6 +235,12 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
                     : datatypeToString(actualDataType),
             byteOrder,
             dimensions,
+            width,
+            height,
+            channels,
+            dimensionOrder,
+            mins,
+            maxs,
             data,
         });
     } catch (e) {

@@ -1,8 +1,9 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 
 use crate::{
-    common::{ComputedInfo, ImageData, ImageInfo},
-    math_utils::image_calculations::image_minmax_on_bytes, app_state::app_state::ImageObject,
+    app_state::app_state::ImageObject,
+    common::{pixel_value::PixelValue, ComputedInfo, ImageData, ImageInfo},
+    math_utils::image_calculations::image_minmax_on_bytes,
 };
 
 use super::messages::ImageMessage;
@@ -39,8 +40,15 @@ impl TryFrom<ImageMessage> for ImageData {
                 additional_info: image_message.additional_info,
             };
 
-            let (min, max) =
-                image_minmax_on_bytes(bytes.as_ref().unwrap(), info.datatype, info.channels);
+            let (min, max) = if image_message.min.is_some() && image_message.max.is_some() {
+                (
+                    TryInto::<PixelValue>::try_into(image_message.min.unwrap())?,
+                    TryInto::<PixelValue>::try_into(image_message.max.unwrap())?,
+                )
+            } else {
+                image_minmax_on_bytes(bytes.as_ref().unwrap(), info.datatype, info.channels)
+            };
+
             Ok(Self {
                 info,
                 computed_info: ComputedInfo { min, max },

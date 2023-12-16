@@ -43,6 +43,10 @@ Uint16 = 0x08
 Uint32 = 0x09
 Uint64 = 0x0a
 Bool = 0x0b
+# DimensionOrder
+HW = 0x01
+HWC = 0x02
+CHW = 0x03
 # ExceptionType
 ExceptionTypes = {
     BaseException: 0x01,
@@ -68,6 +72,7 @@ StringLengthType = np.uint32
 NumDimsType = np.uint8
 DimType = np.uint32
 ByteOrderType = np.uint8
+StatsType = np.float32  
 
 array_dtype_to_array_data_type = {
     "float32": Float32,
@@ -144,6 +149,61 @@ def check_can_fit_in_32bit(array_64bit):
     array_max = np.max(array_64bit)
     return array_min >= MIN_INT32 and array_max <= MAX_INT32
 
+def guess_image_dimensions(image):
+    if not isinstance(image, np.ndarray):
+        return None
+    shape = image.shape
+
+    if len(shape) < 2:
+        return None
+
+    if len(shape) == 2:
+        return { 'width': DimType(shape[1]), 'height': DimType(shape[0]),'channels': DimType(1), 'order': HWC }
+
+    if len(shape) == 4 and shape[0] == 1:
+        # A batched image
+        image = image[0]
+
+    if len(shape) == 3:
+        if shape[2] > 4:
+            # Possibly a channel first image
+            if shape[0] > 4:
+                return None
+            return { 'width': DimType(shape[2]), 'height': DimType(shape[1]), 'channels': DimType(shape[0]), 'order': CHW }
+        else:
+            return { 'width': DimType(shape[1]), 'height': DimType(shape[0]), 'channels': DimType(shape[2]), 'order': HWC }
+
+    return None
+
+def array_stats(array):
+    if not isinstance(array, np.ndarray):
+        return None
+    shape = array.shape
+    ndims = len(array.shape)
+
+    if ndims < 2:
+        return None
+    
+    if ndims == 2 or (ndims == 3 and shape[2] == 1):
+        return { 'min': [StatsType(np.nanmin(array))], 'max': [StatsType(np.nanmax(array))] }
+    
+    if ndims == 4 and shape[0] == 1:
+        # assume batched image
+        image = array[0]
+
+    if ndims == 3:
+        # per channel stats
+        if shape[2] > 4:
+            # Possibly a channel first image
+            if shape[0] > 4:
+                return None
+            return { 'min': StatsType(np.nanmin(array, axis=(1,2))), 'max': StatsType(np.nanmax(array, axis=(1,2))) }
+        else:
+            return { 'min': StatsType(np.nanmin(array, axis=(0,1))), 'max': StatsType(np.nanmax(array, axis=(0,1))) }
+
+    return None
+
+        
 
 def create_numpy_message(
     array: np.ndarray,
@@ -156,12 +216,24 @@ def create_numpy_message(
     num_dimensions  = NumDimsType(len(array.shape))
     array_shape     = np.array(array.shape, dtype=DimType)
 
+    dimensions = guess_image_dimensions(array) or {}
+    w = dimensions.get('width', DimType(0))
+    h = dimensions.get('height', DimType(0))
+    c = dimensions.get('channels', DimType(0))
+    order = dimensions.get('order', None)
+
+    stats = array_stats(array) or {}
+    min_stats = stats.get('min', [])
+    max_stats = stats.get('max', [])
+    assert len(min_stats) == len(max_stats)
+    num_stats = len(min_stats)
+
     # The webview only supports up to 32 bit integers and floats. If the array is 64 bit, try to convert it to 32 bit.
     if is_64bit(array) and check_can_fit_in_32bit(array):
         array = array.astype(CORRESPONDING_32BIT_TYPE[str(array.dtype)])
         actual_datatype = array_dtype_to_array_data_type[str(array.dtype)]
 
-    array_data = array.tobytes()
+    array_data = array.tobytes('C')
 
     metadata = [
         object_type,
@@ -170,6 +242,13 @@ def create_numpy_message(
         byte_order,
         num_dimensions,
         *array_shape,
+        w,
+        h,
+        c,
+        order,
+        num_stats,
+        *min_stats,
+        *max_stats,
     ]
     
     # add padding before the array data, making sure the offset is a multiple of the element size
@@ -185,7 +264,7 @@ def create_numpy_message(
     ]
 
     # Create the message format string
-    message_format = f'!BBBBB{num_dimensions}I{len(array_data)}s'
+    message_format = f'!BBBBB{num_dimensions}IIIIBB{num_stats}f{num_stats}f{len(array_data)}s'
 
     # Pack the message
     message_pack = struct.pack(message_format, *message)

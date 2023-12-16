@@ -1,5 +1,5 @@
 use anyhow::Result;
-use std::fmt::Display;
+use std::{convert::{TryFrom, TryInto}, fmt::Display};
 
 use bytemuck::Pod;
 use glam::UVec2;
@@ -105,5 +105,18 @@ impl PixelValue {
             }
         }
         res
+    }
+}
+
+impl TryFrom<Vec<f32>> for PixelValue {
+    type Error = anyhow::Error;
+
+    fn try_from(value: Vec<f32>) -> Result<Self, Self::Error> {
+        let channels: Channels = (value.len() as u32).try_into()?;
+        let mut res = Self::new(channels, Datatype::Float32);
+        for (i, v) in value.iter().enumerate() {
+            *res.get_mut::<f32>(i as u32) = *v;
+        }
+        Ok(res)
     }
 }

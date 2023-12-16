@@ -8858,6 +8858,8 @@ fn image_data_with(
         height,
         channels,
         datatype,
+        min: None,
+        max: None,
         additional_info: HashMap::from([
             (
                 "Shape".to_string(),

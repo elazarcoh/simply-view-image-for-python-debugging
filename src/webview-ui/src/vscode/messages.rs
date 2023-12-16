@@ -22,6 +22,8 @@ pub(crate) struct ImageMessage {
     #[tsify(type = "1 | 2 | 3 | 4")]
     pub channels: Channels,
     pub datatype: Datatype,
+    pub min: Option<Vec<f32>>,
+    pub max: Option<Vec<f32>>,
     pub additional_info: HashMap<String, String>,
 
     #[tsify(type = "ArrayBuffer | null")]

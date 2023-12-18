@@ -16,6 +16,7 @@ use crate::common::camera;
 use crate::common::constants::all_views;
 use crate::common::pixel_value::PixelValue;
 use crate::common::texture_image::TextureImage;
+use crate::common::DataOrdering;
 use crate::common::Datatype;
 use crate::common::Size;
 use crate::common::ViewId;
@@ -39,6 +40,7 @@ struct Programs {
     normalized_image: ProgramBundle,
     uint_image: ProgramBundle,
     int_image: ProgramBundle,
+    planar_normalized_image: ProgramBundle,
 }
 
 struct RenderingData {
@@ -258,11 +260,17 @@ impl Renderer {
             .fragment_shader(include_str!("../shaders/image-int.frag"))
             .attribute("vin_position")
             .build()?;
+        let planar_normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-planar-normalized.frag"))
+            .attribute("vin_position")
+            .build()?;
 
         Ok(Programs {
             normalized_image,
             uint_image,
             int_image,
+            planar_normalized_image,
         })
     }
 
@@ -349,15 +357,28 @@ impl Renderer {
         view_name: &ViewId,
     ) {
         let gl = &rendering_data.gl;
-        let program = match texture.image.info.datatype {
-            Datatype::Uint8 => &rendering_data.programs.uint_image,
-            Datatype::Uint16 => &rendering_data.programs.uint_image,
-            Datatype::Uint32 => &rendering_data.programs.uint_image,
-            Datatype::Float32 => &rendering_data.programs.normalized_image,
-            Datatype::Int8 => &rendering_data.programs.int_image,
-            Datatype::Int16 => &rendering_data.programs.int_image,
-            Datatype::Int32 => &rendering_data.programs.int_image,
-            Datatype::Bool => &rendering_data.programs.uint_image,
+        let program = match texture.image.info.data_ordering {
+            DataOrdering::HWC => match texture.image.info.datatype {
+                Datatype::Uint8 => &rendering_data.programs.uint_image,
+                Datatype::Uint16 => &rendering_data.programs.uint_image,
+                Datatype::Uint32 => &rendering_data.programs.uint_image,
+                Datatype::Float32 => &rendering_data.programs.normalized_image,
+                Datatype::Int8 => &rendering_data.programs.int_image,
+                Datatype::Int16 => &rendering_data.programs.int_image,
+                Datatype::Int32 => &rendering_data.programs.int_image,
+                Datatype::Bool => &rendering_data.programs.uint_image,
+            },
+
+            DataOrdering::CHW => match texture.image.info.datatype {
+                Datatype::Uint8 => todo!(),
+                Datatype::Uint16 => todo!(),
+                Datatype::Uint32 => todo!(),
+                Datatype::Float32 => &rendering_data.programs.planar_normalized_image,
+                Datatype::Int8 => todo!(),
+                Datatype::Int16 => todo!(),
+                Datatype::Int32 => todo!(),
+                Datatype::Bool => todo!(),
+            },
         };
         let config = rendering_context.rendering_configuration();
 
@@ -388,15 +409,66 @@ impl Renderer {
             &drawing_options,
         );
 
-        let mut uniform_values = HashMap::from([
-            ("u_texture", UniformValue::Texture(&texture.texture)),
-            ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
-            ("u_enable_borders", UniformValue::Bool(&enable_borders)),
-            ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
-            ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
-            ("u_color_addition", UniformValue::Vec4(&color_addition)),
-            ("u_invert", UniformValue::Bool(&drawing_options.invert)),
-        ]);
+        let mut uniform_values = match texture.image.info.data_ordering {
+            crate::common::DataOrdering::HWC => {
+                assert!(texture.textures.len() == 1);
+                HashMap::from([
+                    ("u_texture", UniformValue::Texture(&texture.textures[0])),
+                    ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
+                    ("u_enable_borders", UniformValue::Bool(&enable_borders)),
+                    ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
+                    ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
+                    ("u_color_addition", UniformValue::Vec4(&color_addition)),
+                    ("u_invert", UniformValue::Bool(&drawing_options.invert)),
+                ])
+            }
+
+            crate::common::DataOrdering::CHW => {
+                let mut uniforms = HashMap::from([
+                    ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
+                    ("u_enable_borders", UniformValue::Bool(&enable_borders)),
+                    ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
+                    ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
+                    ("u_color_addition", UniformValue::Vec4(&color_addition)),
+                    ("u_invert", UniformValue::Bool(&drawing_options.invert)),
+                ]);
+
+                match texture.image.info.channels {
+                    crate::common::Channels::One => {
+                        assert!(texture.textures.len() == 1);
+                        // TODO: instead of using Int(0) here, add an enum
+                        uniforms.insert("u_image_type", UniformValue::Int(&0));
+                        uniforms.insert("u_texture_r", UniformValue::Texture(&texture.textures[0]));
+                    }
+                    crate::common::Channels::Two => {
+                        assert!(texture.textures.len() == 2);
+                        // TODO: instead of using Int(0) here, add an enum
+                        uniforms.insert("u_image_type", UniformValue::Int(&3));
+                        uniforms.insert("u_texture_r", UniformValue::Texture(&texture.textures[0]));
+                        uniforms.insert("u_texture_g", UniformValue::Texture(&texture.textures[1]));
+                    }
+                    crate::common::Channels::Three => {
+                        assert!(texture.textures.len() == 3);
+                        // TODO: instead of using Int(0) here, add an enum
+                        uniforms.insert("u_image_type", UniformValue::Int(&1));
+                        uniforms.insert("u_texture_r", UniformValue::Texture(&texture.textures[0]));
+                        uniforms.insert("u_texture_g", UniformValue::Texture(&texture.textures[1]));
+                        uniforms.insert("u_texture_b", UniformValue::Texture(&texture.textures[2]));
+                    }
+                    crate::common::Channels::Four => {
+                        assert!(texture.textures.len() == 4);
+                        // TODO: instead of using Int(0) here, add an enum
+                        uniforms.insert("u_image_type", UniformValue::Int(&2));
+                        uniforms.insert("u_texture_r", UniformValue::Texture(&texture.textures[0]));
+                        uniforms.insert("u_texture_g", UniformValue::Texture(&texture.textures[1]));
+                        uniforms.insert("u_texture_b", UniformValue::Texture(&texture.textures[2]));
+                        uniforms.insert("u_texture_a", UniformValue::Texture(&texture.textures[3]));
+                    }
+                }
+
+                uniforms
+            }
+        };
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context

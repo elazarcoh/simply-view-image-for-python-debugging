@@ -1,11 +1,16 @@
 use anyhow::Result;
-use std::{convert::{TryFrom, TryInto}, fmt::Display};
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt::Display,
+};
 
 use bytemuck::Pod;
 use glam::UVec2;
 use strum::EnumCount;
 
 use crate::common::{Channels, Datatype, ImageData};
+
+use super::DataOrdering;
 
 static_assertions::const_assert_eq!(Channels::COUNT, 4); // If this is failing, you need to update the code below
 
@@ -54,11 +59,31 @@ impl PixelValue {
         let c = image.info.channels;
         let pixel_index = (pixel.x + pixel.y * image.info.width) as usize;
         let bytes_per_element = image.info.datatype.num_bytes();
-        let start = pixel_index * c as usize * bytes_per_element;
-        let end = start + c as usize * bytes_per_element;
-        let bytes = &image.bytes[start..end];
-        let mut bytes_array = [0_u8; 32];
-        bytes_array[..bytes.len()].copy_from_slice(bytes);
+
+        let bytes_array = match image.info.data_ordering {
+            DataOrdering::HWC => {
+                let start = pixel_index * c as usize * bytes_per_element;
+                let end = start + c as usize * bytes_per_element;
+                let bytes = &image.bytes[start..end];
+                let mut bytes_array = [0_u8; 32];
+                bytes_array[..bytes.len()].copy_from_slice(bytes);
+                bytes_array
+            }
+            DataOrdering::CHW => {
+                let plane_size =
+                    (image.info.width * image.info.height) as usize * bytes_per_element;
+                let mut bytes_array = [0_u8; 32];
+                for channel in 0..c as usize {
+                    let start = plane_size * channel + pixel_index * bytes_per_element;
+                    let end = start + bytes_per_element;
+                    let bytes = &image.bytes[start..end];
+                    bytes_array[channel * bytes_per_element..(channel + 1) * bytes_per_element]
+                        .copy_from_slice(bytes);
+                }
+                bytes_array
+            }
+        };
+
         Self {
             num_channels: c,
             datatype: image.info.datatype,

@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fmt::Display, collections::HashMap};
+use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 
 use super::pixel_value::PixelValue;
 
@@ -152,6 +152,14 @@ impl Datatype {
     // }
 }
 
+#[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
+pub(crate) enum DataOrdering {
+    #[serde(rename = "hwc")]
+    HWC,
+    #[serde(rename = "chw")]
+    CHW,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ImageInfo {
     pub image_id: ImageId,
@@ -161,6 +169,7 @@ pub(crate) struct ImageInfo {
     pub height: u32,
     pub channels: Channels,
     pub datatype: Datatype,
+    pub data_ordering: DataOrdering,
     pub additional_info: HashMap<String, String>,
 }
 
@@ -180,4 +189,3 @@ pub(crate) struct ImageData {
 pub(crate) enum ViewId {
     Primary,
 }
-

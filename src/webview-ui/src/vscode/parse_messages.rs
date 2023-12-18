@@ -18,6 +18,7 @@ impl From<ImageMessage> for ImageInfo {
             height: image_message.height,
             channels: image_message.channels,
             datatype: image_message.datatype,
+            data_ordering: image_message.data_ordering,
             additional_info: image_message.additional_info,
         }
     }
@@ -37,6 +38,7 @@ impl TryFrom<ImageMessage> for ImageData {
                 height: image_message.height,
                 channels: image_message.channels,
                 datatype: image_message.datatype,
+                data_ordering: image_message.data_ordering,
                 additional_info: image_message.additional_info,
             };
 

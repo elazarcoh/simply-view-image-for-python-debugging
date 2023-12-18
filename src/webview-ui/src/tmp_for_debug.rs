@@ -1,6 +1,6 @@
 use crate::app_state::app_state::StoreAction;
-use crate::common::ImageId;
 use crate::common::{Channels, Datatype, ValueVariableKind};
+use crate::common::{DataOrdering, ImageId};
 use crate::vscode::messages::ImageMessage;
 use std::collections::HashMap;
 use yewdux::prelude::Dispatch;
@@ -8849,6 +8849,7 @@ fn image_data_with(
     name: &str,
     width: u32,
     height: u32,
+    data_ordering: DataOrdering,
 ) -> ImageMessage {
     ImageMessage {
         image_id: ImageId::new(name),
@@ -8858,6 +8859,7 @@ fn image_data_with(
         height,
         channels,
         datatype,
+        data_ordering,
         min: None,
         max: None,
         additional_info: HashMap::from([
@@ -8880,6 +8882,7 @@ fn image_texture_rgba_u8() -> ImageMessage {
         "image_rgba_u8",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -8896,6 +8899,7 @@ fn image_texture_rgb_u8() -> ImageMessage {
         "image_rgb_u8",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -8924,6 +8928,7 @@ fn image_texture_rg_u8() -> ImageMessage {
         "image_rg_u8",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -8946,6 +8951,7 @@ fn image_texture_gray_u8() -> ImageMessage {
         "image_gray_u8",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -8968,6 +8974,7 @@ fn image_texture_rgba_int8() -> ImageMessage {
         "image_rgba_i8",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -8990,6 +8997,7 @@ fn image_texture_rgba_f32() -> ImageMessage {
         "image_rgba_f32",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9011,6 +9019,7 @@ fn image_texture_rgb_f32() -> ImageMessage {
         "image_rgb_f32",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9032,6 +9041,7 @@ fn image_texture_gray_f32() -> ImageMessage {
         "image_gray_f32",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9054,6 +9064,7 @@ fn image_texture_gray_f32_not_normalized(min_value: f32, max_value: f32) -> Imag
         format!("image_gray_f32_not_normalized_{}_{}", min_value, max_value).as_str(),
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9076,6 +9087,7 @@ fn image_texture_gray_u8_not_normalized(min_value: u8, max_value: u8) -> ImageMe
         format!("image_gray_u8_not_normalized_{}_{}", min_value, max_value).as_str(),
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9106,6 +9118,7 @@ fn image_texture_with_transparency() -> ImageMessage {
         "image_with_transparency",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9128,6 +9141,7 @@ fn image_fully_transparent() -> ImageMessage {
         "transparent_image",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9150,6 +9164,7 @@ fn image_texture_bool_rgba() -> ImageMessage {
         "image_bool_rgba",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9166,12 +9181,21 @@ fn image_texture_bool_gray() -> ImageMessage {
         "image_bool_gray",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
 fn heatmap_texture_u16() -> ImageMessage {
     let (data, w, h) = heatmap_gray_data_u16();
-    image_data_with(data, Datatype::Uint16, Channels::One, "heatmap_u16", w, h)
+    image_data_with(
+        data,
+        Datatype::Uint16,
+        Channels::One,
+        "heatmap_u16",
+        w,
+        h,
+        DataOrdering::HWC,
+    )
 }
 
 fn segmentation_texture_u8() -> ImageMessage {
@@ -9183,6 +9207,7 @@ fn segmentation_texture_u8() -> ImageMessage {
         "segmentation_u8",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9214,6 +9239,7 @@ fn matrix_4x4_with_scientific_nan_inf() -> ImageMessage {
         "matrix_4x4_with_scientific_nan_inf",
         w,
         h,
+        DataOrdering::HWC,
     )
 }
 
@@ -9241,6 +9267,41 @@ fn rectangle_image() -> ImageMessage {
         "rectangle_image",
         target_w as u32,
         target_h as u32,
+        DataOrdering::HWC,
+    )
+}
+
+fn channels_first_image_f32() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let mut data = vec![0_f32; w as usize * h as usize * 4];
+    for y in 0..h {
+        for x in 0..w {
+            let source_base = ((y * w + x) * 4) as usize;
+            let source_r = source_base;
+            let source_g = source_base + 1;
+            let source_b = source_base + 2;
+            let source_a = source_base + 3;
+
+            let target_base = y * w + x;
+            let target_r = target_base as usize;
+            let target_g = (target_base + w * h) as usize;
+            let target_b = (target_base + 2 * w * h) as usize;
+            let target_a = (target_base + 3 * w * h) as usize;
+
+            data[target_r] = bytes_rgba[source_r] as f32 / 255.0;
+            data[target_g] = bytes_rgba[source_g] as f32 / 255.0;
+            data[target_b] = bytes_rgba[source_b] as f32 / 255.0;
+            data[target_a] = bytes_rgba[source_a] as f32 / 255.0;
+        }
+    }
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Float32,
+        Channels::Four,
+        "channels_first_image_f32",
+        w,
+        h,
+        DataOrdering::CHW,
     )
 }
 
@@ -9275,6 +9336,7 @@ pub(crate) fn set_debug_images() {
         segmentation_texture_u8(),
         matrix_4x4_with_scientific_nan_inf(),
         rectangle_image(),
+        channels_first_image_f32(),
     ];
 
     let dispatch = Dispatch::<AppState>::new();

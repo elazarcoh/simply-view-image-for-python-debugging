@@ -169,6 +169,20 @@ pub(crate) trait GLDrop {
     fn drop(&self, gl: &GL);
 }
 
+impl<T: GLDrop> GLDrop for Option<T> {
+    fn drop(&self, gl: &GL) {
+        if let Some(obj) = self {
+            obj.drop(gl);
+        }
+    }
+}
+
+impl<T: GLDrop> GLDrop for Vec<T> {
+    fn drop(&self, gl: &GL) {
+        self.iter().for_each(|obj| obj.drop(gl));
+    }
+}
+
 impl GLDrop for WebGlProgram {
     fn drop(&self, gl: &GL) {
         gl.delete_program(Some(self));

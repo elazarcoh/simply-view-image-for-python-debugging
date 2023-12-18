@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::common::{Channels, Datatype, ImageId, ValueVariableKind};
+use crate::common::{Channels, Datatype, ImageId, ValueVariableKind, DataOrdering};
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub(crate) struct MessageId(String);
@@ -22,6 +22,7 @@ pub(crate) struct ImageMessage {
     #[tsify(type = "1 | 2 | 3 | 4")]
     pub channels: Channels,
     pub datatype: Datatype,
+    pub data_ordering: DataOrdering,
     pub min: Option<Vec<f32>>,
     pub max: Option<Vec<f32>>,
     pub additional_info: HashMap<String, String>,

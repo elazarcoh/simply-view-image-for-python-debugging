@@ -8886,6 +8886,52 @@ fn image_texture_rgba_u8() -> ImageMessage {
     )
 }
 
+fn image_texture_rgba_u16() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .flat_map(|chunk| {
+            let r = chunk[0] as u16 * 256;
+            let g = chunk[1] as u16 * 256;
+            let b = chunk[2] as u16 * 256;
+            let a = chunk[3] as u16 * 256;
+            vec![r, g, b, a]
+        })
+        .collect::<Vec<u16>>();
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Uint16,
+        Channels::Four,
+        "image_rgba_u16",
+        w,
+        h,
+        DataOrdering::HWC,
+    )
+}
+
+fn image_texture_rgba_u32() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .flat_map(|chunk| {
+            let r = chunk[0] as u32 * 256 * 256;
+            let g = chunk[1] as u32 * 256 * 256;
+            let b = chunk[2] as u32 * 256 * 256;
+            let a = chunk[3] as u32 * 256 * 256;
+            vec![r, g, b, a]
+        })
+        .collect::<Vec<u32>>();
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Uint32,
+        Channels::Four,
+        "image_rgba_u32",
+        w,
+        h,
+        DataOrdering::HWC,
+    )
+}
+
 fn image_texture_rgb_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
@@ -8955,7 +9001,7 @@ fn image_texture_gray_u8() -> ImageMessage {
     )
 }
 
-fn image_texture_rgba_int8() -> ImageMessage {
+fn image_texture_rgba_i8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -8972,6 +9018,52 @@ fn image_texture_rgba_int8() -> ImageMessage {
         Datatype::Int8,
         Channels::Four,
         "image_rgba_i8",
+        w,
+        h,
+        DataOrdering::HWC,
+    )
+}
+
+fn image_texture_rgba_i16() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .flat_map(|chunk| {
+            let r = chunk[0] as i16 * 128;
+            let g = chunk[1] as i16 * 128;
+            let b = chunk[2] as i16 * 128;
+            let a = chunk[3] as i16 * 128;
+            vec![r, g, b, a]
+        })
+        .collect::<Vec<i16>>();
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Int16,
+        Channels::Four,
+        "image_rgba_i16",
+        w,
+        h,
+        DataOrdering::HWC,
+    )
+}
+
+fn image_texture_rgba_i32() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .flat_map(|chunk| {
+            let r = chunk[0] as i32 * 128 * 128;
+            let g = chunk[1] as i32 * 128 * 128;
+            let b = chunk[2] as i32 * 128 * 128;
+            let a = chunk[3] as i32 * 128 * 128;
+            vec![r, g, b, a]
+        })
+        .collect::<Vec<i32>>();
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Int32,
+        Channels::Four,
+        "image_rgba_i32",
         w,
         h,
         DataOrdering::HWC,
@@ -9298,7 +9390,72 @@ fn channels_first_image_f32() -> ImageMessage {
         bytemuck::cast_slice(&data),
         Datatype::Float32,
         Channels::Four,
-        "channels_first_image_f32",
+        "channels_first_image_rgba_f32",
+        w,
+        h,
+        DataOrdering::CHW,
+    )
+}
+
+fn channels_first_image_rgb_u8() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let mut data = vec![0_u8; w as usize * h as usize * 3];
+    for y in 0..h {
+        for x in 0..w {
+            let source_base = ((y * w + x) * 4) as usize;
+            let source_r = source_base;
+            let source_g = source_base + 1;
+            let source_b = source_base + 2;
+
+            let target_base = y * w + x;
+            let target_r = target_base as usize;
+            let target_g = (target_base + w * h) as usize;
+            let target_b = (target_base + 2 * w * h) as usize;
+
+            data[target_r] = bytes_rgba[source_r];
+            data[target_g] = bytes_rgba[source_g];
+            data[target_b] = bytes_rgba[source_b];
+        }
+    }
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Uint8,
+        Channels::Three,
+        "channels_first_image_rgb_u8",
+        w,
+        h,
+        DataOrdering::CHW,
+    )
+}
+
+fn channels_first_image_rgba_int16() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let mut data = vec![0_i16; w as usize * h as usize * 4];
+    for y in 0..h {
+        for x in 0..w {
+            let source_base = ((y * w + x) * 4) as usize;
+            let source_r = source_base;
+            let source_g = source_base + 1;
+            let source_b = source_base + 2;
+            let source_a = source_base + 3;
+
+            let target_base = y * w + x;
+            let target_r = target_base as usize;
+            let target_g = (target_base + w * h) as usize;
+            let target_b = (target_base + 2 * w * h) as usize;
+            let target_a = (target_base + 3 * w * h) as usize;
+
+            data[target_r] = bytes_rgba[source_r] as i16 * 128;
+            data[target_g] = bytes_rgba[source_g] as i16 * 128;
+            data[target_b] = bytes_rgba[source_b] as i16 * 128;
+            data[target_a] = bytes_rgba[source_a] as i16 * 128;
+        }
+    }
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Int16,
+        Channels::Four,
+        "channels_first_imaga_rgba_int16",
         w,
         h,
         DataOrdering::CHW,
@@ -9313,30 +9470,34 @@ pub(crate) fn set_debug_images() {
 
     use crate::app_state::app_state::{AppState, ImageObject};
 
-    let dispatch = Dispatch::<AppState>::new();
-
     log::debug!("creating debug image texture");
     let images: Vec<ImageMessage> = vec![
-        image_texture_bool_rgba(),
         image_texture_rgba_u8(),
-        image_texture_rgb_u8(),
-        image_texture_rg_u8(),
-        image_texture_gray_u8(),
-        image_texture_rgba_int8(),
-        image_texture_rgba_f32(),
-        image_texture_rgb_f32(),
-        image_texture_gray_f32(),
-        image_texture_gray_f32_not_normalized(0.0, 0.5),
-        image_texture_gray_f32_not_normalized(-100.0, 100.0),
-        image_texture_gray_u8_not_normalized(50, 100),
-        image_texture_with_transparency(),
-        image_fully_transparent(),
-        image_texture_bool_gray(),
-        heatmap_texture_u16(),
-        segmentation_texture_u8(),
-        matrix_4x4_with_scientific_nan_inf(),
-        rectangle_image(),
+        image_texture_rgba_u16(),
+        image_texture_rgba_u32(),
+        // image_texture_bool_rgba(),
+        // image_texture_rgb_u8(),
+        // image_texture_rg_u8(),
+        // image_texture_gray_u8(),
+        image_texture_rgba_i8(),
+        image_texture_rgba_i16(),
+        image_texture_rgba_i32(),
+        // image_texture_rgba_f32(),
+        // image_texture_rgb_f32(),
+        // image_texture_gray_f32(),
+        // image_texture_gray_f32_not_normalized(0.0, 0.5),
+        // image_texture_gray_f32_not_normalized(-100.0, 100.0),
+        // image_texture_gray_u8_not_normalized(50, 100),
+        // image_texture_with_transparency(),
+        // image_fully_transparent(),
+        // image_texture_bool_gray(),
+        // heatmap_texture_u16(),
+        // segmentation_texture_u8(),
+        // matrix_4x4_with_scientific_nan_inf(),
+        // rectangle_image(),
         channels_first_image_f32(),
+        channels_first_image_rgb_u8(),
+        channels_first_image_rgba_int16(),
     ];
 
     let dispatch = Dispatch::<AppState>::new();

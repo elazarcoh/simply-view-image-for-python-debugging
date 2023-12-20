@@ -41,6 +41,8 @@ struct Programs {
     uint_image: ProgramBundle,
     int_image: ProgramBundle,
     planar_normalized_image: ProgramBundle,
+    planar_uint_image: ProgramBundle,
+    planar_int_image: ProgramBundle,
 }
 
 struct RenderingData {
@@ -265,12 +267,24 @@ impl Renderer {
             .fragment_shader(include_str!("../shaders/image-planar-normalized.frag"))
             .attribute("vin_position")
             .build()?;
+        let planar_uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-planar-uint.frag"))
+            .attribute("vin_position")
+            .build()?;
+        let planar_int_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-planar-int.frag"))
+            .attribute("vin_position")
+            .build()?;
 
         Ok(Programs {
             normalized_image,
             uint_image,
             int_image,
             planar_normalized_image,
+            planar_uint_image,
+            planar_int_image,
         })
     }
 
@@ -359,25 +373,25 @@ impl Renderer {
         let gl = &rendering_data.gl;
         let program = match texture.image.info.data_ordering {
             DataOrdering::HWC => match texture.image.info.datatype {
-                Datatype::Uint8 => &rendering_data.programs.uint_image,
-                Datatype::Uint16 => &rendering_data.programs.uint_image,
-                Datatype::Uint32 => &rendering_data.programs.uint_image,
+                Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32 => {
+                    &rendering_data.programs.uint_image
+                }
                 Datatype::Float32 => &rendering_data.programs.normalized_image,
-                Datatype::Int8 => &rendering_data.programs.int_image,
-                Datatype::Int16 => &rendering_data.programs.int_image,
-                Datatype::Int32 => &rendering_data.programs.int_image,
+                Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
+                    &rendering_data.programs.int_image
+                }
                 Datatype::Bool => &rendering_data.programs.uint_image,
             },
 
             DataOrdering::CHW => match texture.image.info.datatype {
-                Datatype::Uint8 => todo!(),
-                Datatype::Uint16 => todo!(),
-                Datatype::Uint32 => todo!(),
+                Datatype::Uint8 | Datatype::Uint32 | Datatype::Uint16 => {
+                    &rendering_data.programs.planar_uint_image
+                }
                 Datatype::Float32 => &rendering_data.programs.planar_normalized_image,
-                Datatype::Int8 => todo!(),
-                Datatype::Int16 => todo!(),
-                Datatype::Int32 => todo!(),
-                Datatype::Bool => todo!(),
+                Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
+                    &rendering_data.programs.planar_int_image
+                }
+                Datatype::Bool => &rendering_data.programs.planar_uint_image,
             },
         };
         let config = rendering_context.rendering_configuration();

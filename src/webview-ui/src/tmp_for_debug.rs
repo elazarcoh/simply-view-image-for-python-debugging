@@ -8914,10 +8914,10 @@ fn image_texture_rgba_u32() -> ImageMessage {
     let data = bytes_rgba
         .chunks_exact(4)
         .flat_map(|chunk| {
-            let r = chunk[0] as u32 * 256 * 256;
-            let g = chunk[1] as u32 * 256 * 256;
-            let b = chunk[2] as u32 * 256 * 256;
-            let a = chunk[3] as u32 * 256 * 256;
+            let r = chunk[0] as u32 * 256 * 256 * 256;
+            let g = chunk[1] as u32 * 256 * 256 * 256;
+            let b = chunk[2] as u32 * 256 * 256 * 256;
+            let a = chunk[3] as u32 * 256 * 256 * 256;
             vec![r, g, b, a]
         })
         .collect::<Vec<u32>>();
@@ -9052,10 +9052,10 @@ fn image_texture_rgba_i32() -> ImageMessage {
     let data = bytes_rgba
         .chunks_exact(4)
         .flat_map(|chunk| {
-            let r = chunk[0] as i32 * 128 * 128;
-            let g = chunk[1] as i32 * 128 * 128;
-            let b = chunk[2] as i32 * 128 * 128;
-            let a = chunk[3] as i32 * 128 * 128;
+            let r = chunk[0] as i32 * 256 * 256 * 128;
+            let g = chunk[1] as i32 * 256 * 256 * 128;
+            let b = chunk[2] as i32 * 256 * 256 * 128;
+            let a = chunk[3] as i32 * 256 * 256 * 128;
             vec![r, g, b, a]
         })
         .collect::<Vec<i32>>();
@@ -9214,7 +9214,7 @@ fn image_texture_with_transparency() -> ImageMessage {
     )
 }
 
-fn image_fully_transparent() -> ImageMessage {
+fn image_fully_transparent_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9335,7 +9335,7 @@ fn matrix_4x4_with_scientific_nan_inf() -> ImageMessage {
     )
 }
 
-fn rectangle_image() -> ImageMessage {
+fn rectangle_image_u8() -> ImageMessage {
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let target_w = (w / 2) as usize;
     let target_h = h as usize;
@@ -9472,29 +9472,36 @@ pub(crate) fn set_debug_images() {
 
     log::debug!("creating debug image texture");
     let images: Vec<ImageMessage> = vec![
+        // Unsigned Int
         image_texture_rgba_u8(),
         image_texture_rgba_u16(),
         image_texture_rgba_u32(),
-        // image_texture_bool_rgba(),
-        // image_texture_rgb_u8(),
-        // image_texture_rg_u8(),
-        // image_texture_gray_u8(),
+        image_texture_bool_rgba(),
+        image_texture_rgb_u8(),
+        image_texture_rg_u8(),
+        image_texture_gray_u8(),
+        image_texture_gray_u8_not_normalized(50, 100),
+        heatmap_texture_u16(),
+        segmentation_texture_u8(),
+        image_fully_transparent_u8(),
+        rectangle_image_u8(),
+
+        // Int
         image_texture_rgba_i8(),
         image_texture_rgba_i16(),
         image_texture_rgba_i32(),
-        // image_texture_rgba_f32(),
-        // image_texture_rgb_f32(),
-        // image_texture_gray_f32(),
-        // image_texture_gray_f32_not_normalized(0.0, 0.5),
-        // image_texture_gray_f32_not_normalized(-100.0, 100.0),
-        // image_texture_gray_u8_not_normalized(50, 100),
-        // image_texture_with_transparency(),
-        // image_fully_transparent(),
-        // image_texture_bool_gray(),
-        // heatmap_texture_u16(),
-        // segmentation_texture_u8(),
-        // matrix_4x4_with_scientific_nan_inf(),
-        // rectangle_image(),
+
+        // Float
+        image_texture_rgba_f32(),
+        image_texture_rgb_f32(),
+        image_texture_gray_f32(),
+        image_texture_gray_f32_not_normalized(0.0, 0.5),
+        image_texture_gray_f32_not_normalized(-100.0, 100.0),
+        image_texture_with_transparency(),
+        image_texture_bool_gray(),
+        matrix_4x4_with_scientific_nan_inf(),
+
+        // Planar
         channels_first_image_f32(),
         channels_first_image_rgb_u8(),
         channels_first_image_rgba_int16(),

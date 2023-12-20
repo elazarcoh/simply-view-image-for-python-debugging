@@ -12,3 +12,8 @@ export enum ArrayDataType {
     UInt64 = "uint64",
     Bool = "bool",
 }
+
+export enum DimensionOrder {
+    HWC = "hwc",
+    CHW = "chw",
+}

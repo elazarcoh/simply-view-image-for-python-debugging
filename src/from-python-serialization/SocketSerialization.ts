@@ -12,10 +12,14 @@ import {
     ObjectType,
     parseMessage,
 } from "../python-communication/socket-based/protocol";
-import { Datatype as WebviewDatatype, ImageMessage } from "../webview/webview";
+import {
+    Datatype as WebviewDatatype,
+    DataOrdering as WebviewDataOrdering,
+    ImageMessage,
+} from "../webview/webview";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
-import { ArrayDataType } from "../common/datatype";
+import { ArrayDataType, DimensionOrder } from "../common/datatype";
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
     [key in ArrayDataType]: WebviewDatatype | undefined;
@@ -31,6 +35,13 @@ const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
     [ArrayDataType.Float64]: undefined,
     [ArrayDataType.Int64]: undefined,
     [ArrayDataType.UInt64]: undefined,
+};
+
+const SOCKET_PROTOCOL_ORDERING_TO_WEBVIEW_ORDERING: {
+    [key in DimensionOrder]: WebviewDataOrdering | undefined;
+} = {
+    [DimensionOrder.HWC]: "hwc",
+    [DimensionOrder.CHW]: "chw",
 };
 
 export async function serializePythonObjectUsingSocketServer(
@@ -128,7 +139,16 @@ export async function serializeImageUsingSocketServer(
             additionalInfo = infoOrError.safeUnwrap()[1];
         }
 
-        return Ok({
+        const dataOrdering =
+            SOCKET_PROTOCOL_ORDERING_TO_WEBVIEW_ORDERING[
+                arrayInfo.dimensionOrder
+            ];
+        if (dataOrdering === undefined) {
+            const msg = `Data ordering ${arrayInfo.dimensionOrder} not supported.`;
+            return Err(msg);
+        }
+
+        const image_message: ImageMessage = {
             image_id: expression,
             value_variable_kind: isExpressionSelection(obj)
                 ? "expression"
@@ -136,12 +156,14 @@ export async function serializeImageUsingSocketServer(
             expression: expression,
             width: arrayInfo.width,
             height: arrayInfo.height,
-            channels: arrayInfo.channels,
+            channels: arrayInfo.channels as 1 | 2 | 3 | 4,
             datatype: webviewDatatype,
             additional_info: additionalInfo,
             min: arrayInfo.mins,
             max: arrayInfo.maxs,
+            data_ordering: arrayInfo.dimensionOrder,
             bytes: arrayBuffer,
-        } as ImageMessage);
+        };
+        return Ok(image_message);
     }
 }

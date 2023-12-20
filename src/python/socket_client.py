@@ -44,9 +44,8 @@ Uint32 = 0x09
 Uint64 = 0x0a
 Bool = 0x0b
 # DimensionOrder
-HW = 0x01
-HWC = 0x02
-CHW = 0x03
+HWC = 0x01
+CHW = 0x02
 # ExceptionType
 ExceptionTypes = {
     BaseException: 0x01,

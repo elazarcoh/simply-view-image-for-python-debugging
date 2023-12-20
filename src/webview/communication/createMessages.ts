@@ -37,6 +37,7 @@ function expressingWithInfoIntoImageInfo(
         max: null,
         min: null,
         bytes: null,
+        data_ordering: "hwc",
     };
 }
 

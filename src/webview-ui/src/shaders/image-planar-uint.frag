@@ -1,6 +1,7 @@
 #version 300 es
-precision mediump float;
-precision mediump usampler2D;
+precision highp float;
+precision highp int;
+precision highp usampler2D;
 
 in vec2 vout_uv;
 layout(location = 0) out vec4 fout_color;
@@ -34,6 +35,7 @@ uniform usampler2D u_texture_b;
 uniform usampler2D u_texture_a;
 
 // drawing options
+uniform float u_normalization_factor;
 uniform mat4 u_color_multiplier;
 uniform vec4 u_color_addition;
 uniform bool u_invert;
@@ -48,7 +50,6 @@ const float CHECKER_SIZE = 10.0;
 const float WHITE_CHECKER = 0.9;
 const float BLACK_CHECKER = 0.6;
 
-// @include "./common-functions.glsl"
 float checkboard(vec2 st) {
   vec2 pos = mod(st, CHECKER_SIZE * 2.0);
   float value = mod(step(CHECKER_SIZE, pos.x) + step(CHECKER_SIZE, pos.y), 2.0);
@@ -62,16 +63,16 @@ void main() {
 
   int need = TYPE_TO_NEED[u_image_type];
   if ((need & NEED_RED) != 0) {
-    sampled.r = float(texture(u_texture_r, pix).r);
+    sampled.r = float(texture(u_texture_r, pix).r) / u_normalization_factor;
   }
   if ((need & NEED_GREEN) != 0) {
-    sampled.g = float(texture(u_texture_g, pix).r);
+    sampled.g = float(texture(u_texture_g, pix).r) / u_normalization_factor;
   }
   if ((need & NEED_BLUE) != 0) {
-    sampled.b = float(texture(u_texture_b, pix).r);
+    sampled.b = float(texture(u_texture_b, pix).r) / u_normalization_factor;
   }
   if ((need & NEED_ALPHA) != 0) {
-    sampled.a = float(texture(u_texture_a, pix).r);
+    sampled.a = float(texture(u_texture_a, pix).r) / u_normalization_factor;
   }
 
   vec4 color = u_color_multiplier * sampled + u_color_addition;
@@ -85,8 +86,7 @@ void main() {
   if (u_use_colormap) {
     vec2 colormap_uv = vec2(color.r, 0.5);
     vec4 colormap_color = texture(u_colormap, colormap_uv);
-    // vec4 colormap_color = vec4(1., 0., 0., 1.);
-    color.rgb = colormap_color.rgb;
+        color.rgb = colormap_color.rgb;
   }
 
   float c = checkboard(gl_FragCoord.xy);

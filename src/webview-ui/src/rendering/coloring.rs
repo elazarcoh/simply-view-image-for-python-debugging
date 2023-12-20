@@ -223,26 +223,26 @@ fn stretch_values_matrix(
 
 }
 
+pub(crate) struct ColoringFactors {
+    // Instead of composing all into a single matrix, we split it into components.
+    // The reason is that we might deal with large numbers, and we want to avoid
+    // overflow and rounding errors.
+    pub(crate) normalization_factor: f32,
+    pub(crate) color_multiplier: Mat4,
+    pub(crate) color_addition: Vec4,
+}
+
 pub(crate) fn calculate_color_matrix(
     image_info: &ImageInfo,
     image_computed_info: &ComputedInfo,
     drawing_options: &DrawingOptions,
-) -> (Mat4, Vec4) {
+) -> ColoringFactors {
     let datatype = image_info.datatype;
     let channels = image_info.channels;
 
     let has_alpha_channel = channels == Channels::Two || channels == Channels::Four;
 
-    let normalization_matrix = match datatype {
-        Datatype::Uint8 => NORMALIZE_U8,
-        Datatype::Uint16 => NORMALIZE_U16,
-        Datatype::Uint32 => NORMALIZE_U32,
-        Datatype::Float32 => IDENTITY,
-        Datatype::Int8 => NORMALIZE_I8,
-        Datatype::Int16 => NORMALIZE_I16,
-        Datatype::Int32 => NORMALIZE_I32,
-        Datatype::Bool => IDENTITY,
-    };
+    let normalization_factor = max_by_datatype(datatype);
     let right_reorder = match channels {
         Channels::One => IDENTITY,
         Channels::Two => RG_TO_RED_ALPHA,
@@ -361,10 +361,12 @@ pub(crate) fn calculate_color_matrix(
         (modify_value_mult, modify_value_add)
     };
 
-    let modify_value_mult = normalization_matrix * modify_value_mult;
-
-    (
-        reorder * modify_value_mult * right_reorder,
-        reorder * normalization_matrix * (modify_value_add + reorder_add),
-    )
+    let color_multiplier = reorder * modify_value_mult * right_reorder;
+    let color_addition = reorder * ((modify_value_add + reorder_add) / normalization_factor);
+    
+    ColoringFactors {
+        normalization_factor,
+        color_multiplier,
+        color_addition,
+    }
 }

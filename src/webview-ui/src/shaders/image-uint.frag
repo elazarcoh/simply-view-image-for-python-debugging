@@ -1,6 +1,7 @@
 #version 300 es
-precision mediump float;
-precision mediump usampler2D;
+precision highp float;
+precision highp int;
+precision highp usampler2D;
 
 in vec2 vout_uv;
 layout(location = 0) out vec4 fout_color;
@@ -8,6 +9,7 @@ layout(location = 0) out vec4 fout_color;
 uniform usampler2D u_texture;
 
 // drawing options
+uniform float u_normalization_factor;
 uniform mat4 u_color_multiplier;
 uniform vec4 u_color_addition;
 uniform bool u_invert;
@@ -32,8 +34,10 @@ void main() {
   vec2 pix = vout_uv;
 
   uvec4 texel = texture(u_texture, pix);
-  vec4 sampled =
-      vec4(float(texel.r), float(texel.g), float(texel.b), float(texel.a));
+  vec4 sampled = vec4(float(texel.r) / u_normalization_factor,
+                      float(texel.g) / u_normalization_factor,
+                      float(texel.b) / u_normalization_factor,
+                      float(texel.a) / u_normalization_factor);
 
   vec4 color = u_color_multiplier * sampled + u_color_addition;
 
@@ -46,7 +50,6 @@ void main() {
   if (u_use_colormap) {
     vec2 colormap_uv = vec2(color.r, 0.5);
     vec4 colormap_color = texture(u_colormap, colormap_uv);
-    // vec4 colormap_color = vec4(1., 0., 0., 1.);
     color.rgb = colormap_color.rgb;
   }
 

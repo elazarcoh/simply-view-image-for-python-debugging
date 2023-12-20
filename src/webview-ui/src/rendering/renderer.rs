@@ -30,6 +30,7 @@ use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
+use super::coloring::ColoringFactors;
 use super::constants::VIEW_SIZE;
 use super::rendering_context::{ImageViewData, RenderingContext};
 use crate::rendering::pixel_text_rendering::{
@@ -130,13 +131,13 @@ fn create_placeholder_texture(gl: &GL) -> Result<GLGuard<web_sys::WebGlTexture>>
 
 fn calculate_pixel_color_from_colormap(
     pixel_value: &PixelValue,
-    color_multiplier: Mat4,
-    color_addition: Vec4,
+    coloring_factors: &ColoringFactors,
     colormap: &colormap::ColorMap,
     drawing_options: &DrawingOptions,
 ) -> Vec4 {
     let mut rgba = Vec4::from(pixel_value.as_rgba_f32());
-    rgba = color_multiplier * rgba + color_addition;
+    rgba = coloring_factors.color_multiplier * (rgba / coloring_factors.normalization_factor)
+        + coloring_factors.color_addition;
     if drawing_options.invert {
         rgba.x = 1.0 - rgba.x;
         rgba.y = 1.0 - rgba.y;
@@ -417,7 +418,7 @@ impl Renderer {
 
         let (drawing_options, global_drawing_options) =
             rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
-        let (color_multiplier, color_addition) = calculate_color_matrix(
+        let coloring_factors = calculate_color_matrix(
             &texture.image.info,
             &texture.image.computed_info,
             &drawing_options,
@@ -431,8 +432,18 @@ impl Renderer {
                     ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
                     ("u_enable_borders", UniformValue::Bool(&enable_borders)),
                     ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
-                    ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
-                    ("u_color_addition", UniformValue::Vec4(&color_addition)),
+                    (
+                        "u_normalization_factor",
+                        UniformValue::Float(&coloring_factors.normalization_factor),
+                    ),
+                    (
+                        "u_color_multiplier",
+                        UniformValue::Mat4(&coloring_factors.color_multiplier),
+                    ),
+                    (
+                        "u_color_addition",
+                        UniformValue::Vec4(&coloring_factors.color_addition),
+                    ),
                     ("u_invert", UniformValue::Bool(&drawing_options.invert)),
                 ])
             }
@@ -442,8 +453,18 @@ impl Renderer {
                     ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
                     ("u_enable_borders", UniformValue::Bool(&enable_borders)),
                     ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
-                    ("u_color_multiplier", UniformValue::Mat4(&color_multiplier)),
-                    ("u_color_addition", UniformValue::Vec4(&color_addition)),
+                    (
+                        "u_normalization_factor",
+                        UniformValue::Float(&coloring_factors.normalization_factor),
+                    ),
+                    (
+                        "u_color_multiplier",
+                        UniformValue::Mat4(&coloring_factors.color_multiplier),
+                    ),
+                    (
+                        "u_color_addition",
+                        UniformValue::Vec4(&coloring_factors.color_addition),
+                    ),
                     ("u_invert", UniformValue::Bool(&drawing_options.invert)),
                 ]);
 
@@ -554,8 +575,7 @@ impl Renderer {
                                 .expect("Could not get color map");
                             let pixel_color = calculate_pixel_color_from_colormap(
                                 &pixel_value,
-                                color_multiplier,
-                                color_addition,
+                                &coloring_factors,
                                 colormap.as_ref(),
                                 &drawing_options,
                             );
@@ -564,7 +584,9 @@ impl Renderer {
                         }
                         _ => {
                             let rgba = Vec4::from(pixel_value.as_rgba_f32());
-                            let pixel_color = color_multiplier * rgba + color_addition;
+                            let pixel_color = coloring_factors.color_multiplier
+                                * (rgba / coloring_factors.normalization_factor)
+                                + coloring_factors.color_addition;
 
                             text_color(pixel_color, &drawing_options)
                         }

@@ -1,6 +1,7 @@
 #version 300 es
-precision mediump float;
-precision mediump isampler2D;
+precision highp float;
+precision highp int;
+precision highp isampler2D;
 
 in vec2 vout_uv;
 layout(location = 0) out vec4 fout_color;
@@ -8,6 +9,7 @@ layout(location = 0) out vec4 fout_color;
 uniform isampler2D u_texture;
 
 // drawing options
+uniform float u_normalization_factor;
 uniform mat4 u_color_multiplier;
 uniform vec4 u_color_addition;
 uniform bool u_invert;
@@ -18,13 +20,13 @@ uniform sampler2D u_colormap;
 uniform vec2 u_buffer_dimension;
 uniform bool u_enable_borders;
 
-const float CHECKER_SIZE = 10.;
-const float WHITE_CHECKER = .9;
-const float BLACK_CHECKER = .6;
+const float CHECKER_SIZE = 10.0;
+const float WHITE_CHECKER = 0.9;
+const float BLACK_CHECKER = 0.6;
 
 float checkboard(vec2 st) {
-  vec2 pos = mod(st, CHECKER_SIZE * 2.);
-  float value = mod(step(CHECKER_SIZE, pos.x) + step(CHECKER_SIZE, pos.y), 2.);
+  vec2 pos = mod(st, CHECKER_SIZE * 2.0);
+  float value = mod(step(CHECKER_SIZE, pos.x) + step(CHECKER_SIZE, pos.y), 2.0);
   return mix(BLACK_CHECKER, WHITE_CHECKER, value);
 }
 
@@ -32,19 +34,21 @@ void main() {
   vec2 pix = vout_uv;
 
   ivec4 texel = texture(u_texture, pix);
-  vec4 sampled =
-      vec4(float(texel.r), float(texel.g), float(texel.b), float(texel.a));
+  vec4 sampled = vec4(float(texel.r) / u_normalization_factor,
+                      float(texel.g) / u_normalization_factor,
+                      float(texel.b) / u_normalization_factor,
+                      float(texel.a) / u_normalization_factor);
 
   vec4 color = u_color_multiplier * sampled + u_color_addition;
 
-  color = clamp(color, 0., 1.);
+  color = clamp(color, 0.0, 1.0);
 
   if (u_invert) {
     color.rgb = 1. - color.rgb;
   }
 
   if (u_use_colormap) {
-    vec2 colormap_uv = vec2(color.r, .5);
+    vec2 colormap_uv = vec2(color.r, 0.5);
     vec4 colormap_color = texture(u_colormap, colormap_uv);
     color.rgb = colormap_color.rgb;
   }

@@ -128,9 +128,9 @@ export async function serializeImageUsingSocketServer(
 
         const debugSessionData = activeDebugSessionData(session);
         const infoOrError =
-            debugSessionData.currentPythonObjectsList?.variablesList.find(
-                ([exp]) => exp === selectionString(obj)
-            )?.[1];
+            debugSessionData.currentPythonObjectsList?.find(
+                expression
+            )?.InfoOrError;
 
         let additionalInfo;
         if (infoOrError === undefined || infoOrError.err) {

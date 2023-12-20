@@ -248,8 +248,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             class={ if Coloring::Segmentation == drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
             aria_label={"Segmentation"}
             title={"Segmentation"}
-            // icon={"svifpd-icons svifpd-icons-segmentation"}
-            icon={"codicon codicon-heart"}
+            icon={"svifpd-icons svifpd-icons-segmentation"}
             onclick={{
                 let image_id = image_id.clone();
                 let dispatch = Dispatch::<AppState>::new();

@@ -3,7 +3,7 @@ import * as net from "net";
 import { RequestsManager } from "./RequestsManager";
 import { MessageChunkHeader, splitHeaderContentRest } from "./protocol";
 import { MessageChunks } from "./MessageChunks";
-import { logDebug } from "../../Logging";
+import { logDebug, logInfo, logTrace } from "../../Logging";
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -38,7 +38,7 @@ export class SocketServer {
             throw new Error("SocketServer address is null");
         }
         this.port = address.port;
-        logDebug("SocketServer started on port " + this.port);
+        logInfo("SocketServer started on port " + this.port);
         this.started = true;
     }
 
@@ -59,7 +59,7 @@ export class SocketServer {
     onClientConnected(socket: net.Socket): void {
         const outgoingRequestsManager = this.outgoingRequestsManager;
         const handleMessage = (header: MessageChunkHeader, data: Buffer) => {
-            logDebug(
+            logTrace(
                 "Received message from client. Request id:",
                 header.requestId
             );
@@ -75,8 +75,7 @@ export class SocketServer {
 
         let waitingForHandling: Buffer = Buffer.alloc(0);
         const handleData = (data: Buffer) => {
-            logDebug("Received %d bytes from client", data.length);
-            logDebug("Received data from client", data);
+            logTrace("Received %d bytes from client", data.length);
             while (waitingForHandling.length > 0 || data.length > 0) {
                 if (waitingForHandling.length > 0) {
                     const fullData = Buffer.concat([waitingForHandling, data]);
@@ -86,17 +85,17 @@ export class SocketServer {
 
                 const parsed = splitHeaderContentRest(data);
                 if (parsed.err) {
-                    logDebug("Waiting for more data");
+                    logTrace("Waiting for more data");
                     waitingForHandling = data;
                     return;
                 }
 
                 const [header, content, rest] = parsed.safeUnwrap();
                 if (rest.length > 0) {
-                    logDebug("Received more data than expected");
+                    logTrace("Received more data than expected");
                     waitingForHandling = rest;
                 }
-                logDebug("Parsed header", header);
+                logTrace("Parsed header", header);
                 data = EMPTY_BUFFER;
 
                 const chunks = setDefault(
@@ -107,7 +106,7 @@ export class SocketServer {
                 chunks.addChunk(header, content);
 
                 if (chunks.isComplete()) {
-                    logDebug("Message is complete");
+                    logTrace("Message is complete");
                     const fullMessage = chunks.fullMessage();
                     handleMessage(header, fullMessage);
                 }
@@ -126,10 +125,10 @@ export class SocketServer {
 
         socket.on("data", makeSafe(handleData));
         socket.on("close", () => {
-            logDebug("Client closed connection");
+            logTrace("Client closed connection");
         });
         socket.on("end", () => {
-            logDebug("Client ended connection");
+            logTrace("Client ended connection");
         });
         socket.on("error", (err) => {
             logDebug("Client connection error");

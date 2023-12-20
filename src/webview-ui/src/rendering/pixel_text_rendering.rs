@@ -117,7 +117,7 @@ impl PixelTextData {
     }
 
     fn create_buffer_for_pixel(gl: &WebGl2RenderingContext) -> Result<ReusableBuffer> {
-        ReusableBuffer::new(gl.clone(), 1024)
+        ReusableBuffer::new(gl.clone(), 2048)
     }
 
     fn uv_buffer(&mut self) -> &mut ReusableBuffer {

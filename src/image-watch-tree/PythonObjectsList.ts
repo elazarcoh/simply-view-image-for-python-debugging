@@ -30,6 +30,18 @@ export type InfoOrError = Result<
 >;
 type ExpressingWithInfo = [string, InfoOrError];
 
+function removeSurroundingQuotesFromInfoObject(
+    info: PythonObjectInformation
+): PythonObjectInformation {
+    const removeSurroundingQuotes = (s: string): string =>
+        s.startsWith('"') && s.endsWith('"') && s.length > 1
+            ? s.slice(1, s.length - 1)
+            : s;
+    return Object.fromEntries(
+        Object.entries(info).map(([k, v]) => [k, removeSurroundingQuotes(v)])
+    );
+}
+
 export class CurrentPythonObjectsList {
     private readonly _variablesList: ExpressingWithInfo[] = [];
     private _expressionsInfo: InfoOrError[] = [];
@@ -151,7 +163,12 @@ export class CurrentPythonObjectsList {
                 } else {
                     const viewables = maybeViewables.safeUnwrap();
                     if (notEmptyArray(viewables)) {
-                        return Ok([viewables, info.safeUnwrap()]);
+                        return Ok([
+                            viewables,
+                            removeSurroundingQuotesFromInfoObject(
+                                info.safeUnwrap()
+                            ),
+                        ]);
                     } else {
                         return Err("Not viewable");
                     }

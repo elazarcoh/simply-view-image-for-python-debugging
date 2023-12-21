@@ -1,11 +1,19 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-const devConfig = require('./webpack.config');
+const [extensionConfigDev, WebviewConfigDev] = require("./webpack.config");
 
 /**@type {import('webpack').Configuration}*/
-const config = {
-    ...devConfig,
-    mode: 'production',
-    devtool: 'source-map',
+const prodConfig = {
+    mode: "production",
+    devtool: "source-map",
 };
-module.exports = config;
+module.exports = [
+    {
+        ...extensionConfigDev,
+        ...prodConfig,
+    },
+    {
+        ...WebviewConfigDev,
+        ...prodConfig,
+    },
+];

@@ -191,7 +191,7 @@ export class ImageViewPanel {
             .replaceAll(/\${nonce}/g, nonce)
             .replaceAll(/\${webviewCspSource}/g, webview.cspSource)
             .replaceAll(/\${baseUri}/g, baseUri.toString())
-            .replace(/<script defer src="webview.js"><\/script>/g, () => {
+            .replaceAll(/<script.*?src="webview\.js"><\/script>/g, () => {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
             });
         return htmlWithVscodeResourceUris;

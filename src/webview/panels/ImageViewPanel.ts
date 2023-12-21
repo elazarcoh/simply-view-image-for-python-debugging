@@ -117,69 +117,10 @@ export class ImageViewPanel {
         }
     }
 
-    /**
-     * Defines and returns the HTML that should be rendered within the webview panel.
-     *
-     * @remarks This is also the place where references to the React webview build files
-     * are created and inserted into the webview HTML.
-     *
-     * @param webview A reference to the extension webview
-     * @param extensionUri The URI of the directory containing the extension
-     * @returns A template string literal containing the HTML that should be
-     * rendered within the webview panel
-     */
     private _getWebviewContent(webview: Webview, extensionUri: Uri) {
-        // const stylesUri = getUri(webview, extensionUri, [
-        //     "dist",
-        //     "webview.css",
-        // ]);
-        // const scriptUri = getUri(webview, extensionUri, ["dist", "webview.js"]);
         const baseUri = getUri(webview, extensionUri, ["dist"]);
 
         const nonce = getNonce();
-
-        // Tip: Install the es6-string-html VS Code extension to enable code highlighting below
-        //     return /*html*/ `
-        //   <!DOCTYPE html>
-        //   <html lang="en">
-        //     <head>
-        //       <meta charset="UTF-8" />
-        //       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        //       <meta http-equiv="Content-Security-Policy" content="default-src https:; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-        //       <link rel="stylesheet" type="text/css" href="${stylesUri}">
-        //       <title>Hello World</title>
-        //     </head>
-        //     <body>
-        //       <div id="root"></div>
-        //       <div id="yew-app">Test</div>
-        //       <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-        //     </body>
-        //   </html>
-        // `;
-
-        // <link rel="preload" nonce="${nonce}" href="${baseUri}/yew-app-987f331f08a3e6d1_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-        // <link rel="modulepreload" nonce="${nonce}" href="${baseUri}/yew-app-987f331f08a3e6d1.js"></head>
-
-        //  <script type="module" nonce="${nonce}">import init from '${baseUri}/yew-app-987f331f08a3e6d1.js';init('${baseUri}/yew-app-987f331f08a3e6d1_bg.wasm');</script>
-
-        // return /*html*/ `
-        //     <!DOCTYPE html><html><head>
-        //             <meta charset="utf-8">
-        //             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        //             <meta http-equiv="Content-Security-Policy" content="default-src https: ; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' 'unsafe-eval';">
-        //         <title>Yew App</title>
-
-        //             <link rel="modulepreload" nonce="${nonce}" href="${baseUri}/webview.js"></head>
-        //     <body>
-
-        //         <div id="root"></div>
-        //         <div id="yew-app">Test</div>
-
-        //       <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-
-        //     </body>
-        //     </html>
-        // `;
 
         // fetch index.html from dist folder
         const indexHtml = fs.readFileSync(

@@ -9,11 +9,11 @@ const prodConfig = {
 };
 module.exports = [
     {
-        ...extensionConfigDev,
+        ...WebviewConfigDev,
         ...prodConfig,
     },
     {
-        ...WebviewConfigDev,
+        ...extensionConfigDev,
         ...prodConfig,
     },
 ];

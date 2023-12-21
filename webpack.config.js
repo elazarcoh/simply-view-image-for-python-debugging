@@ -33,6 +33,7 @@ const baseConfig = {
 /** @type WebpackConfig */
 const extensionConfig = {
     ...baseConfig,
+    name: "extension",
     target: "node",
     entry: "./src/extension.ts",
     externals: {
@@ -70,12 +71,14 @@ const extensionConfig = {
         }),
         new VSCodeExtensionsPackageJsonGenerator("vscode-ext-config.json"),
     ],
+    dependencies: ["webview"]
 };
 
 // Config for webview source code
 /** @type WebpackConfig */
 const WebviewConfig = {
     ...baseConfig,
+    name: "webview",
     entry: {
         index: path.resolve(webviewPath, "index.js"),
     },
@@ -137,4 +140,4 @@ const WebviewConfig = {
     },
 };
 
-module.exports = [extensionConfig, WebviewConfig];
+module.exports = [WebviewConfig, extensionConfig];

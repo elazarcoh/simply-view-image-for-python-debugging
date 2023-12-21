@@ -10,9 +10,11 @@ use crate::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
     },
-    tmp_for_debug::set_debug_images,
     vscode::vscode_requests::VSCodeRequests,
 };
+
+#[cfg(debug_assertions)]
+use crate::tmp_for_debug::set_debug_images;
 
 #[derive(PartialEq, Properties)]
 struct ToolbarProps {

@@ -32,7 +32,10 @@ wee_alloc = { version = "0.4.5", optional = true }
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
 cfg-if = "1.0.0"
-log = "0.4.20"
+log = { version = "0.4.20", features = [
+  "max_level_debug",
+  "release_max_level_warn",
+] }
 console_log = { version = "1.0.0", optional = true, features = ["color"] }
 
 gloo = "0.8"

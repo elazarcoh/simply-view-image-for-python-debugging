@@ -3,7 +3,6 @@ use stylist::{css, yew::use_style};
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
-use yewdux::prelude::*;
 
 use crate::{
     components::{

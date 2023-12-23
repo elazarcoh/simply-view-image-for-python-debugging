@@ -117,6 +117,7 @@ pub(crate) enum UpdateDrawingOptions {
     IgnoreAlpha(bool),
 }
 
+#[allow(dead_code)]
 pub(crate) enum UpdateGlobalDrawingOptions {
     GlobalHeatmapColormap(String),
     GlobalSegmentationColormap(String),
@@ -240,33 +241,6 @@ impl Reducer<AppState> for StoreAction {
                     state.global_drawing_options.segmentation_colormap_name = name;
                 }
             },
-        };
-
-        app_state
-    }
-}
-
-#[derive(Debug)]
-pub(crate) enum RequestAction {
-    ImageDataById(ImageId),
-    ImagesList,
-}
-
-#[async_reducer]
-impl AsyncReducer<AppState> for RequestAction {
-    async fn apply(self, mut app_state: Rc<AppState>) -> Rc<AppState> {
-        log::debug!("Reducer: RequestAction");
-
-        let state = Rc::make_mut(&mut app_state);
-
-        match self {
-            RequestAction::ImageDataById(image_id) => {}
-
-            RequestAction::ImagesList => {
-                // if let Some(message_service) = state.message_service {
-                //     message_service.send_message(RequestImagesMessage{}.into());
-                // }
-            }
         };
 
         app_state

@@ -44,10 +44,6 @@ impl ImageCache {
             .insert(id.clone(), ImageAvailability::Available(Rc::new(image)));
     }
 
-    pub(crate) fn len(&self) -> usize {
-        self.0.len()
-    }
-
     pub(crate) fn clear(&mut self) {
         self.0.clear();
     }
@@ -67,12 +63,6 @@ impl Images {
 
     pub fn clear(&mut self) {
         self.0.clear();
-    }
-
-    pub fn update(&mut self, images: Vec<(ImageId, ImageInfo)>) {
-        images.iter().for_each(|(id, info)| {
-            self.0.insert(id.clone(), info.clone());
-        });
     }
 
     pub fn len(&self) -> usize {

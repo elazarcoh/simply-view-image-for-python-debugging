@@ -68,7 +68,7 @@ pub(crate) fn create_texture_from_bytes(
             datatype,
             channels,
         ))?;
-    let val = gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
+    gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
         TextureTarget::Texture2D as _,
         0,
         internal_format as _,
@@ -80,8 +80,7 @@ pub(crate) fn create_texture_from_bytes(
         &js_typed_array_from_bytes(bytes, type_),
         0,
     )
-    .map_err(|jsvalue| WebGlError::from_js_value(&jsvalue, "tex_image_2d"));
-
+    .map_err(|jsvalue| WebGlError::from_js_value(&jsvalue, "tex_image_2d"))?;
 
     if let Some(mag_filter) = parameters.mag_filter {
         gl.tex_parameteri(

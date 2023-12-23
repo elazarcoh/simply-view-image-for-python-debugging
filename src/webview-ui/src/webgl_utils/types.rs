@@ -35,6 +35,7 @@ pub(crate) enum UniformValue<'a> {
 pub(crate) type UniformSetter = Box<dyn Fn(&GL, &UniformValue)>;
 pub(crate) type AttributeSetterFunction = Box<dyn Fn(&GL, &AttribInfo, &dyn GLBuffer)>;
 
+#[allow(dead_code)]
 pub(crate) struct AttributeSetter {
     pub index: u32,
     pub setter: AttributeSetterFunction,

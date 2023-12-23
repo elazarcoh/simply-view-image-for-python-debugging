@@ -57,6 +57,7 @@ pub(crate) enum Format {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum InternalFormat {
     // treated as Gray
     R16F = GL::R16F,
@@ -98,6 +99,7 @@ pub(crate) enum InternalFormat {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum TextureTarget {
     Texture2D = GL::TEXTURE_2D,
     TextureCubeMap = GL::TEXTURE_CUBE_MAP,
@@ -105,6 +107,7 @@ pub(crate) enum TextureTarget {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum TextureMagFilter {
     Nearest = GL::NEAREST,
     Linear = GL::LINEAR,
@@ -112,6 +115,7 @@ pub(crate) enum TextureMagFilter {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum TextureMinFilter {
     Nearest = GL::NEAREST,
     Linear = GL::LINEAR,
@@ -123,6 +127,7 @@ pub(crate) enum TextureMinFilter {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum TextureWrap {
     ClampToEdge = GL::CLAMP_TO_EDGE,
     MirroredRepeat = GL::MIRRORED_REPEAT,
@@ -132,6 +137,7 @@ pub(crate) enum TextureWrap {
 #[allow(clippy::enum_variant_names)]
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum BindingPoint {
     ArrayBuffer = GL::ARRAY_BUFFER,
     ElementArrayBuffer = GL::ELEMENT_ARRAY_BUFFER,
@@ -145,6 +151,7 @@ pub(crate) enum BindingPoint {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum DrawMode {
     Points = GL::POINTS,
     LineStrip = GL::LINE_STRIP,
@@ -157,6 +164,7 @@ pub(crate) enum DrawMode {
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum Capability {
     DepthTest = GL::DEPTH_TEST,
     StencilTest = GL::STENCIL_TEST,
@@ -216,8 +224,10 @@ fn float_attribute_setter(index: u32) -> AttributeSetter {
     }
 }
 
+#[allow(dead_code)]
 fn int_attribute_setter(_gl: &GL, _index: u32) {}
 
+#[allow(dead_code)]
 fn uint_attribute_setter(_gl: &GL, _index: u32) {}
 
 lazy_static! {
@@ -251,6 +261,7 @@ lazy_static! {
 
 #[non_exhaustive]
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[allow(dead_code)]
 pub(crate) enum WebGlExtension {
     OesVertexArrayObject,
     OesTextureFloat,
@@ -260,6 +271,7 @@ pub(crate) enum WebGlExtension {
 
 #[derive(Debug)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub(crate) enum WebGlErrorCode {
     NoError = WebGl2RenderingContext::NO_ERROR as _,
     InvalidEnum = WebGl2RenderingContext::INVALID_ENUM as _,

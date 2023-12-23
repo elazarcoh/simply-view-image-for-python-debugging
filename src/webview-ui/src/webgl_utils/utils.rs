@@ -1,4 +1,3 @@
-use anyhow::Result;
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
 use super::ElementType;

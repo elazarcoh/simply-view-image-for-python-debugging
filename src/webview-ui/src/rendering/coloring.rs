@@ -127,61 +127,6 @@ const fn only_max_alpha(datatype: Datatype) -> Vec4 {
     with_alpha(max_by_datatype(datatype))
 }
 
-#[rustfmt::skip]
-const NORMALIZE_U8: Mat4 = transpose(&Mat4::from_cols_array(&[
-    1.0 / u8::MAX as f32, 0.0, 0.0, 0.0,
-    0.0, 1.0 / u8::MAX as f32, 0.0, 0.0,
-    0.0, 0.0, 1.0 / u8::MAX as f32, 0.0,
-    0.0, 0.0, 0.0, 1.0 / u8::MAX as f32,
-]));
-#[rustfmt::skip]
-const NORMALIZE_U16: Mat4 = transpose(&Mat4::from_cols_array(&[
-    1.0 / u16::MAX as f32, 0.0, 0.0, 0.0,
-    0.0, 1.0 / u16::MAX as f32, 0.0, 0.0,
-    0.0, 0.0, 1.0 / u16::MAX as f32, 0.0,
-    0.0, 0.0, 0.0, 1.0 / u16::MAX as f32,
-]));
-#[rustfmt::skip]
-const NORMALIZE_U32: Mat4 = transpose(&Mat4::from_cols_array(&[
-    1.0 / u32::MAX as f32, 0.0, 0.0, 0.0,
-    0.0, 1.0 / u32::MAX as f32, 0.0, 0.0,
-    0.0, 0.0, 1.0 / u32::MAX as f32, 0.0,
-    0.0, 0.0, 0.0, 1.0 / u32::MAX as f32,
-]));
-#[rustfmt::skip]
-const NORMALIZE_I8: Mat4 = transpose(&Mat4::from_cols_array(&[
-    1.0 / i8::MAX as f32, 0.0, 0.0, 0.0,
-    0.0, 1.0 / i8::MAX as f32, 0.0, 0.0,
-    0.0, 0.0, 1.0 / i8::MAX as f32, 0.0,
-    0.0, 0.0, 0.0, 1.0 / i8::MAX as f32,
-]));
-#[rustfmt::skip]
-const NORMALIZE_I16: Mat4 = transpose(&Mat4::from_cols_array(&[
-    1.0 / i16::MAX as f32, 0.0, 0.0, 0.0,
-    0.0, 1.0 / i16::MAX as f32, 0.0, 0.0,
-    0.0, 0.0, 1.0 / i16::MAX as f32, 0.0,
-    0.0, 0.0, 0.0, 1.0 / i16::MAX as f32,
-]));
-#[rustfmt::skip]
-const NORMALIZE_I32: Mat4 = transpose(&Mat4::from_cols_array(&[
-    1.0 / i32::MAX as f32, 0.0, 0.0, 0.0,
-    0.0, 1.0 / i32::MAX as f32, 0.0, 0.0,
-    0.0, 0.0, 1.0 / i32::MAX as f32, 0.0,
-    0.0, 0.0, 0.0, 1.0 / i32::MAX as f32,
-]));
-
-fn is_integer(datatype: Datatype) -> bool {
-    matches!(
-        datatype,
-        | Datatype::Uint8
-        | Datatype::Int8
-        | Datatype::Uint16
-        | Datatype::Int16
-        | Datatype::Uint32
-        | Datatype::Int32
-    )
-}
-
 fn stretch_values_matrix(
     image_info: &ImageInfo,
     image_computed_info: &ComputedInfo,

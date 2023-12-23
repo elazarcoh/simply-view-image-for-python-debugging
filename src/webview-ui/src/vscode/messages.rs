@@ -68,6 +68,7 @@ pub(crate) enum FromExtensionMessage {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
+#[allow(dead_code)]
 pub(crate) struct FromExtensionMessageWithId {
     pub(crate) id: MessageId,
     pub(crate) message: FromExtensionMessage,

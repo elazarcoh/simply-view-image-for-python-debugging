@@ -173,8 +173,6 @@ fn view_context() -> impl ViewContext {
 pub(crate) fn App() -> Html {
     VSCodeRequests::init(vscode::acquire_vscode_api());
 
-    let dispatch = Dispatch::<AppState>::new();
-
     let canvas_ref = use_node_ref();
 
     // TODO: move from here

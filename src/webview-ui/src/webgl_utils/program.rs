@@ -77,6 +77,7 @@ fn validate_program(gl: &GL, program: &WebGlProgram) -> Result<()> {
 }
 
 fn make_uniform_setter(gl_type: GLConstant, location: WebGlUniformLocation) -> UniformSetter {
+    let _ = gl_type;
     Box::new(move |gl: &GL, value: &UniformValue| match value {
         UniformValue::Int(v) => gl.uniform1i(Some(&location), **v),
         UniformValue::Float(v) => gl.uniform1f(Some(&location), **v),
@@ -103,6 +104,7 @@ fn make_sampler_setter(
     texture_unit: i32,
     location: WebGlUniformLocation,
 ) -> UniformSetter {
+    let _ = gl_type;
     Box::new(move |gl: &GL, value: &UniformValue| {
         if let UniformValue::Texture(value) = value {
             gl.uniform1i(Some(&location), texture_unit);

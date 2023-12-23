@@ -1,5 +1,4 @@
 use anyhow::Result;
-use js_sys::WebAssembly::Global;
 use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
@@ -7,7 +6,7 @@ use web_sys::{HtmlElement, WebGl2RenderingContext};
 use crate::{
     app_state::{app_state::GlobalDrawingOptions, images::ImageAvailability},
     colormap::colormap,
-    common::{camera, texture_image::TextureImage, ImageId, Size, ViewId},
+    common::{camera, ImageId, Size, ViewId},
     configurations::RenderingConfiguration,
     rendering::coloring::DrawingOptions,
     webgl_utils,

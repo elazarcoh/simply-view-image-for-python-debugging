@@ -8,3 +8,4 @@ pub(crate) mod sidebar;
 pub(crate) mod main_toolbar;
 pub(crate) mod icon_button;
 pub(crate) mod status_bar;
+pub(crate) mod view_container;

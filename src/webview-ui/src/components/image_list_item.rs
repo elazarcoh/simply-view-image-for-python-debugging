@@ -1,8 +1,5 @@
-use std::{cell::RefCell, iter::FromIterator, rc::Rc};
-
 use itertools::Itertools;
-use stylist::{css, yew::use_style, Style};
-use wasm_bindgen::{closure::Closure, JsCast};
+use stylist::{yew::use_style, Style};
 use yew::prelude::*;
 use yewdux::prelude::{use_selector, Dispatch};
 
@@ -332,12 +329,6 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
 
         </div>
     }
-}
-
-fn make_item_tooltip(entry: &ImageInfo) -> String {
-    let mut tooltip = String::new();
-    tooltip.push_str(&entry.expression);
-    tooltip
 }
 
 fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html {

@@ -80,20 +80,20 @@ impl_minmax!(i16);
 impl_minmax!(i32);
 impl_minmax!(f32);
 
-fn minmax<const Ch: usize, T, Out>(values: &[T]) -> ([Out; Ch], [Out; Ch])
+fn minmax<const CH: usize, T, Out>(values: &[T]) -> ([Out; CH], [Out; CH])
 where
     T: MinMax<T> + Copy + PartialOrd,
     Out: From<T>,
 {
     // let start = instant::Instant::now();
 
-    let mut min: [T; Ch] = [T::MAX; Ch];
-    let mut max: [T; Ch] = [T::MIN; Ch];
+    let mut min: [T; CH] = [T::MAX; CH];
+    let mut max: [T; CH] = [T::MIN; CH];
 
-    let num_pixels = values.len() / Ch;
+    let num_pixels = values.len() / CH;
     let mut index = 0;
     for _ in 0..num_pixels {
-        for channel in 0..Ch {
+        for channel in 0..CH {
             let value = values[index];
             let current_min = &mut min[channel];
             let current_max = &mut max[channel];
@@ -110,8 +110,8 @@ where
     // let end = instant::Instant::now();
     // log::debug!("minmax took {:?}", end - start);
 
-    let min: [Out; Ch] = min.map(|v| Out::from(v));
-    let max: [Out; Ch] = max.map(|v| Out::from(v));
+    let min: [Out; CH] = min.map(|v| Out::from(v));
+    let max: [Out; CH] = max.map(|v| Out::from(v));
     (min, max)
 }
 

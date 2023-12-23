@@ -9,6 +9,7 @@ use web_sys::WebGl2RenderingContext;
 use super::WebGlErrorCode;
 
 #[derive(Error, Debug, Display)]
+#[allow(dead_code)]
 pub(crate) enum WebGlError {
     UnknownConstant(u32, &'static str),
     WebGlError {

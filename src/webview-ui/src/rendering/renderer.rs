@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use glam::{Mat3, Mat4, UVec2, Vec2, Vec4};
+use glam::{Mat3, UVec2, Vec2, Vec4};
 
 use wasm_bindgen::prelude::*;
 use web_sys::{

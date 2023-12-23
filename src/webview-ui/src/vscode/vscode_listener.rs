@@ -35,7 +35,7 @@ impl VSCodeListener {
     }
 
     fn handle_incoming_message(message: FromExtensionMessage) {
-        let handle_result: Result<()> = match message {
+        let _handle_result: Result<()> = match message {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
                 ExtensionResponse::ReplaceData(replacement_data) => Ok(
@@ -77,6 +77,7 @@ impl VSCodeListener {
         image_data: ImageMessage,
         options: ShowImageOptions,
     ) -> Result<()> {
+        let _ = options;
         let image_id = image_data.image_id.clone();
         Self::handle_image_data_response(image_data)?;
 

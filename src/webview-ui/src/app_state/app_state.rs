@@ -1,7 +1,6 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
-use crate::app_state::images::ImageAvailability;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{ImageData, ImageId, ImageInfo, ViewId};

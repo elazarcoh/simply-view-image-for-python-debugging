@@ -1,10 +1,11 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
-use yewdux::{dispatch::Dispatch, functional::use_selector};
+use yewdux::functional::use_selector;
 
 use crate::{
     app_state::{app_state::AppState, images::ImageAvailability},
     common::ViewId,
+    components::spinner::Spinner,
 };
 
 #[derive(PartialEq, Properties)]
@@ -38,7 +39,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                 <div>{"No Data"}</div>
             }),
             ImageAvailability::Pending => Some(html! {
-                <div>{"Loading..."}</div>
+                <Spinner />
             }),
             ImageAvailability::Available(_) => None,
         }

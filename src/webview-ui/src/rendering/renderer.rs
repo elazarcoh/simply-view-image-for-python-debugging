@@ -350,14 +350,18 @@ impl Renderer {
         canvas.set_height(canvas.client_height() as _);
 
         if let Some(image_id) = &image_view_data.image_id {
-            if let Some(texture) = rendering_context.texture_by_id(image_id) {
-                Renderer::render_image(
-                    rendering_context,
-                    rendering_data,
-                    texture,
-                    image_view_data,
-                    view_name,
-                );
+            match rendering_context.texture_by_id(image_id) {
+                crate::app_state::images::ImageAvailability::NotAvailable
+                | crate::app_state::images::ImageAvailability::Pending => {}
+                crate::app_state::images::ImageAvailability::Available(texture) => {
+                    Renderer::render_image(
+                        rendering_context,
+                        rendering_data,
+                        texture,
+                        image_view_data,
+                        view_name,
+                    );
+                }
             }
         };
 

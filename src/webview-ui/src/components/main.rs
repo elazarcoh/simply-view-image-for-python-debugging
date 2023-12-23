@@ -50,7 +50,7 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                         let maybe_pixel_value = hovered_pixel.and_then(|pixel| {
                             let image = view_context.get_image_for_view(view_id);
                             image.and_then(|image| {
-                                Some(PixelValue::from_image(&image.image, &pixel))
+                                image.map(|image| PixelValue::from_image(&image.image, &pixel))
                             })
                         });
 

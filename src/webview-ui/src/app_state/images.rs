@@ -4,20 +4,44 @@ use crate::{
 };
 use std::{collections::HashMap, rc::Rc};
 
+#[derive(Clone)]
+pub(crate) enum ImageAvailability {
+    NotAvailable,
+    Pending,
+    Available(Rc<TextureImage>),
+}
+
+impl ImageAvailability {
+    pub fn map<U, F>(self, f: F) -> Option<U>
+    where
+        F: FnOnce(Rc<TextureImage>) -> U,
+    {
+        match self {
+            ImageAvailability::NotAvailable => None,
+            ImageAvailability::Pending => None,
+            ImageAvailability::Available(image) => Some(f(image)),
+        }
+    }
+}
+
 #[derive(Default)]
-pub(crate) struct ImageCache(HashMap<ImageId, Rc<TextureImage>>);
+pub(crate) struct ImageCache(HashMap<ImageId, ImageAvailability>);
 
 impl ImageCache {
     pub(crate) fn has(&self, id: &ImageId) -> bool {
         self.0.contains_key(id)
     }
 
-    pub(crate) fn get(&self, id: &ImageId) -> Option<&Rc<TextureImage>> {
-        self.0.get(id)
+    pub(crate) fn get(&self, id: &ImageId) -> ImageAvailability {
+        self.0
+            .get(id)
+            .cloned()
+            .unwrap_or(ImageAvailability::NotAvailable)
     }
 
     pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
-        self.0.insert(id.clone(), Rc::new(image));
+        self.0
+            .insert(id.clone(), ImageAvailability::Available(Rc::new(image)));
     }
 
     pub(crate) fn len(&self) -> usize {

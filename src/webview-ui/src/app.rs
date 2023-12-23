@@ -1,8 +1,8 @@
 use crate::app_state::app_state::AppState;
 use crate::app_state::app_state::GlobalDrawingOptions;
+use crate::app_state::images::ImageAvailability;
 use crate::colormap::colormap;
 use crate::common::camera;
-use crate::common::texture_image::TextureImage;
 use crate::common::ImageId;
 use crate::common::Size;
 use crate::common::ViewId;
@@ -39,9 +39,9 @@ fn rendering_context() -> impl RenderingContext {
             state.gl.clone().unwrap()
         }
 
-        fn texture_by_id(&self, id: &ImageId) -> Option<Rc<TextureImage>> {
+        fn texture_by_id(&self, id: &ImageId) -> ImageAvailability {
             let dispatch = Dispatch::<AppState>::new();
-            dispatch.get().image_cache.borrow().get(id).map(Rc::clone)
+            dispatch.get().image_cache.borrow().get(id)
         }
 
         fn visible_nodes(&self) -> Vec<ViewId> {
@@ -134,28 +134,13 @@ fn view_context() -> impl ViewContext {
             let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
             dispatch
                 .get()
-                .image_cache
+                .images
                 .borrow()
-                .get(&image_id.clone()?)
-                .map_or_else(
-                    || {
-                        dispatch
-                            .get()
-                            .images
-                            .borrow()
-                            .get(&image_id?)
-                            .map(|image| Size {
-                                width: image.width as _,
-                                height: image.height as _,
-                            })
-                    },
-                    |texture| {
-                        Some(Size {
-                            width: texture.image.info.width as _,
-                            height: texture.image.info.height as _,
-                        })
-                    },
-                )
+                .get(&image_id?)
+                .map(|image| Size {
+                    width: image.width as _,
+                    height: image.height as _,
+                })
         }
 
         fn get_view_element(&self, view_id: ViewId) -> HtmlElement {
@@ -174,17 +159,10 @@ fn view_context() -> impl ViewContext {
                 })
         }
 
-        fn get_image_for_view(&self, view_id: ViewId) -> Option<Rc<TextureImage>> {
+        fn get_image_for_view(&self, view_id: ViewId) -> Option<ImageAvailability> {
             let dispatch = Dispatch::<AppState>::new();
             let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
-            image_id.and_then(|image_id| {
-                dispatch
-                    .get()
-                    .image_cache
-                    .borrow()
-                    .get(&image_id)
-                    .map(Rc::clone)
-            })
+            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id))
         }
     }
 

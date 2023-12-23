@@ -40,10 +40,10 @@ mod features {
     #[rustfmt::skip]
     pub(crate) fn list_features(datatype: Datatype, channels: Channels) -> EnumSet<Feature> {
         let for_all = EnumSet::from(Feature::Invert);
-        let rgb_features =  Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B | Feature::Grayscale ;
-        let bool_rgb_features =  Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B ;
+        let rgb_features = Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B | Feature::Grayscale  | Feature::HighContrast;
+        let bool_rgb_features = Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B ;
         let alpha_features = Feature::IgnoreAlpha;
-        let rgba_features =  rgb_features | alpha_features;
+        let rgba_features = rgb_features | alpha_features;
         let gray_alpha_features = Feature::HighContrast | alpha_features;
         let gray_features = Feature::HighContrast | Feature::Heatmap | alpha_features;
         let integer_gray_features = Feature::Segmentation | gray_features;

@@ -8,7 +8,7 @@ use yewdux::prelude::Dispatch;
 use crate::{
     app_state::app_state::AppState,
     common::{pixel_value::PixelValue, ViewId},
-    components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar},
+    components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar, view_container::ViewContainer},
     mouse_events::PixelHoverHandler,
     rendering::rendering_context::ViewContext,
 };
@@ -90,7 +90,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
         view_context,
     } = props;
 
-    let gl_view_node_ref = Dispatch::<AppState>::new()
+    let view_container_node_ref = Dispatch::<AppState>::new()
         .get()
         .image_views
         .borrow()
@@ -129,7 +129,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
             width: 100%;
         }
 
-        .gl-view {
+        .view-container {
             width: 100%;
             height: 100%;
         }
@@ -143,7 +143,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
             </div>
             <Sidebar class="sidebar" />
             <div class={"main"}>
-                <div ref={gl_view_node_ref} class={"gl-view"} />
+                <ViewContainer node_ref={view_container_node_ref} class="view-container" />
             </div>
             <div class={"status-bar"}>
                 <StatusBarWrapper view_id={*view_id} view_context={view_context.clone()} />

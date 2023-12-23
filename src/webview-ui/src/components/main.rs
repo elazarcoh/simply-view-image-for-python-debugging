@@ -143,7 +143,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
             </div>
             <Sidebar class="sidebar" />
             <div class={"main"}>
-                <ViewContainer node_ref={view_container_node_ref} class="view-container" />
+                <ViewContainer node_ref={view_container_node_ref} class="view-container" view_id={ViewId::Primary}/>
             </div>
             <div class={"status-bar"}>
                 <StatusBarWrapper view_id={*view_id} view_context={view_context.clone()} />

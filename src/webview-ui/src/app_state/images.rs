@@ -11,6 +11,15 @@ pub(crate) enum ImageAvailability {
     Available(Rc<TextureImage>),
 }
 
+impl PartialEq for ImageAvailability {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Available(l0), Self::Available(r0)) => Rc::ptr_eq(l0, r0),
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
 impl ImageAvailability {
     pub fn map<U, F>(self, f: F) -> Option<U>
     where
@@ -37,6 +46,10 @@ impl ImageCache {
             .get(id)
             .cloned()
             .unwrap_or(ImageAvailability::NotAvailable)
+    }
+
+    pub(crate) fn set_pending(&mut self, id: &ImageId) {
+        self.0.insert(id.clone(), ImageAvailability::Pending);
     }
 
     pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {

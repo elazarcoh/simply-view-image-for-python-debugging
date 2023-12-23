@@ -1,6 +1,7 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
+use crate::app_state::images::ImageAvailability;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{ImageData, ImageId, ImageInfo, ViewId};
@@ -30,7 +31,11 @@ impl Listener for ImagesFetcher {
                 log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
                 if let Some(image_info) = state.images.borrow().get(&image_id) {
                     log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                    VSCodeRequests::request_image_data(image_id, image_info.expression.clone());
+                    VSCodeRequests::request_image_data(
+                        image_id.clone(),
+                        image_info.expression.clone(),
+                    );
+                    state.image_cache.borrow_mut().set_pending(&image_id);
                 }
             }
         }

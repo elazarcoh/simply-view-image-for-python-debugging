@@ -5,8 +5,8 @@ use yewdux::prelude::{use_selector, Dispatch};
 
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
-    common::ImageInfo,
-    rendering::coloring::Coloring,
+    common::{ImageInfo, ValueVariableKind},
+    rendering::coloring::Coloring, vscode::vscode_requests::VSCodeRequests,
 };
 
 use super::icon_button::IconButton;
@@ -254,14 +254,6 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
         />
     };
 
-    // let transpose_button = html! {
-    //     <IconButton
-    //         aria_label={"Transpose"}
-    //         title={"Transpose"}
-    //         icon={"svifpd-icons svifpd-icons-transpose"}
-    //     />
-    // };
-
     let mut buttons = Vec::new();
     if features.contains(features::Feature::HighContrast) {
         buttons.push(high_contrast_button);
@@ -375,14 +367,52 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         .sorted()
         .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style));
 
+    let edit_button = html! {
+        <IconButton
+            aria_label={"Edit"}
+            title={"Edit"}
+            icon={"codicon codicon-edit"}
+            onclick={Callback::from({
+                let expression = entry.expression.clone();
+                move |_| {
+                    let _id = VSCodeRequests::edit_expression(expression.clone());
+                }
+            })}
+        />
+    };
+
+    let item_style = use_style!(
+        r#"
+
+        .item-label-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
+            gap: 10px;
+        }
+        .item-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        "#
+    );
+
     html! {
-        <>
-            <label title={entry.expression.clone()}>{&entry.expression}</label>
-                <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
+        <div class={item_style.clone()}>
+            <div class="item-label-container">
+                <label class="item-label" title={entry.expression.clone()}>{&entry.expression}</label>
+                if entry.value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
+            </div>
+
+            <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
                 {for rows}
-                </vscode-data-grid>
+            </vscode-data-grid>
 
             if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
-        </>
+        </div>
     }
 }

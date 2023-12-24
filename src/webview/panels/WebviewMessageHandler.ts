@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import {
+    EditExpression,
     FromWebviewMessageWithId,
     MessageId,
     RequestImageData,
@@ -11,6 +12,9 @@ import Container from "typedi";
 import { WebviewClient } from "../communication/WebviewClient";
 import { WebviewResponses } from "../communication/createMessages";
 import { errorMessage } from "../../utils/Result";
+import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
+import { editExpression } from "../../image-watch-tree/PythonObjectsList";
+import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
 
 export class WebviewMessageHandler {
     readonly client = Container.get(WebviewClient);
@@ -25,6 +29,12 @@ export class WebviewMessageHandler {
             return undefined;
         }
 
+        const currentPythonObjectsList =
+            activeDebugSessionData(debugSession)?.currentPythonObjectsList;
+        const objectItemKind =
+            currentPythonObjectsList.find(args.expression)?.type ??
+            "expression";
+
         const objectViewables = await findExpressionViewables(
             args.expression,
             debugSession
@@ -35,7 +45,9 @@ export class WebviewMessageHandler {
         }
 
         const response = await serializeImageUsingSocketServer(
-            { expression: args.expression },
+            objectItemKind === "variable"
+                ? { variable: args.expression }
+                : { expression: args.expression },
             objectViewables.safeUnwrap()[0],
             debugSession
         );
@@ -58,6 +70,15 @@ export class WebviewMessageHandler {
         this.client.sendResponse(id, WebviewResponses.imagesObjects());
     }
 
+    async handleEditExpression(id: MessageId, { expression }: EditExpression) {
+        const changed = await editExpression(expression);
+        if (changed) {
+            await activeDebugSessionData()?.currentPythonObjectsList.update();
+            Container.get(WatchTreeProvider).refresh();
+            this.client.sendResponse(id, WebviewResponses.imagesObjects());
+        }
+    }
+
     async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
         logTrace("Received message from webview", messageWithId);
 
@@ -72,6 +93,8 @@ export class WebviewMessageHandler {
                 return this.handleImagesRequest(id);
             case "RequestImageData":
                 return this.handleImageDataRequest(id, message);
+            case "EditExpression":
+                return this.handleEditExpression(id, message);
 
             default:
                 ((_: never) => {

@@ -23,12 +23,18 @@ struct RequestImageData {
 struct RequestImages {}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
+struct EditExpression {
+    expression: String,
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 enum FromWebviewMessage {
     WebviewReady(WebviewReady),
     RequestImageData(RequestImageData),
     RequestImages(RequestImages),
+    EditExpression(EditExpression),
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
@@ -87,5 +93,12 @@ impl VSCodeRequests {
     pub(crate) fn webview_ready() -> MessageId {
         log::debug!("VSCodeRequests::webview_ready");
         Self::send_message(FromWebviewMessage::WebviewReady(WebviewReady {}))
+    }
+
+    pub(crate) fn edit_expression(expression: String) -> MessageId {
+        log::debug!("VSCodeRequests::edit_expression: {:?}", expression);
+        Self::send_message(FromWebviewMessage::EditExpression(EditExpression {
+            expression,
+        }))
     }
 }

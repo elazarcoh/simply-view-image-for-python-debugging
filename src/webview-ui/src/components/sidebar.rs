@@ -167,6 +167,16 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     let refresh_button = html! {
         <RefreshButton />
     };
+    let add_expression_button = html! {
+        <IconButton
+            title={"Add expression"}
+            aria_label={"Add expression"}
+            icon={"codicon codicon-add"}
+            onclick={Callback::from({
+                |_| { let _id = VSCodeRequests::add_expression(); }
+            })}
+            />
+    };
 
     #[cfg(debug_assertions)]
     let debug_images_button = html! {
@@ -226,6 +236,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         }>
             <Toolbar>
                 {debug_images_button}
+                {add_expression_button}
                 {refresh_button.clone()}
                 {pin_toggle_button}
                 {collapse_toggle_button}

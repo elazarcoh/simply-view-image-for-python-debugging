@@ -13,7 +13,10 @@ import { WebviewClient } from "../communication/WebviewClient";
 import { WebviewResponses } from "../communication/createMessages";
 import { errorMessage } from "../../utils/Result";
 import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
-import { editExpression } from "../../image-watch-tree/PythonObjectsList";
+import {
+    addExpression,
+    editExpression,
+} from "../../image-watch-tree/PythonObjectsList";
 import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
 
 export class WebviewMessageHandler {
@@ -70,6 +73,15 @@ export class WebviewMessageHandler {
         this.client.sendResponse(id, WebviewResponses.imagesObjects());
     }
 
+    async handleAddExpression(id: MessageId) {
+        const added = await addExpression();
+        if (added) {
+            await activeDebugSessionData()?.currentPythonObjectsList.update();
+            Container.get(WatchTreeProvider).refresh();
+            this.client.sendResponse(id, WebviewResponses.imagesObjects());
+        }
+    }
+
     async handleEditExpression(id: MessageId, { expression }: EditExpression) {
         const changed = await editExpression(expression);
         if (changed) {
@@ -93,6 +105,8 @@ export class WebviewMessageHandler {
                 return this.handleImagesRequest(id);
             case "RequestImageData":
                 return this.handleImageDataRequest(id, message);
+            case "AddExpression":
+                return this.handleAddExpression(id);
             case "EditExpression":
                 return this.handleEditExpression(id, message);
 

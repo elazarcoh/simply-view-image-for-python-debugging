@@ -44,8 +44,11 @@ export class WebviewClient {
 
     private sendToWebview(message: FromExtensionMessageWithId) {
         logDebug(`webview === undefined: ${this.webview === undefined}`);
+        if (this.webview === undefined) {
+            return;
+        }
         logDebug(`message: ${JSON.stringify(message)}`);
-        return this.webview?.postMessage(message);
+        return this.webview.postMessage(message);
     }
 
     sendRequest(message: ExtensionRequest) {

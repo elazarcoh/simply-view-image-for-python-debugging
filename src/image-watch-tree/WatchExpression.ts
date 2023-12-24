@@ -10,6 +10,8 @@ import {
 } from "./PythonObjectsList";
 import { PythonObjectTreeItem } from "./WatchTreeItem";
 import { WatchTreeProvider } from "./WatchTreeProvider";
+import { WebviewClient } from "../webview/communication/WebviewClient";
+import { WebviewRequests } from "../webview/communication/createMessages";
 
 // singleton object that used to add expression when user click on it
 class _AddExpressionWatchTreeItem extends vscode.TreeItem {
@@ -54,6 +56,7 @@ export async function addExpressionTreeItem(): Promise<void> {
     if (added) {
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
     }
 }
 
@@ -70,6 +73,7 @@ export async function removeExpressionTreeItem(
         }
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
     }
 }
 
@@ -81,6 +85,7 @@ export async function editExpressionTreeItem(
     if (changed) {
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
     }
 }
 
@@ -101,5 +106,6 @@ export async function removeAllExpressionsTree(): Promise<void> {
         }
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
     }
 }

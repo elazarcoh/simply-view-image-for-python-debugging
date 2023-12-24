@@ -22,6 +22,7 @@ import {
 } from "./ViewPythonObject";
 import Container from "typedi";
 import { WebviewClient } from "./webview/communication/WebviewClient";
+import { runSetup } from "./python-communication/Setup";
 
 // *********************
 // Some general commands
@@ -34,6 +35,12 @@ async function openExtensionSettings(): Promise<void> {
 async function openImageWebview(): Promise<void> {
     Container.get(WebviewClient).reveal();
 }
+async function rerunSetup(): Promise<void> {
+    const debugSession = vscode.debug.activeDebugSession;
+    if (debugSession) {
+        await runSetup(debugSession, true);
+    }
+}
 
 // *********************************
 // VSCode extension commands helpers
@@ -45,6 +52,7 @@ export interface TypedCommand<C extends AvailableCommands>
 }
 
 const Commands = {
+    "svifpd.run-setup": rerunSetup,
     "svifpd.open-settings": openExtensionSettings,
     "svifpd.open-image-webview": openImageWebview,
     "svifpd.watch-refresh": refreshWatchTree,
@@ -94,6 +102,7 @@ export function registerExtensionCommands(
 ): vscode.Disposable[] {
     // TODO: automate registering
     return [
+        _registerCommandByName("svifpd.run-setup"),
         _registerCommandByName("svifpd.view-image"),
         _registerCommandByName("svifpd.view-image-track"),
         _registerCommandByName("svifpd._internal_view-object"),

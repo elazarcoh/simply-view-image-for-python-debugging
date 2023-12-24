@@ -25,15 +25,35 @@ async function checkSetupOkay(session: DebugSession) {
     return joinResult(res);
 }
 
-export async function runSetup(session: DebugSession): Promise<boolean> {
+export async function runSetup(
+    session: DebugSession,
+    force?: boolean
+): Promise<boolean> {
     const debugSessionData = activeDebugSessionData(session);
     let maxTries = 5;
 
     const trySetupExtensionAndRunAgainIfFailed = async (): Promise<boolean> => {
-        logDebug("Checks setup is okay or not");
-        const isSetupOkay = await checkSetupOkay(session);
+        let isSetupOkay: boolean;
+        if (force === true) {
+            isSetupOkay = false;
+            force = false;
+            logDebug("Force run setup");
+        } else {
+            logDebug("Check setup is okay or not");
+            const result = await checkSetupOkay(session);
+            if (result.err) {
+                logDebug("Setup check failed", result.val);
+                isSetupOkay = false;
+            } else if (result.safeUnwrap() === false) {
+                logDebug("Setup check succeeded, but no setup");
+                isSetupOkay = false;
+            } else {
+                logDebug("Setup check succeeded, setup is okay");
+                isSetupOkay = true;
+            }
+        }
 
-        if (isSetupOkay.err || isSetupOkay.safeUnwrap() === false) {
+        if (isSetupOkay === false) {
             if (maxTries <= 0) {
                 throw new Error("Setup failed");
             }
@@ -41,13 +61,14 @@ export async function runSetup(session: DebugSession): Promise<boolean> {
             debugSessionData.setupOkay = false;
 
             maxTries -= 1;
-            logDebug("No setup. Run setup code");
+            logDebug("Running setup... tries left:", maxTries);
+            logDebug("Run module setup code");
             await execInPython(moduleSetupCode(), session);
+            logDebug("Run viewables setup code");
             await execInPython(viewablesSetupCode(), session);
             // run again to make sure setup is okay
             return trySetupExtensionAndRunAgainIfFailedDebounced();
         } else {
-            logDebug("Setup is okay");
             debugSessionData.setupOkay = true;
             return true;
         }

@@ -31,6 +31,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "svifpd.run-setup",
+        "title": "Run Setup",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
+      },
+      {
         "command": "svifpd.view-image-track",
         "title": "Track Image",
         "enablement": "inDebugMode",
@@ -133,6 +139,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "svifpd.run-setup",
+          "when": "inDebugMode"
+        },
         {
           "command": "svifpd.watch-view-image",
           "when": "false"
@@ -365,6 +375,7 @@
     "vscode:prepublish": "yarn run clean && webpack --config webpack.config.prod.js",
     "build": "webpack --mode development",
     "watch": "webpack --mode development --watch",
+    "package": "vsce package",
     "install-extension": "vsce package -o svifpd.vsix && code --install-extension svifpd.vsix",
     "lint": "eslint src --ext ts",
     "clean": "rimraf dist src/webview-ui/pkg",

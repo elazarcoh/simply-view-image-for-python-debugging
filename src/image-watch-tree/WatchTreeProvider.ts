@@ -71,6 +71,7 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                                   info.safeUnwrap()[1]
                               )
                 ) ?? [];
+
             const expressionsInfoOrNotReady =
                 debugSessionData?.currentPythonObjectsList.expressionsInfo ??
                 (Array(globalExpressionsList.length).fill(

@@ -297,6 +297,29 @@ export class CurrentPythonObjectsList {
         Container.get(ExpressionsList).expressions.push(expression);
         return this.update();
     }
+
+    public expressionsList({
+        skipInvalid,
+    }: {
+        skipInvalid: boolean;
+    }): ReadonlyArray<ExpressingWithInfo> {
+        const expressionsInfoOrNotReady =
+            this.expressionsInfo ??
+            (Array(globalExpressionsList.length).fill(
+                Err("Not ready") as InfoOrError
+            ) as InfoOrError[]);
+
+        let expressions = zip(
+            globalExpressionsList,
+            expressionsInfoOrNotReady
+        ).map(([exp, info]) => [exp, info] as ExpressingWithInfo);
+
+        if (skipInvalid) {
+            expressions = expressions.filter(([, info]) => !info.err);
+        }
+
+        return expressions;
+    }
 }
 
 function combineValidInfoErrorIfNone(

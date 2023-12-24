@@ -28,9 +28,8 @@ function expressingWithInfoIntoImageInfo(
         image_id: exp,
         expression: exp,
         value_variable_kind: valueVariableKind,
-        // TODO: Implement this
-        width: 100,
-        height: 100,
+        width: 0,
+        height: 0,
         channels: 1,
         datatype: "float32",
         additional_info: info,
@@ -42,13 +41,22 @@ function expressingWithInfoIntoImageInfo(
 }
 
 function imageObjects(): ImageObjects {
+    const currentPythonObjectsList =
+        activeDebugSessionData()?.currentPythonObjectsList;
     const validVariables: ImageMessage[] =
-        activeDebugSessionData()
-            ?.currentPythonObjectsList?.variablesList.map(([exp, info]) =>
+        currentPythonObjectsList?.variablesList
+            .map(([exp, info]) =>
                 expressingWithInfoIntoImageInfo(exp, info, "variable")
             )
             .filter(hasValue) ?? [];
-    const validExpressions: ImageMessage[] = []; // TODO: Implement this
+    const validExpressions: ImageMessage[] =
+        currentPythonObjectsList
+            ?.expressionsList({ skipInvalid: true })
+            ?.map(([exp, info]) =>
+                expressingWithInfoIntoImageInfo(exp, info, "expression")
+            )
+            .filter(hasValue) ?? [];
+
     const objects = validVariables.concat(validExpressions);
     return objects;
 }

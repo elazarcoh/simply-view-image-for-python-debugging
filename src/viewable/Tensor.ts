@@ -32,7 +32,7 @@ export const NumpyTensor: Viewable<NumpyTensorInfo> = {
             `${m("numpy_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: () => false,
 };
 
 export type TorchTensorInfo = NumpyTensorInfo;
@@ -59,5 +59,5 @@ export const TorchTensor: Viewable<TorchTensorInfo> = {
             `${m("torch_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: () => false,
 };

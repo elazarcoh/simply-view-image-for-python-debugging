@@ -39,7 +39,7 @@ export const NumpyImage: Viewable<NumpyImageInfo> = {
             `${m("numpy_image_save")}('${savePath}', ${expression}, backend='${getConfiguration('preferredBackend', undefined, Backends.Standalone)}', preprocess='${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))}')`,
     },
     suffix: ".png",
-    supportsImageViewer: true,
+    supportsImageViewer: () => true,
 };
 
 export type PillowImageInfo = NumpyImageInfo;
@@ -67,5 +67,5 @@ export const PillowImage: Viewable<PillowImageInfo> = {
             `${m("pillow_image_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: true,
+    supportsImageViewer: () => true,
 };

@@ -26,8 +26,8 @@ export async function viewObject(
 ): Promise<void> {
     if (
         !(forceDiskSerialization ?? false) &&
-        viewable.supportsImageViewer === true &&
-        getConfiguration("useExperimentalViewer", undefined, false) === true
+        getConfiguration("useExperimentalViewer", undefined, false) === true &&
+        (await viewable.supportsImageViewer()) === true
     ) {
         const response = await serializeImageUsingSocketServer(
             obj,

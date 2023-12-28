@@ -18,7 +18,9 @@ function expressingWithInfoIntoImageInfo(
         return undefined;
     }
     const viewables = infoOrError.safeUnwrap()[0];
-    const supported = viewables.filter((v) => v.supportsImageViewer).length > 0;
+    const supported =
+        viewables.filter(async (v) => (await v.supportsImageViewer()) === true)
+            .length > 0;
     if (!supported) {
         return undefined;
     }

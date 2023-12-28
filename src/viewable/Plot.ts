@@ -30,7 +30,7 @@ export const PlotlyFigure: Viewable<{ type: string }> = {
             `${m("plotly_figure_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: () => false,
 };
 
 export const PyplotFigure: Viewable<{ type: string }> = {
@@ -62,7 +62,7 @@ export const PyplotFigure: Viewable<{ type: string }> = {
             `${m("pyplot_figure_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: () => false,
 };
 
 export const PyplotAxes: Viewable<{ type: string }> = {
@@ -92,5 +92,5 @@ export const PyplotAxes: Viewable<{ type: string }> = {
             `${m("pyplot_ax_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: () => false,
 };

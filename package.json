@@ -430,7 +430,7 @@
     "react-use": "^17.4.0",
     "react-use-measure": "^2.1.1",
     "reflect-metadata": "^0.1.13",
-    "sharp": "^0.31.3",
+    "sharp": "^0.32.6",
     "tmp": "^0.2.1",
     "ts-results": "^3.3.0",
     "typedi": "^0.10.0",

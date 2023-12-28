@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
-import { Except } from "../utils/Except";
 import { stringifyPython } from "./BuildPythonCode";
 import { parsePythonResult } from "./PythonValueParser";
+import { Err, Ok, Result } from "../utils/Result";
 
 function runThroughDebugger(
     session: vscode.DebugSession,
     expression: string,
     { context, frameId }: RunInPythonOptions
-): Thenable<Body<DebugProtocol.EvaluateResponse>> {
+): Thenable<BodyOf<DebugProtocol.EvaluateResponse>> {
     const debugVariablesTracker =
         activeDebugSessionData(session).debugVariablesTracker;
 
@@ -27,36 +27,36 @@ export async function runPython<R>(
     parse: true,
     session: vscode.DebugSession,
     options: RunInPythonOptions
-): Promise<Except<R>>;
+): Promise<Result<R>>;
 export async function runPython<R>(
     code: EvalCodePython<R>,
     parse: false,
     session: vscode.DebugSession,
     options: RunInPythonOptions
-): Promise<Except<null>>;
+): Promise<Result<null>>;
 export async function runPython<R>(
     code: EvalCodePython<R>,
     parse: boolean,
     session: vscode.DebugSession,
     options: RunInPythonOptions
-): Promise<Except<R | null>> {
+): Promise<Result<R | null>> {
     try {
         const res = await runThroughDebugger(session, code.pythonCode, options);
         if (parse) {
             const parsed = parsePythonResult<R>(res.result);
             return parsed;
         } else {
-            return Except.result(null);
+            return Ok(null);
         }
     } catch (error) {
         if (error instanceof Error) {
             if (error.message.includes("SyntaxError")) {
-                return Except.error("Syntax error");
+                return Err("Syntax error");
             } else {
-                return Except.error(error.message);
+                return Err(error.message);
             }
         } else {
-            return Except.error(JSON.stringify(error));
+            return Err(JSON.stringify(error));
         }
     }
 }
@@ -65,7 +65,7 @@ export function execInPython(
     evalCodePython: EvalCodePython<unknown>,
     session: vscode.DebugSession,
     options: RunInPythonOptions = { context: "repl" }
-): Promise<Except<null>> {
+): Promise<Result<null>> {
     const code = {
         pythonCode: `
 exec(\"\"\"
@@ -81,6 +81,6 @@ export function evaluateInPython<R = unknown>(
     evalCodePython: EvalCodePython<R>,
     session: vscode.DebugSession,
     options: RunInPythonOptions = { context: "repl" }
-): Promise<Except<R>> {
+): Promise<Result<R>> {
     return runPython(stringifyPython(evalCodePython), true, session, options);
 }

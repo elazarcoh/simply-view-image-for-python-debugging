@@ -19,7 +19,7 @@ def stringify(value):
         if value.startswith("Value(") or value.startswith("Error("):
             return value  # keep Value/Error without wrapping quoted
         else:
-            return f"'{value}'"
+            return f'"{sanitize(value)}"'
     elif isinstance(value, Exception):
         return f'"{type(value).__name__}: {sanitize(str(value))}"'
     else:

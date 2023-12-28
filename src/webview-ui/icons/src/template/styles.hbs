@@ -1,0 +1,62 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+@font-face {
+	font-family: "{{ name }}";
+	font-display: block;
+	src: {{{ fontSrc }}};
+}
+
+.svifpd-icons[class*='svifpd-icons-'] {
+	font: normal normal normal 16px/1 {{ name }};
+	display: inline-block;
+	text-decoration: none;
+	text-rendering: auto;
+	text-align: center;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+
+/*---------------------
+ *  Modifiers
+ *-------------------*/
+
+@keyframes svifpd-icons-spin {
+	100% {
+		transform:rotate(360deg);
+	}
+}
+
+.svifpd-icons-sync.svifpd-icons-modifier-spin,
+.svifpd-icons-loading.svifpd-icons-modifier-spin,
+.svifpd-icons-gear.svifpd-icons-modifier-spin {
+	/* Use steps to throttle FPS to reduce CPU usage */
+	animation: svifpd-icons-spin 1.5s steps(30) infinite;
+}
+
+.svifpd-icons-modifier-disabled {
+	opacity: 0.5;
+}
+
+.svifpd-icons-modifier-hidden {
+	opacity: 0;
+}
+
+/* custom speed & easing for loading icon */
+.svifpd-icons-loading {
+	animation-duration: 1s !important;
+	animation-timing-function: cubic-bezier(0.53, 0.21, 0.29, 0.67) !important;
+}
+
+/*---------------------
+ *  Icons
+ *-------------------*/
+
+{{# each codepoints }}
+.{{ ../prefix }}-{{ @key }}:before { content: "\\{{ codepoint this }}" }
+{{/ each }}

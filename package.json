@@ -2,7 +2,7 @@
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
   "description": "simply view the image of the image variables when debugging python",
-  "version": "3.0.13",
+  "version": "3.0.15",
   "publisher": "elazarcoh",
   "icon": "icon.png",
   "preview": false,
@@ -30,6 +30,12 @@
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "svifpd.run-setup",
+        "title": "Run Setup",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python"
+      },
       {
         "command": "svifpd.view-image-track",
         "title": "Track Image",
@@ -85,6 +91,11 @@
         "icon": "$(timeline-refresh)"
       },
       {
+        "command": "svifpd.open-image-webview",
+        "title": "Open Image Webview",
+        "icon": "$(browser)"
+      },
+      {
         "command": "svifpd.open-settings",
         "title": "Configure...",
         "icon": "$(settings-gear)"
@@ -129,6 +140,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "svifpd.run-setup",
+          "when": "inDebugMode"
+        },
+        {
           "command": "svifpd.watch-view-image",
           "when": "false"
         },
@@ -155,6 +170,10 @@
         {
           "command": "svifpd.open-settings",
           "when": "false"
+        },
+        {
+          "command": "svifpd.open-image-webview",
+          "when": "inDebugMode"
         },
         {
           "command": "svifpd.view-debug-variable",
@@ -188,6 +207,11 @@
           "command": "svifpd.open-settings",
           "when": "view == pythonDebugImageWatch",
           "group": "navigation@30"
+        },
+        {
+          "command": "svifpd.open-image-webview",
+          "when": "view == pythonDebugImageWatch",
+          "group": "navigation@40"
         }
       ],
       "debug/variables/context": [
@@ -326,6 +350,16 @@
           "default": "tmp",
           "description": "Location to save images."
         },
+        "svifpd.useExperimentalDataTransfer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to use the new data-transfer protocol (using a socket server, instead of a file)."
+        },
+        "svifpd.useExperimentalViewer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to use the new experimental viewer."
+        },
         "svifpd.useTmpPathToSave": {
           "type": "boolean",
           "default": true,
@@ -341,36 +375,66 @@
     "vscode:prepublish": "yarn run clean && webpack --config webpack.config.prod.js",
     "build": "webpack --mode development",
     "watch": "webpack --mode development --watch",
+    "package": "vsce package",
+    "package-pre-release": "vsce package --pre-release",
     "install-extension": "vsce package -o svifpd.vsix && code --install-extension svifpd.vsix",
     "lint": "eslint src --ext ts",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist src/webview-ui/pkg",
+    "start-webview": "cd src/webview-ui && yarn start"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.15",
     "@types/parsimmon": "^1.10.6",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@types/sharp": "^0.31.1",
     "@types/tmp": "^0.2.1",
+    "@types/uuid": "^9.0.0",
     "@types/vscode": "^1.60.0",
+    "@types/vscode-webview": "^1.57.1",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
     "@typescript-eslint/typescript-estree": "^5.47.0",
+    "@vitejs/plugin-react": "^1.0.7",
     "@vscode/debugprotocol": "^1.49.0",
+    "@wasm-tool/wasm-pack-plugin": "^1.1.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.7.3",
     "eslint": "^8.30.0",
     "eslint-webpack-plugin": "^3.0.1",
     "glob": "^8.0.3",
+    "html-webpack-plugin": "^5.5.3",
+    "mini-css-extract-plugin": "^2.7.2",
     "rimraf": "^3.0.2",
+    "style-loader": "^3.3.1",
+    "text-encoding": "^0.7.0",
     "ts-loader": "^9.4.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.4",
+    "vite": "^2.9.13",
+    "wasm-pack": "^0.12.1",
     "webpack": "^5.76.0",
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.33",
+    "@vscode/webview-ui-toolkit": "^1.2.1",
     "parsimmon": "^1.18.1",
+    "plotly.js": "^2.18.2",
+    "prop-types": "^15.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-plotly.js": "^2.6.0",
+    "react-use": "^17.4.0",
+    "react-use-measure": "^2.1.1",
     "reflect-metadata": "^0.1.13",
+    "sharp": "^0.31.3",
     "tmp": "^0.2.1",
+    "ts-results": "^3.3.0",
     "typedi": "^0.10.0",
+    "uuid": "^9.0.0",
     "vscode-debugprotocol": "^1.49.0",
     "vscode-extensions-json-generator": "^0.1.5"
   }

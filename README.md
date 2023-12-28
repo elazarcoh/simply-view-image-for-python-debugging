@@ -3,6 +3,10 @@
 Based on the great work of [john-guo](https://github.com/john-guo/simply-view-image-for-python-opencv-debugging), a more general version for the extension.
 
 ## Features
+* Built-in editor for viewing images:
+  ![image-values](readme-assets/values-example.png)
+  ![heatmap](readme-assets/heatmap-example.png)
+  ![segmentation](readme-assets/segmentation-example.png)
 
 * Support in Jupyter notebooks
 * Support view image from expression

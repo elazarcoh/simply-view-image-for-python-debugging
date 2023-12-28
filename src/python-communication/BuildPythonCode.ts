@@ -1,7 +1,9 @@
 import COMMON from "../python/common.py?raw";
+import SOCKET_CLIENT from "../python/socket_client.py?raw";
 import Container from "typedi";
 import { AllViewables } from "../AllViewables";
 import { indent } from "../utils/Utils";
+import { Result } from "../utils/Result";
 
 export const PYTHON_MODULE_NAME = "_python_view_image_mod";
 const SETUP_RESULT_VARIABLE_NAME = `${PYTHON_MODULE_NAME}_setup_result`;
@@ -9,6 +11,7 @@ const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
 const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
 const OBJECT_SHAPE_IF_IT_HAS_ONE = `${PYTHON_MODULE_NAME}.object_shape_if_it_has_one`;
+const OPEN_SEND_AND_CLOSE = `${PYTHON_MODULE_NAME}.open_send_and_close`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -22,6 +25,11 @@ except:
     except Exception as e:
         ${SETUP_RESULT_VARIABLE_NAME} = e
         del ${PYTHON_MODULE_NAME}
+
+    try:
+        exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
+    except:
+        pass
 `;
 
 function execInModuleCode(
@@ -81,7 +89,7 @@ ${setupCode}
     return code;
 }
 
-export function verifyModuleExistsCode(): EvalCodePython<Except<boolean>> {
+export function verifyModuleExistsCode(): EvalCodePython<Result<boolean>> {
     return {
         pythonCode: `"Value({})".format('${PYTHON_MODULE_NAME}' in globals())`
     };
@@ -104,7 +112,7 @@ export function viewablesSetupCode(): EvalCodePython<null> {
  */
 function convertExpressionIntoValueWrappedExpression<R>(
     expression: string
-): EvalCodePython<Except<R>> {
+): EvalCodePython<Result<R>> {
     // verify it's a single-line expression
     if (expression.includes("\n")) {
         throw new Error("Expression must be a single line");
@@ -121,7 +129,7 @@ export function constructValueWrappedExpressionFromEvalCode<
     evalCode: EvalCode<R, P>,
     expression: string,
     ...args: P
-): EvalCodePython<Except<R>> {
+): EvalCodePython<Result<R>> {
     const expressionToEval = evalCode.evalCode(expression, ...args);
     return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
 }
@@ -133,7 +141,7 @@ export function constructRunSameExpressionWithMultipleEvaluatorsCode<
     evals: EvalCodes
 ): EvalCodePython<{
     [K in keyof EvalCodes]: EvalCodes[K] extends EvalCode<infer R>
-        ? Except<R>
+        ? Result<R>
         : never;
 }> {
     const lazyEvalExpression = `lambda: ${expression}`;
@@ -165,8 +173,18 @@ export function combineMultiEvalCodePython<
 
 export function constructObjectShapeCode(
     expression: string
-): EvalCodePython<Except<PythonObjectShape>> {
+): EvalCodePython<Result<PythonObjectShape>> {
     return convertExpressionIntoValueWrappedExpression(
         `${OBJECT_SHAPE_IF_IT_HAS_ONE}(${expression})`
+    );
+}
+
+export function constructOpenSendAndCloseCode(
+    port: number,
+    request_id: number,
+    expression: string,
+): EvalCodePython<Result<PythonObjectShape>> {
+    return convertExpressionIntoValueWrappedExpression(
+        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression})`
     );
 }

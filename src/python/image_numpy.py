@@ -12,7 +12,8 @@ try:
                 try:
                     img = np.asarray(img)
                     is_image = (img.ndim == 2) or (
-                        img.ndim == 3 and img.shape[2] in (1, 3, 4)
+                        # hwc or chw
+                        img.ndim == 3 and (img.shape[2] <= 4 or img.shape[0] <= 4)
                     )
                     return is_image
                 except:
@@ -108,6 +109,9 @@ try:
             img = np.asarray(img)
             if img.dtype in (bool, np.bool_):
                 img = img.astype(np.uint8)
+            # if channel first, convert to channel last
+            if img.ndim == 3 and img.shape[0] <= 4 and img.shape[2] > 4:
+                img = img.transpose(1, 2, 0)
             if preprocess_method == "skimage.img_as_ubyte":
                 try:
                     from skimage import img_as_ubyte

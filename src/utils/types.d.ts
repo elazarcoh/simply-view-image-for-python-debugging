@@ -1,11 +1,5 @@
-type Body<T extends { body: unknown }> = T["body"];
-type ExceptError = {
-    error: Error | string;
-    errorMessage: string;
-    isError: true;
-};
-type ExceptResult<T> = { result: T; isError: false };
-type Except<T> = ExceptResult<T> | ExceptError;
+
+type BodyOf<T extends { body: unknown }> = T["body"];
 
 type Constructor<T> = new (...args: any[]) => T;
 type ExtractConstructorClass<Constructors extends unknown[]> = {
@@ -15,3 +9,10 @@ type ExtractConstructorClass<Constructors extends unknown[]> = {
 };
 type TupleToUnion<T extends unknown[]> = T[number];
 type NonEmptyArray<T> = [T, ...T[]];
+type MessageEvent<T> = { data: T };
+
+type FlattenedPromise<T> = unknown extends T
+    ? Promise<T>
+    : T extends Promise<infer _>
+    ? T
+    : Promise<T>;

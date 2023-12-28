@@ -27,11 +27,17 @@ export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
 export function debounce<
     F extends (...args: Args) => ReturnType<F>,
     Args extends unknown[] = Parameters<F>
->(func: F, waitFor: number): (...args: Args) => void {
+>(func: F, waitFor: number): (...args: Args) => FlattenedPromise<ReturnType<F>> {
     let timeout: NodeJS.Timeout;
-    return (...args: Args): void => {
+    return (...args: Args): FlattenedPromise<ReturnType<F>> => {
         clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), waitFor);
+        const promise = new Promise<ReturnType<F>>((resolve) => {
+            timeout = setTimeout(async () => {
+                const res = await func(...args);
+                resolve(res);
+            }, waitFor);
+        });
+        return promise as FlattenedPromise<ReturnType<F>>;
     };
 }
 
@@ -70,4 +76,12 @@ export function hasValue<T>(value: T | null | undefined): value is T {
 
 export function notEmptyArray<T>(array: T[]): array is NonEmptyArray<T> {
     return array.length !== 0;
+}
+
+export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
+    if (!map.has(key)) {
+        map.set(key, value);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion  -- we just set it
+    return map.get(key)!;
 }

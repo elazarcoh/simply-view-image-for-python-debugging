@@ -34,5 +34,8 @@
             }
         ],
         "@typescript-eslint/strict-boolean-expressions": "error"
-    }
+    },
+    "ignorePatterns": [
+        "src/webview-ui"
+    ]
 }

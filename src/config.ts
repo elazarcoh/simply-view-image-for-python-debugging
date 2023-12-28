@@ -82,6 +82,20 @@ export interface Config {
      * @description Whether to allow plugins to register their own viewables.
      */
     allowPlugins: boolean;
+
+    /**
+     * @default true
+     * @description Whether to use the new experimental viewer.
+     * @experimental
+     */
+    useExperimentalViewer: boolean;
+
+    /**
+     * @default true
+     * @description Whether to use the new data-transfer protocol (using a socket server, instead of a file).
+     * @experimental
+     */
+    useExperimentalDataTransfer: boolean;
 }
 
 export const EXTENSION_CONFIG_SECTION = "svifpd";

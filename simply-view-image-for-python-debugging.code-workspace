@@ -5,11 +5,21 @@
 		},
 		{
 			"path": "example-plugin"
+		},
+		{
+			"path": "src/webview-ui"
 		}
 	],
 	"settings": {
 		"files.associations": {
 			"vscode-ext-config.json": "jsonc"
+		},
+		"rust-analyzer.linkedProjects": [
+			"./src/webview-ui/Cargo.toml"
+		],
+		"rust-analyzer.showUnlinkedFileNotification": false,
+		"emmet.includeLanguages": {
+			"rust": "html",
 		}
 	}
 }

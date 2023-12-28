@@ -6,20 +6,27 @@ import {
     atModule as m,
     convertBoolToPython,
 } from "../python-communication/BuildPythonCode";
+import { ArrayDataType } from "../common/datatype";
 
-export const NumpyImage: Viewable = {
+export type NumpyImageInfo = {
+    type: string;
+    shape: string;
+    dtype: ArrayDataType;
+};
+
+export const NumpyImage: Viewable<NumpyImageInfo> = {
     group: "image",
     type: "numpy_image",
     title: "Image",
     setupPythonCode: {
         setupCode: () => NUMPY_CODE,
-        testSetupCode: "(is_numpy_image, numpy_image_info, numpy_image_save)", // require all three functions to be defined
+        testSetupCode: "(is_numpy_image, numpy_image_info, numpy_image_save)",
         id: "numpy_image",
     },
     testTypePythonCode: {
         evalCode: (expression: string) => {
             // prettier-ignore
-            return `${m('is_numpy_image')}(${expression}, restrict_types=${convertBoolToPython(getConfiguration('restrictImageTypes') ?? false)})`
+            return `${m('is_numpy_image')}(${expression}, restrict_types=${convertBoolToPython(getConfiguration('restrictImageTypes') ?? false)})`;
         },
     },
     infoPythonCode: {
@@ -32,9 +39,12 @@ export const NumpyImage: Viewable = {
             `${m("numpy_image_save")}('${savePath}', ${expression}, backend='${getConfiguration('preferredBackend', undefined, Backends.Standalone)}', preprocess='${(getConfiguration('normalizationMethod', undefined, NormalizationMethods.None))}')`,
     },
     suffix: ".png",
+    supportsImageViewer: true,
 };
 
-export const PillowImage: Viewable = {
+export type PillowImageInfo = NumpyImageInfo;
+
+export const PillowImage: Viewable<PillowImageInfo> = {
     group: "image",
     type: "pillow_image",
     title: "Image",
@@ -57,4 +67,5 @@ export const PillowImage: Viewable = {
             `${m("pillow_image_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: true,
 };

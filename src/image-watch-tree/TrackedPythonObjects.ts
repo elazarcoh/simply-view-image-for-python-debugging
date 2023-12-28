@@ -10,7 +10,7 @@ import { openImageToTheSide } from "../utils/VSCodeUtils";
 import { allFulfilled } from "../utils/Utils";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logError } from "../Logging";
-import { Except } from "../utils/Except";
+import { errorMessage } from "../utils/Result";
 
 type TrackedObject = {
     expression: PythonExpression;
@@ -101,16 +101,18 @@ export async function saveAllTrackedObjects(
     const saveObjectsCode = combineMultiEvalCodePython(codes);
 
     const mkdirRes = debugSessionData.savePathHelper.mkdir();
-    if (mkdirRes.isError) {
+    if (mkdirRes.err) {
         logError(
-            `Failed to create directory for saving tracked objects: ${mkdirRes.errorMessage}`
+            `Failed to create directory for saving tracked objects: ${errorMessage(
+                mkdirRes
+            )}`
         );
         return;
     }
 
     const saveResult = await evaluateInPython(saveObjectsCode, session);
-    if (Except.isError(saveResult)) {
-        logError(`Failed to save tracked objects: ${saveResult.errorMessage}`);
+    if (saveResult.err) {
+        logError(`Failed to save tracked objects: ${errorMessage(saveResult)}`);
         return;
     } else {
         await allFulfilled(

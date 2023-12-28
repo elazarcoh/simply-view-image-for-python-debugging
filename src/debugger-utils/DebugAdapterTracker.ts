@@ -9,6 +9,8 @@ import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects"
 import { getConfiguration } from "../config";
 import { patchDebugVariableContext } from "./DebugRelatedCommands";
 import { runSetup } from "../python-communication/Setup";
+import { WebviewClient } from "../webview/communication/WebviewClient";
+import { WebviewRequests } from "../webview/communication/createMessages";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -39,7 +41,6 @@ export const createDebugAdapterTracker = (
     const trackedPythonObjects = debugSessionData.trackedPythonObjects;
 
     const updateWatchTree = async () => {
-        await currentPythonObjectsList.update();
         watchTreeProvider.refresh();
     };
 
@@ -47,9 +48,16 @@ export const createDebugAdapterTracker = (
         return saveAllTrackedObjects(trackedPythonObjects.allTracked, session);
     };
 
+    const updateWebview = async () => {
+        const webviewClient = Container.get(WebviewClient);
+        webviewClient.sendRequest(WebviewRequests.replaceData());
+    };
+
     const onScopeChange = debounce(async () => {
+        logDebug("Scope changed. Update current python objects list");
+        await currentPythonObjectsList.update();
         await updateWatchTree();
-        await saveTracked();
+        await Promise.all([updateWebview(), saveTracked()]);
     }, 500);
 
     let isSetupRunning = false;
@@ -58,8 +66,9 @@ export const createDebugAdapterTracker = (
             return;
         }
         isSetupRunning = true;
-        await runSetup(session);
+        const res = await runSetup(session);
         isSetupRunning = false;
+        return res;
     }, 500);
 
     return {
@@ -104,7 +113,11 @@ export const createDebugAdapterTracker = (
                 logDebug("Breakpoint hit");
                 debugSessionData.isStopped = true;
 
-                await debounce(runSetupIfNotRunning, 250)();
+                await runSetupIfNotRunning().then((ok) => {
+                    if (ok === true) {
+                        return onScopeChange();
+                    }
+                });
             } else if (msg.type === "response" && msg.command === "variables") {
                 // Add context to debug variable. This is a workaround.
                 if (
@@ -122,8 +135,11 @@ export const createDebugAdapterTracker = (
             } else if (msg.type === "response" && msg.command === "scopes") {
                 debugVariablesTracker.onScopesResponse(msg);
                 // scope has changed. Make sure setup is okay
-                await runSetupIfNotRunning();
-                await onScopeChange();
+                await runSetupIfNotRunning().then((ok) => {
+                    if (ok === true) {
+                        return onScopeChange();
+                    }
+                });
             }
         },
 

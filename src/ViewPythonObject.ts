@@ -4,62 +4,66 @@ import {
     currentUserSelection,
     selectionString,
     openImageToTheSide,
-    isExpressionSelection,
 } from "./utils/VSCodeUtils";
 import { Viewable } from "./viewable/Viewable";
-import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { constructValueWrappedExpressionFromEvalCode } from "./python-communication/BuildPythonCode";
 import { findExpressionViewables } from "./PythonObjectInfo";
-import { logDebug, logError } from "./Logging";
 import Container from "typedi";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { Except } from "./utils/Except";
+import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
+import { getConfiguration } from "./config";
+import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
+import { WebviewClient } from "./webview/communication/WebviewClient";
+import { WebviewResponses } from "./webview/communication/createMessages";
+import { logWarn } from "./Logging";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
     session: vscode.DebugSession,
     path?: string,
-    openInPreview?: boolean
+    openInPreview?: boolean,
+    forceDiskSerialization?: boolean
 ): Promise<void> {
-    const debugSessionData = activeDebugSessionData(session);
-    path = path ?? debugSessionData.savePathHelper.savePathFor(obj);
-    logDebug(`Saving viewable of type ${viewable.type} to ${path}`);
-    const objectAsString = isExpressionSelection(obj)
-        ? obj.expression
-        : obj.variable;
-    const pathWithSuffix = `${path}${viewable.suffix}`;
-    const saveObjectCode = constructValueWrappedExpressionFromEvalCode(
-        viewable.serializeObjectPythonCode,
-        objectAsString,
-        pathWithSuffix
-    );
-    const mkdirRes = debugSessionData.savePathHelper.mkdir();
-    if (mkdirRes.isError) {
-        const message = `Failed to create directory for saving object: ${mkdirRes.errorMessage}`;
-        logError(message);
-        vscode.window.showErrorMessage(message);
-        return;
-    }
-    const result = await evaluateInPython(saveObjectCode, session);
-    const errorMessage = Except.isError(result)
-        ? result.errorMessage
-        : Except.isError(result.result)
-        ? result.result.errorMessage
-        : undefined;
-    if (errorMessage !== undefined) {
-        const message =
-            `Error saving viewable of type ${viewable.type}: ${errorMessage}`.replaceAll(
-                "\\n",
-                "\n"
+    if (
+        !(forceDiskSerialization ?? false) &&
+        viewable.supportsImageViewer === true &&
+        getConfiguration("useExperimentalViewer", undefined, false) === true
+    ) {
+        const response = await serializeImageUsingSocketServer(
+            obj,
+            viewable,
+            session
+        );
+        if (response.err) {
+            logWarn(response.val);
+            return viewObject(
+                obj,
+                viewable,
+                session,
+                path,
+                openInPreview,
+                true
             );
-        logError(message);
-        vscode.window.showErrorMessage(message);
-    } else {
-        if (viewable.onShow !== undefined) {
-            await viewable.onShow(pathWithSuffix);
         } else {
-            await openImageToTheSide(pathWithSuffix, openInPreview ?? true);
+            const webviewClient = Container.get(WebviewClient);
+            await webviewClient.reveal();
+            webviewClient.sendRequest(
+                WebviewResponses.showImage(response.safeUnwrap())
+            );
+        }
+    } else {
+        const resPath = await serializePythonObjectToDisk(
+            obj,
+            viewable,
+            session,
+            path
+        );
+        if (resPath !== undefined) {
+            if (viewable.onShow !== undefined) {
+                await viewable.onShow(resPath);
+            } else {
+                await openImageToTheSide(resPath, openInPreview ?? true);
+            }
         }
     }
 }
@@ -85,14 +89,15 @@ export async function viewObjectUnderCursor(): Promise<unknown> {
         selectionString(userSelection),
         debugSession
     );
-    if (
-        Except.isError(objectViewables) ||
-        objectViewables.result.length === 0
-    ) {
+    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
         return undefined;
     }
 
-    return viewObject(userSelection, objectViewables.result[0], debugSession);
+    return viewObject(
+        userSelection,
+        objectViewables.safeUnwrap()[0],
+        debugSession
+    );
 }
 
 export async function trackObjectUnderCursor(): Promise<unknown> {
@@ -131,7 +136,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
         );
     }
     let savePath: string | undefined = undefined;
-    if (Except.isOkay(objectViewables) && objectViewables.result.length > 0) {
+    if (objectViewables.ok && objectViewables.safeUnwrap().length > 0) {
         const trackedPythonObjects = debugSessionData.trackedPythonObjects;
         const trackingId = trackedPythonObjects.trackingIdIfTracked({
             expression: userSelectionAsString,
@@ -144,7 +149,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
             debugSessionData.savePathHelper.savePathFor(userSelection);
         trackedPythonObjects.track(
             { expression: userSelectionAsString },
-            objectViewables.result[0],
+            objectViewables.safeUnwrap()[0],
             savePath,
             trackingId
         );
@@ -152,16 +157,13 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
 
     Container.get(WatchTreeProvider).refresh();
 
-    if (
-        Except.isError(objectViewables) ||
-        objectViewables.result.length === 0
-    ) {
+    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
         return undefined;
     }
 
     return viewObject(
         userSelection,
-        objectViewables.result[0],
+        objectViewables.safeUnwrap()[0],
         debugSession,
         savePath,
         false

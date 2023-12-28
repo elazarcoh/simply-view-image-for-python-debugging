@@ -20,6 +20,9 @@ import {
     viewObject,
     viewObjectUnderCursor,
 } from "./ViewPythonObject";
+import Container from "typedi";
+import { WebviewClient } from "./webview/communication/WebviewClient";
+import { runSetup } from "./python-communication/Setup";
 
 // *********************
 // Some general commands
@@ -28,6 +31,15 @@ async function openExtensionSettings(): Promise<void> {
     await vscode.commands.executeCommand("workbench.action.openSettings", {
         query: "svifpd",
     });
+}
+async function openImageWebview(): Promise<void> {
+    Container.get(WebviewClient).reveal();
+}
+async function rerunSetup(): Promise<void> {
+    const debugSession = vscode.debug.activeDebugSession;
+    if (debugSession) {
+        await runSetup(debugSession, true);
+    }
 }
 
 // *********************************
@@ -40,7 +52,9 @@ export interface TypedCommand<C extends AvailableCommands>
 }
 
 const Commands = {
+    "svifpd.run-setup": rerunSetup,
     "svifpd.open-settings": openExtensionSettings,
+    "svifpd.open-image-webview": openImageWebview,
     "svifpd.watch-refresh": refreshWatchTree,
     "svifpd._internal_view-object": viewObject,
     "svifpd.add-expression": addExpressionTreeItem,
@@ -88,6 +102,7 @@ export function registerExtensionCommands(
 ): vscode.Disposable[] {
     // TODO: automate registering
     return [
+        _registerCommandByName("svifpd.run-setup"),
         _registerCommandByName("svifpd.view-image"),
         _registerCommandByName("svifpd.view-image-track"),
         _registerCommandByName("svifpd._internal_view-object"),
@@ -99,6 +114,7 @@ export function registerExtensionCommands(
         _registerCommandByName("svifpd.watch-track-disable"),
         _registerCommandByName("svifpd.watch-refresh"),
         _registerCommandByName("svifpd.open-settings"),
+        _registerCommandByName("svifpd.open-image-webview"),
         _registerCommandByName("svifpd.update-frame-id"),
         _registerCommandByName("svifpd.view-debug-variable"),
         _registerCommandByName("svifpd.disable-plugin"),

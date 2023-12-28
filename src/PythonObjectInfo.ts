@@ -7,23 +7,23 @@ import {
     constructRunSameExpressionWithMultipleEvaluatorsCode,
 } from "./python-communication/BuildPythonCode";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { Except } from "./utils/Except";
 import { Viewable } from "./viewable/Viewable";
+import { Err, Ok, Result, errorMessage } from "./utils/Result";
 
 function listOfValidViewables(
     viewables: ReadonlyArray<Viewable>,
-    isOfType: Except<boolean>[]
+    isOfType: Result<boolean>[]
 ) {
     return isOfType
         .map((isOfType, i) => ({ isOfType, i }))
-        .filter(({ isOfType }) => !isOfType.isError && isOfType.result)
+        .filter(({ isOfType }) => !isOfType.err && isOfType.safeUnwrap())
         .map(({ i }) => viewables[i]);
 }
 
 export async function findExpressionViewables(
     expression: string,
     session: vscode.DebugSession
-): Promise<Except<Viewable[]>> {
+): Promise<Result<Viewable[]>> {
     const viewables = Container.get(AllViewables).allViewables;
     const code = constructRunSameExpressionWithMultipleEvaluatorsCode(
         expression,
@@ -31,25 +31,24 @@ export async function findExpressionViewables(
     );
     const isOfType = await evaluateInPython(code, session);
 
-    if (Except.isError(isOfType)) {
+    if (isOfType.err) {
         logError(
-            `Error finding viewables for expression \`${expression}\`. Error: ${isOfType.errorMessage}`
+            `Error finding viewables for expression \`${expression}\`. Error: ${errorMessage(
+                isOfType
+            )}`
         );
-        return Except.error(isOfType.errorMessage);
+        return Err(errorMessage(isOfType));
     } else {
-        const objectViewables = listOfValidViewables(
-            viewables,
-            isOfType.result
-        );
+        const objectViewables = listOfValidViewables(viewables, isOfType.safeUnwrap());
 
-        return Except.result(objectViewables);
+        return Ok(objectViewables);
     }
 }
 
 export async function findExpressionsViewables(
     expressions: string[],
     session: vscode.DebugSession
-): Promise<Except<Viewable[][]>> {
+): Promise<Result<Viewable[][]>> {
     const viewables = Container.get(AllViewables).allViewables;
     const codes = expressions.map((expression) =>
         constructRunSameExpressionWithMultipleEvaluatorsCode(
@@ -60,17 +59,17 @@ export async function findExpressionsViewables(
     const code = combineMultiEvalCodePython(codes);
     const isOfType = await evaluateInPython(code, session);
 
-    if (isOfType.isError) {
+    if (isOfType.err) {
         const message = `Error finding viewables for expressions \`${expressions.join(
             ", "
-        )}\`. Error: ${isOfType.errorMessage}`;
+        )}\`. Error: ${errorMessage(isOfType)}`;
         logError(message);
-        return Except.error(isOfType.errorMessage);
+        return Err(errorMessage(isOfType));
     } else {
-        const objectsViewables = isOfType.result.map(
-            (isOfType: Except<boolean>[]) =>
+        const objectsViewables = isOfType.safeUnwrap().map(
+            (isOfType: Result<boolean>[]) =>
                 listOfValidViewables(viewables, isOfType)
         );
-        return Except.result(objectsViewables);
+        return Ok(objectsViewables);
     }
 }

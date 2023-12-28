@@ -3,3 +3,4 @@
 /dist/
 *.vsix
 /.vscode-test
+__pycache__/

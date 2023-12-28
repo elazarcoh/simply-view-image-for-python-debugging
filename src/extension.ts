@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import * as vscode from "vscode";
-import { initLog, logDebug, logTrace } from "./Logging";
+import { initLog, logDebug, logError, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
 import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
 import Container from "typedi";
@@ -17,6 +17,8 @@ import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
 import { HoverProvider } from "./HoverProvider";
+import { SocketServer } from "./python-communication/socket-based/Server";
+import { WebviewClient } from "./webview/communication/WebviewClient";
 
 function onConfigChange(): void {
     initLog();
@@ -31,6 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
     setupPluginManager(context);
 
     setSaveLocation(context);
+
+    Container.set(WebviewClient, new WebviewClient(context));
 
     vscode.workspace.onDidChangeConfiguration((config) => {
         if (config.affectsConfiguration(EXTENSION_CONFIG_SECTION)) {
@@ -105,6 +109,13 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(...registerExtensionCommands(context));
+
+    try {
+        const socketServer = Container.get(SocketServer);
+        socketServer.start();
+    } catch (e) {
+        logError("Failed to start socket server", e);
+    }
 
     // TODO: Disabled for now, until I decide it's ready to be used.
     // return { ...api };

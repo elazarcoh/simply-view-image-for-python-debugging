@@ -2,8 +2,15 @@ import NUMPY_TENSOR_CODE from "../python/numpy_tensor.py?raw";
 import TORCH_TENSOR_CODE from "../python/torch_tensor.py?raw";
 import { Viewable } from "./Viewable";
 import { atModule as m } from "../python-communication/BuildPythonCode";
+import { ArrayDataType } from "../common/datatype";
 
-export const NumpyTensor: Viewable = {
+export type NumpyTensorInfo = {
+    type: string;
+    shape: string;
+    dtype: ArrayDataType;
+};
+
+export const NumpyTensor: Viewable<NumpyTensorInfo> = {
     group: "tensor",
     type: "numpy_tensor",
     title: "Tensor (numpy)",
@@ -25,9 +32,12 @@ export const NumpyTensor: Viewable = {
             `${m("numpy_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };
 
-export const TorchTensor: Viewable = {
+export type TorchTensorInfo = NumpyTensorInfo;
+
+export const TorchTensor: Viewable<TorchTensorInfo> = {
     group: "tensor",
     type: "torch_tensor",
     title: "Tensor (torch)",
@@ -49,4 +59,5 @@ export const TorchTensor: Viewable = {
             `${m("torch_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
+    supportsImageViewer: false,
 };

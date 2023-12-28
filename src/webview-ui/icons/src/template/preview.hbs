@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ name }} | The icon font for Visual Studio Code </title>
+
+    <style type="text/css">
+
+        html {
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+            margin: 0;
+            padding: 0;
+            font-weight: normal;
+        }
+
+        ol, ul {
+            list-style: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;
+            margin: 0;
+            padding: 10px 20px;
+            text-align: center;
+            background-color: #f8f8f8;
+        }
+
+        h1 {
+            font-weight: bold;
+            margin: 24px;
+        }
+
+        .icon {
+            width: 100px;
+            display: inline-block;
+            margin: 8px;
+        }
+
+        .icon:hover {
+            cursor: pointer;
+        }
+
+        .icon:hover .inner {
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.24);
+        }
+
+        .icon .inner {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            background-color: white;
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.06);
+            border-radius: 4px;
+            transition: all .3s ease-in-out;
+        }
+
+        .icon .inner {{ tag }} {
+            padding: 16px 0;
+            font-size: 48px;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .icon .inner::before {
+            overflow: hidden;
+        }
+
+        .label {
+            margin-top: 8px;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 4px;
+            font-size: 10px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .description {
+            display: none;
+        }
+
+        #search {
+            display: flex;
+            width: 100%;
+            font-size: 16px;
+            padding: 12px 16px;
+            margin: 0 auto;
+            max-width: 900px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(0,0,0,.1);
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        #search:focus {
+            outline: none !important;
+            border-color: #18a0fb;
+        }
+
+        #copier {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+
+        #notification {
+            position: fixed;
+            margin: auto;
+            bottom: 40px;
+            left: 50%;
+            width: auto;
+            transform: translateX(-50%);
+            color: white;
+            background-color: #212121;
+            padding: 8px 24px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity .3s ease-in-out;
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        #notification-id {
+            font-weight: bold;
+        }
+
+        #notification.show{
+            opacity: .9;
+        }
+
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="{{ name }}.css" />
+</head>
+<body>
+
+    <h1>{{ name }}</h1>
+
+    <input type="text" id="search" placeholder="Search for icon names">
+
+    <div id="icons">
+    {{# each assets }}
+        <div class="icon" data-name="{{ @key }}" title="{{ @key }}">
+            <span class="inner">
+                <{{ ../tag }} class="{{ ../prefix }} {{ ../prefix }}-{{ @key }}" aria-hidden="true"></{{ ../tag }}>
+            </span>
+            <br>
+            <span class='label'>{{ @key }}</span>
+            <span class='description'></span>
+        </div>
+    {{/ each }}
+    </div>
+
+    <div id="notification">📋 Copied: <span id="notification-id"></span></div>
+    <input type="text" id="copier">
+
+<script type="text/javascript">
+    let icons = document.getElementsByClassName('icon');
+    let copier = document.getElementById('copier');
+    let notification = document.getElementById('notification');
+    let notificationText = document.getElementById('notification-id');
+    let search = document.getElementById('search');
+    let timer;
+    let descriptions = [
+        {
+            name: 'account',
+            description: 'person people face user contact outline'
+        },
+        {
+            name: 'activate-breakpoints',
+            description: 'dot circle toggle switch'
+        },
+        {
+            name: 'add',
+            description: 'combine plus add more new'
+        },
+        {
+            name: 'archive',
+            description: 'save box delivery package'
+        },
+        {
+            name: 'arrow-both',
+            description: 'switch swap'
+        },
+        {
+            name: 'beaker',
+            description: 'test lab tube tool'
+        },
+        {
+            name: 'bell',
+            description: 'alert notify notification'
+        },
+        {
+            name: 'bell-dot',
+            description: 'alert notify notification'
+        },
+        {
+            name: 'bold',
+            description: 'text format weight font style'
+        },
+        {
+            name: 'book',
+            description: 'library text read open'
+        },
+        {
+            name: 'bookmark',
+            description: 'book save later'
+        },
+        {
+            name: 'briefcase',
+            description: 'work workplace'
+        },
+        {
+            name: 'broadcast',
+            description: 'tower signal connect connection'
+        },
+        {
+            name: 'browser',
+            description: 'web internet page window'
+        },
+        {
+            name: 'bug',
+            description: 'error issue insect block'
+        },
+        {
+            name: 'calendar',
+            description: 'day time week month date schedule event planner'
+        },
+        {
+            name: 'call-incoming',
+            description: 'phone cell voice connection direction'
+        },
+        {
+            name: 'call-outgoing',
+            description: 'phone cell voice connection direction'
+        },
+        {
+            name: 'case-sensitive',
+            description: 'search filter option letters words'
+        },
+        {
+            name: 'check-all',
+            description: 'checkmark select everything checked mark complete finish done accept approve'
+        },
+        {
+            name: 'check',
+            description: 'checkmark select everything checked mark complete finish done accept approve'
+        },
+        {
+            name: 'checklist',
+            description: 'checkmark select everything checked mark complete finish done accept todo task text'
+        },
+        {
+            name: 'chevron-down',
+            description: 'twistie tree node folder fold collapse'
+        },
+        {
+            name: 'chevron-left',
+            description: 'twistie tree node folder fold collapse'
+        },
+        {
+            name: 'chevron-right',
+            description: 'twistie tree node folder fold collapse'
+        },
+        {
+            name: 'chevron-up',
+            description: 'twistie tree node folder fold collapse'
+        },
+        {
+            name: 'chrome-close',
+            description: 'menu bar window dismiss'
+        },
+        {
+            name: 'chrome-maximize',
+            description: 'menu bar window large increase'
+        },
+        {
+            name: 'chrome-minimize',
+            description: 'menu bar window small decrease'
+        },
+        {
+            name: 'chrome-restore',
+            description: 'menu bar window'
+        },
+        {
+            name: 'circle-filled',
+            description: 'dot round small bullet breakpoint'
+        },
+        {
+            name: 'circle-large-filled',
+            description: 'dot round bullet'
+        },
+        {
+            name: 'circle-large',
+            description: 'dot round bullet'
+        },
+        {
+            name: 'circle',
+            description: 'dot round small bullet unverified breakpoint'
+        },
+        {
+            name: 'circle-slash',
+            description: 'error block stop disable'
+        },
+        {
+            name: 'circuit-board',
+            description: 'iot device process lines'
+        },
+        {
+            name: 'clear-all',
+            description: 'reset remove'
+        },
+        {
+            name: 'clippy',
+            description: 'clipboard document edit copy'
+        },
+        {
+            name: 'close-all',
+            description: 'remove bulk'
+        },
+        {
+            name: 'close',
+            description: 'remove x cancel stop miltiply'
+        },
+        {
+            name: 'cloud-download',
+            description: 'install import'
+        },
+        {
+            name: 'cloud-upload',
+            description: 'export'
+        },
+        {
+            name: 'cloud',
+            description: 'online service'
+        },
+        {
+            name: 'code',
+            description: 'embed script programming server'
+        },
+        {
+            name: 'collapse-all',
+            description: 'bulk fold minimize'
+        },
+        {
+            name: 'color-mode',
+            description: 'switch dark light contrast mode toggle'
+        },
+        {
+            name: 'comment-discussion',
+            description: 'dialog message bubble chat'
+        },
+        {
+            name: 'comment',
+            description: 'dialog message bubble chat'
+        },
+        {
+            name: 'credit-card',
+            description: 'payment merchant money'
+        },
+        {
+            name: 'dash',
+            description: 'line minus subtract hyphen'
+        },
+        {
+            name: 'dashboard',
+            description: 'panel stats dial'
+        },
+        {
+            name: 'database',
+            description: 'sql db storage online cloud'
+        },
+        {
+            name: 'debug-alt-small',
+            description: 'run'
+        },
+        {
+            name: 'debug-alt',
+            description: 'run'
+        },
+        {
+            name: 'debug-console',
+            description: 'terminal command input compile build'
+        },
+        {
+            name: 'debug-disconnect',
+            description: 'stop unplug eject'
+        },
+        {
+            name: 'desktop-download',
+            description: 'install'
+        },
+        {
+            name: 'device-camera-video',
+            description: 'movie record capture'
+        },
+        {
+            name: 'device-camera',
+            description: 'capture picture image'
+        },
+        {
+            name: 'device-mobile',
+            description: 'phone handheld smartphone'
+        },
+        {
+            name: 'diff-added',
+            description: 'git change'
+        },
+        {
+            name: 'diff-ignored',
+            description: 'git change'
+        },
+        {
+            name: 'diff-modified',
+            description: 'git change'
+        },
+        {
+            name: 'diff-renamed',
+            description: 'git change'
+        },
+        {
+            name: 'diff-removed',
+            description: 'git change'
+        },
+        {
+            name: 'play-circle',
+            description: 'run'
+        },
+        {
+            name: 'pass',
+            description: 'play check checkmark outline issue closed'
+        },
+        {
+            name: 'pass-filled',
+            description: 'play check checkmark filled issue closed'
+        },
+        {
+            name: 'play',
+            description: 'run'
+        },
+    ];
+
+    descriptions.some(function(item) {
+        let findIcon = document.querySelectorAll(`[data-name="${item.name}"]`);
+        findIcon[0].querySelector('.description').innerHTML += item.description;
+    });
+
+    for(i=0;i<icons.length;i++){
+        let icon = icons[i]
+        icon.onclick = function(e){
+            let name = this.getAttribute('data-name');
+
+            copier.value = name;
+            copier.select();
+            copier.setSelectionRange(0, 99999)
+            document.execCommand('copy');
+
+            notificationText.innerHTML = name;
+            animateNotification();
+            e.preventDefault();
+        }
+    }
+
+    function animateNotification(){
+        window.clearTimeout(timer);
+        search.focus();
+        notification.classList.add('show');
+        timer = window.setTimeout(function(){
+            notification.classList.remove('show');
+        }, 3000);
+    }
+
+    function sanitizeText(string){
+        return string = string.replace(/-/gi,' ');
+    }
+
+    search.addEventListener('keyup', function(){
+        let filter = search.value.toUpperCase();
+        let wrapper = document.getElementById('icons');
+        let icon = wrapper.getElementsByTagName('div');
+
+        for (i = 0; i < icon.length; i++) {
+            let textInner = sanitizeText(icon[i].innerText)
+            let textContents = sanitizeText(icon[i].textContent);
+            compareText = textContents || textInner;
+
+            if (compareText.toUpperCase().indexOf(filter) > -1) {
+                icon[i].style.display = '';
+            } else {
+                icon[i].style.display = 'none';
+            }
+        }
+    });
+
+    search.focus();
+
+</script>
+</body>
+</html>

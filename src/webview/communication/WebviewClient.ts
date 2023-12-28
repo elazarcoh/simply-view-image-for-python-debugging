@@ -12,6 +12,7 @@ import { logDebug } from "../../Logging";
 @Service()
 export class WebviewClient {
     webview?: vscode.Webview;
+    nonce?: string;
     isReady = false;
 
     constructor(private readonly context: vscode.ExtensionContext) {}
@@ -20,8 +21,9 @@ export class WebviewClient {
         return Math.random().toString(36).substring(2, 15);
     }
 
-    setWebview(webview: vscode.Webview) {
+    setWebview(webview: vscode.Webview, nonce: string) {
         this.webview = webview;
+        this.nonce = nonce;
     }
     setReady() {
         this.isReady = true;
@@ -29,6 +31,7 @@ export class WebviewClient {
 
     unsetWebview() {
         this.webview = undefined;
+        this.nonce = undefined;
         this.isReady = false;
     }
 

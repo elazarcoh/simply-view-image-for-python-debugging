@@ -50,14 +50,14 @@ export class ImageViewPanel {
         // the panel or when the panel is closed programmatically)
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-        // Set the HTML content for the webview panel
-        this._panel.webview.html = this._getWebviewContent(
+        const { content, nonce } = this._getWebviewContent(
             this._panel.webview,
             extensionUri
         );
+        this._panel.webview.html = content;
 
         this._webviewMessageHandler = new WebviewMessageHandler();
-        Container.get(WebviewClient).setWebview(this._panel.webview);
+        Container.get(WebviewClient).setWebview(this._panel.webview, nonce);
 
         // Set an event listener to listen for messages passed from the webview context
         // this._setWebviewMessageListener(this._panel.webview, context);
@@ -135,6 +135,9 @@ export class ImageViewPanel {
             .replaceAll(/<script.*?src="webview\.js"><\/script>/g, () => {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
             });
-        return htmlWithVscodeResourceUris;
+        return {
+            content: htmlWithVscodeResourceUris,
+            nonce,
+        };
     }
 }

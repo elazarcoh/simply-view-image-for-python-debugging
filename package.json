@@ -376,6 +376,7 @@
     "build": "webpack --mode development",
     "watch": "webpack --mode development --watch",
     "package": "vsce package",
+    "package-pre-release": "vsce package --pre-release",
     "install-extension": "vsce package -o svifpd.vsix && code --install-extension svifpd.vsix",
     "lint": "eslint src --ext ts",
     "clean": "rimraf dist src/webview-ui/pkg",

@@ -13,6 +13,7 @@ export class DebugSessionData {
     public readonly currentPythonObjectsList: CurrentPythonObjectsList;
     public setupOkay: boolean = false;
     public isStopped: boolean = false;
+    public readonly storage = new Map<string, unknown>();
 
     constructor(session: vscode.DebugSession) {
         this.savePathHelper = new SavePathHelper(session.id);

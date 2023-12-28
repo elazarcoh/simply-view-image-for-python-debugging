@@ -10,3 +10,4 @@ pub(crate) mod icon_button;
 pub(crate) mod status_bar;
 pub(crate) mod view_container;
 pub(crate) mod spinner;
+pub(crate) mod dangerously_set_html_content;

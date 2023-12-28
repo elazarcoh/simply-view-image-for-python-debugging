@@ -1,5 +1,18 @@
 # Change Log
 
+## [3.0.15] - Pre-release
+
+### Added
+
+- New image viewer (only images for now)
+  - Supports zooming and panning
+  - Pixel values in status bar
+  - Pixel value when zoomed in
+  - Heatmap coloring
+  - Segmentation coloring
+
+- Communicate with python via sockets
+
 ## [3.0.13] - Patch
 
 ### Fixed

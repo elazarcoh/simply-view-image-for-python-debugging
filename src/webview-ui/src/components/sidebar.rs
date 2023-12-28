@@ -3,8 +3,10 @@ use stylist::{css, yew::use_style};
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
+use yewdux::dispatch::Dispatch;
 
 use crate::{
+    app_state::app_state::AppState,
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
@@ -177,6 +179,14 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
             })}
             />
     };
+    let reset_view_button = html! {
+        <IconButton
+            title={"Reset view"}
+            aria_label={"Reset view"}
+            icon={"codicon codicon-home"}
+            onclick={Dispatch::<AppState>::new().reduce_mut_callback(|state| { state.view_cameras.borrow_mut().reset_all() })}
+            />
+    };
 
     #[cfg(debug_assertions)]
     let debug_images_button = html! {
@@ -236,6 +246,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         }>
             <Toolbar>
                 {debug_images_button}
+                {reset_view_button.clone()}
                 {add_expression_button}
                 {refresh_button.clone()}
                 {pin_toggle_button}
@@ -262,6 +273,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     let collapsed_html = html! {
     <div class={collapsed_style}>
         {expand_toggle_button}
+        {reset_view_button}
         {refresh_button}
     </div>
     };

@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{common::Size, math_utils};
 
-use super::{types::ViewId, constants::all_views};
+use super::{constants::all_views, types::ViewId};
 
 #[derive(Copy, Clone)]
 pub(crate) struct Camera {
@@ -47,6 +47,12 @@ impl ViewsCameras {
 
     pub(crate) fn set(&mut self, view_id: ViewId, camera: Camera) {
         self.0.get(&view_id).unwrap().replace(camera);
+    }
+
+    pub(crate) fn reset_all(&mut self) {
+        for (_, camera) in self.0.iter() {
+            camera.replace(Camera::default());
+        }
     }
 }
 

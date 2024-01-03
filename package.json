@@ -422,7 +422,7 @@
     "@vscode/codicons": "^0.0.33",
     "@vscode/webview-ui-toolkit": "^1.2.1",
     "parsimmon": "^1.18.1",
-    "plotly.js": "^2.18.2",
+    "plotly.js": "^2.25.2",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

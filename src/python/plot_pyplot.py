@@ -61,5 +61,10 @@ try:
         return is_pyplot_ax, info, save
 
     is_pyplot_ax, pyplot_ax_info, pyplot_ax_save = pyplot_axes()
-except:
+except Exception as e:
+    def is_pyplot_figure(obj):
+        return False
+    def is_pyplot_ax(obj):
+        return False
+    _plot_pyplot_error = e
     pass

@@ -47,5 +47,8 @@ try:
         return is_numpy_tensor, info, save
 
     is_numpy_tensor, numpy_tensor_info, numpy_tensor_save = numpy_tensor()
-except:
+except Exception as e:
+    def is_numpy_tensor(obj):
+        return False
+    _numpy_tensor_error = e
     pass

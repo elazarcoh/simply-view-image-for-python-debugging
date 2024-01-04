@@ -27,7 +27,8 @@ try:
         return is_pillow_image, info, save
 
     is_pillow_image, pillow_image_info, pillow_image_save = pillow()
-except:
+except Exception as e:
     def is_pillow_image(img):
         return False
+    _image_pillow_error = e
     pass

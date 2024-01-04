@@ -41,5 +41,8 @@ try:
         return is_torch_tensor, info, save
 
     is_torch_tensor, torch_tensor_info, torch_tensor_save = torch_tensor()
-except:
+except Exception as e:
+    def is_torch_tensor(obj):
+        return False
+    _torch_tensor_error = e
     pass

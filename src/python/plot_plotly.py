@@ -18,5 +18,8 @@ try:
         return is_plotly_figure, info, save
 
     is_plotly_figure, plotly_figure_info, plotly_figure_save = plotly_figure()
-except:
+except Exception as e:
+    def is_plotly_figure(obj):
+        return False
+    _plot_plotly_error = e
     pass

@@ -182,5 +182,6 @@ try:
         return is_numpy_image, info, save
 
     is_numpy_image, numpy_image_info, numpy_image_save = numpy()
-except:
+except Exception as e:
+    _image_numpy_error = e
     pass

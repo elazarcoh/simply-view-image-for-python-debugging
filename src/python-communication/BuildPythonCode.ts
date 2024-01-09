@@ -91,7 +91,7 @@ ${setupCode}
 
 export function verifyModuleExistsCode(): EvalCodePython<Result<boolean>> {
     return {
-        pythonCode: `"Value({})".format('${PYTHON_MODULE_NAME}' in globals())`
+        pythonCode: `"Value({})".format('${PYTHON_MODULE_NAME}' in globals() or '${PYTHON_MODULE_NAME}' in locals())`,
     };
 }
 

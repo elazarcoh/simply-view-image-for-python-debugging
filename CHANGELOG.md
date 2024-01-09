@@ -1,4 +1,9 @@
 # Change Log
+## [3.0.17] - Pre-release
+
+### Fixed
+
+- Check module either in globals or in locals (instead of only in globals).
 
 ## [3.0.15] - Pre-release
 

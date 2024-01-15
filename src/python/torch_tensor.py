@@ -10,9 +10,13 @@ try:
                 if len(obj.shape) == 2:
                     pass
                 elif len(obj.shape) == 3:
-                    is_valid &= obj.shape[0] in valid_channels
+                    is_ch_first = obj.shape[0] in valid_channels 
+                    is_ch_last = obj.shape[2] in valid_channels
+                    is_valid &= is_ch_first or is_ch_last
                 elif len(obj.shape) == 4:
-                    is_valid &= obj.shape[1] in valid_channels
+                    is_ch_first = obj.shape[1] in valid_channels 
+                    is_ch_last = obj.shape[3] in valid_channels
+                    is_valid &= is_ch_first or is_ch_last
                 return is_valid
             except:
                 return False
@@ -28,10 +32,21 @@ try:
 
         def save(path, obj, normalize=True, pad=10, *args, **kwargs):
             import torchvision
+            def ensure_channel_first(obj):
+                valid_channels = (1, 2, 3, 4)
+                if len(obj.shape) == 2:
+                    obj = obj[None, ...]
+                elif len(obj.shape) == 3:
+                    if obj.shape[0] not in valid_channels:
+                        obj = obj.permute(2, 0, 1)
+                elif len(obj.shape) == 4:
+                    if obj.shape[1] not in valid_channels:
+                        obj = obj.permute(0, 3, 1, 2)
+                return obj
 
             pad_value = 255
             torchvision.utils.save_image(
-                obj.float(),
+                ensure_channel_first(obj).float(),
                 path,
                 normalize=normalize,
                 pad_value=pad_value,

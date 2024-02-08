@@ -2,7 +2,7 @@
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
   "description": "simply view the image of the image variables when debugging python",
-  "version": "3.0.17",
+  "version": "3.0.19",
   "publisher": "elazarcoh",
   "icon": "icon.png",
   "preview": false,
@@ -25,6 +25,7 @@
   ],
   "activationEvents": [
     "onDebugResolve:python",
+    "onDebugResolve:debugpy",
     "onDebugResolve:Python Kernel Debug Adapter"
   ],
   "main": "./dist/extension.js",

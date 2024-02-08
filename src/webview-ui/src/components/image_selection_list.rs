@@ -5,7 +5,8 @@ use yewdux::prelude::*;
 
 use crate::{
     app_state::app_state::{AppState, StoreAction},
-    components::image_list_item::ImageListItem, common::ViewId,
+    common::ViewId,
+    components::image_list_item::ImageListItem,
 };
 
 #[derive(PartialEq, Properties)]
@@ -32,7 +33,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
         .iter()
         .map(|(id, info)| {
             let onclick = {
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
 
                 dispatch.apply_callback({
                     let id = id.clone();

@@ -56,13 +56,13 @@ pub(crate) struct VSCodeRequests;
 
 impl VSCodeRequests {
     fn vscode() -> Rc<WebviewApi> {
-        Dispatch::<WebviewApiStore>::new().get().vscode.as_ref().ok_or(
+        Dispatch::<WebviewApiStore>::global().get().vscode.as_ref().ok_or(
             "VSCodeRequests::vscode: VSCodeRequests::init must be called before VSCodeRequests::vscode",
         ).unwrap().clone()
     }
 
     pub(crate) fn init(vscode: WebviewApi) {
-        Dispatch::<WebviewApiStore>::new().reduce_mut(move |state| {
+        Dispatch::<WebviewApiStore>::global().reduce_mut(move |state| {
             state.vscode = Some(Rc::new(vscode));
         });
     }

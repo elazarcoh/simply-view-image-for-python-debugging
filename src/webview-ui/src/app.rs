@@ -35,22 +35,22 @@ fn rendering_context() -> impl RenderingContext {
 
     impl RenderingContext for RenderingContextImpl {
         fn gl(&self) -> WebGl2RenderingContext {
-            let state = Dispatch::<AppState>::new().get();
-            state.gl.clone().unwrap()
+            let dispatch = Dispatch::<AppState>::global();
+            dispatch.get().gl.clone().unwrap()
         }
 
         fn texture_by_id(&self, id: &ImageId) -> ImageAvailability {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch.get().image_cache.borrow().get(id)
         }
 
         fn visible_nodes(&self) -> Vec<ViewId> {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch.get().image_views.borrow().visible_views()
         }
 
         fn view_data(&self, view_id: ViewId) -> ImageViewData {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             ImageViewData {
                 camera: dispatch.get().view_cameras.borrow().get(view_id),
                 html_element: dispatch
@@ -70,12 +70,12 @@ fn rendering_context() -> impl RenderingContext {
         }
 
         fn rendering_configuration(&self) -> configurations::RenderingConfiguration {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch.get().configuration.rendering.clone()
         }
 
         fn drawing_options(&self, image_id: &ImageId) -> (DrawingOptions, GlobalDrawingOptions) {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
             let drawing_options = state.drawing_options.borrow().get_or_default(image_id);
             let global_drawing_options = state.global_drawing_options.clone();
@@ -86,7 +86,7 @@ fn rendering_context() -> impl RenderingContext {
             &self,
             colormap_name: &str,
         ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>> {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
             let gl = state.gl()?;
             let colormap = self.get_color_map(colormap_name)?;
@@ -98,7 +98,7 @@ fn rendering_context() -> impl RenderingContext {
         }
 
         fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch
                 .get()
                 .color_map_registry
@@ -116,12 +116,12 @@ fn view_context() -> impl ViewContext {
 
     impl ViewContext for CameraContextImpl {
         fn get_camera_for_view(&self, view_id: ViewId) -> camera::Camera {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch.get().view_cameras.borrow().get(view_id)
         }
 
         fn set_camera_for_view(&self, view_id: ViewId, camera: camera::Camera) {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch
                 .get()
                 .view_cameras
@@ -130,7 +130,7 @@ fn view_context() -> impl ViewContext {
         }
 
         fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size> {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
             dispatch
                 .get()
@@ -144,7 +144,7 @@ fn view_context() -> impl ViewContext {
         }
 
         fn get_view_element(&self, view_id: ViewId) -> HtmlElement {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch
                 .get()
                 .image_views
@@ -160,7 +160,7 @@ fn view_context() -> impl ViewContext {
         }
 
         fn get_image_for_view(&self, view_id: ViewId) -> Option<ImageAvailability> {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
             image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id))
         }
@@ -223,7 +223,7 @@ pub(crate) fn App() -> Html {
             ]
             .map(|ext| webgl_utils::general::enable_extension(&gl, ext).unwrap());
 
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             dispatch.reduce_mut(|state| {
                 state.gl = Some(gl.clone());
             });

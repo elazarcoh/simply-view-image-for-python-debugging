@@ -90,7 +90,7 @@ pub(crate) fn Main(props: &MainProps) -> Html {
         view_context,
     } = props;
 
-    let view_container_node_ref = Dispatch::<AppState>::new()
+    let view_container_node_ref = Dispatch::<AppState>::global()
         .get()
         .image_views
         .borrow()

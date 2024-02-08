@@ -4,7 +4,7 @@ use itertools::Itertools;
 use stylist::yew::{styled_component, use_style};
 use yew::prelude::*;
 
-use yewdux::prelude::{use_selector, Dispatch};
+use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
@@ -69,7 +69,7 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
                     log::debug!("current_value: {:?}", current_value);
                     match current_value {
                         Some(name) => {
-                            let dispatch = Dispatch::<AppState>::new();
+                            let dispatch = Dispatch::<AppState>::global();
                             dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
                                 UpdateGlobalDrawingOptions::GlobalHeatmapColormap(name),
                             ));

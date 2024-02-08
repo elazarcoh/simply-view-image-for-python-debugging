@@ -25,6 +25,7 @@
   ],
   "activationEvents": [
     "onDebugResolve:python",
+    "onDebugResolve:debugpy",
     "onDebugResolve:Python Kernel Debug Adapter"
   ],
   "main": "./dist/extension.js",

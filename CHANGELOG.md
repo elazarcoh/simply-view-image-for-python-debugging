@@ -1,4 +1,10 @@
 # Change Log
+## [3.0.19] - Pre-release
+
+### Fixed
+
+- Register debug-adapters with the new `debugpy` type (`python` is deprecated). Fixes #82.
+
 ## [3.0.17] - Pre-release
 
 ### Fixed

@@ -8,7 +8,7 @@ use itertools::Itertools;
 use std::convert::TryFrom;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
-use yewdux::prelude::Dispatch;
+use yewdux::Dispatch;
 
 pub(crate) struct VSCodeListener;
 
@@ -57,7 +57,7 @@ impl VSCodeListener {
     fn handle_image_data_response(image_message: ImageMessage) -> Result<()> {
         let image_id = image_message.image_id.clone();
         if image_message.bytes.is_some() {
-            let dispatch = Dispatch::<AppState>::new();
+            let dispatch = Dispatch::<AppState>::global();
             let image_data = ImageData::try_from(image_message)?;
 
             dispatch.apply(StoreAction::AddTextureImage(
@@ -81,13 +81,13 @@ impl VSCodeListener {
         let image_id = image_data.image_id.clone();
         Self::handle_image_data_response(image_data)?;
 
-        let dispatch = Dispatch::<AppState>::new();
+        let dispatch = Dispatch::<AppState>::global();
         dispatch.apply(StoreAction::SetImageToView(image_id, ViewId::Primary));
         Ok(())
     }
 
     fn handle_replace_data_request(replacement_images: ImageObjects) {
-        let dispatch = Dispatch::<AppState>::new();
+        let dispatch = Dispatch::<AppState>::global();
         let (images, errors): (Vec<_>, Vec<_>) = replacement_images
             .0
             .into_iter()

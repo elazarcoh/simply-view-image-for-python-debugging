@@ -16,7 +16,7 @@ struct ImagesFetcher;
 impl Listener for ImagesFetcher {
     type Store = AppState;
 
-    fn on_change(&mut self, state: Rc<Self::Store>) {
+    fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
         let currently_viewing_image_ids = state
             .image_views
             .borrow()

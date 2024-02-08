@@ -9507,7 +9507,7 @@ pub(crate) fn set_debug_images() {
         channels_first_image_rgba_int16(),
     ];
 
-    let dispatch = Dispatch::<AppState>::new();
+    let dispatch = Dispatch::<AppState>::global();
     let (images, errors): (Vec<_>, Vec<_>) = images
         .into_iter()
         .map(ImageObject::try_from)

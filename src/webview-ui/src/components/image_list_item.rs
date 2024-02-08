@@ -1,12 +1,13 @@
 use itertools::Itertools;
 use stylist::{yew::use_style, Style};
 use yew::prelude::*;
-use yewdux::prelude::{use_selector, Dispatch};
+use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
     common::{ImageInfo, ValueVariableKind},
-    rendering::coloring::Coloring, vscode::vscode_requests::VSCodeRequests,
+    rendering::coloring::Coloring,
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 use super::icon_button::IconButton;
@@ -115,7 +116,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"codicon codicon-discard"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Reset)); }
             }}
         />
@@ -128,7 +129,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-contrast"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 let drawing_options = drawing_options.clone();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::HighContrast(!drawing_options.high_contrast))); }
             }}
@@ -142,7 +143,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-grayscale"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Grayscale))); }
             }}
         />
@@ -155,7 +156,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-BGR"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::SwapRgbBgr))); }
             }}
         />
@@ -168,7 +169,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-R"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::R))); }
             }}
         />
@@ -181,7 +182,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-G"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::G))); }
             }}
         />
@@ -194,7 +195,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-B"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::B))); }
             }}
         />
@@ -207,7 +208,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-invert"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 let drawing_options = drawing_options.clone();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Invert(!drawing_options.invert))); }
             }}
@@ -221,7 +222,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-toggle-transparency"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 let drawing_options = drawing_options.clone();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::IgnoreAlpha(!drawing_options.ignore_alpha))); }
             }}
@@ -235,7 +236,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-heatmap"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Heatmap))); }
             }}
         />
@@ -248,7 +249,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             icon={"svifpd-icons svifpd-icons-segmentation"}
             onclick={{
                 let image_id = image_id.clone();
-                let dispatch = Dispatch::<AppState>::new();
+                let dispatch = Dispatch::<AppState>::global();
                 move |_| { dispatch.apply(StoreAction::UpdateDrawingOptions(image_id.clone(), UpdateDrawingOptions::Coloring(Coloring::Segmentation))); }
             }}
         />

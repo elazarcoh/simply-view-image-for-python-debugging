@@ -47,6 +47,10 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.debug.registerDebugAdapterTrackerFactory("python", {
         createDebugAdapterTracker,
     });
+    logDebug("Registering debug adapter tracker for debugpy");
+    vscode.debug.registerDebugAdapterTrackerFactory("debugpy", {
+        createDebugAdapterTracker,
+    });
     logDebug("Registering debug adapter tracker for python-Jupyter");
     vscode.debug.registerDebugAdapterTrackerFactory(
         "Python Kernel Debug Adapter",

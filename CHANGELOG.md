@@ -1,4 +1,11 @@
 # Change Log
+## [3.0.21] - Pre-release
+
+### Fixed
+
+- Fix error logging.
+
+
 ## [3.0.19] - Pre-release
 
 ### Fixed

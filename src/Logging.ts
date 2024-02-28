@@ -1,6 +1,21 @@
 import * as vscode from "vscode";
 import { getConfiguration } from "./config";
 
+function replaceErrors(key: unknown, value: unknown) {
+    if (value instanceof Error) {
+        const error: Record<string, unknown> = {};
+
+        Object.getOwnPropertyNames(value).forEach(function (propName) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any  -- we know value is an Error object
+            error[propName] = (value as any)[propName];
+        });
+
+        return error;
+    }
+
+    return value;
+}
+
 enum LogLevel {
     None = 0,
     Trace = 1,
@@ -51,7 +66,7 @@ function log(level: LogLevel, ...obj: any[]): void {
     }
 
     obj = [`[${levelNames[level]}]`, ...obj];
-    const msg = obj.map((o) => JSON.stringify(o, null, 2)).join(" ");
+    const msg = obj.map((o) => JSON.stringify(o, replaceErrors, 2)).join(" ");
     outputChannel.appendLine(msg);
 }
 

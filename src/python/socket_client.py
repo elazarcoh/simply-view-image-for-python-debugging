@@ -91,7 +91,8 @@ array_dtype_to_array_data_type = {
 BYTE_ORDER = LittleEndian if sys.byteorder == 'little' else BigEndian
 
 def generate_message_id():
-    return np.random.randint(0, 2**32, dtype=np.uint32)
+    rng = np.random.default_rng()
+    return rng.integers(0, 2**32, dtype=np.uint32)
 
 def chunk_header(
     message_length,

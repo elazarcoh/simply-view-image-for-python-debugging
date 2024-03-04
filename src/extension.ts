@@ -19,13 +19,17 @@ import { setupPluginManager } from "./plugins";
 import { HoverProvider } from "./HoverProvider";
 import { SocketServer } from "./python-communication/socket-based/Server";
 import { WebviewClient } from "./webview/communication/WebviewClient";
+import { WebviewRequests } from "./webview/communication/createMessages";
 
 function onConfigChange(): void {
     initLog();
+    Container.get(WebviewClient).sendRequest(WebviewRequests.configuration());
 }
 
 // ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext) {
+    Container.set(WebviewClient, new WebviewClient(context));
+
     onConfigChange();
 
     logTrace("Activating extension");
@@ -33,8 +37,6 @@ export function activate(context: vscode.ExtensionContext) {
     setupPluginManager(context);
 
     setSaveLocation(context);
-
-    Container.set(WebviewClient, new WebviewClient(context));
 
     vscode.workspace.onDidChangeConfiguration((config) => {
         if (config.affectsConfiguration(EXTENSION_CONFIG_SECTION)) {

@@ -237,6 +237,7 @@ impl Reducer<AppState> for StoreAction {
                     }
                 }
             }
+
             StoreAction::UpdateGlobalDrawingOptions(opts) => match opts {
                 UpdateGlobalDrawingOptions::GlobalHeatmapColormap(name) => {
                     state.global_drawing_options.heatmap_colormap_name = name;

@@ -1,7 +1,3 @@
-
-
-
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct RenderingConfiguration {
     pub minimum_size_to_render_pixel_border: usize,
@@ -16,44 +12,17 @@ impl Default for RenderingConfiguration {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct Configuration {
     pub rendering: RenderingConfiguration,
+    pub invert_scroll_direction: bool,
 }
 
-// pub enum UpdateConfigurationAction {}
-
-// impl UpdateConfigurationAction {
-//     fn update(self, _configuration: Configuration) -> Configuration {
-//         match self {
-            
-//         }
-//     }
-// }
-
-// impl Reducible for Configuration {
-//     type Action = UpdateConfigurationAction;
-
-//     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-//         Rc::new(action.update((*self).clone()))
-//     }
-// }
-
-// pub type ConfigurationContext = UseReducerHandle<Configuration>;
-
-// #[derive(Properties, Debug, PartialEq)]
-// pub struct ConfigurationProviderProps {
-//     #[prop_or_default]
-//     pub children: Html,
-// }
-
-// #[function_component]
-// pub(crate) fn ConfigurationProvider(props: &ConfigurationProviderProps) -> Html {
-//     let msg = use_reducer(Configuration::default);
-
-//     html! {
-//         <ContextProvider<ConfigurationContext> context={msg}>
-//             {props.children.clone()}
-//         </ContextProvider<ConfigurationContext>>
-//     }
-// }
+impl Default for Configuration {
+    fn default() -> Self {
+        Self {
+            rendering: Default::default(),
+            invert_scroll_direction: false,
+        }
+    }
+}

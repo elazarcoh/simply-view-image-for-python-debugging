@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::common::{Channels, Datatype, ImageId, ValueVariableKind, DataOrdering};
+use crate::common::{Channels, DataOrdering, Datatype, ImageId, ValueVariableKind};
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub(crate) struct MessageId(String);
@@ -41,6 +41,11 @@ pub(crate) struct ReplaceData {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
+pub(crate) struct Configuration {
+    pub invert_scroll_direction: Option<bool>,
+}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
 #[serde(tag = "type")]
 pub(crate) enum ExtensionResponse {
     ImageData(ImageMessage),
@@ -58,6 +63,7 @@ pub(crate) enum ExtensionRequest {
         options: ShowImageOptions,
     },
     ReplaceData(ReplaceData),
+    Configuration(Configuration),
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

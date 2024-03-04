@@ -10,7 +10,10 @@ import { logError, logTrace } from "../../Logging";
 import { serializeImageUsingSocketServer } from "../../from-python-serialization/SocketSerialization";
 import Container from "typedi";
 import { WebviewClient } from "../communication/WebviewClient";
-import { WebviewResponses } from "../communication/createMessages";
+import {
+    WebviewRequests,
+    WebviewResponses,
+} from "../communication/createMessages";
 import { errorMessage } from "../../utils/Result";
 import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
 import {
@@ -70,6 +73,7 @@ export class WebviewMessageHandler {
 
     async handleWebviewReady(id: MessageId) {
         this.client.setReady();
+        this.client.sendRequest(WebviewRequests.configuration());
         this.client.sendResponse(id, WebviewResponses.imagesObjects());
     }
 

@@ -7,7 +7,7 @@ import {
     MessageId,
 } from "../webview";
 import { ImageViewPanel } from "../panels/ImageViewPanel";
-import { logDebug } from "../../Logging";
+import { logTrace } from "../../Logging";
 
 @Service()
 export class WebviewClient {
@@ -43,11 +43,10 @@ export class WebviewClient {
     }
 
     private sendToWebview(message: FromExtensionMessageWithId) {
-        logDebug(`webview === undefined: ${this.webview === undefined}`);
         if (this.webview === undefined) {
             return;
         }
-        logDebug(`message: ${JSON.stringify(message)}`);
+        logTrace(`message: ${JSON.stringify(message)}`);
         return this.webview.postMessage(message);
     }
 

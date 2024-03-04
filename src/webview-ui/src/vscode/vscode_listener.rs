@@ -50,6 +50,9 @@ impl VSCodeListener {
                 ExtensionRequest::ReplaceData(replacement_data) => Ok(
                     Self::handle_replace_data_request(replacement_data.replacement_images),
                 ),
+                ExtensionRequest::Configuration(configurations) => {
+                    Self::handle_configuration_request(configurations)
+                }
             },
         };
     }
@@ -99,5 +102,15 @@ impl VSCodeListener {
         }
 
         dispatch.apply(StoreAction::ReplaceData(images));
+    }
+
+    fn handle_configuration_request(configurations: Configuration) -> Result<()> {
+        let dispatch = Dispatch::<AppState>::global();
+        dispatch.reduce_mut(|state| {
+            if let Some(invert_scroll_direction) = configurations.invert_scroll_direction {
+                state.configuration.invert_scroll_direction = invert_scroll_direction;
+            }
+        });
+        Ok(())
     }
 }

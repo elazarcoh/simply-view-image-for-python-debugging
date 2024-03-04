@@ -2,6 +2,7 @@ import { MessageChunkHeader } from "./protocol";
 
 export class MessageChunks {
     private messageChunks: (Buffer | null)[];
+    private messageHeaders: (MessageChunkHeader | null)[] = [];
     private messageLength: number = 0;
 
     constructor(
@@ -9,6 +10,7 @@ export class MessageChunks {
         private expectedChunkCount: number
     ) {
         this.messageChunks = new Array(expectedChunkCount).fill(null);
+        this.messageHeaders = new Array(expectedChunkCount).fill(null);
     }
 
     addChunk(header: MessageChunkHeader, chunk: Buffer) {
@@ -38,11 +40,17 @@ export class MessageChunks {
                 `Chunk length ${chunkLength} does not match chunk length ${chunk.length}`
             );
         }
+        if (this.messageHeaders[chunkNumber] !== null) {
+            throw new Error(
+                `Chunk number ${chunkNumber} already exists. current: ${JSON.stringify(this.messageHeaders[chunkNumber])}`
+            );
+        }
         if (this.messageChunks[chunkNumber] !== null) {
-            throw new Error(`Chunk number ${chunkNumber} already exists`);
+            throw new Error(`Chunk number ${chunkNumber} already exists. current with length: ${this.messageChunks[chunkNumber]?.length}`);
         }
 
         this.messageChunks[chunkNumber] = chunk;
+        this.messageHeaders[chunkNumber] = header;
         this.messageLength += chunkLength;
     }
 

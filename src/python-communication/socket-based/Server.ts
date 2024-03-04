@@ -75,7 +75,7 @@ export class SocketServer {
 
         let waitingForHandling: Buffer = Buffer.alloc(0);
         const handleData = (data: Buffer) => {
-            logTrace("Received %d bytes from client", data.length);
+            logTrace(`Received ${data.length} bytes from client`);
             while (waitingForHandling.length > 0 || data.length > 0) {
                 if (waitingForHandling.length > 0) {
                     const fullData = Buffer.concat([waitingForHandling, data]);
@@ -101,7 +101,7 @@ export class SocketServer {
                 const chunks = setDefault(
                     this.chunksByMessageId,
                     header.messageID,
-                    new MessageChunks(header.messageLength, header.chunkCount)
+                    () => new MessageChunks(header.messageLength, header.chunkCount) 
                 );
                 chunks.addChunk(header, content);
 
@@ -140,16 +140,16 @@ export class SocketServer {
         requestId: number,
         callback: (header: MessageChunkHeader, data: Buffer) => void
     ) {
-        this.outgoingRequestsManager.subscribeRequest(requestId, callback);
-        return () => {
+        this.outgoingRequestsManager.subscribeRequest(requestId, (header, data) => {
             this.outgoingRequestsManager.unsubscribeRequest(requestId);
-        };
+            callback(header, data);
+        });
     }
 }
 
-export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
+export function setDefault<K, V>(map: Map<K, V>, key: K, ctor: () => V): V {
     if (!map.has(key)) {
-        map.set(key, value);
+        map.set(key, ctor());
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion  -- we just set it
     return map.get(key)!;

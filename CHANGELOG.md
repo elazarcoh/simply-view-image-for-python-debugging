@@ -1,4 +1,11 @@
 # Change Log
+## [3.0.23] - Pre-release
+
+### Fixed
+
+- Fixed bug with random seed.
+
+
 ## [3.0.21] - Pre-release
 
 ### Fixed

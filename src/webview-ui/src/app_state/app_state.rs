@@ -4,7 +4,6 @@ use super::views::ImageViews;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{ImageData, ImageId, ImageInfo, ViewId};
-use crate::configurations::Configuration;
 use crate::rendering::coloring::{Coloring, DrawingOptions};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};

@@ -1,3 +1,4 @@
+import { getConfiguration } from "../../config";
 import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
 import { hasValue } from "../../utils/Utils";
@@ -69,6 +70,16 @@ export class WebviewRequests {
         return {
             type: "ReplaceData",
             replacement_images: replacementImages,
+        };
+    }
+
+    static configuration(): ExtensionRequest & {
+        type: "Configuration";
+    } {
+        return {
+            type: "Configuration",
+            invert_scroll_direction:
+                getConfiguration("viewerUi.invertMouseWheelZoom") ?? null,
         };
     }
 }

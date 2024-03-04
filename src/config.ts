@@ -96,6 +96,13 @@ export interface Config {
      * @experimental
      */
     useExperimentalDataTransfer: boolean;
+
+    /**
+     * @default false
+     * @description Invert mouse wheel zoom direction in the image viewer.
+     * @experimental
+     */
+    "viewerUi.invertMouseWheelZoom": boolean;
 }
 
 export const EXTENSION_CONFIG_SECTION = "svifpd";

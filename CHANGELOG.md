@@ -1,4 +1,11 @@
 # Change Log
+## [3.0.25] - Pre-release
+
+### Added
+
+- Configuration to set the scroll direction for zooming in the image viewer. (`viewerUi.invertMouseWheelZoom`)
+
+
 ## [3.0.23] - Pre-release
 
 ### Fixed

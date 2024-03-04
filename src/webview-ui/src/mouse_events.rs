@@ -5,11 +5,10 @@ use gloo::events::{EventListener, EventListenerOptions};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, MouseEvent};
 use yew::Callback;
+use yewdux::Dispatch;
 
 use crate::{
-    common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId},
-    math_utils::{image_calculations::calculate_pixels_information, ToHom},
-    rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
+    app_state::app_state::AppState, common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId}, math_utils::{image_calculations::calculate_pixels_information, ToHom}, rendering::{constants::VIEW_SIZE, rendering_context::ViewContext}
 };
 
 fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) -> Vec2 {
@@ -218,7 +217,12 @@ impl ZoomHandler {
                         .dyn_ref::<web_sys::WheelEvent>()
                         .expect("Unable to cast event to WheelEvent");
 
-                    let delta_y = event.delta_y();
+                    let invert_scroll_direction = Dispatch::<AppState>::global()
+                        .get()
+                        .configuration
+                        .invert_scroll_direction;
+                    let delta_y =
+                        event.delta_y() * if invert_scroll_direction { -1.0 } else { 1.0 };
                     if pixels_info.image_pixel_size_device > MAX_PIXEL_SIZE_DEVICE && delta_y > 0.0
                     {
                         return;

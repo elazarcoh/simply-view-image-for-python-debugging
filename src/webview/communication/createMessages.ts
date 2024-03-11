@@ -59,7 +59,7 @@ function imageObjects(): ImageObjects {
             .filter(hasValue) ?? [];
 
     const objects = validVariables.concat(validExpressions);
-    return objects;
+    return objects.map(o => ({'type': 'Image', ...o}));
 }
 
 export class WebviewRequests {

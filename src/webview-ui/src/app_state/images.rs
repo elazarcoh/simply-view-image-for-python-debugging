@@ -1,21 +1,21 @@
 use crate::{
-    common::{ImageId, ImageInfo},
+    common::{viewables::viewables::ViewableInfo, ImageId},
     rendering::coloring::DrawingOptions,
 };
 use std::collections::HashMap;
 
 #[derive(Default)]
 pub(crate) struct Images {
-    data: HashMap<ImageId, ImageInfo>,
+    data: HashMap<ImageId, ViewableInfo>,
     order: Vec<ImageId>,
 }
 
 impl Images {
-    pub fn get(&self, image_id: &ImageId) -> Option<&ImageInfo> {
+    pub fn get(&self, image_id: &ImageId) -> Option<&ViewableInfo> {
         self.data.get(image_id)
     }
 
-    pub fn insert(&mut self, image_id: ImageId, image_info: ImageInfo) {
+    pub fn insert(&mut self, image_id: ImageId, image_info: ViewableInfo) {
         if self.data.insert(image_id.clone(), image_info).is_none() {
             self.order.push(image_id);
         }
@@ -30,7 +30,7 @@ impl Images {
         self.data.len()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&ImageId, &ImageInfo)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&ImageId, &ViewableInfo)> {
         self.order
             .iter()
             .filter_map(move |id| self.data.get(id).map(|info| (id, info)))

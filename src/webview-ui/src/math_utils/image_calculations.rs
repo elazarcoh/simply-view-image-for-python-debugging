@@ -1,7 +1,7 @@
 use glam::{Mat3, Vec2, Vec3};
 
 use crate::{
-    common::{pixel_value::PixelValue, Channels, Datatype, Size},
+    common::{pixel_value::PixelValue, viewables::image::{Channels, Datatype}, Size},
     rendering::constants::VIEW_SIZE,
 };
 

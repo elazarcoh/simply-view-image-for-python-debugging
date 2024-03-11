@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::{
-    math_utils::mat4::transpose, common::{Datatype, ImageInfo, ComputedInfo, Channels},
+    math_utils::mat4::transpose, common::viewables::image::{Datatype, ImageInfo, ComputedInfo, Channels},
 };
 
 

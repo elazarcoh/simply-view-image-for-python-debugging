@@ -8,7 +8,7 @@ use yewdux::Dispatch;
 use crate::{
     app_state::app_state::{AppState, StoreAction},
     bindings::plotlyjs::new_plot,
-    common::{ViewId, Viewable},
+    common::ViewId,
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
@@ -191,7 +191,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
             onclick={Callback::from({
                 |_|  {
                     let dispatch = Dispatch::<AppState>::global();
-                    dispatch.apply(StoreAction::SetObjectToView(Viewable::Plotly(()), ViewId::Primary));
+                    // dispatch.apply(StoreAction::SetObjectToView("PLOTLY", ViewId::Primary));
                     yew::platform::spawn_local(async {
                         new_plot("my-plot").await;
                     });

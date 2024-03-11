@@ -86,11 +86,11 @@ impl VSCodeRequests {
         Self::send_message(FromWebviewMessage::RequestImages(RequestImages {}))
     }
 
-    pub(crate) fn request_image_data(image_id: ImageId, expression: String) -> MessageId {
+    pub(crate) fn request_image_data(image_id: ImageId, expression: &str) -> MessageId {
         log::debug!("VSCodeRequests::request_image_data: {:?}", image_id);
         Self::send_message(FromWebviewMessage::RequestImageData(RequestImageData {
             image_id,
-            expression,
+            expression: expression.to_owned(),
         }))
     }
 

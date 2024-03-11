@@ -3,9 +3,9 @@ use std::{collections::HashMap, iter::FromIterator};
 use web_sys::HtmlElement;
 use yew::NodeRef;
 
-use crate::common::{constants::all_views, ImageId, ViewId, Viewable};
+use crate::common::{constants::all_views, ImageId, ViewId};
 
-pub(crate) struct ImageViews(HashMap<ViewId, (Option<Viewable>, NodeRef)>);
+pub(crate) struct ImageViews(HashMap<ViewId, (Option<ImageId>, NodeRef)>);
 
 impl ImageViews {
     fn new() -> Self {
@@ -20,7 +20,7 @@ impl ImageViews {
     pub(crate) fn is_visible(
         &self,
         _view_id: &ViewId,
-        image_id: &Option<Viewable>,
+        image_id: &Option<ImageId>,
         node_ref: &NodeRef,
     ) -> bool {
         // TODO: implement this
@@ -30,7 +30,7 @@ impl ImageViews {
     pub(crate) fn visible_views(&self) -> Vec<ViewId> {
         self.0
             .iter()
-            .filter(|(v, (viewable, node_ref))| self.is_visible(v, viewable, node_ref))
+            .filter(|(v, (object_id, node_ref))| self.is_visible(v, object_id, node_ref))
             .map(|(v, _)| *v)
             .collect::<Vec<_>>()
     }
@@ -39,13 +39,13 @@ impl ImageViews {
         self.0.get(&view_id).unwrap().1.clone()
     }
 
-    pub(crate) fn get_viewable(&self, view_id: ViewId) -> Option<Viewable> {
+    pub(crate) fn get_viewable(&self, view_id: ViewId) -> Option<ImageId> {
         self.0.get(&view_id).unwrap().0.clone()
     }
 
-    pub(crate) fn set_object_to_view(&mut self, viewable: Viewable, view_id: ViewId) {
+    pub(crate) fn set_object_to_view(&mut self, object_id: ImageId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
-        view.0 = Some(viewable);
+        view.0 = Some(object_id);
     }
 }
 

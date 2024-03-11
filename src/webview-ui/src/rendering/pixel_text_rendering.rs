@@ -9,7 +9,7 @@ use glyph_brush_layout::{GlyphPositioner, Layout, SectionGeometry, SectionText};
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use crate::{
-    common::{Datatype, Size},
+    common::{viewables::image::Datatype, Size},
     webgl_utils::{
         self,
         draw::draw_buffer_info,

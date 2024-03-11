@@ -1,6 +1,7 @@
-use crate::app_state::app_state::{AppState, ImageObject, StoreAction};
+use crate::app_state::app_state::{AppState, StoreAction, ViewableObject};
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageData, ViewId, Viewable};
+use crate::common::viewables::image::ImageData;
+use crate::common::ViewId;
 use crate::vscode::messages::*;
 use anyhow::{anyhow, Result};
 use gloo::events::EventListener;
@@ -85,7 +86,7 @@ impl VSCodeListener {
         Self::handle_image_data_response(image_data)?;
 
         let dispatch = Dispatch::<AppState>::global();
-        dispatch.apply(StoreAction::SetObjectToView(Viewable::Image(image_id), ViewId::Primary));
+        dispatch.apply(StoreAction::SetObjectToView(image_id, ViewId::Primary));
         Ok(())
     }
 
@@ -95,8 +96,8 @@ impl VSCodeListener {
             .0
             .into_iter()
             .map(|image| match image {
-                ViewableObject::Image(image) => Ok(ImageObject::try_from(image)?),
-                ViewableObject::Plotly(plot) => Err(anyhow!("Plotly plots are not supported")),
+                ViewableObjectMessage::Image(image) => Ok(ViewableObject::try_from(image)?),
+                ViewableObjectMessage::Plotly(plot) => Err(anyhow!("Plotly plots are not supported")),
             })
             .partition_result();
 

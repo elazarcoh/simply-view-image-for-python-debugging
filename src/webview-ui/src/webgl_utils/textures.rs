@@ -1,4 +1,4 @@
-use crate::common::Datatype;
+use crate::common::viewables::image::Datatype;
 use anyhow::{anyhow, Result};
 
 use super::error::WebGlError;

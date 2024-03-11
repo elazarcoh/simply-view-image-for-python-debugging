@@ -8,9 +8,7 @@ use bytemuck::Pod;
 use glam::UVec2;
 use strum::EnumCount;
 
-use crate::common::{Channels, Datatype, ImageData};
-
-use super::DataOrdering;
+use crate::common::viewables::image::{Channels, DataOrdering, Datatype, ImageData};
 
 static_assertions::const_assert_eq!(Channels::COUNT, 4); // If this is failing, you need to update the code below
 

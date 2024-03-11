@@ -4,7 +4,7 @@ use yewdux::functional::use_selector;
 
 use crate::{
     app_state::app_state::AppState,
-    common::{ImageAvailability, ViewId, Viewable},
+    common::{ImageAvailability, ViewId},
     components::spinner::Spinner,
 };
 
@@ -38,13 +38,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         let view_id = *view_id;
         use_selector(move |state: &AppState| -> Option<ImageAvailability> {
             let viewable = state.image_views.borrow().get_viewable(view_id)?;
-            match viewable {
-                Viewable::Image(image_id) => {
-                    let availability = state.viewables_cache.borrow().get(&image_id);
-                    Some(availability)
-                }
-                Viewable::Plotly(_) => Some(ImageAvailability::PlotlyAvailable(())),
-            }
+            Some(state.viewables_cache.borrow().get(&viewable))
         })
     };
 

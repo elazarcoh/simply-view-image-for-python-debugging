@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::common::{Channels, DataOrdering, Datatype, ImageId, PlotlyPlot, ValueVariableKind};
+use crate::common::{viewables::{image::{Channels, DataOrdering, Datatype}, plotly::PlotlyPlot}, ImageId, ValueVariableKind};
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub(crate) struct MessageId(String);
@@ -44,13 +44,13 @@ pub(crate) struct PlotlyMessage {
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 #[serde(tag = "type")]
-pub(crate) enum ViewableObject {
+pub(crate) enum ViewableObjectMessage {
     Image(ImageMessage),
     Plotly(PlotlyMessage),
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
-pub(crate) struct ImageObjects(pub Vec<ViewableObject>);
+pub(crate) struct ImageObjects(pub Vec<ViewableObjectMessage>);
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub(crate) struct ReplaceData {

@@ -1,6 +1,6 @@
 use crate::app_state::app_state::StoreAction;
-use crate::common::{Channels, Datatype, ValueVariableKind};
-use crate::common::{DataOrdering, ImageId};
+use crate::common::viewables::image::{Channels, DataOrdering, Datatype};
+use crate::common::{ImageId, ValueVariableKind};
 use crate::vscode::messages::ImageMessage;
 use std::collections::HashMap;
 use yewdux::prelude::Dispatch;
@@ -9468,7 +9468,7 @@ pub(crate) fn set_debug_images() {
 
     use itertools::Itertools;
 
-    use crate::app_state::app_state::{AppState, ImageObject};
+    use crate::app_state::app_state::{AppState, ViewableObject};
 
     log::debug!("creating debug image texture");
     let images: Vec<ImageMessage> = vec![
@@ -9485,12 +9485,10 @@ pub(crate) fn set_debug_images() {
         segmentation_texture_u8(),
         image_fully_transparent_u8(),
         rectangle_image_u8(),
-
         // Int
         image_texture_rgba_i8(),
         image_texture_rgba_i16(),
         image_texture_rgba_i32(),
-
         // Float
         image_texture_rgba_f32(),
         image_texture_rgb_f32(),
@@ -9500,7 +9498,6 @@ pub(crate) fn set_debug_images() {
         image_texture_with_transparency(),
         image_texture_bool_gray(),
         matrix_4x4_with_scientific_nan_inf(),
-
         // Planar
         channels_first_image_f32(),
         channels_first_image_rgb_u8(),
@@ -9510,7 +9507,7 @@ pub(crate) fn set_debug_images() {
     let dispatch = Dispatch::<AppState>::global();
     let (images, errors): (Vec<_>, Vec<_>) = images
         .into_iter()
-        .map(ImageObject::try_from)
+        .map(ViewableObject::try_from)
         .partition_result();
 
     if !errors.is_empty() {

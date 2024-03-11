@@ -4,7 +4,8 @@ use super::viewables_cache::ViewablesCache;
 use super::views::ImageViews;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageAvailability, ImageData, ImageId, ImageInfo, ViewId, Viewable};
+use crate::common::viewables::viewables::{ViewableData, ViewableInfo};
+use crate::common::{ImageAvailability, ImageId, ViewId};
 use crate::rendering::coloring::{Coloring, DrawingOptions};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
@@ -26,22 +27,14 @@ impl Listener for ImagesFetcher {
             .filter_map(|view_id| state.image_views.borrow().get_viewable(*view_id))
             .collect::<Vec<_>>();
 
-        for viewable in currently_viewing_image_ids {
-            match viewable {
-                Viewable::Image(image_id) => {
-                    if !state.viewables_cache.borrow().has(&image_id) {
-                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                        if let Some(image_info) = state.images.borrow().get(&image_id) {
-                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                            VSCodeRequests::request_image_data(
-                                image_id.clone(),
-                                image_info.expression.clone(),
-                            );
-                            state.viewables_cache.borrow_mut().set_pending(&image_id);
-                        }
-                    }
+        for image_id in currently_viewing_image_ids {
+            if !state.viewables_cache.borrow().has(&image_id) {
+                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                if let Some(image_info) = state.images.borrow().get(&image_id) {
+                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                    VSCodeRequests::request_image_data(image_id.clone(), image_info.expression());
+                    state.viewables_cache.borrow_mut().set_pending(&image_id);
                 }
-                Viewable::Plotly(_) => {}
             }
         }
     }
@@ -88,11 +81,8 @@ impl AppState {
             .ok_or(anyhow!("WebGL context not initialized"))
     }
 
-    pub(crate) fn get_object_from_cache(&self, viewable: Viewable) -> ImageAvailability {
-        match viewable {
-            Viewable::Image(image_id) => self.viewables_cache.borrow().get(&image_id),
-            Viewable::Plotly(_) => ImageAvailability::PlotlyAvailable(()),
-        }
+    pub(crate) fn get_object_from_cache(&self, object_id: ImageId) -> ImageAvailability {
+        self.viewables_cache.borrow().get(&object_id)
     }
 }
 
@@ -140,32 +130,32 @@ pub(crate) enum UpdateGlobalDrawingOptions {
     GlobalSegmentationColormap(String),
 }
 
-pub(crate) enum ImageObject {
-    InfoOnly(ImageInfo),
-    WithData(ImageData),
+pub(crate) enum ViewableObject {
+    InfoOnly(ViewableInfo),
+    WithData(ViewableData),
 }
 
-impl ImageObject {
-    fn image_id(&self) -> &ImageId {
+impl ViewableObject {
+    fn object_id(&self) -> ImageId {
         match self {
-            ImageObject::InfoOnly(info) => &info.image_id,
-            ImageObject::WithData(data) => &data.info.image_id,
+            ViewableObject::InfoOnly(info) => info.id().clone(),
+            ViewableObject::WithData(data) => data.info().id().clone(),
         }
     }
-    fn image_info(&self) -> &ImageInfo {
+    fn info(&self) -> ViewableInfo {
         match self {
-            ImageObject::InfoOnly(info) => info,
-            ImageObject::WithData(data) => &data.info,
+            ViewableObject::InfoOnly(info) => info.clone(),
+            ViewableObject::WithData(data) => data.info(),
         }
     }
 }
 
 pub(crate) enum StoreAction {
-    SetObjectToView(Viewable, ViewId),
+    SetObjectToView(ImageId, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
-    ReplaceData(Vec<ImageObject>),
+    ReplaceData(Vec<ViewableObject>),
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -187,7 +177,10 @@ impl Reducer<AppState> for StoreAction {
                     .viewables_cache
                     .borrow_mut()
                     .set(&image_id, *texture_image);
-                state.images.borrow_mut().insert(image_id, info);
+                state
+                    .images
+                    .borrow_mut()
+                    .insert(image_id, ViewableInfo::Image(info));
             }
 
             StoreAction::UpdateDrawingOptions(image_id, update) => {
@@ -228,24 +221,32 @@ impl Reducer<AppState> for StoreAction {
 
                 let mut errors = Vec::new();
                 for image in replacement_images.into_iter() {
-                    let image_id = image.image_id().clone();
-                    let image_info = image.image_info().clone();
+                    let image_id = image.object_id().clone();
+                    let image_info: ViewableInfo = image.info().to_owned();
 
                     state
                         .images
                         .borrow_mut()
                         .insert(image_id.clone(), image_info);
 
-                    if let ImageObject::WithData(image_data) = image {
-                        let tex_image =
-                            TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
-                        match tex_image {
-                            Ok(tex_image) => {
-                                state.viewables_cache.borrow_mut().set(&image_id, tex_image);
+                    if let ViewableObject::WithData(data) = image {
+                        match data {
+                            ViewableData::Image(image_data) => {
+                                let tex_image =
+                                    TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
+                                match tex_image {
+                                    Ok(tex_image) => {
+                                        state
+                                            .viewables_cache
+                                            .borrow_mut()
+                                            .set(&image_id, tex_image);
+                                    }
+                                    Err(e) => {
+                                        errors.push(e);
+                                    }
+                                }
                             }
-                            Err(e) => {
-                                errors.push(e);
-                            }
+                            ViewableData::Plotly(_) => todo!(),
                         }
                     }
                 }

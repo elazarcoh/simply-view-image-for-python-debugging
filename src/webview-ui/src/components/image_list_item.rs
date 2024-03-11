@@ -5,7 +5,10 @@ use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
-    common::{ImageInfo, ValueVariableKind},
+    common::{
+        viewables::{image::ImageInfo, viewables::ViewableInfo},
+        ValueVariableKind,
+    },
     rendering::coloring::Coloring,
     vscode::vscode_requests::VSCodeRequests,
 };
@@ -20,7 +23,7 @@ pub(crate) struct DisplayOptionProps {
 mod features {
     use enumset::{EnumSet, EnumSetType};
 
-    use crate::common::{Channels, Datatype};
+    use crate::common::viewables::image::{Channels, Datatype};
 
     #[derive(EnumSetType, Debug)]
     #[allow(clippy::upper_case_acronyms)]
@@ -337,7 +340,7 @@ fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html
 
 #[derive(PartialEq, Properties, Clone)]
 pub(crate) struct ImageListItemProps {
-    pub entry: ImageInfo,
+    pub entry: ViewableInfo,
     pub selected: bool,
 }
 
@@ -363,7 +366,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     );
 
     let rows = entry
-        .additional_info
+        .additional_info()
         .iter()
         .sorted()
         .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style));
@@ -374,7 +377,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             title={"Edit"}
             icon={"codicon codicon-edit"}
             onclick={Callback::from({
-                let expression = entry.expression.clone();
+                let expression = entry.expression().to_string();
                 move |_| {
                     let _id = VSCodeRequests::edit_expression(expression.clone());
                 }
@@ -402,18 +405,28 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         "#
     );
 
+    let display_option = if let ViewableInfo::Image(info) = entry {
+        html! {
+            if *selected { <DisplayOption entry={info.clone()} />}  else {<></>}
+        }
+    } else {
+        html! {<></>}
+    };
+
+    let expression = entry.expression().to_string();
+    let value_variable_kind = entry.value_variable_kind();
     html! {
         <div class={item_style.clone()}>
             <div class="item-label-container">
-                <label class="item-label" title={entry.expression.clone()}>{&entry.expression}</label>
-                if entry.value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
+                <label class="item-label" title={expression.clone()}>{expression}</label>
+                if *value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
             </div>
 
             <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
                 {for rows}
             </vscode-data-grid>
 
-            if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+            {display_option}
         </div>
     }
 }

@@ -1,8 +1,14 @@
 use std::convert::{TryFrom, TryInto};
 
 use crate::{
-    app_state::app_state::ImageObject,
-    common::{pixel_value::PixelValue, ComputedInfo, ImageData, ImageInfo},
+    app_state::app_state::ViewableObject,
+    common::{
+        pixel_value::PixelValue,
+        viewables::{
+            image::{ComputedInfo, ImageData, ImageInfo},
+            viewables::{ViewableData, ViewableInfo},
+        },
+    },
     math_utils::image_calculations::image_minmax_on_bytes,
 };
 
@@ -62,13 +68,17 @@ impl TryFrom<ImageMessage> for ImageData {
     }
 }
 
-impl TryFrom<ImageMessage> for ImageObject {
+impl TryFrom<ImageMessage> for ViewableObject {
     type Error = anyhow::Error;
 
     fn try_from(image_message: ImageMessage) -> Result<Self, Self::Error> {
         match &image_message.bytes {
-            Some(_) => Ok(ImageObject::WithData(ImageData::try_from(image_message)?)),
-            None => Ok(ImageObject::InfoOnly(ImageInfo::from(image_message))),
+            Some(_) => Ok(ViewableObject::WithData(ViewableData::Image(
+                ImageData::try_from(image_message)?,
+            ))),
+            None => Ok(ViewableObject::InfoOnly(ViewableInfo::Image(
+                ImageInfo::from(image_message),
+            ))),
         }
     }
 }

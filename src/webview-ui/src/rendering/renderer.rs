@@ -16,8 +16,8 @@ use crate::common::camera;
 use crate::common::constants::all_views;
 use crate::common::pixel_value::PixelValue;
 use crate::common::texture_image::TextureImage;
-use crate::common::DataOrdering;
-use crate::common::Datatype;
+use crate::common::viewables::image::Channels;
+use crate::common::viewables::image::{DataOrdering, Datatype};
 use crate::common::ImageAvailability;
 use crate::common::Size;
 use crate::common::ViewId;
@@ -431,7 +431,7 @@ impl Renderer {
         );
 
         let mut uniform_values = match texture.image.info.data_ordering {
-            crate::common::DataOrdering::HWC => {
+            DataOrdering::HWC => {
                 assert!(texture.textures.len() == 1);
                 HashMap::from([
                     ("u_texture", UniformValue::Texture(&texture.textures[0])),
@@ -454,7 +454,7 @@ impl Renderer {
                 ])
             }
 
-            crate::common::DataOrdering::CHW => {
+            DataOrdering::CHW => {
                 let mut uniforms = HashMap::from([
                     ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
                     ("u_enable_borders", UniformValue::Bool(&enable_borders)),
@@ -475,20 +475,20 @@ impl Renderer {
                 ]);
 
                 match texture.image.info.channels {
-                    crate::common::Channels::One => {
+                    Channels::One => {
                         assert!(texture.textures.len() == 1);
                         // TODO: instead of using Int(0) here, add an enum
                         uniforms.insert("u_image_type", UniformValue::Int(&0));
                         uniforms.insert("u_texture_r", UniformValue::Texture(&texture.textures[0]));
                     }
-                    crate::common::Channels::Two => {
+                    Channels::Two => {
                         assert!(texture.textures.len() == 2);
                         // TODO: instead of using Int(0) here, add an enum
                         uniforms.insert("u_image_type", UniformValue::Int(&3));
                         uniforms.insert("u_texture_r", UniformValue::Texture(&texture.textures[0]));
                         uniforms.insert("u_texture_g", UniformValue::Texture(&texture.textures[1]));
                     }
-                    crate::common::Channels::Three => {
+                    Channels::Three => {
                         assert!(texture.textures.len() == 3);
                         // TODO: instead of using Int(0) here, add an enum
                         uniforms.insert("u_image_type", UniformValue::Int(&1));
@@ -496,7 +496,7 @@ impl Renderer {
                         uniforms.insert("u_texture_g", UniformValue::Texture(&texture.textures[1]));
                         uniforms.insert("u_texture_b", UniformValue::Texture(&texture.textures[2]));
                     }
-                    crate::common::Channels::Four => {
+                    Channels::Four => {
                         assert!(texture.textures.len() == 4);
                         // TODO: instead of using Int(0) here, add an enum
                         uniforms.insert("u_image_type", UniformValue::Int(&2));

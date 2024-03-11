@@ -5,7 +5,7 @@ use yewdux::prelude::*;
 
 use crate::{
     app_state::app_state::{AppState, StoreAction},
-    common::{ViewId, Viewable},
+    common::ViewId,
     components::image_list_item::ImageListItem,
 };
 
@@ -38,12 +38,12 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 dispatch.apply_callback({
                     let id = id.clone();
                     move |_| {
-                        StoreAction::SetObjectToView(Viewable::Image(id.clone()), ViewId::Primary)
+                        StoreAction::SetObjectToView(id.clone(), ViewId::Primary)
                     }
                 })
             };
 
-            let is_selected = *selected_entry == Some(Viewable::Image(id.clone()));
+            let is_selected = *selected_entry == Some(id.clone());
 
             html! {
                 <vscode-option

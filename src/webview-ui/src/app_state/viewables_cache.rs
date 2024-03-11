@@ -1,6 +1,4 @@
-use crate::common::{
-    texture_image::TextureImage, ImageAvailability, ImageId, PlotData, PlotlyPlot,
-};
+use crate::common::{texture_image::TextureImage, ImageAvailability, ImageId};
 use std::{collections::HashMap, rc::Rc};
 
 #[derive(Default)]

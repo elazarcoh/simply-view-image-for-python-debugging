@@ -1,4 +1,11 @@
 # Change Log
+## [4.0.0] - Release
+
+### Added
+
+- Implement a new image viewer (see below 3.0.15-3.0.25)
+
+
 ## [3.0.25] - Pre-release
 
 ### Added

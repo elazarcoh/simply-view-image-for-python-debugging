@@ -5,7 +5,7 @@ use yewdux::prelude::*;
 
 use crate::{
     app_state::app_state::{AppState, StoreAction},
-    common::ViewId,
+    common::{ViewId, Viewable},
     components::image_list_item::ImageListItem,
 };
 
@@ -18,7 +18,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
 
     let images_data = use_selector(|state: &AppState| state.images.clone());
     let selected_entry =
-        use_selector(|state: &AppState| state.image_views.borrow().get_image_id(ViewId::Primary));
+        use_selector(|state: &AppState| state.image_views.borrow().get_viewable(ViewId::Primary));
 
     let entry_style = use_style!(
         r#"
@@ -38,12 +38,12 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 dispatch.apply_callback({
                     let id = id.clone();
                     move |_| {
-                        StoreAction::SetImageToView(id.clone(), ViewId::Primary)
+                        StoreAction::SetObjectToView(Viewable::Image(id.clone()), ViewId::Primary)
                     }
                 })
             };
 
-            let is_selected = *selected_entry == Some(id.clone());
+            let is_selected = *selected_entry == Some(Viewable::Image(id.clone()));
 
             html! {
                 <vscode-option

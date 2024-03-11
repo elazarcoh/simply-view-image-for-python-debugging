@@ -15,6 +15,7 @@ mod math_utils;
 mod mouse_events;
 mod vscode;
 mod webgl_utils;
+mod bindings;
 
 mod colormap;
 mod rendering;

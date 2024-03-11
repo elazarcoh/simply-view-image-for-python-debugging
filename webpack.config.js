@@ -107,6 +107,19 @@ const WebviewConfig = {
                     from: path.posix.join(
                         __dirname.replace(/\\/g, "/"),
                         "node_modules",
+                        "plotly.js-dist",
+                        "plotly.js"
+                    ),
+                    to: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "dist",
+                        "[name][ext]"
+                    ),
+                },
+                {
+                    from: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "node_modules",
                         "@vscode",
                         "codicons",
                         "dist",

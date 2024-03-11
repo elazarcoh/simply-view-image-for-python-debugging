@@ -7,7 +7,7 @@ use yewdux::prelude::Dispatch;
 
 use crate::{
     app_state::app_state::AppState,
-    common::{pixel_value::PixelValue, ViewId},
+    common::{pixel_value::PixelValue, ImageAvailability, ViewId},
     components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar, view_container::ViewContainer},
     mouse_events::PixelHoverHandler,
     rendering::rendering_context::ViewContext,
@@ -50,7 +50,11 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                         let maybe_pixel_value = hovered_pixel.and_then(|pixel| {
                             let image = view_context.get_image_for_view(view_id);
                             image.and_then(|image| {
-                                image.map(|image| PixelValue::from_image(&image.image, &pixel))
+                                if let ImageAvailability::ImageAvailable(image) = image {
+                                    Some(PixelValue::from_image(&image.image, &pixel))
+                                } else {
+                                    None
+                                }
                             })
                         });
 

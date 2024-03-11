@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryFrom, fmt::Display};
+use std::{collections::HashMap, convert::TryFrom, fmt::Display, rc::Rc};
 
 use super::pixel_value::PixelValue;
 
@@ -188,4 +188,27 @@ pub(crate) struct ImageData {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum ViewId {
     Primary,
+}
+
+#[derive(Clone, PartialEq)]
+pub(crate) enum Viewable {
+    Image(ImageId),
+    Plotly(()),
+}
+
+#[derive(Clone)]
+pub(crate) enum ImageAvailability {
+    NotAvailable,
+    Pending,
+    ImageAvailable(Rc<super::texture_image::TextureImage>),
+    PlotlyAvailable(()),
+}
+
+impl PartialEq for ImageAvailability {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::ImageAvailable(l0), Self::ImageAvailable(r0)) => Rc::ptr_eq(l0, r0),
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
 }

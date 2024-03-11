@@ -3,7 +3,7 @@ use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageData, ImageId, ImageInfo, ViewId};
+use crate::common::{ImageAvailability, ImageData, ImageId, ImageInfo, ViewId, Viewable};
 use crate::rendering::coloring::{Coloring, DrawingOptions};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
@@ -22,20 +22,25 @@ impl Listener for ImagesFetcher {
             .borrow()
             .visible_views()
             .iter()
-            .filter_map(|view_id| state.image_views.borrow().get_image_id(*view_id))
+            .filter_map(|view_id| state.image_views.borrow().get_viewable(*view_id))
             .collect::<Vec<_>>();
 
-        for image_id in currently_viewing_image_ids {
-            if !state.image_cache.borrow().has(&image_id) {
-                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                if let Some(image_info) = state.images.borrow().get(&image_id) {
-                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                    VSCodeRequests::request_image_data(
-                        image_id.clone(),
-                        image_info.expression.clone(),
-                    );
-                    state.image_cache.borrow_mut().set_pending(&image_id);
+        for viewable in currently_viewing_image_ids {
+            match viewable {
+                Viewable::Image(image_id) => {
+                    if !state.image_cache.borrow().has(&image_id) {
+                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                        if let Some(image_info) = state.images.borrow().get(&image_id) {
+                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                            VSCodeRequests::request_image_data(
+                                image_id.clone(),
+                                image_info.expression.clone(),
+                            );
+                            state.image_cache.borrow_mut().set_pending(&image_id);
+                        }
+                    }
                 }
+                Viewable::Plotly(_) => {}
             }
         }
     }
@@ -80,6 +85,13 @@ impl AppState {
         self.gl
             .as_ref()
             .ok_or(anyhow!("WebGL context not initialized"))
+    }
+
+    pub(crate) fn get_object_from_cache(&self, viewable: Viewable) -> ImageAvailability {
+        match viewable {
+            Viewable::Image(image_id) => self.image_cache.borrow().get(&image_id),
+            Viewable::Plotly(_) => ImageAvailability::PlotlyAvailable(()),
+        }
     }
 }
 
@@ -148,7 +160,7 @@ impl ImageObject {
 }
 
 pub(crate) enum StoreAction {
-    SetImageToView(ImageId, ViewId),
+    SetObjectToView(Viewable, ViewId),
     AddTextureImage(ImageId, Box<TextureImage>),
     UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
@@ -160,11 +172,11 @@ impl Reducer<AppState> for StoreAction {
         let state = Rc::make_mut(&mut app_state);
 
         match self {
-            StoreAction::SetImageToView(image_id, view_id) => {
+            StoreAction::SetObjectToView(viewable, view_id) => {
                 state
                     .image_views
                     .borrow_mut()
-                    .set_image_to_view(image_id, view_id);
+                    .set_object_to_view(viewable, view_id);
             }
 
             StoreAction::AddTextureImage(image_id, texture_image) => {

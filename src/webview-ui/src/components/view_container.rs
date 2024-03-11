@@ -3,8 +3,8 @@ use yew::prelude::*;
 use yewdux::functional::use_selector;
 
 use crate::{
-    app_state::{app_state::AppState, images::ImageAvailability},
-    common::ViewId,
+    app_state::app_state::AppState,
+    common::{ImageAvailability, ViewId, Viewable},
     components::spinner::Spinner,
 };
 
@@ -24,12 +24,27 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         view_id,
     } = props;
 
+    let plotly_div = use_style!(
+        r#"
+        display: flex;
+        height: 100%;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        "#,
+    );
+
     let current_image_availability = {
         let view_id = *view_id;
         use_selector(move |state: &AppState| -> Option<ImageAvailability> {
-            let image_id = state.image_views.borrow().get_image_id(view_id)?;
-            let availability = state.image_cache.borrow().get(&image_id);
-            Some(availability)
+            let viewable = state.image_views.borrow().get_viewable(view_id)?;
+            match viewable {
+                Viewable::Image(image_id) => {
+                    let availability = state.image_cache.borrow().get(&image_id);
+                    Some(availability)
+                }
+                Viewable::Plotly(_) => Some(ImageAvailability::PlotlyAvailable(())),
+            }
         })
     };
 
@@ -41,7 +56,10 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             ImageAvailability::Pending => Some(html! {
                 <Spinner />
             }),
-            ImageAvailability::Available(_) => None,
+            ImageAvailability::ImageAvailable(_) => None,
+            ImageAvailability::PlotlyAvailable(_) => Some(html! {
+                <div id="my-plot" class={plotly_div} />
+            }),
         }
     } else {
         None

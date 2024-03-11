@@ -412,6 +412,7 @@
     "@vscode/codicons": "^0.0.33",
     "@vscode/webview-ui-toolkit": "^1.2.1",
     "parsimmon": "^1.18.1",
+    "plotly.js-dist": "^2.30.0",
     "reflect-metadata": "^0.1.13",
     "ts-results": "^3.3.0",
     "typedi": "^0.10.0",

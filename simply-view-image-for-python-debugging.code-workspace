@@ -20,6 +20,9 @@
 		"rust-analyzer.showUnlinkedFileNotification": false,
 		"emmet.includeLanguages": {
 			"rust": "html",
-		}
+		},
+		"cSpell.words": [
+			"Plotly"
+		]
 	}
 }

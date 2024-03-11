@@ -1,11 +1,12 @@
 use crate::app_state::app_state::AppState;
 use crate::app_state::app_state::GlobalDrawingOptions;
-use crate::app_state::images::ImageAvailability;
 use crate::colormap::colormap;
 use crate::common::camera;
+use crate::common::ImageAvailability;
 use crate::common::ImageId;
 use crate::common::Size;
 use crate::common::ViewId;
+use crate::common::Viewable;
 use crate::components::main::Main;
 use crate::configurations;
 use crate::mouse_events::PanHandler;
@@ -65,7 +66,10 @@ fn rendering_context() -> impl RenderingContext {
                             view_id
                         )
                     }),
-                image_id: dispatch.get().image_views.borrow().get_image_id(view_id),
+                image_id: match dispatch.get().image_views.borrow().get_viewable(view_id) {
+                    Some(Viewable::Image(image_id)) => Some(image_id),
+                    _ => None,
+                },
             }
         }
 
@@ -131,16 +135,21 @@ fn view_context() -> impl ViewContext {
 
         fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size> {
             let dispatch = Dispatch::<AppState>::global();
-            let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
-            dispatch
-                .get()
-                .images
-                .borrow()
-                .get(&image_id?)
-                .map(|image| Size {
-                    width: image.width as _,
-                    height: image.height as _,
-                })
+            let viewable = dispatch.get().image_views.borrow().get_viewable(view_id)?;
+            match viewable {
+                Viewable::Image(image_id) => {
+                    dispatch
+                        .get()
+                        .images
+                        .borrow()
+                        .get(&image_id)
+                        .map(|image| Size {
+                            width: image.width as _,
+                            height: image.height as _,
+                        })
+                }
+                Viewable::Plotly(_) => None,
+            }
         }
 
         fn get_view_element(&self, view_id: ViewId) -> HtmlElement {
@@ -161,8 +170,8 @@ fn view_context() -> impl ViewContext {
 
         fn get_image_for_view(&self, view_id: ViewId) -> Option<ImageAvailability> {
             let dispatch = Dispatch::<AppState>::global();
-            let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
-            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id))
+            let viewable = dispatch.get().image_views.borrow().get_viewable(view_id);
+            viewable.map(|viewable| dispatch.get().get_object_from_cache(viewable))
         }
     }
 

@@ -2021,6 +2021,11 @@ pkg-dir@^4.2.0:
   dependencies:
     find-up "^4.0.0"
 
+plotly.js-dist@^2.30.0:
+  version "2.30.0"
+  resolved "https://registry.yarnpkg.com/plotly.js-dist/-/plotly.js-dist-2.30.0.tgz#34b6934820eedb5ec3eee893166839d585bba2b9"
+  integrity sha512-i/RGYJ6/EyNhvnljxYLnBp/QsfWKrC38yELYE+1j5qWZEO/coh3vIReXhb7vgys6ducv7DMe16onykkfE+UGTw==
+
 prelude-ls@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.2.1.tgz#debc6489d7a6e6b0e7611888cec880337d316396"

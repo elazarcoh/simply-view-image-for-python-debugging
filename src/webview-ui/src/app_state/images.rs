@@ -1,37 +1,8 @@
 use crate::{
-    common::{texture_image::TextureImage, ImageId, ImageInfo},
+    common::{texture_image::TextureImage, ImageAvailability, ImageId, ImageInfo},
     rendering::coloring::DrawingOptions,
 };
 use std::{collections::HashMap, rc::Rc};
-
-#[derive(Clone)]
-pub(crate) enum ImageAvailability {
-    NotAvailable,
-    Pending,
-    Available(Rc<TextureImage>),
-}
-
-impl PartialEq for ImageAvailability {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Available(l0), Self::Available(r0)) => Rc::ptr_eq(l0, r0),
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
-        }
-    }
-}
-
-impl ImageAvailability {
-    pub fn map<U, F>(self, f: F) -> Option<U>
-    where
-        F: FnOnce(Rc<TextureImage>) -> U,
-    {
-        match self {
-            ImageAvailability::NotAvailable => None,
-            ImageAvailability::Pending => None,
-            ImageAvailability::Available(image) => Some(f(image)),
-        }
-    }
-}
 
 #[derive(Default)]
 pub(crate) struct ImageCache(HashMap<ImageId, ImageAvailability>);
@@ -54,7 +25,7 @@ impl ImageCache {
 
     pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
         self.0
-            .insert(id.clone(), ImageAvailability::Available(Rc::new(image)));
+            .insert(id.clone(), ImageAvailability::ImageAvailable(Rc::new(image)));
     }
 
     pub(crate) fn clear(&mut self) {

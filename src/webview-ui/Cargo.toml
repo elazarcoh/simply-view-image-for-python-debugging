@@ -79,6 +79,7 @@ thiserror = "1.0.50"
 ndarray = "0.15.6"
 ndarray-stats = "0.5.1"
 num-traits = "0.2.17"
+wasm-bindgen-futures = "0.4.42"
 
 
 [dependencies.web-sys]

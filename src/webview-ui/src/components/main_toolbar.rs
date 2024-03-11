@@ -9,7 +9,7 @@ use yewdux::{prelude::use_selector, Dispatch};
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
     colormap::colormap::ColorMapKind,
-    common::ViewId,
+    common::{ViewId, Viewable},
     rendering::coloring::Coloring,
 };
 
@@ -114,8 +114,14 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         state
             .image_views
             .borrow()
-            .get_image_id(ViewId::Primary)
-            .map(|image_id| state.drawing_options.borrow().get_or_default(&image_id))
+            .get_viewable(ViewId::Primary)
+            .map(|viewable| {
+                if let Viewable::Image(image_id) = viewable {
+                    state.drawing_options.borrow().get_or_default(&image_id)
+                } else {
+                    Default::default()
+                }
+            })
             .unwrap_or_default()
     });
 

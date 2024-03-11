@@ -18,6 +18,7 @@ use crate::common::pixel_value::PixelValue;
 use crate::common::texture_image::TextureImage;
 use crate::common::DataOrdering;
 use crate::common::Datatype;
+use crate::common::ImageAvailability;
 use crate::common::Size;
 use crate::common::ViewId;
 use crate::math_utils::image_calculations::calculate_pixels_information;
@@ -351,9 +352,8 @@ impl Renderer {
 
         if let Some(image_id) = &image_view_data.image_id {
             match rendering_context.texture_by_id(image_id) {
-                crate::app_state::images::ImageAvailability::NotAvailable
-                | crate::app_state::images::ImageAvailability::Pending => {}
-                crate::app_state::images::ImageAvailability::Available(texture) => {
+                ImageAvailability::NotAvailable | ImageAvailability::Pending => {}
+                ImageAvailability::ImageAvailable(texture) => {
                     Renderer::render_image(
                         rendering_context,
                         rendering_data,
@@ -362,6 +362,8 @@ impl Renderer {
                         view_name,
                     );
                 }
+                // types that are not handled by the renderer
+                ImageAvailability::PlotlyAvailable(_) => {}
             }
         };
 

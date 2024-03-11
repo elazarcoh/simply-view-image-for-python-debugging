@@ -3,8 +3,12 @@ use stylist::{css, yew::use_style};
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
+    app_state::app_state::{AppState, StoreAction},
+    bindings::plotlyjs::new_plot,
+    common::{ViewId, Viewable},
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
@@ -64,7 +68,7 @@ pub(crate) fn RefreshButton(props: &RefreshButtonProps) -> Html {
             title={"Refresh Images"}
             aria_label={"Refresh"}
             icon={"codicon codicon-refresh"}
-            onclick={Callback::from({
+            onclick={Callback::from( {
                 let _is_loading = is_loading.clone();
                 move |_| {
                     let _id = VSCodeRequests::request_images();
@@ -185,7 +189,14 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
             aria_label={"Debug images"}
             icon={"codicon codicon-debug"}
             onclick={Callback::from({
-                |_| set_debug_images()
+                |_|  {
+                    let dispatch = Dispatch::<AppState>::global();
+                    dispatch.apply(StoreAction::SetObjectToView(Viewable::Plotly(()), ViewId::Primary));
+                    yew::platform::spawn_local(async {
+                        new_plot("my-plot").await;
+                    });
+                    // set_debug_images()
+                }
             })}
             />
     };

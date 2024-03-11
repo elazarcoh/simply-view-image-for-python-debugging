@@ -1,6 +1,6 @@
 use crate::app_state::app_state::{AppState, ImageObject, StoreAction};
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageData, ViewId};
+use crate::common::{ImageData, ViewId, Viewable};
 use crate::vscode::messages::*;
 use anyhow::{anyhow, Result};
 use gloo::events::EventListener;
@@ -85,7 +85,7 @@ impl VSCodeListener {
         Self::handle_image_data_response(image_data)?;
 
         let dispatch = Dispatch::<AppState>::global();
-        dispatch.apply(StoreAction::SetImageToView(image_id, ViewId::Primary));
+        dispatch.apply(StoreAction::SetObjectToView(Viewable::Image(image_id), ViewId::Primary));
         Ok(())
     }
 

@@ -40,7 +40,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             let viewable = state.image_views.borrow().get_viewable(view_id)?;
             match viewable {
                 Viewable::Image(image_id) => {
-                    let availability = state.image_cache.borrow().get(&image_id);
+                    let availability = state.viewables_cache.borrow().get(&image_id);
                     Some(availability)
                 }
                 Viewable::Plotly(_) => Some(ImageAvailability::PlotlyAvailable(())),

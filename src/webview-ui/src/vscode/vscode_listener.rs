@@ -94,7 +94,10 @@ impl VSCodeListener {
         let (images, errors): (Vec<_>, Vec<_>) = replacement_images
             .0
             .into_iter()
-            .map(ImageObject::try_from)
+            .map(|image| match image {
+                ViewableObject::Image(image) => Ok(ImageObject::try_from(image)?),
+                ViewableObject::Plotly(plot) => Err(anyhow!("Plotly plots are not supported")),
+            })
             .partition_result();
 
         if !errors.is_empty() {

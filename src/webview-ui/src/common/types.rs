@@ -18,6 +18,13 @@ impl Display for ImageId {
     }
 }
 
+#[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq)]
+pub(crate) struct PlotlyPlot {
+    data: Vec<serde_json::Value>,
+    layout: serde_json::Value,
+    config: serde_json::Value,
+}
+
 #[derive(Debug)]
 pub(crate) struct Size {
     pub width: f32,
@@ -134,22 +141,6 @@ impl Datatype {
             Datatype::Bool => 1,
         }
     }
-
-    // pub(crate) fn is_floating(&self) -> bool {
-    //     matches!(
-    //         self,
-    //         Datatype::Float32,
-    //         // Datatype::Float64
-    //     )
-    // }
-
-    // pub(crate) fn is_unsigned_integer(&self) -> bool {
-    //     matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
-    // }
-
-    // pub(crate) fn is_signed_integer(&self) -> bool {
-    //     matches!(self, Datatype::Int8 | Datatype::Int16 | Datatype::Int32)
-    // }
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -183,6 +174,17 @@ pub(crate) struct ImageData {
     pub info: ImageInfo,
     pub computed_info: ComputedInfo,
     pub bytes: Vec<u8>,
+}
+
+pub(crate) struct PlotInfo {
+    pub id: ImageId,
+    pub value_variable_kind: ValueVariableKind,
+    pub expression: String,
+}
+
+pub(crate) struct PlotData {
+    pub info: PlotInfo,
+    pub plot: PlotlyPlot,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

@@ -42,7 +42,7 @@ fn rendering_context() -> impl RenderingContext {
 
         fn texture_by_id(&self, id: &ImageId) -> ImageAvailability {
             let dispatch = Dispatch::<AppState>::global();
-            dispatch.get().image_cache.borrow().get(id)
+            dispatch.get().viewables_cache.borrow().get(id)
         }
 
         fn visible_nodes(&self) -> Vec<ViewId> {

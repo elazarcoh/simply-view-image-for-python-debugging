@@ -1,5 +1,6 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
-use super::images::{ImageCache, Images, ImagesDrawingOptions};
+use super::images::{Images, ImagesDrawingOptions};
+use super::viewables_cache::ViewablesCache;
 use super::views::ImageViews;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
@@ -28,7 +29,7 @@ impl Listener for ImagesFetcher {
         for viewable in currently_viewing_image_ids {
             match viewable {
                 Viewable::Image(image_id) => {
-                    if !state.image_cache.borrow().has(&image_id) {
+                    if !state.viewables_cache.borrow().has(&image_id) {
                         log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
                             log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
@@ -36,7 +37,7 @@ impl Listener for ImagesFetcher {
                                 image_id.clone(),
                                 image_info.expression.clone(),
                             );
-                            state.image_cache.borrow_mut().set_pending(&image_id);
+                            state.viewables_cache.borrow_mut().set_pending(&image_id);
                         }
                     }
                 }
@@ -68,7 +69,7 @@ pub(crate) struct AppState {
 
     pub images: Mrc<Images>,
     pub image_views: Mrc<ImageViews>,
-    pub image_cache: Mrc<ImageCache>,
+    pub viewables_cache: Mrc<ViewablesCache>,
     pub drawing_options: Mrc<ImagesDrawingOptions>,
     pub global_drawing_options: GlobalDrawingOptions,
 
@@ -89,7 +90,7 @@ impl AppState {
 
     pub(crate) fn get_object_from_cache(&self, viewable: Viewable) -> ImageAvailability {
         match viewable {
-            Viewable::Image(image_id) => self.image_cache.borrow().get(&image_id),
+            Viewable::Image(image_id) => self.viewables_cache.borrow().get(&image_id),
             Viewable::Plotly(_) => ImageAvailability::PlotlyAvailable(()),
         }
     }
@@ -101,7 +102,7 @@ impl Default for AppState {
             gl: None,
             images: Default::default(),
             image_views: Default::default(),
-            image_cache: Default::default(),
+            viewables_cache: Default::default(),
             view_cameras: Default::default(),
             color_map_registry: Default::default(),
             color_map_textures_cache: Default::default(),
@@ -116,7 +117,7 @@ impl PartialEq for AppState {
     fn eq(&self, other: &Self) -> bool {
         self.images == other.images
             && self.image_views == other.image_views
-            && self.image_cache == other.image_cache
+            && self.viewables_cache == other.viewables_cache
             && self.view_cameras == other.view_cameras
             && self.configuration == other.configuration
             && self.gl == other.gl
@@ -183,7 +184,7 @@ impl Reducer<AppState> for StoreAction {
                 log::debug!("AddTextureImage: {:?}", image_id);
                 let info = texture_image.image.info.clone();
                 state
-                    .image_cache
+                    .viewables_cache
                     .borrow_mut()
                     .set(&image_id, *texture_image);
                 state.images.borrow_mut().insert(image_id, info);
@@ -222,7 +223,7 @@ impl Reducer<AppState> for StoreAction {
 
             StoreAction::ReplaceData(replacement_images) => {
                 log::debug!("ReplaceData");
-                state.image_cache.borrow_mut().clear();
+                state.viewables_cache.borrow_mut().clear();
                 state.images.borrow_mut().clear();
 
                 let mut errors = Vec::new();
@@ -240,7 +241,7 @@ impl Reducer<AppState> for StoreAction {
                             TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
                         match tex_image {
                             Ok(tex_image) => {
-                                state.image_cache.borrow_mut().set(&image_id, tex_image);
+                                state.viewables_cache.borrow_mut().set(&image_id, tex_image);
                             }
                             Err(e) => {
                                 errors.push(e);

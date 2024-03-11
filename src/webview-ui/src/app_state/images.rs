@@ -1,37 +1,8 @@
 use crate::{
-    common::{texture_image::TextureImage, ImageAvailability, ImageId, ImageInfo},
+    common::{ImageId, ImageInfo},
     rendering::coloring::DrawingOptions,
 };
-use std::{collections::HashMap, rc::Rc};
-
-#[derive(Default)]
-pub(crate) struct ImageCache(HashMap<ImageId, ImageAvailability>);
-
-impl ImageCache {
-    pub(crate) fn has(&self, id: &ImageId) -> bool {
-        self.0.contains_key(id)
-    }
-
-    pub(crate) fn get(&self, id: &ImageId) -> ImageAvailability {
-        self.0
-            .get(id)
-            .cloned()
-            .unwrap_or(ImageAvailability::NotAvailable)
-    }
-
-    pub(crate) fn set_pending(&mut self, id: &ImageId) {
-        self.0.insert(id.clone(), ImageAvailability::Pending);
-    }
-
-    pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
-        self.0
-            .insert(id.clone(), ImageAvailability::ImageAvailable(Rc::new(image)));
-    }
-
-    pub(crate) fn clear(&mut self) {
-        self.0.clear();
-    }
-}
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub(crate) struct Images {

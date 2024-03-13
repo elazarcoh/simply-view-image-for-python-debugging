@@ -6,7 +6,7 @@ use yewdux::{prelude::use_selector, Dispatch};
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
     common::{
-        viewables::{image::ImageInfo, viewables::ViewableInfo},
+        viewables::{image::ImageInfo, plotly::PlotlyInfo, viewables::ViewableInfo},
         ValueVariableKind,
     },
     rendering::coloring::Coloring,
@@ -16,7 +16,7 @@ use crate::{
 use super::icon_button::IconButton;
 
 #[derive(PartialEq, Properties)]
-pub(crate) struct DisplayOptionProps {
+pub(crate) struct ImageDisplayOptionToolbarProps {
     pub entry: ImageInfo,
 }
 
@@ -93,8 +93,8 @@ mod features {
 }
 
 #[function_component]
-pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
-    let DisplayOptionProps { entry } = props;
+fn ImageDisplayOptionToolbar(props: &ImageDisplayOptionToolbarProps) -> Html {
+    let ImageDisplayOptionToolbarProps { entry } = props;
 
     let image_id = entry.image_id.clone();
     let drawing_options = use_selector(move |state: &AppState| {
@@ -327,6 +327,18 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
 }
 
+#[derive(PartialEq, Properties, Clone)]
+pub(crate) struct PlotlyDisplayOptionToolbarProps {
+    pub entry: PlotlyInfo,
+}
+
+#[function_component]
+fn PlotlyDisplayOptionToolbar(_props: &PlotlyDisplayOptionToolbarProps) -> Html {
+    html! {
+        <></>
+    }
+}
+
 fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html {
     html! {
     <>
@@ -405,12 +417,13 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         "#
     );
 
-    let display_option = if let ViewableInfo::Image(info) = entry {
-        html! {
-            if *selected { <DisplayOption entry={info.clone()} />}  else {<></>}
-        }
-    } else {
-        html! {<></>}
+    let display_option = match entry {
+        ViewableInfo::Image(info) => html! {
+            if *selected { <ImageDisplayOptionToolbar entry={info.clone()} />}  else {<></>}
+        },
+        ViewableInfo::Plotly(info) => html! {
+            if *selected { <PlotlyDisplayOptionToolbar entry={info.clone()} />}  else {<></>}
+        },
     };
 
     let expression = entry.expression().to_string();

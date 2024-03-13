@@ -18,11 +18,13 @@
 			"./src/webview-ui/Cargo.toml"
 		],
 		"rust-analyzer.showUnlinkedFileNotification": false,
+		"rust-analyzer.cargo.target": "wasm32-unknown-unknown",
 		"emmet.includeLanguages": {
 			"rust": "html",
 		},
 		"cSpell.words": [
-			"Plotly"
+			"Plotly",
+			"viewables"
 		]
 	}
 }

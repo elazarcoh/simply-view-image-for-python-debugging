@@ -1,4 +1,6 @@
-use crate::common::{texture_image::TextureImage, ImageAvailability, ImageId};
+use crate::common::{
+    texture_image::TextureImage, viewables::plotly::PlotlyPlot, ImageAvailability, ImageId,
+};
 use std::{collections::HashMap, rc::Rc};
 
 #[derive(Default)]
@@ -20,10 +22,17 @@ impl ViewablesCache {
         self.0.insert(id.clone(), ImageAvailability::Pending);
     }
 
-    pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
+    pub(crate) fn set_image(&mut self, id: &ImageId, image: TextureImage) {
         self.0.insert(
             id.clone(),
             ImageAvailability::ImageAvailable(Rc::new(image)),
+        );
+    }
+
+    pub(crate) fn set_plotly(&mut self, id: &ImageId, plotly: PlotlyPlot) {
+        self.0.insert(
+            id.clone(),
+            ImageAvailability::PlotlyAvailable(Rc::new(plotly)),
         );
     }
 

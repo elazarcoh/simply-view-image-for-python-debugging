@@ -6,13 +6,14 @@ use crate::{
         pixel_value::PixelValue,
         viewables::{
             image::{ComputedInfo, ImageData, ImageInfo},
+            plotly::{PlotlyData, PlotlyInfo},
             viewables::{ViewableData, ViewableInfo},
         },
     },
     math_utils::image_calculations::image_minmax_on_bytes,
 };
 
-use super::messages::ImageMessage;
+use super::messages::{ImageMessage, PlotlyMessage, ViewableObjectMessage};
 
 impl From<ImageMessage> for ImageInfo {
     fn from(image_message: ImageMessage) -> Self {
@@ -79,6 +80,66 @@ impl TryFrom<ImageMessage> for ViewableObject {
             None => Ok(ViewableObject::InfoOnly(ViewableInfo::Image(
                 ImageInfo::from(image_message),
             ))),
+        }
+    }
+}
+
+impl From<PlotlyMessage> for PlotlyInfo {
+    fn from(message: PlotlyMessage) -> Self {
+        Self {
+            id: message.image_id,
+            value_variable_kind: message.value_variable_kind,
+            expression: message.expression,
+            additional_info: message.additional_info,
+        }
+    }
+}
+
+impl TryFrom<PlotlyMessage> for PlotlyData {
+    type Error = anyhow::Error;
+
+    fn try_from(message: PlotlyMessage) -> Result<Self, Self::Error> {
+        if message.plot.is_some() {
+            let PlotlyMessage { plot, .. } = message;
+            let info = PlotlyInfo {
+                id: message.image_id,
+                value_variable_kind: message.value_variable_kind,
+                expression: message.expression,
+                additional_info: message.additional_info,
+            };
+
+            Ok(Self {
+                info,
+                plot: plot.unwrap(),
+            })
+        } else {
+            return Err(anyhow::anyhow!("PlotlyMessage without plot data"));
+        }
+    }
+}
+
+impl TryFrom<PlotlyMessage> for ViewableObject {
+    type Error = anyhow::Error;
+
+    fn try_from(message: PlotlyMessage) -> Result<Self, Self::Error> {
+        match &message.plot {
+            Some(_) => Ok(ViewableObject::WithData(ViewableData::Plotly(
+                PlotlyData::try_from(message)?,
+            ))),
+            None => Ok(ViewableObject::InfoOnly(ViewableInfo::Plotly(
+                PlotlyInfo::from(message),
+            ))),
+        }
+    }
+}
+
+impl TryFrom<ViewableObjectMessage> for ViewableObject {
+    type Error = anyhow::Error;
+
+    fn try_from(message: ViewableObjectMessage) -> Result<Self, Self::Error> {
+        match message {
+            ViewableObjectMessage::Image(image_message) => image_message.try_into(),
+            ViewableObjectMessage::Plotly(plotly_message) => plotly_message.try_into(),
         }
     }
 }

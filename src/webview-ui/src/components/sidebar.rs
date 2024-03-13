@@ -189,14 +189,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
             aria_label={"Debug images"}
             icon={"codicon codicon-debug"}
             onclick={Callback::from({
-                |_|  {
-                    let dispatch = Dispatch::<AppState>::global();
-                    // dispatch.apply(StoreAction::SetObjectToView("PLOTLY", ViewId::Primary));
-                    yew::platform::spawn_local(async {
-                        new_plot("my-plot").await;
-                    });
-                    // set_debug_images()
-                }
+                |_|  { set_debug_images() }
             })}
             />
     };

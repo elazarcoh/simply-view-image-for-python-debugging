@@ -1,4 +1,4 @@
-use stylist::yew::use_style;
+use stylist::{css, yew::use_style};
 use yew::prelude::*;
 use yewdux::functional::use_selector;
 
@@ -51,12 +51,19 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                 <Spinner />
             }),
             ImageAvailability::ImageAvailable(_) => None,
-            ImageAvailability::PlotlyAvailable(_) => Some(html! {
-                <div id="my-plot" class={plotly_div} />
-            }),
+            ImageAvailability::PlotlyAvailable(_) => None,
         }
     } else {
         None
+    };
+
+    let show_plotly = if matches!(
+        current_image_availability.as_ref(),
+        Some(ImageAvailability::PlotlyAvailable(_))
+    ) {
+        css!("") // keep default
+    } else {
+        css!("display: none;")
     };
 
     let style = use_style!(
@@ -72,6 +79,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
     html! {
         <div ref={node_ref.clone()} class={classes!(class.clone(), style)}>
             {inner_element}
+            <div id="plotly-view" class={classes!(plotly_div, show_plotly)} />
         </div>
     }
 }

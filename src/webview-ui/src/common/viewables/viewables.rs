@@ -31,7 +31,7 @@ impl ViewableInfo {
     pub(crate) fn additional_info(&self) -> &std::collections::HashMap<String, String> {
         match self {
             ViewableInfo::Image(info) => &info.additional_info,
-            ViewableInfo::Plotly(_) => todo!(),
+            ViewableInfo::Plotly(info) => &info.additional_info,
         }
     }
 }

@@ -51,7 +51,7 @@ pub(crate) enum ImageAvailability {
     NotAvailable,
     Pending,
     ImageAvailable(Rc<super::texture_image::TextureImage>),
-    PlotlyAvailable(()),
+    PlotlyAvailable(Rc<super::viewables::plotly::PlotlyPlot>),
 }
 
 impl PartialEq for ImageAvailability {

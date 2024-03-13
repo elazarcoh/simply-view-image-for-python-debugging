@@ -2,6 +2,7 @@ use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{Images, ImagesDrawingOptions};
 use super::viewables_cache::ViewablesCache;
 use super::views::ImageViews;
+use crate::bindings::plotlyjs;
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::viewables::viewables::{ViewableData, ViewableInfo};
@@ -9,6 +10,7 @@ use crate::common::{ImageAvailability, ImageId, ViewId};
 use crate::rendering::coloring::{Coloring, DrawingOptions};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
+use std::convert::TryFrom;
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
@@ -28,12 +30,25 @@ impl Listener for ImagesFetcher {
             .collect::<Vec<_>>();
 
         for image_id in currently_viewing_image_ids {
-            if !state.viewables_cache.borrow().has(&image_id) {
-                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                if let Some(image_info) = state.images.borrow().get(&image_id) {
-                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                    VSCodeRequests::request_image_data(image_id.clone(), image_info.expression());
-                    state.viewables_cache.borrow_mut().set_pending(&image_id);
+            match state.viewables_cache.borrow().get(&image_id) {
+                ImageAvailability::NotAvailable => {
+                    log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                    if let Some(image_info) = state.images.borrow().get(&image_id) {
+                        log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                        VSCodeRequests::request_image_data(
+                            image_id.clone(),
+                            image_info.expression(),
+                        );
+                        state.viewables_cache.borrow_mut().set_pending(&image_id);
+                    }
+                }
+                ImageAvailability::Pending => {}
+                ImageAvailability::ImageAvailable(_) => {}
+                ImageAvailability::PlotlyAvailable(plot) => {
+                    log::debug!("ImagesFetcher::on_change: plotly image {}", image_id);
+                    yew::platform::spawn_local(async move {
+                        plotlyjs::new_plot("plotly-view", plot.as_ref()).await;
+                    });
                 }
             }
         }
@@ -176,7 +191,7 @@ impl Reducer<AppState> for StoreAction {
                 state
                     .viewables_cache
                     .borrow_mut()
-                    .set(&image_id, *texture_image);
+                    .set_image(&image_id, *texture_image);
                 state
                     .images
                     .borrow_mut()
@@ -220,16 +235,13 @@ impl Reducer<AppState> for StoreAction {
                 state.images.borrow_mut().clear();
 
                 let mut errors = Vec::new();
-                for image in replacement_images.into_iter() {
-                    let image_id = image.object_id().clone();
-                    let image_info: ViewableInfo = image.info().to_owned();
+                for object in replacement_images.into_iter() {
+                    let id = object.object_id();
+                    let info: ViewableInfo = object.info();
 
-                    state
-                        .images
-                        .borrow_mut()
-                        .insert(image_id.clone(), image_info);
+                    state.images.borrow_mut().insert(id.clone(), info);
 
-                    if let ViewableObject::WithData(data) = image {
+                    if let ViewableObject::WithData(data) = object {
                         match data {
                             ViewableData::Image(image_data) => {
                                 let tex_image =
@@ -239,14 +251,19 @@ impl Reducer<AppState> for StoreAction {
                                         state
                                             .viewables_cache
                                             .borrow_mut()
-                                            .set(&image_id, tex_image);
+                                            .set_image(&id, tex_image);
                                     }
                                     Err(e) => {
                                         errors.push(e);
                                     }
                                 }
                             }
-                            ViewableData::Plotly(_) => todo!(),
+                            ViewableData::Plotly(data) => {
+                                state
+                                    .viewables_cache
+                                    .borrow_mut()
+                                    .set_plotly(&id, data.plot);
+                            }
                         }
                     }
                 }

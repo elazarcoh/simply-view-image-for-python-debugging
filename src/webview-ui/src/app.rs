@@ -8,6 +8,7 @@ use crate::common::Size;
 use crate::common::ViewId;
 use crate::components::main::Main;
 use crate::configurations;
+use crate::keyboard_event::KeyboardHandler;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::rendering::coloring::DrawingOptions;
@@ -182,6 +183,7 @@ pub(crate) fn App() -> Html {
 
     use_effect({
         let view_context_rc = Rc::clone(&view_context_rc);
+        let canvas_ref = canvas_ref.clone();
 
         move || {
             // send message to VSCode that the webview is ready
@@ -192,10 +194,13 @@ pub(crate) fn App() -> Html {
             let zoom_listener = ZoomHandler::install(view_id, Rc::clone(&view_context_rc));
             let pan_listener = PanHandler::install(view_id, Rc::clone(&view_context_rc));
 
+            let keyboard_listener = KeyboardHandler::install(&canvas_ref);
+
             move || {
                 drop(message_listener);
                 drop(zoom_listener);
                 drop(pan_listener);
+                drop(keyboard_listener);
             }
         }
     });

@@ -13,6 +13,7 @@ mod components;
 mod configurations;
 mod math_utils;
 mod mouse_events;
+mod keyboard_event;
 mod vscode;
 mod webgl_utils;
 

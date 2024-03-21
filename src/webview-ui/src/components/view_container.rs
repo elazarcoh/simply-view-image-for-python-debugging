@@ -1,12 +1,77 @@
+use std::{
+    cell::{Ref, RefCell},
+    rc::Rc,
+};
+
 use stylist::{css, yew::use_style};
+use wasm_bindgen::{closure::Closure, JsCast};
+use web_sys::{window, Element, ResizeObserver, ResizeObserverEntry, ResizeObserverSize};
+
 use yew::prelude::*;
+use yew_hooks::prelude::*;
+
+use yew_hooks::use_size;
 use yewdux::functional::use_selector;
 
 use crate::{
     app_state::app_state::AppState,
-    common::{ImageAvailability, ViewId},
+    bindings::plotlyjs::{self, relayout_plot, resize_plot},
+    common::{viewables::plotly::PlotlyPlot, ImageAvailability, ViewId},
     components::spinner::Spinner,
 };
+
+#[derive(PartialEq, Properties)]
+pub struct PlotlyContainerProps {
+    hidden: bool,
+}
+
+#[function_component]
+pub fn PlotlyContainer(props: &PlotlyContainerProps) -> Html {
+    let PlotlyContainerProps { hidden } = props;
+
+    let element_ref = use_node_ref();
+
+    // based on this: https://github.com/plotly/react-plotly.js/issues/76#issuecomment-1655339186
+    use_effect_with((), {
+        let element_ref = element_ref.clone();
+        move |_| {
+            let resize_observer = Rc::new(RefCell::new(None));
+            if let Some(element) = element_ref.cast::<Element>() {
+                let closure = Closure::wrap(Box::new(|_| {
+                    wasm_bindgen_futures::spawn_local(async move {
+                        resize_plot("plotly-view").await;
+                    });
+                })
+                    as Box<dyn Fn(Vec<ResizeObserverEntry>)>);
+
+                *resize_observer.borrow_mut() =
+                    Some(ResizeObserver::new(closure.as_ref().unchecked_ref()).unwrap());
+                // Forget the closure to keep it alive
+                closure.forget();
+
+                resize_observer.borrow().as_ref().unwrap().observe(&element);
+            }
+
+            move || {
+                resize_observer.borrow().as_ref().map(|o| o.disconnect());
+            }
+        }
+    });
+
+    // using string style instead of css! macro because for some reason the css! macro kills the plotly plot auto-resize.
+    // using visibility instead of display because display: none; kills the plotly plot auto-resize.
+    let style = if *hidden {
+        "height: 100%; width: 100%; visibility: hidden;"
+    } else {
+        "height: 100%; width: 100%; visibility: visible;"
+    };
+
+    html! {
+        <div ref={element_ref} style={{style}}>
+            <div id="plotly-view" style="height: 100%; width: 100%;"></div>
+        </div>
+    }
+}
 
 #[derive(PartialEq, Properties)]
 pub(crate) struct ViewContainerProps {
@@ -23,16 +88,6 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         class,
         view_id,
     } = props;
-
-    let plotly_div = use_style!(
-        r#"
-        display: flex;
-        height: 100%;
-        width: 100%;
-        justify-content: center;
-        align-items: center;
-        "#,
-    );
 
     let current_image_availability = {
         let view_id = *view_id;
@@ -57,14 +112,10 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         None
     };
 
-    let show_plotly = if matches!(
+    let is_plotly = matches!(
         current_image_availability.as_ref(),
         Some(ImageAvailability::PlotlyAvailable(_))
-    ) {
-        css!("") // keep default
-    } else {
-        css!("display: none;")
-    };
+    );
 
     let style = use_style!(
         r#"
@@ -79,7 +130,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
     html! {
         <div ref={node_ref.clone()} class={classes!(class.clone(), style)}>
             {inner_element}
-            <div id="plotly-view" class={classes!(plotly_div, show_plotly)} />
+            <PlotlyContainer hidden={!is_plotly} />
         </div>
     }
 }

@@ -88,10 +88,20 @@ impl Images {
         self.data.len()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&ImageId, &ImageInfo)> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&ImageId, &ImageInfo)> {
         self.order
             .iter()
             .filter_map(move |id| self.data.get(id).map(|info| (id, info)))
+    }
+
+    pub fn next_image_id(&self, current_image_id: &ImageId) -> Option<&ImageId> {
+        let current_index = self.order.iter().position(|id| id == current_image_id)?;
+        self.order.get(current_index + 1)
+    }
+
+    pub fn previous_image_id(&self, current_image_id: &ImageId) -> Option<&ImageId> {
+        let current_index = self.order.iter().position(|id| id == current_image_id)?;
+        self.order.get(current_index.checked_sub(1)?)
     }
 }
 

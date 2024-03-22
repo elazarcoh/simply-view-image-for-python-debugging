@@ -241,9 +241,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
                 {pin_toggle_button}
                 {collapse_toggle_button}
             </Toolbar>
-            <div class={css!("overflow-y: auto; height: 100%;")}>
-                <ImageSelectionList />
-            </div>
+            <ImageSelectionList />
         </div>
     };
 

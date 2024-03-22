@@ -181,7 +181,7 @@ pub(crate) fn image_minmax_on_bytes(
         Datatype::Bool => make_minmax_pixel_value_from_bytes::<u8>(channels, bytes),
     };
 
-    log::debug!("min: {}, max: {}", min, max);
+    // log::debug!("min: {}, max: {}", min, max);
 
     (min, max)
 }

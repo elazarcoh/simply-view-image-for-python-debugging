@@ -3,18 +3,36 @@ use gloo_utils::window;
 use wasm_bindgen::JsCast;
 use web_sys::Event;
 use yew::Callback;
+use yewdux::Dispatch;
+
+use crate::{
+    app_state::app_state::{AppState, ChangeImageAction},
+    common::ViewId,
+};
 
 pub(crate) struct KeyboardHandler {}
 
 impl KeyboardHandler {
+    fn handle_key(event: &web_sys::KeyboardEvent) {
+        let key = event.key();
+        let dispatch = Dispatch::<AppState>::global();
+        match key.as_str() {
+            "ArrowDown" => {
+                dispatch.apply(ChangeImageAction::Next(ViewId::Primary));
+            }
+            "ArrowUp" => {
+                dispatch.apply(ChangeImageAction::Previous(ViewId::Primary));
+            }
+            &_ => {}
+        }
+    }
     pub(crate) fn install(node_ref: &yew::NodeRef) -> Option<EventListener> {
         let keydown = {
             Callback::from(move |event: Event| {
                 let event = event
                     .dyn_ref::<web_sys::KeyboardEvent>()
                     .expect("Unable to cast event to KeyboardEvent");
-                let key = event.key();
-                log::info!("Keydown: {}", key);
+                KeyboardHandler::handle_key(&event);
             })
         };
 

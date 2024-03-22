@@ -107,4 +107,8 @@ features = [
   "FileReader",
   "MessageEvent",
   "ProgressEvent",
+  "ScrollToOptions",
+  "ScrollBehavior",
+  "ScrollLogicalPosition",
+  "ScrollIntoViewOptions",
 ]

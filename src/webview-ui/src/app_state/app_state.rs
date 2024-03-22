@@ -81,6 +81,12 @@ impl AppState {
             .as_ref()
             .ok_or(anyhow!("WebGL context not initialized"))
     }
+
+    pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
+        self.image_views
+            .borrow_mut()
+            .set_image_to_view(image_id, view_id);
+    }
 }
 
 impl Default for AppState {
@@ -161,10 +167,7 @@ impl Reducer<AppState> for StoreAction {
 
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
-                state
-                    .image_views
-                    .borrow_mut()
-                    .set_image_to_view(image_id, view_id);
+                state.set_image_to_view(image_id, view_id);
             }
 
             StoreAction::AddTextureImage(image_id, texture_image) => {
@@ -247,6 +250,72 @@ impl Reducer<AppState> for StoreAction {
                 }
             },
         };
+
+        app_state
+    }
+}
+
+pub(crate) enum ChangeImageAction {
+    Next(ViewId),
+    Previous(ViewId),
+}
+
+impl Reducer<AppState> for ChangeImageAction {
+    fn apply(self, mut app_state: Rc<AppState>) -> Rc<AppState> {
+        let state = Rc::make_mut(&mut app_state);
+
+        match self {
+            ChangeImageAction::Next(view_id) => {
+                let next_image_id = state
+                    .image_views
+                    .borrow()
+                    .get_image_id(view_id)
+                    .and_then(|current_image_id| {
+                        state
+                            .images
+                            .borrow()
+                            .next_image_id(&current_image_id)
+                            .cloned()
+                    })
+                    .or_else(|| {
+                        // If no image is currently displayed, show the first image
+                        state
+                            .images
+                            .borrow()
+                            .iter()
+                            .next()
+                            .map(|(image_id, _)| image_id.clone())
+                    });
+                next_image_id.map(|next_image_id| {
+                    state.set_image_to_view(next_image_id, view_id);
+                });
+            }
+            ChangeImageAction::Previous(view_id) => {
+                let previous_image_id = state
+                    .image_views
+                    .borrow()
+                    .get_image_id(view_id)
+                    .and_then(|current_image_id| {
+                        state
+                            .images
+                            .borrow()
+                            .previous_image_id(&current_image_id)
+                            .cloned()
+                    })
+                    .or_else(|| {
+                        // If no image is currently displayed, show the last image
+                        state
+                            .images
+                            .borrow()
+                            .iter()
+                            .next_back()
+                            .map(|(image_id, _)| image_id.clone())
+                    });
+                previous_image_id.map(|previous_image_id| {
+                    state.set_image_to_view(previous_image_id, view_id);
+                });
+            }
+        }
 
         app_state
     }

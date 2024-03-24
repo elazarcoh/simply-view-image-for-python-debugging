@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use stylist::{css, yew::use_style};
-use web_sys::{ScrollBehavior, ScrollLogicalPosition, ScrollToOptions};
+use web_sys::{ScrollBehavior, ScrollToOptions};
 use yew::prelude::*;
 use yewdux::prelude::*;
 

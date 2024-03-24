@@ -2,10 +2,7 @@ use crate::{
     common::{texture_image::TextureImage, ImageId, ImageInfo},
     rendering::coloring::DrawingOptions,
 };
-use std::{
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::{collections::HashMap, rc::Rc};
 
 #[derive(Clone)]
 pub(crate) enum ImageAvailability {

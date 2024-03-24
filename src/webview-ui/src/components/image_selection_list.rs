@@ -48,6 +48,7 @@ struct ImageItemWrapperProps {
     container_ref: NodeRef,
     info: ImageInfo,
     is_selected: bool,
+    is_pinned: bool,
     onclick: Callback<MouseEvent>,
 }
 
@@ -57,6 +58,7 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
         container_ref,
         info,
         is_selected,
+        is_pinned,
         onclick,
     } = props;
 
@@ -93,7 +95,7 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
             {onclick}
             class={entry_style.clone()}
         >
-            <ImageListItem entry={info.clone()} selected={is_selected} />
+            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} />
         </vscode-option>
     }
 }
@@ -128,12 +130,14 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             };
 
             let is_selected = *selected_entry == Some(id.clone());
+            let is_pinned = images_data.borrow().is_pinned(id);
 
             html! {
                 <ImageItemWrapper
                     container_ref={node_ref.clone()}
                     info={info.clone()}
                     is_selected={is_selected}
+                    is_pinned={is_pinned}
                     onclick={onclick}
                 />
             }

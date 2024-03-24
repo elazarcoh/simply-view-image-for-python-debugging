@@ -2,7 +2,10 @@ use crate::{
     common::{texture_image::TextureImage, ImageId, ImageInfo},
     rendering::coloring::DrawingOptions,
 };
-use std::{collections::HashMap, rc::Rc};
+use std::{
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 #[derive(Clone)]
 pub(crate) enum ImageAvailability {
@@ -66,6 +69,7 @@ impl ImageCache {
 pub(crate) struct Images {
     data: HashMap<ImageId, ImageInfo>,
     order: Vec<ImageId>,
+    pinned: Vec<ImageId>,
 }
 
 impl Images {
@@ -82,6 +86,7 @@ impl Images {
     pub fn clear(&mut self) {
         self.data.clear();
         self.order.clear();
+        self.pinned.clear();
     }
 
     pub fn len(&self) -> usize {
@@ -89,19 +94,47 @@ impl Images {
     }
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&ImageId, &ImageInfo)> {
-        self.order
-            .iter()
-            .filter_map(move |id| self.data.get(id).map(|info| (id, info)))
+        let iter_item = move |id| self.data.get(id).map(|info| (id, info));
+        // first pinned images, then unpinned images
+        self.pinned.iter().filter_map(iter_item).chain(
+            self.order
+                .iter()
+                .filter(move |id| !self.is_pinned(id))
+                .filter_map(iter_item),
+        )
     }
 
     pub fn next_image_id(&self, current_image_id: &ImageId) -> Option<&ImageId> {
-        let current_index = self.order.iter().position(|id| id == current_image_id)?;
-        self.order.get(current_index + 1)
+        self.iter()
+            .skip_while(|(id, _)| *id != current_image_id)
+            .skip(1)
+            .map(|(id, _)| id)
+            .next()
     }
 
     pub fn previous_image_id(&self, current_image_id: &ImageId) -> Option<&ImageId> {
-        let current_index = self.order.iter().position(|id| id == current_image_id)?;
-        self.order.get(current_index.checked_sub(1)?)
+        self.iter()
+            .rev()
+            .skip_while(|(id, _)| *id != current_image_id)
+            .skip(1)
+            .map(|(id, _)| id)
+            .next()
+    }
+
+    pub fn pin(&mut self, image_id: &ImageId) {
+        if !self.is_pinned(image_id) {
+            self.pinned.insert(0, image_id.clone());
+        }
+    }
+
+    pub fn unpin(&mut self, image_id: &ImageId) {
+        if let Some(index) = self.pinned.iter().position(|id| id == image_id) {
+            self.pinned.remove(index);
+        }
+    }
+
+    pub fn is_pinned(&self, image_id: &ImageId) -> bool {
+        self.pinned.iter().any(|id| id == image_id)
     }
 }
 

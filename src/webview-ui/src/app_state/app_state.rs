@@ -258,6 +258,8 @@ impl Reducer<AppState> for StoreAction {
 pub(crate) enum ChangeImageAction {
     Next(ViewId),
     Previous(ViewId),
+    Pin(ImageId),
+    Unpin(ImageId),
 }
 
 impl Reducer<AppState> for ChangeImageAction {
@@ -314,6 +316,12 @@ impl Reducer<AppState> for ChangeImageAction {
                 previous_image_id.map(|previous_image_id| {
                     state.set_image_to_view(previous_image_id, view_id);
                 });
+            }
+            ChangeImageAction::Pin(image_id) => {
+                state.images.borrow_mut().pin(&image_id);
+            }
+            ChangeImageAction::Unpin(image_id) => {
+                state.images.borrow_mut().unpin(&image_id);
             }
         }
 

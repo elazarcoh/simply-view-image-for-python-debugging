@@ -18,9 +18,11 @@ impl KeyboardHandler {
         let dispatch = Dispatch::<AppState>::global();
         match key.as_str() {
             "ArrowDown" => {
+                event.prevent_default();
                 dispatch.apply(ChangeImageAction::Next(ViewId::Primary));
             }
             "ArrowUp" => {
+                event.prevent_default();
                 dispatch.apply(ChangeImageAction::Previous(ViewId::Primary));
             }
             &_ => {}

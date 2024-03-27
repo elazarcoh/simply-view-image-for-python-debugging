@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, StoreAction, UpdateDrawingOptions},
+    app_state::app_state::{AppState, ChangeImageAction, StoreAction, UpdateDrawingOptions},
     common::{ImageInfo, ValueVariableKind},
     rendering::coloring::Coloring,
     vscode::vscode_requests::VSCodeRequests,
@@ -337,13 +337,19 @@ fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html
 
 #[derive(PartialEq, Properties, Clone)]
 pub(crate) struct ImageListItemProps {
+    pub pinned: bool,
     pub entry: ImageInfo,
     pub selected: bool,
 }
 
 #[function_component]
 pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
-    let ImageListItemProps { entry, selected } = props;
+    let ImageListItemProps {
+        pinned,
+        entry,
+        selected,
+    } = props;
+    let image_id = entry.image_id.clone();
 
     let info_grid_style = use_style!(
         r#"
@@ -381,6 +387,39 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             })}
         />
     };
+    let dispatch = Dispatch::<AppState>::global();
+
+    let pin_button = html! {
+        <IconButton
+            aria_label={"Pin"}
+            title={"Pin"}
+            icon={"codicon codicon-pin"}
+            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| ChangeImageAction::Pin(image_id.clone())})}
+        />
+    };
+    let unpin_style = use_style!(
+        r#"
+        box-shadow: inset 0px 0px 1px 1px var(--vscode-checkbox-background);
+        background-color: var(--vscode-checkbox-background);
+        "#
+    );
+    let unpin_button = html! {
+        <IconButton
+            aria_label={"Unpin"}
+            title={"Unpin"}
+            icon={"codicon codicon-pinned"}
+            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| ChangeImageAction::Unpin(image_id.clone())})}
+            class={unpin_style}
+        />
+    };
+
+    let pin_unpin_button = if *pinned {
+        unpin_button
+    } else if *selected {
+        pin_button
+    } else {
+        html!(<></>)
+    };
 
     let item_style = use_style!(
         r#"
@@ -405,6 +444,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     html! {
         <div class={item_style.clone()}>
             <div class="item-label-container">
+                {pin_unpin_button}
                 <label class="item-label" title={entry.expression.clone()}>{&entry.expression}</label>
                 if entry.value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
             </div>

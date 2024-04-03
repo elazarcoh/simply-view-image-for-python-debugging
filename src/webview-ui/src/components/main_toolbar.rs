@@ -8,9 +8,9 @@ use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
     app_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
+    coloring::Coloring,
     colormap::colormap::ColorMapKind,
     common::ViewId,
-    rendering::coloring::Coloring,
 };
 
 #[derive(PartialEq, Properties)]

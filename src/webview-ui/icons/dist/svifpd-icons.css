@@ -6,7 +6,7 @@
 @font-face {
 	font-family: "svifpd-icons";
 	font-display: block;
-	src: url("./svifpd-icons.ttf?b9bb1d76f6754e872f251727a2ceae6f") format("truetype");
+	src: url("./svifpd-icons.ttf?917fbe18584fab163e2a441453a842b3") format("truetype");
 }
 
 .svifpd-icons[class*='svifpd-icons-'] {
@@ -67,3 +67,4 @@
 .svifpd-icons-toggle-transparency:before { content: "\ea68" }
 .svifpd-icons-heatmap:before { content: "\ea69" }
 .svifpd-icons-segmentation:before { content: "\ea6a" }
+.svifpd-icons-legend:before { content: "\ea6b" }

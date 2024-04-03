@@ -1,4 +1,12 @@
+use std::collections::HashSet;
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt::Display,
+};
+
+use anyhow::{anyhow, Result};
 use glam::{Mat3, Vec2, Vec3};
+use itertools::Itertools;
 
 use crate::{
     common::{pixel_value::PixelValue, Channels, Datatype, Size},
@@ -184,4 +192,51 @@ pub(crate) fn image_minmax_on_bytes(
     // log::debug!("min: {}, max: {}", min, max);
 
     (min, max)
+}
+
+fn collect_unique_values<T>(
+    data: &[T],
+) -> Result<Vec<PixelValue>, <PixelValue as TryFrom<T>>::Error>
+where
+    T: Copy + Eq + std::hash::Hash,
+    PixelValue: TryFrom<T>,
+{
+    let mut unique_values = HashSet::new();
+    for &value in data {
+        unique_values.insert(value);
+    }
+    unique_values
+        .into_iter()
+        .map(PixelValue::try_from)
+        .collect::<Result<Vec<PixelValue>, _>>()
+}
+
+pub(crate) fn image_unique_values_on_bytes(
+    bytes: &[u8],
+    datatype: Datatype,
+    channels: Channels,
+) -> Result<Vec<PixelValue>> {
+    // valid only for single-channel images with integer values
+    if channels != Channels::One {
+        return Err(anyhow!(
+            "Unique values calculation is only valid for single-channel images"
+        ));
+    }
+    if !datatype.is_signed_integer() && !datatype.is_unsigned_integer() {
+        return Err(anyhow!(
+            "Unique values calculation is only valid for integer datatypes"
+        ));
+    }
+
+    let unique_values = (match datatype {
+        Datatype::Uint8 => collect_unique_values(bytemuck::cast_slice::<u8, u8>(bytes)),
+        Datatype::Uint16 => collect_unique_values(bytemuck::cast_slice::<u8, u16>(bytes)),
+        Datatype::Uint32 => collect_unique_values(bytemuck::cast_slice::<u8, u32>(bytes)),
+        Datatype::Int8 => collect_unique_values(bytemuck::cast_slice::<u8, i8>(bytes)),
+        Datatype::Int16 => collect_unique_values(bytemuck::cast_slice::<u8, i16>(bytes)),
+        Datatype::Int32 => collect_unique_values(bytemuck::cast_slice::<u8, i32>(bytes)),
+        _ => unreachable!(),
+    })?;
+
+    Ok(unique_values)
 }

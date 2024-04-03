@@ -133,15 +133,51 @@ impl PixelValue {
     }
 }
 
-impl TryFrom<Vec<f32>> for PixelValue {
-    type Error = anyhow::Error;
 
-    fn try_from(value: Vec<f32>) -> Result<Self, Self::Error> {
-        let channels: Channels = (value.len() as u32).try_into()?;
-        let mut res = Self::new(channels, Datatype::Float32);
-        for (i, v) in value.iter().enumerate() {
-            *res.get_mut::<f32>(i as u32) = *v;
+
+macro_rules! impl_try_from_single {
+    ($t:ty, $dt:ident) => {
+        impl TryFrom<$t> for PixelValue {
+            type Error = anyhow::Error;
+
+            fn try_from(value: $t) -> Result<Self, Self::Error> {
+                let mut res = Self::new(Channels::One, Datatype::$dt);
+                *res.get_mut::<$t>(0) = value;
+                Ok(res)
+            }
         }
-        Ok(res)
-    }
+    };
 }
+macro_rules! impl_try_from_vec {
+    ($t:ty, $dt:ident) => {
+        impl TryFrom<Vec<$t>> for PixelValue {
+            type Error = anyhow::Error;
+
+            fn try_from(value: Vec<$t>) -> Result<Self, Self::Error> {
+                let channels: Channels = (value.len() as u32).try_into()?;
+                let mut res = Self::new(channels, Datatype::$dt);
+                for (i, v) in value.iter().enumerate() {
+                    *res.get_mut::<$t>(i as u32) = *v;
+                }
+                Ok(res)
+            }
+        }
+    };
+}
+
+impl_try_from_single!(u8, Uint8);
+impl_try_from_single!(u16, Uint16);
+impl_try_from_single!(u32, Uint32);
+impl_try_from_single!(f32, Float32);
+impl_try_from_single!(i8, Int8);
+impl_try_from_single!(i16, Int16);
+impl_try_from_single!(i32, Int32);
+// impl_try_from_single!(bool, Bool);
+impl_try_from_vec!(u8, Uint8);
+impl_try_from_vec!(u16, Uint16);
+impl_try_from_vec!(u32, Uint32);
+impl_try_from_vec!(f32, Float32);
+impl_try_from_vec!(i8, Int8);
+impl_try_from_vec!(i16, Int16);
+impl_try_from_vec!(i32, Int32);
+// impl_try_from_vec!(bool, Bool);

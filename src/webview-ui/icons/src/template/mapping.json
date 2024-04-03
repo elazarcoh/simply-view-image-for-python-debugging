@@ -8,5 +8,6 @@
   "BGR": 60007,
   "toggle-transparency": 60008,
   "heatmap": 60009,
-  "segmentation": 60010
+  "segmentation": 60010,
+  "legend": 60011
 }

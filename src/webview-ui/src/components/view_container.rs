@@ -2,10 +2,9 @@ use std::rc::Rc;
 
 use glam::Vec4Swizzles;
 use itertools::Itertools;
-use js_sys::global;
 use stylist::{css, yew::use_style};
 use yew::{prelude::*, virtual_dom::VNode};
-use yewdux::{dispatch, functional::use_selector, Dispatch};
+use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
     app_state::{app_state::AppState, images::ImageAvailability},

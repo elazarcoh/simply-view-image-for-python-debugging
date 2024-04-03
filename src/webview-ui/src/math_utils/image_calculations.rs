@@ -1,12 +1,8 @@
 use std::collections::HashSet;
-use std::{
-    convert::{TryFrom, TryInto},
-    fmt::Display,
-};
+use std::convert::TryFrom;
 
 use anyhow::{anyhow, Result};
 use glam::{Mat3, Vec2, Vec3};
-use itertools::Itertools;
 
 use crate::{
     common::{pixel_value::PixelValue, Channels, Datatype, Size},

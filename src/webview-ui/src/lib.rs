@@ -21,6 +21,7 @@ mod colormap;
 mod rendering;
 #[cfg(debug_assertions)]
 mod tmp_for_debug;
+mod coloring;
 
 use app::App;
 use cfg_if::cfg_if;

@@ -11,7 +11,8 @@ use web_sys::{
     HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
 };
 
-use crate::colormap::colormap;
+use crate::coloring;
+use crate::coloring::{calculate_color_matrix, Coloring, DrawingOptions};
 use crate::common::camera;
 use crate::common::constants::all_views;
 use crate::common::pixel_value::PixelValue;
@@ -21,16 +22,12 @@ use crate::common::Datatype;
 use crate::common::Size;
 use crate::common::ViewId;
 use crate::math_utils::image_calculations::calculate_pixels_information;
-use crate::rendering::coloring::calculate_color_matrix;
-use crate::rendering::coloring::Coloring;
-use crate::rendering::coloring::DrawingOptions;
 use crate::webgl_utils;
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
 use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
-use super::coloring::ColoringFactors;
 use super::constants::VIEW_SIZE;
 use super::rendering_context::{ImageViewData, RenderingContext};
 use crate::rendering::pixel_text_rendering::{
@@ -127,27 +124,6 @@ fn create_placeholder_texture(gl: &GL) -> Result<GLGuard<web_sys::WebGlTexture>>
             .build()
             .unwrap(),
     )
-}
-
-fn calculate_pixel_color_from_colormap(
-    pixel_value: &PixelValue,
-    coloring_factors: &ColoringFactors,
-    colormap: &colormap::ColorMap,
-    drawing_options: &DrawingOptions,
-) -> Vec4 {
-    let mut rgba = Vec4::from(pixel_value.as_rgba_f32());
-    rgba = coloring_factors.color_multiplier * (rgba / coloring_factors.normalization_factor)
-        + coloring_factors.color_addition;
-    if drawing_options.invert {
-        rgba.x = 1.0 - rgba.x;
-        rgba.y = 1.0 - rgba.y;
-        rgba.z = 1.0 - rgba.z;
-    }
-    let colormap_sampling_value = rgba.x.clamp(0.0, 1.0);
-    let colormap_index =
-        (colormap_sampling_value * (colormap.map.len() - 1) as f32).round() as usize;
-    let colormap_color = colormap.map[colormap_index];
-    Vec4::new(colormap_color[0], colormap_color[1], colormap_color[2], 1.0)
 }
 
 fn text_color(pixel_color: Vec4, drawing_options: &DrawingOptions) -> Vec4 {
@@ -577,7 +553,7 @@ impl Renderer {
                             let colormap = rendering_context
                                 .get_color_map(name)
                                 .expect("Could not get color map");
-                            let pixel_color = calculate_pixel_color_from_colormap(
+                            let pixel_color = coloring::calculate_pixel_color_from_colormap(
                                 &pixel_value,
                                 &coloring_factors,
                                 colormap.as_ref(),

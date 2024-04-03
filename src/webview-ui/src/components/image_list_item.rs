@@ -5,8 +5,8 @@ use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
     app_state::app_state::{AppState, ChangeImageAction, StoreAction, UpdateDrawingOptions},
+    coloring::Coloring,
     common::{ImageInfo, ValueVariableKind},
-    rendering::coloring::Coloring,
     vscode::vscode_requests::VSCodeRequests,
 };
 

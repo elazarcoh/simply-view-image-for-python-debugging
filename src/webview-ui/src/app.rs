@@ -1,6 +1,7 @@
 use crate::app_state::app_state::AppState;
 use crate::app_state::app_state::GlobalDrawingOptions;
 use crate::app_state::images::ImageAvailability;
+use crate::coloring::DrawingOptions;
 use crate::colormap::colormap;
 use crate::common::camera;
 use crate::common::ImageId;
@@ -11,7 +12,6 @@ use crate::configurations;
 use crate::keyboard_event::KeyboardHandler;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ZoomHandler;
-use crate::rendering::coloring::DrawingOptions;
 use crate::rendering::renderer::Renderer;
 use crate::rendering::rendering_context::ImageViewData;
 use crate::rendering::rendering_context::RenderingContext;

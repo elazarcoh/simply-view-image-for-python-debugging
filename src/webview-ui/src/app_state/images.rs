@@ -1,6 +1,6 @@
 use crate::{
+    coloring::DrawingOptions,
     common::{texture_image::TextureImage, ImageId, ImageInfo},
-    rendering::coloring::DrawingOptions,
 };
 use std::{collections::HashMap, rc::Rc};
 
@@ -148,5 +148,9 @@ impl ImagesDrawingOptions {
             .get(image_id)
             .cloned()
             .unwrap_or(DrawingOptions::default())
+    }
+
+    pub(crate) fn get(&self, image_id: &ImageId) -> Option<DrawingOptions> {
+        self.0.get(image_id).cloned()
     }
 }

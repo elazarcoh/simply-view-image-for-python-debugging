@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::{
-    math_utils::mat4::transpose, common::{Datatype, ImageInfo, ComputedInfo, Channels},
+    colormap::colormap, common::{pixel_value::PixelValue, Channels, ComputedInfo, Datatype, ImageInfo}, math_utils::mat4::transpose
 };
 
 
@@ -314,4 +314,25 @@ pub(crate) fn calculate_color_matrix(
         color_multiplier,
         color_addition,
     }
+}
+
+pub(crate) fn calculate_pixel_color_from_colormap(
+    pixel_value: &PixelValue,
+    coloring_factors: &ColoringFactors,
+    colormap: &colormap::ColorMap,
+    drawing_options: &DrawingOptions,
+) -> Vec4 {
+    let mut rgba = Vec4::from(pixel_value.as_rgba_f32());
+    rgba = coloring_factors.color_multiplier * (rgba / coloring_factors.normalization_factor)
+        + coloring_factors.color_addition;
+    if drawing_options.invert {
+        rgba.x = 1.0 - rgba.x;
+        rgba.y = 1.0 - rgba.y;
+        rgba.z = 1.0 - rgba.z;
+    }
+    let colormap_sampling_value = rgba.x.clamp(0.0, 1.0);
+    let colormap_index =
+        (colormap_sampling_value * (colormap.map.len() - 1) as f32).round() as usize;
+    let colormap_color = colormap.map[colormap_index];
+    Vec4::new(colormap_color[0], colormap_color[1], colormap_color[2], 1.0)
 }

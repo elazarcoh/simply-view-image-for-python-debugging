@@ -5,10 +5,10 @@ use web_sys::{HtmlElement, WebGl2RenderingContext};
 
 use crate::{
     app_state::{app_state::GlobalDrawingOptions, images::ImageAvailability},
+    coloring::DrawingOptions,
     colormap::colormap,
     common::{camera, ImageId, Size, ViewId},
     configurations::RenderingConfiguration,
-    rendering::coloring::DrawingOptions,
     webgl_utils,
 };
 

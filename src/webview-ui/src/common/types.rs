@@ -135,21 +135,21 @@ impl Datatype {
         }
     }
 
-    // pub(crate) fn is_floating(&self) -> bool {
-    //     matches!(
-    //         self,
-    //         Datatype::Float32,
-    //         // Datatype::Float64
-    //     )
-    // }
+    pub(crate) fn is_floating(&self) -> bool {
+        matches!(
+            self,
+            Datatype::Float32,
+            // Datatype::Float64
+        )
+    }
 
-    // pub(crate) fn is_unsigned_integer(&self) -> bool {
-    //     matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
-    // }
+    pub(crate) fn is_unsigned_integer(&self) -> bool {
+        matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
+    }
 
-    // pub(crate) fn is_signed_integer(&self) -> bool {
-    //     matches!(self, Datatype::Int8 | Datatype::Int16 | Datatype::Int32)
-    // }
+    pub(crate) fn is_signed_integer(&self) -> bool {
+        matches!(self, Datatype::Int8 | Datatype::Int16 | Datatype::Int32)
+    }
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -188,4 +188,10 @@ pub(crate) struct ImageData {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum ViewId {
     Primary,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct LegendItem {
+    pub color: [f32; 3],
+    pub label: String,
 }

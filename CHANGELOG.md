@@ -1,4 +1,13 @@
 # Change Log
+
+## [4.0.1] - Pre-release
+
+### Added
+
+- Keyboard navigation in images list
+- Pin images to top of list
+- Legend for segmentation images
+
 ## [4.0.0] - Release
 
 ### Added

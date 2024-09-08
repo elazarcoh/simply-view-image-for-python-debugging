@@ -158,6 +158,7 @@ export async function serializeImageUsingSocketServer(
             height: arrayInfo.height,
             channels: arrayInfo.channels as 1 | 2 | 3 | 4,
             datatype: webviewDatatype,
+            batch_size: null,
             additional_info: additionalInfo,
             min: arrayInfo.mins,
             max: arrayInfo.maxs,

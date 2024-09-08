@@ -1,6 +1,6 @@
 use crate::app_state::app_state::StoreAction;
 use crate::common::{Channels, Datatype, ValueVariableKind};
-use crate::common::{DataOrdering, ImageId};
+use crate::common::{DataOrdering, ViewableObjectId};
 use crate::vscode::messages::ImageMessage;
 use std::collections::HashMap;
 use yewdux::prelude::Dispatch;
@@ -8850,9 +8850,10 @@ fn image_data_with(
     width: u32,
     height: u32,
     data_ordering: DataOrdering,
+    batch_size: Option<u32>,
 ) -> ImageMessage {
     ImageMessage {
-        image_id: ImageId::new(name),
+        image_id: ViewableObjectId::new(name),
         value_variable_kind: ValueVariableKind::Variable,
         expression: name.to_string(),
         width,
@@ -8860,12 +8861,22 @@ fn image_data_with(
         channels,
         datatype,
         data_ordering,
+        batch_size,
         min: None,
         max: None,
         additional_info: HashMap::from([
             (
                 "Shape".to_string(),
-                format!("({}, {}, {})", width, height, channels),
+                match (batch_size, data_ordering) {
+                    (Some(batch_size), DataOrdering::HWC) => {
+                        format!("({}, {}, {}, {})", batch_size, height, width, channels)
+                    }
+                    (Some(batch_size), DataOrdering::CHW) => {
+                        format!("({}, {}, {}, {})", batch_size, channels, height, width)
+                    }
+                    (None, DataOrdering::HWC) => format!("({}, {}, {})", height, width, channels),
+                    (None, DataOrdering::CHW) => format!("({}, {}, {})", channels, height, width),
+                },
             ),
             ("Datatype".to_string(), format!("{:?}", datatype)),
         ]),
@@ -8883,6 +8894,7 @@ fn image_texture_rgba_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -8906,6 +8918,7 @@ fn image_texture_rgba_u16() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -8929,6 +8942,7 @@ fn image_texture_rgba_u32() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -8946,6 +8960,7 @@ fn image_texture_rgb_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -8975,6 +8990,7 @@ fn image_texture_rg_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -8998,6 +9014,7 @@ fn image_texture_gray_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9021,6 +9038,7 @@ fn image_texture_rgba_i8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9044,6 +9062,7 @@ fn image_texture_rgba_i16() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9067,6 +9086,7 @@ fn image_texture_rgba_i32() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9090,6 +9110,7 @@ fn image_texture_rgba_f32() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9112,6 +9133,7 @@ fn image_texture_rgb_f32() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9134,6 +9156,7 @@ fn image_texture_gray_f32() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9157,6 +9180,7 @@ fn image_texture_gray_f32_not_normalized(min_value: f32, max_value: f32) -> Imag
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9180,6 +9204,7 @@ fn image_texture_gray_u8_not_normalized(min_value: u8, max_value: u8) -> ImageMe
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9211,6 +9236,7 @@ fn image_texture_with_transparency() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9234,6 +9260,7 @@ fn image_fully_transparent_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9257,6 +9284,7 @@ fn image_texture_bool_rgba() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9274,6 +9302,7 @@ fn image_texture_bool_gray() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9287,6 +9316,7 @@ fn heatmap_texture_u16() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9300,6 +9330,7 @@ fn segmentation_texture_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9332,6 +9363,7 @@ fn matrix_4x4_with_scientific_nan_inf() -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9360,6 +9392,7 @@ fn rectangle_image_u8() -> ImageMessage {
         target_w as u32,
         target_h as u32,
         DataOrdering::HWC,
+        None,
     )
 }
 
@@ -9394,6 +9427,7 @@ fn channels_first_image_f32() -> ImageMessage {
         w,
         h,
         DataOrdering::CHW,
+        None,
     )
 }
 
@@ -9425,6 +9459,7 @@ fn channels_first_image_rgb_u8() -> ImageMessage {
         w,
         h,
         DataOrdering::CHW,
+        None,
     )
 }
 
@@ -9459,6 +9494,64 @@ fn channels_first_image_rgba_int16() -> ImageMessage {
         w,
         h,
         DataOrdering::CHW,
+        None,
+    )
+}
+
+fn channels_first_image_gray_u8() -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .map(|chunk| {
+            let r = chunk[0] as f32;
+            let g = chunk[1] as f32;
+            let b = chunk[2] as f32;
+
+            (r * 0.3 + g * 0.59 + b * 0.11) as u8
+        })
+        .collect::<Vec<u8>>();
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Uint8,
+        Channels::One,
+        "channels_first_image_gray_u8",
+        w,
+        h,
+        DataOrdering::CHW,
+        None,
+    )
+}
+
+fn batch_gray_u8(batch_size: u32) -> ImageMessage {
+    let (bytes_rgba, w, h) = image_rgba_data_u8();
+    let data = bytes_rgba
+        .chunks_exact(4)
+        .map(|chunk| {
+            let r = chunk[0] as f32;
+            let g = chunk[1] as f32;
+            let b = chunk[2] as f32;
+
+            (r * 0.3 + g * 0.59 + b * 0.11) as u8
+        })
+        .collect::<Vec<u8>>();
+
+    let data = (0..batch_size)
+        .flat_map(|r| {
+            data.iter()
+                .map(|x| (*x as f32 + r as f32).min(255.0) as u8)
+                .collect::<Vec<u8>>()
+        })
+        .collect::<Vec<u8>>();
+
+    image_data_with(
+        bytemuck::cast_slice(&data),
+        Datatype::Uint8,
+        Channels::One,
+        "batch_gray_u8",
+        w,
+        h,
+        DataOrdering::HWC,
+        Some(batch_size),
     )
 }
 
@@ -9473,38 +9566,41 @@ pub(crate) fn set_debug_images() {
     log::debug!("creating debug image texture");
     let images: Vec<ImageMessage> = vec![
         // Unsigned Int
-        image_texture_rgba_u8(),
-        image_texture_rgba_u16(),
-        image_texture_rgba_u32(),
-        image_texture_bool_rgba(),
-        image_texture_rgb_u8(),
-        image_texture_rg_u8(),
-        image_texture_gray_u8(),
-        image_texture_gray_u8_not_normalized(50, 100),
-        heatmap_texture_u16(),
-        segmentation_texture_u8(),
-        image_fully_transparent_u8(),
-        rectangle_image_u8(),
+        // image_texture_rgba_u8(),
+        // image_texture_rgba_u16(),
+        // image_texture_rgba_u32(),
+        // image_texture_bool_rgba(),
+        // image_texture_rgb_u8(),
+        // image_texture_rg_u8(),
+        // image_texture_gray_u8(),
+        // image_texture_gray_u8_not_normalized(50, 100),
+        // heatmap_texture_u16(),
+        // segmentation_texture_u8(),
+        // image_fully_transparent_u8(),
+        // rectangle_image_u8(),
 
-        // Int
-        image_texture_rgba_i8(),
-        image_texture_rgba_i16(),
-        image_texture_rgba_i32(),
+        // // Int
+        // image_texture_rgba_i8(),
+        // image_texture_rgba_i16(),
+        // image_texture_rgba_i32(),
 
-        // Float
-        image_texture_rgba_f32(),
-        image_texture_rgb_f32(),
-        image_texture_gray_f32(),
-        image_texture_gray_f32_not_normalized(0.0, 0.5),
-        image_texture_gray_f32_not_normalized(-100.0, 100.0),
-        image_texture_with_transparency(),
-        image_texture_bool_gray(),
-        matrix_4x4_with_scientific_nan_inf(),
+        // // Float
+        // image_texture_rgba_f32(),
+        // image_texture_rgb_f32(),
+        // image_texture_gray_f32(),
+        // image_texture_gray_f32_not_normalized(0.0, 0.5),
+        // image_texture_gray_f32_not_normalized(-100.0, 100.0),
+        // image_texture_with_transparency(),
+        // image_texture_bool_gray(),
+        // matrix_4x4_with_scientific_nan_inf(),
 
         // Planar
         channels_first_image_f32(),
         channels_first_image_rgb_u8(),
         channels_first_image_rgba_int16(),
+        channels_first_image_gray_u8(),
+        // Batch
+        batch_gray_u8(5),
     ];
 
     let dispatch = Dispatch::<AppState>::global();

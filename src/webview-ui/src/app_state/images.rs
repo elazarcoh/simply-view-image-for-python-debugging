@@ -1,6 +1,6 @@
 use crate::{
     coloring::DrawingOptions,
-    common::{texture_image::TextureImage, ImageId, ImageInfo},
+    common::{texture_image::TextureImage, ViewableObjectId, ImageInfo},
 };
 use std::{collections::HashMap, rc::Rc};
 
@@ -34,25 +34,25 @@ impl ImageAvailability {
 }
 
 #[derive(Default)]
-pub(crate) struct ImageCache(HashMap<ImageId, ImageAvailability>);
+pub(crate) struct ImageCache(HashMap<ViewableObjectId, ImageAvailability>);
 
 impl ImageCache {
-    pub(crate) fn has(&self, id: &ImageId) -> bool {
+    pub(crate) fn has(&self, id: &ViewableObjectId) -> bool {
         self.0.contains_key(id)
     }
 
-    pub(crate) fn get(&self, id: &ImageId) -> ImageAvailability {
+    pub(crate) fn get(&self, id: &ViewableObjectId) -> ImageAvailability {
         self.0
             .get(id)
             .cloned()
             .unwrap_or(ImageAvailability::NotAvailable)
     }
 
-    pub(crate) fn set_pending(&mut self, id: &ImageId) {
+    pub(crate) fn set_pending(&mut self, id: &ViewableObjectId) {
         self.0.insert(id.clone(), ImageAvailability::Pending);
     }
 
-    pub(crate) fn set(&mut self, id: &ImageId, image: TextureImage) {
+    pub(crate) fn set(&mut self, id: &ViewableObjectId, image: TextureImage) {
         self.0
             .insert(id.clone(), ImageAvailability::Available(Rc::new(image)));
     }
@@ -64,17 +64,17 @@ impl ImageCache {
 
 #[derive(Default)]
 pub(crate) struct Images {
-    data: HashMap<ImageId, ImageInfo>,
-    order: Vec<ImageId>,
-    pinned: Vec<ImageId>,
+    data: HashMap<ViewableObjectId, ImageInfo>,
+    order: Vec<ViewableObjectId>,
+    pinned: Vec<ViewableObjectId>,
 }
 
 impl Images {
-    pub fn get(&self, image_id: &ImageId) -> Option<&ImageInfo> {
+    pub fn get(&self, image_id: &ViewableObjectId) -> Option<&ImageInfo> {
         self.data.get(image_id)
     }
 
-    pub fn insert(&mut self, image_id: ImageId, image_info: ImageInfo) {
+    pub fn insert(&mut self, image_id: ViewableObjectId, image_info: ImageInfo) {
         if self.data.insert(image_id.clone(), image_info).is_none() {
             self.order.push(image_id);
         }
@@ -90,7 +90,7 @@ impl Images {
         self.data.len()
     }
 
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&ImageId, &ImageInfo)> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&ViewableObjectId, &ImageInfo)> {
         let iter_item = move |id| self.data.get(id).map(|info| (id, info));
         // first pinned images, then unpinned images
         self.pinned.iter().filter_map(iter_item).chain(
@@ -101,7 +101,7 @@ impl Images {
         )
     }
 
-    pub fn next_image_id(&self, current_image_id: &ImageId) -> Option<&ImageId> {
+    pub fn next_image_id(&self, current_image_id: &ViewableObjectId) -> Option<&ViewableObjectId> {
         self.iter()
             .skip_while(|(id, _)| *id != current_image_id)
             .skip(1)
@@ -109,7 +109,7 @@ impl Images {
             .next()
     }
 
-    pub fn previous_image_id(&self, current_image_id: &ImageId) -> Option<&ImageId> {
+    pub fn previous_image_id(&self, current_image_id: &ViewableObjectId) -> Option<&ViewableObjectId> {
         self.iter()
             .rev()
             .skip_while(|(id, _)| *id != current_image_id)
@@ -118,39 +118,39 @@ impl Images {
             .next()
     }
 
-    pub fn pin(&mut self, image_id: &ImageId) {
+    pub fn pin(&mut self, image_id: &ViewableObjectId) {
         if !self.is_pinned(image_id) {
             self.pinned.insert(0, image_id.clone());
         }
     }
 
-    pub fn unpin(&mut self, image_id: &ImageId) {
+    pub fn unpin(&mut self, image_id: &ViewableObjectId) {
         if let Some(index) = self.pinned.iter().position(|id| id == image_id) {
             self.pinned.remove(index);
         }
     }
 
-    pub fn is_pinned(&self, image_id: &ImageId) -> bool {
+    pub fn is_pinned(&self, image_id: &ViewableObjectId) -> bool {
         self.pinned.iter().any(|id| id == image_id)
     }
 }
 
 #[derive(Default)]
-pub(crate) struct ImagesDrawingOptions(HashMap<ImageId, DrawingOptions>);
+pub(crate) struct ImagesDrawingOptions(HashMap<ViewableObjectId, DrawingOptions>);
 
 impl ImagesDrawingOptions {
-    pub(crate) fn set(&mut self, image_id: ImageId, drawing_options: DrawingOptions) {
+    pub(crate) fn set(&mut self, image_id: ViewableObjectId, drawing_options: DrawingOptions) {
         self.0.insert(image_id, drawing_options);
     }
 
-    pub(crate) fn get_or_default(&self, image_id: &ImageId) -> DrawingOptions {
+    pub(crate) fn get_or_default(&self, image_id: &ViewableObjectId) -> DrawingOptions {
         self.0
             .get(image_id)
             .cloned()
             .unwrap_or(DrawingOptions::default())
     }
 
-    pub(crate) fn get(&self, image_id: &ImageId) -> Option<DrawingOptions> {
+    pub(crate) fn get(&self, image_id: &ViewableObjectId) -> Option<DrawingOptions> {
         self.0.get(image_id).cloned()
     }
 }

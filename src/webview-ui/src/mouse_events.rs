@@ -8,7 +8,10 @@ use yew::Callback;
 use yewdux::Dispatch;
 
 use crate::{
-    app_state::app_state::AppState, common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId}, math_utils::{image_calculations::calculate_pixels_information, ToHom}, rendering::{constants::VIEW_SIZE, rendering_context::ViewContext}
+    app_state::app_state::{AppState, ChangeImageAction},
+    common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId},
+    math_utils::{image_calculations::calculate_pixels_information, ToHom},
+    rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
 };
 
 fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) -> Vec2 {
@@ -179,6 +182,13 @@ impl ZoomHandler {
             Callback::from({
                 let view_element = view_element.clone();
                 move |event: Event| {
+                    let event = event
+                        .dyn_ref::<web_sys::WheelEvent>()
+                        .expect("Unable to cast event to WheelEvent");
+                    if event.shift_key() {
+                        return;
+                    }
+
                     event.prevent_default();
 
                     let html_element_size = Size {
@@ -212,10 +222,6 @@ impl ZoomHandler {
                         &view_projection,
                         &html_element_size,
                     );
-
-                    let event = event
-                        .dyn_ref::<web_sys::WheelEvent>()
-                        .expect("Unable to cast event to WheelEvent");
 
                     let invert_scroll_direction = Dispatch::<AppState>::global()
                         .get()
@@ -356,5 +362,40 @@ impl PixelHoverHandler {
                 mouseleave.emit(e.clone())
             }),
         ]
+    }
+}
+
+pub(crate) struct ShiftScrollHandler;
+
+impl ShiftScrollHandler {
+    pub(crate) fn install(view_id: ViewId, view_context: Rc<dyn ViewContext>) -> EventListener {
+        let view_element = view_context.get_view_element(view_id);
+
+        let wheel = {
+            let view_context = Rc::clone(&view_context);
+            let view_element = view_element.clone();
+
+            Callback::from(move |event: Event| {
+                let event = event
+                    .dyn_ref::<web_sys::WheelEvent>()
+                    .expect("Unable to cast event to WheelEvent");
+                if !event.shift_key() {
+                    return;
+                }
+
+                event.prevent_default();
+
+                if let Some(cv) = view_context.get_currently_viewing_for_view(view_id) {
+                    let amount = event.delta_y() as i32;
+                    let dispatch = Dispatch::<AppState>::global();
+                    dispatch.apply(ChangeImageAction::ViewShiftScroll(cv, amount));
+                }
+            })
+        };
+
+        let options = EventListenerOptions::enable_prevent_default();
+        EventListener::new_with_options(&view_element, "wheel", options, move |e| {
+            wheel.emit(e.clone())
+        })
     }
 }

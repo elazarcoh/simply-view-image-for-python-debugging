@@ -4,7 +4,7 @@ use super::views::ImageViews;
 use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageData, ImageId, ImageInfo, ViewId};
+use crate::common::{CurrentlyViewing, ImageData, ImageInfo, ViewId, ViewableObjectId};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
 use std::rc::Rc;
@@ -17,25 +17,30 @@ impl Listener for ImagesFetcher {
     type Store = AppState;
 
     fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
-        let currently_viewing_image_ids = state
+        let currently_viewing_objects = state
             .image_views
             .borrow()
             .visible_views()
             .iter()
-            .filter_map(|view_id| state.image_views.borrow().get_image_id(*view_id))
+            .filter_map(|view_id| state.image_views.borrow().get_currently_viewing(*view_id))
             .collect::<Vec<_>>();
 
-        for image_id in currently_viewing_image_ids {
-            if !state.image_cache.borrow().has(&image_id) {
-                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                if let Some(image_info) = state.images.borrow().get(&image_id) {
-                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                    VSCodeRequests::request_image_data(
-                        image_id.clone(),
-                        image_info.expression.clone(),
-                    );
-                    state.image_cache.borrow_mut().set_pending(&image_id);
+        for cv in currently_viewing_objects {
+            match cv {
+                crate::common::CurrentlyViewing::Image(image_id) => {
+                    if !state.image_cache.borrow().has(&image_id) {
+                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                        if let Some(image_info) = state.images.borrow().get(&image_id) {
+                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                            VSCodeRequests::request_image_data(
+                                image_id.clone(),
+                                image_info.expression.clone(),
+                            );
+                            state.image_cache.borrow_mut().set_pending(&image_id);
+                        }
+                    }
                 }
+                crate::common::CurrentlyViewing::BatchItem(_) => todo!(),
             }
         }
     }
@@ -82,7 +87,7 @@ impl AppState {
             .ok_or(anyhow!("WebGL context not initialized"))
     }
 
-    pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
+    pub(crate) fn set_image_to_view(&mut self, image_id: ViewableObjectId, view_id: ViewId) {
         self.image_views
             .borrow_mut()
             .set_image_to_view(image_id, view_id);
@@ -139,7 +144,7 @@ pub(crate) enum ImageObject {
 }
 
 impl ImageObject {
-    fn image_id(&self) -> &ImageId {
+    fn image_id(&self) -> &ViewableObjectId {
         match self {
             ImageObject::InfoOnly(info) => &info.image_id,
             ImageObject::WithData(data) => &data.info.image_id,
@@ -154,9 +159,10 @@ impl ImageObject {
 }
 
 pub(crate) enum StoreAction {
-    SetImageToView(ImageId, ViewId),
-    AddTextureImage(ImageId, Box<TextureImage>),
-    UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
+    SetImageToView(ViewableObjectId, ViewId),
+    SetAsBatched(ViewableObjectId, bool),
+    AddTextureImage(ViewableObjectId, Box<TextureImage>),
+    UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
 }
@@ -220,11 +226,27 @@ impl Reducer<AppState> for StoreAction {
                 for image in replacement_images.into_iter() {
                     let image_id = image.image_id().clone();
                     let image_info = image.image_info().clone();
+                    let batch_size = image_info.batch_size;
 
                     state
                         .images
                         .borrow_mut()
                         .insert(image_id.clone(), image_info);
+
+                    if batch_size.is_some() {
+                        let current_drawing_options = state
+                            .drawing_options
+                            .borrow()
+                            .get_or_default(&image_id)
+                            .clone();
+                        state.drawing_options.borrow_mut().set(
+                            image_id.clone(),
+                            DrawingOptions {
+                                as_batch_slice: (true, current_drawing_options.as_batch_slice.1),
+                                ..current_drawing_options
+                            },
+                        );
+                    }
 
                     if let ImageObject::WithData(image_data) = image {
                         let tex_image =
@@ -249,6 +271,19 @@ impl Reducer<AppState> for StoreAction {
                     state.global_drawing_options.segmentation_colormap_name = name;
                 }
             },
+            StoreAction::SetAsBatched(image_id, as_batched) => {
+                let current_drawing_options = state
+                    .drawing_options
+                    .borrow()
+                    .get_or_default(&image_id)
+                    .clone();
+                state.drawing_options.borrow_mut().set(image_id, {
+                    DrawingOptions {
+                        as_batch_slice: (as_batched, current_drawing_options.as_batch_slice.1),
+                        ..current_drawing_options
+                    }
+                });
+            }
         };
 
         app_state
@@ -258,8 +293,9 @@ impl Reducer<AppState> for StoreAction {
 pub(crate) enum ChangeImageAction {
     Next(ViewId),
     Previous(ViewId),
-    Pin(ImageId),
-    Unpin(ImageId),
+    Pin(ViewableObjectId),
+    Unpin(ViewableObjectId),
+    ViewShiftScroll(CurrentlyViewing, i32),
 }
 
 impl Reducer<AppState> for ChangeImageAction {
@@ -271,12 +307,12 @@ impl Reducer<AppState> for ChangeImageAction {
                 let next_image_id = state
                     .image_views
                     .borrow()
-                    .get_image_id(view_id)
+                    .get_currently_viewing(view_id)
                     .and_then(|current_image_id| {
                         state
                             .images
                             .borrow()
-                            .next_image_id(&current_image_id)
+                            .next_image_id(&current_image_id.into())
                             .cloned()
                     })
                     .or_else(|| {
@@ -296,12 +332,12 @@ impl Reducer<AppState> for ChangeImageAction {
                 let previous_image_id = state
                     .image_views
                     .borrow()
-                    .get_image_id(view_id)
+                    .get_currently_viewing(view_id)
                     .and_then(|current_image_id| {
                         state
                             .images
                             .borrow()
-                            .previous_image_id(&current_image_id)
+                            .previous_image_id(&current_image_id.into())
                             .cloned()
                     })
                     .or_else(|| {
@@ -322,6 +358,28 @@ impl Reducer<AppState> for ChangeImageAction {
             }
             ChangeImageAction::Unpin(image_id) => {
                 state.images.borrow_mut().unpin(&image_id);
+            }
+            ChangeImageAction::ViewShiftScroll(cv, amount) => {
+                let id = cv.into();
+                let batch_size = state
+                    .images
+                    .borrow()
+                    .get(&id)
+                    .unwrap()
+                    .batch_size
+                    .unwrap_or(1) as usize;
+
+                let current_drawing_options = state.drawing_options.borrow().get_or_default(&id);
+                let current_index = current_drawing_options.as_batch_slice.1;
+                let new_index =
+                    (current_index as i32 + amount).clamp(0, batch_size as i32 - 1) as u32;
+                state.drawing_options.borrow_mut().set(
+                    id,
+                    DrawingOptions {
+                        as_batch_slice: (current_drawing_options.as_batch_slice.0, new_index),
+                        ..current_drawing_options
+                    },
+                );
             }
         }
 

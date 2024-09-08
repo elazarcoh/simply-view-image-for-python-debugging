@@ -6,7 +6,7 @@ use yewdux::prelude::*;
 
 use crate::{
     app_state::app_state::{AppState, StoreAction},
-    common::{ImageInfo, ViewId},
+    common::{CurrentlyViewing, ImageInfo, ViewId},
     components::image_list_item::ImageListItem,
 };
 
@@ -47,7 +47,7 @@ fn scroll_to_element(container: &web_sys::HtmlElement, element: &web_sys::HtmlEl
 struct ImageItemWrapperProps {
     container_ref: NodeRef,
     info: ImageInfo,
-    is_selected: bool,
+    currently_viewing: Option<CurrentlyViewing>,
     is_pinned: bool,
     onclick: Callback<MouseEvent>,
 }
@@ -57,14 +57,27 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     let ImageItemWrapperProps {
         container_ref,
         info,
-        is_selected,
+        currently_viewing,
         is_pinned,
         onclick,
     } = props;
 
     let node_ref = use_node_ref();
 
-    use_effect_with(*is_selected, {
+    let as_batch_slice = use_selector({
+        let image_id = info.image_id.clone();
+        move |state: &AppState| {
+            state
+                .drawing_options
+                .borrow()
+                .get_or_default(&image_id)
+                .as_batch_slice
+        }
+    });
+
+    let is_selected = currently_viewing.is_some();
+
+    use_effect_with(is_selected, {
         let node_ref = node_ref.clone();
         let container_ref = container_ref.clone();
         move |is_selected| {
@@ -81,6 +94,8 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
         }
     });
 
+    let batch_index = if as_batch_slice.0 { Some(as_batch_slice.1) } else { None };
+
     let entry_style = use_style!(
         r#"
         padding: 5px;
@@ -91,11 +106,11 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     html! {
         <vscode-option
             ref={node_ref.clone()}
-            aria-selected={if *is_selected {"true"} else {"false"}}
+            aria-selected={if is_selected {"true"} else {"false"}}
             {onclick}
             class={entry_style.clone()}
         >
-            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} />
+            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={batch_index} />
         </vscode-option>
     }
 }
@@ -110,8 +125,12 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let node_ref = use_node_ref();
 
     let images_data = use_selector(|state: &AppState| state.images.clone());
-    let selected_entry =
-        use_selector(|state: &AppState| state.image_views.borrow().get_image_id(ViewId::Primary));
+    let selected_entry = use_selector(|state: &AppState| {
+        state
+            .image_views
+            .borrow()
+            .get_currently_viewing(ViewId::Primary)
+    });
 
     let num_entries = images_data.borrow().len();
     let entries = images_data
@@ -129,14 +148,23 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 })
             };
 
-            let is_selected = *selected_entry == Some(id.clone());
+            let cv = {
+                let cv = selected_entry.as_ref().as_ref().cloned();
+                let current_id = cv.as_ref().map(|cv| cv.id());
+                if current_id == Some(id) {
+                    cv
+                } else {
+                    None
+                }
+            };
+
             let is_pinned = images_data.borrow().is_pinned(id);
 
             html! {
                 <ImageItemWrapper
                     container_ref={node_ref.clone()}
                     info={info.clone()}
-                    is_selected={is_selected}
+                    currently_viewing={cv}
                     is_pinned={is_pinned}
                     onclick={onclick}
                 />

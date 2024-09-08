@@ -19,6 +19,7 @@ impl From<ImageMessage> for ImageInfo {
             channels: image_message.channels,
             datatype: image_message.datatype,
             data_ordering: image_message.data_ordering,
+            batch_size: image_message.batch_size,
             additional_info: image_message.additional_info,
         }
     }
@@ -39,6 +40,7 @@ impl TryFrom<ImageMessage> for ImageData {
                 channels: image_message.channels,
                 datatype: image_message.datatype,
                 data_ordering: image_message.data_ordering,
+                batch_size: image_message.batch_size,
                 additional_info: image_message.additional_info,
             };
 

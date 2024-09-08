@@ -5,7 +5,7 @@ use wasm_bindgen::JsValue;
 
 use yewdux::prelude::*;
 
-use crate::common::ImageId;
+use crate::common::ViewableObjectId;
 use crate::vscode::WebviewApi;
 
 use super::messages::MessageId;
@@ -15,7 +15,7 @@ struct WebviewReady {}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct RequestImageData {
-    image_id: ImageId,
+    image_id: ViewableObjectId,
     expression: String,
 }
 
@@ -86,7 +86,7 @@ impl VSCodeRequests {
         Self::send_message(FromWebviewMessage::RequestImages(RequestImages {}))
     }
 
-    pub(crate) fn request_image_data(image_id: ImageId, expression: String) -> MessageId {
+    pub(crate) fn request_image_data(image_id: ViewableObjectId, expression: String) -> MessageId {
         log::debug!("VSCodeRequests::request_image_data: {:?}", image_id);
         Self::send_message(FromWebviewMessage::RequestImageData(RequestImageData {
             image_id,

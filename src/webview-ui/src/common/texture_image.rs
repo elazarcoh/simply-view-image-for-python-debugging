@@ -29,7 +29,8 @@ impl TextureImage {
 
             DataOrdering::CHW => {
                 let bytes_per_element = image.info.datatype.num_bytes();
-                let plane_size = (image.info.width * image.info.height) as usize * bytes_per_element;
+                let plane_size =
+                    (image.info.width * image.info.height) as usize * bytes_per_element;
                 (0..image.info.channels as usize)
                     .map(|channel| {
                         webgl_utils::textures::create_texture_from_bytes(

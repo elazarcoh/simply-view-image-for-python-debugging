@@ -3,18 +3,42 @@ use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 use super::pixel_value::PixelValue;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct ImageId(String);
+pub(crate) struct ViewableObjectId(String);
 
 #[cfg(debug_assertions)]
-impl ImageId {
+impl ViewableObjectId {
     pub(crate) fn new(id: &str) -> Self {
         Self(id.to_owned())
     }
 }
 
-impl Display for ImageId {
+impl Display for ViewableObjectId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum CurrentlyViewing {
+    Image(ViewableObjectId),
+    BatchItem(ViewableObjectId),
+}
+
+impl CurrentlyViewing {
+    pub(crate) fn id(&self) -> &ViewableObjectId {
+        match self {
+            CurrentlyViewing::Image(id) => id,
+            CurrentlyViewing::BatchItem(id) => id,
+        }
+    }
+}
+
+impl Into<ViewableObjectId> for CurrentlyViewing {
+    fn into(self) -> ViewableObjectId {
+        match self {
+            CurrentlyViewing::Image(id) => id,
+            CurrentlyViewing::BatchItem(id) => id,
+        }
     }
 }
 
@@ -162,13 +186,14 @@ pub(crate) enum DataOrdering {
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ImageInfo {
-    pub image_id: ImageId,
+    pub image_id: ViewableObjectId,
     pub value_variable_kind: ValueVariableKind,
     pub expression: String,
     pub width: u32,
     pub height: u32,
     pub channels: Channels,
     pub datatype: Datatype,
+    pub batch_size: Option<u32>,
     pub data_ordering: DataOrdering,
     pub additional_info: HashMap<String, String>,
 }

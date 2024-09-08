@@ -114,8 +114,8 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         state
             .image_views
             .borrow()
-            .get_image_id(ViewId::Primary)
-            .map(|image_id| state.drawing_options.borrow().get_or_default(&image_id))
+            .get_currently_viewing(ViewId::Primary)
+            .map(|image_id| state.drawing_options.borrow().get_or_default(&image_id.into()))
             .unwrap_or_default()
     });
 

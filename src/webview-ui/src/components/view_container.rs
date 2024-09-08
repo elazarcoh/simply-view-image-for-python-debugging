@@ -10,7 +10,7 @@ use crate::{
     app_state::{app_state::AppState, images::ImageAvailability},
     coloring::{self, Coloring, DrawingOptions},
     colormap::colormap,
-    common::{ImageId, ViewId},
+    common::{ViewableObjectId, ViewId},
     components::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
     },
@@ -33,7 +33,7 @@ fn get_segmentation_colormap(
 }
 
 fn make_info_items(
-    image_id: &ImageId,
+    image_id: &ViewableObjectId,
     image_availability: &ImageAvailability,
     drawing_options: &DrawingOptions,
 ) -> Option<Vec<VNode>> {
@@ -116,8 +116,8 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
     let current_image = {
         let view_id = *view_id;
         use_selector(
-            move |state: &AppState| -> Option<(ImageId, ImageAvailability, Option<DrawingOptions>)> {
-                let image_id = state.image_views.borrow().get_image_id(view_id)?;
+            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
+                let image_id = state.image_views.borrow().get_currently_viewing(view_id)?.into();
                 let availability = state.image_cache.borrow().get(&image_id);
                 let drawing_options = state.drawing_options.borrow().get(&image_id);
                 Some((image_id, availability, drawing_options))

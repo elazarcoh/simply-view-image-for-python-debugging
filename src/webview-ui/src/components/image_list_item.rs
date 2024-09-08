@@ -20,7 +20,7 @@ pub(crate) struct DisplayOptionProps {
 mod features {
     use enumset::{EnumSet, EnumSetType};
 
-    use crate::common::{Channels, Datatype};
+    use crate::common::{Channels, Datatype, ImageInfo};
 
     #[derive(EnumSetType, Debug)]
     #[allow(clippy::upper_case_acronyms)]
@@ -39,8 +39,12 @@ mod features {
     }
 
     #[rustfmt::skip]
-    pub(crate) fn list_features(datatype: Datatype, channels: Channels) -> EnumSet<Feature> {
-        let for_all = EnumSet::from(Feature::Invert);
+    pub(crate) fn list_features(entry: &ImageInfo) -> EnumSet<Feature> {
+
+        let datatype = entry.datatype;
+        let channels = entry.channels;
+
+        let for_all = EnumSet::only(Feature::Invert);
         let rgb_features = Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B | Feature::Grayscale  | Feature::HighContrast;
         let bool_rgb_features = Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B ;
         let alpha_features = Feature::IgnoreAlpha;
@@ -48,6 +52,7 @@ mod features {
         let gray_alpha_features = Feature::HighContrast | alpha_features;
         let gray_features = Feature::HighContrast | Feature::Heatmap | alpha_features;
         let integer_gray_features = Feature::Segmentation | gray_features;
+        // let batched_features = EnumSet::only(Feature::Batched);
         let no_additional_features = EnumSet::empty();
 
         for_all | match (channels, datatype) {
@@ -83,8 +88,7 @@ mod features {
             (Channels::Four, Datatype::Int16) => rgba_features,
             (Channels::Four, Datatype::Int32) => rgba_features,
             (Channels::Four, Datatype::Bool) => bool_rgb_features,
-            
-        }
+        } 
 
     }
 }
@@ -98,7 +102,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
         state.drawing_options.borrow().get_or_default(&image_id)
     });
 
-    let features = features::list_features(entry.datatype, entry.channels);
+    let features = features::list_features(entry);
 
     let currently_selected_style = use_style!(
         r#"
@@ -254,6 +258,20 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
+    // let tensor_button = html! {
+    //     <IconButton
+    //         class={ if drawing_options.as_batch_slice.0 { currently_selected_style.clone() } else { default_style.clone() }}
+    //         aria_label={"Tensor"}
+    //         title={"Tensor"}
+    //         icon={"svifpd-icons svifpd-icons-tensor"}
+    //         onclick={{
+    //             let image_id = image_id.clone();
+    //             let dispatch = Dispatch::<AppState>::global();
+    //             let drawing_options = drawing_options.clone();
+    //             move |_| { dispatch.apply(StoreAction::SetAsBatched(image_id.clone(), !drawing_options.as_batch_slice.0)); }
+    //         }}
+    //     />
+    // };
 
     let mut buttons = Vec::new();
     if features.contains(features::Feature::HighContrast) {
@@ -288,6 +306,9 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
     // if features.contains(features::Feature::Transpose) {
     //     buttons.push(transpose_button);
+    // }
+    // if features.contains(features::Feature::Batched) {
+    //     buttons.push(tensor_button);
     // }
 
     if !buttons.is_empty() {
@@ -340,6 +361,7 @@ pub(crate) struct ImageListItemProps {
     pub pinned: bool,
     pub entry: ImageInfo,
     pub selected: bool,
+    pub batch_index: Option<u32>,
 }
 
 #[function_component]
@@ -348,7 +370,9 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         pinned,
         entry,
         selected,
+        batch_index,
     } = props;
+
     let image_id = entry.image_id.clone();
 
     let info_grid_style = use_style!(
@@ -368,11 +392,21 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     "#,
     );
 
-    let rows = entry
+    let mut rows = entry
         .additional_info
         .iter()
         .sorted()
-        .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style));
+        .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style))
+        .collect::<Vec<_>>();
+
+    if let Some(batch_index) = batch_index {
+        let batch_row = make_info_row(
+            "Batch Index",
+            &batch_index.to_string(),
+            &info_grid_cell_style,
+        );
+        rows.push(batch_row);
+    }
 
     let edit_button = html! {
         <IconButton

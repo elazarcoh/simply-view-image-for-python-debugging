@@ -1,0 +1,14 @@
+diff --git a/plugin.js b/plugin.js
+index 37c467830df9d86014553f3832029b4068259531..6ce64aa014cfaadf20be64e9ddb80367863fd65b 100644
+--- a/plugin.js
++++ b/plugin.js
+@@ -231,6 +231,9 @@ function spawnWasmPack({ outDir, outName, isDebug, cwd, args, extraArgs }) {
+         cwd,
+         stdio: 'inherit',
+     }
++    if (process.platform == 'win32') {
++        options.shell = true;
++    }
+ 
+     return runProcess(bin, allArgs, options)
+ }

@@ -96,6 +96,7 @@ features = [
   'HtmlCanvasElement',
   'CssStyleDeclaration',
   'console',
+  "CustomEvent",
   'WebGlBuffer',
   'WebGlProgram',
   'WebGl2RenderingContext',

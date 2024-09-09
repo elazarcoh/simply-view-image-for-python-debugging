@@ -354,12 +354,22 @@ impl PixelHoverHandler {
             })
         };
 
+        let changeimage = {
+            let callback = callback.clone();
+            Callback::from(move |_event: Event| {
+                callback.emit(None);
+            })
+        };
+
         vec![
             EventListener::new(&view_element, "mousemove", move |e| {
                 mousemove.emit(e.clone())
             }),
             EventListener::new(&view_element, "mouseleave", move |e| {
                 mouseleave.emit(e.clone())
+            }),
+            EventListener::new(&view_element, "svifpd:changeimage", move |e| {
+                changeimage.emit(e.clone())
             }),
         ]
     }
@@ -388,7 +398,7 @@ impl ShiftScrollHandler {
                 if let Some(cv) = view_context.get_currently_viewing_for_view(view_id) {
                     let amount = event.delta_y() as i32;
                     let dispatch = Dispatch::<AppState>::global();
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(cv, amount));
+                    dispatch.apply(ChangeImageAction::ViewShiftScroll(view_id, cv, amount));
                 }
             })
         };

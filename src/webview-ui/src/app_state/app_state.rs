@@ -91,6 +91,11 @@ impl AppState {
         self.image_views
             .borrow_mut()
             .set_image_to_view(image_id, view_id);
+
+        // send event to view
+        self.image_views
+            .borrow()
+            .send_event_to_view(view_id, "svifpd:changeimage");
     }
 }
 
@@ -295,7 +300,7 @@ pub(crate) enum ChangeImageAction {
     Previous(ViewId),
     Pin(ViewableObjectId),
     Unpin(ViewableObjectId),
-    ViewShiftScroll(CurrentlyViewing, i32),
+    ViewShiftScroll(ViewId, CurrentlyViewing, i32),
 }
 
 impl Reducer<AppState> for ChangeImageAction {
@@ -359,7 +364,7 @@ impl Reducer<AppState> for ChangeImageAction {
             ChangeImageAction::Unpin(image_id) => {
                 state.images.borrow_mut().unpin(&image_id);
             }
-            ChangeImageAction::ViewShiftScroll(cv, amount) => {
+            ChangeImageAction::ViewShiftScroll(view_id, cv, amount) => {
                 let id = cv.into();
                 let batch_size = state
                     .images
@@ -381,6 +386,12 @@ impl Reducer<AppState> for ChangeImageAction {
                         ..current_drawing_options
                     },
                 );
+
+                // send event to view that the batch item has changed
+                state
+                    .image_views
+                    .borrow()
+                    .send_event_to_view(view_id, "svifpd:changeimage");
             }
         }
 

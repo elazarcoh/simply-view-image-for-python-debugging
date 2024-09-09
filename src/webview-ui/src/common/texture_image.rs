@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::webgl_utils::{self, GLGuard};
 use anyhow::Result;
 
@@ -5,27 +7,30 @@ use super::{DataOrdering, ImageData, Size};
 
 pub(crate) struct TextureImage {
     pub image: ImageData,
-    pub textures: Vec<GLGuard<web_sys::WebGlTexture>>,
+    pub textures: HashMap<usize, GLGuard<web_sys::WebGlTexture>>,
 }
 
 impl TextureImage {
     pub(crate) fn try_new(image: ImageData, gl: &web_sys::WebGl2RenderingContext) -> Result<Self> {
         let textures = match image.info.data_ordering {
-            DataOrdering::HWC => vec![webgl_utils::textures::create_texture_from_bytes(
-                gl,
-                &image.bytes,
-                image.info.width,
-                image.info.height,
-                image.info.channels as _,
-                image.info.datatype,
-                webgl_utils::types::CreateTextureParametersBuilder::default()
-                    .mag_filter(webgl_utils::constants::TextureMagFilter::Nearest)
-                    .min_filter(webgl_utils::constants::TextureMinFilter::Nearest)
-                    .wrap_s(webgl_utils::constants::TextureWrap::ClampToEdge)
-                    .wrap_t(webgl_utils::constants::TextureWrap::ClampToEdge)
-                    .build()
-                    .unwrap(),
-            )?],
+            DataOrdering::HWC => HashMap::from([(
+                0usize,
+                webgl_utils::textures::create_texture_from_bytes(
+                    gl,
+                    &image.bytes,
+                    image.info.width,
+                    image.info.height,
+                    image.info.channels as _,
+                    image.info.datatype,
+                    webgl_utils::types::CreateTextureParametersBuilder::default()
+                        .mag_filter(webgl_utils::constants::TextureMagFilter::Nearest)
+                        .min_filter(webgl_utils::constants::TextureMinFilter::Nearest)
+                        .wrap_s(webgl_utils::constants::TextureWrap::ClampToEdge)
+                        .wrap_t(webgl_utils::constants::TextureWrap::ClampToEdge)
+                        .build()
+                        .unwrap(),
+                )?,
+            )]),
 
             DataOrdering::CHW => {
                 let bytes_per_element = image.info.datatype.num_bytes();
@@ -33,7 +38,7 @@ impl TextureImage {
                     (image.info.width * image.info.height) as usize * bytes_per_element;
                 (0..image.info.channels as usize)
                     .map(|channel| {
-                        webgl_utils::textures::create_texture_from_bytes(
+                        let texture = webgl_utils::textures::create_texture_from_bytes(
                             gl,
                             &image.bytes[plane_size * channel..plane_size * (channel + 1)],
                             image.info.width,
@@ -47,9 +52,10 @@ impl TextureImage {
                                 .wrap_t(webgl_utils::constants::TextureWrap::ClampToEdge)
                                 .build()
                                 .unwrap(),
-                        )
+                        );
+                        Ok((channel, texture?))
                     })
-                    .collect::<Result<Vec<_>>>()?
+                    .collect::<Result<HashMap<usize, GLGuard<web_sys::WebGlTexture>>>>()?
             }
         };
 

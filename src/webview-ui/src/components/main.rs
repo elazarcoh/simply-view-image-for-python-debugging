@@ -6,11 +6,10 @@ use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
 use crate::{
-    app_state::app_state::AppState,
-    common::{pixel_value::PixelValue, ViewId},
-    components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar, view_container::ViewContainer},
-    mouse_events::PixelHoverHandler,
-    rendering::rendering_context::ViewContext,
+    app_state::app_state::AppState, common::{pixel_value::PixelValue, ViewId}, components::{
+        main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar,
+        view_container::ViewContainer,
+    }, math_utils::image_calculations::calc_num_bytes_per_image, mouse_events::PixelHoverHandler, rendering::rendering_context::ViewContext
 };
 
 #[derive(Properties)]
@@ -50,7 +49,30 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                         let maybe_pixel_value = hovered_pixel.and_then(|pixel| {
                             let image = view_context.get_image_for_view(view_id);
                             image.and_then(|image| {
-                                image.map(|image| PixelValue::from_image(&image.image, &pixel))
+                                image.map(|image| {
+                                    let dispatch = Dispatch::<AppState>::global();
+                                    let as_batch_slice = dispatch
+                                        .get()
+                                        .drawing_options
+                                        .borrow()
+                                        .get(&image.image.info.image_id)
+                                        .map(|d| d.as_batch_slice)
+                                        .unwrap_or((false, 0));
+
+                                    let (is_batched, batch_index) = as_batch_slice;
+                                    let offset = if is_batched {
+                                        calc_num_bytes_per_image(
+                                            image.image.info.width,
+                                            image.image.info.height,
+                                            image.image.info.channels,
+                                            image.image.info.datatype,
+                                        ) * batch_index as usize
+                                    } else {
+                                        0
+                                    };
+
+                                    PixelValue::from_image(&image.image, &pixel, offset)
+                                })
                             })
                         });
 

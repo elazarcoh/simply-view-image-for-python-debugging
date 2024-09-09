@@ -19,7 +19,13 @@ impl From<ImageMessage> for ImageInfo {
             channels: image_message.channels,
             datatype: image_message.datatype,
             data_ordering: image_message.data_ordering,
-            batch_size: image_message.batch_size,
+            batch_info: image_message
+                .batch_size
+                .zip(image_message.batch_items_range)
+                .map(|(batch_size, batch_items_range)| crate::common::BatchInfo {
+                    batch_size,
+                    batch_items_range,
+                }),
             additional_info: image_message.additional_info,
         }
     }
@@ -40,7 +46,13 @@ impl TryFrom<ImageMessage> for ImageData {
                 channels: image_message.channels,
                 datatype: image_message.datatype,
                 data_ordering: image_message.data_ordering,
-                batch_size: image_message.batch_size,
+                batch_info: image_message
+                    .batch_size
+                    .zip(image_message.batch_items_range)
+                    .map(|(batch_size, batch_items_range)| crate::common::BatchInfo {
+                        batch_size,
+                        batch_items_range,
+                    }),
                 additional_info: image_message.additional_info,
             };
 

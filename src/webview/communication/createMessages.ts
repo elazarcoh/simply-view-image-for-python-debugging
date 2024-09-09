@@ -34,6 +34,7 @@ function expressingWithInfoIntoImageInfo(
         channels: 1,
         datatype: "float32",
         batch_size: null,
+        batch_items_range: null,
         additional_info: info,
         max: null,
         min: null,

@@ -8862,6 +8862,7 @@ fn image_data_with(
         datatype,
         data_ordering,
         batch_size,
+        batch_items_range: batch_size.map(|batch_size| (0, batch_size)),
         min: None,
         max: None,
         additional_info: HashMap::from([

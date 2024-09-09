@@ -185,6 +185,12 @@ pub(crate) enum DataOrdering {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub(crate) struct BatchInfo {
+    pub batch_size: u32,
+    pub batch_items_range: (u32, u32),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ImageInfo {
     pub image_id: ViewableObjectId,
     pub value_variable_kind: ValueVariableKind,
@@ -193,7 +199,7 @@ pub(crate) struct ImageInfo {
     pub height: u32,
     pub channels: Channels,
     pub datatype: Datatype,
-    pub batch_size: Option<u32>,
+    pub batch_info: Option<BatchInfo>,
     pub data_ordering: DataOrdering,
     pub additional_info: HashMap<String, String>,
 }

@@ -226,14 +226,14 @@ impl Reducer<AppState> for StoreAction {
                 for image in replacement_images.into_iter() {
                     let image_id = image.image_id().clone();
                     let image_info = image.image_info().clone();
-                    let batch_size = image_info.batch_size;
+                    let batch_info = image_info.batch_info.clone();
 
                     state
                         .images
                         .borrow_mut()
                         .insert(image_id.clone(), image_info);
 
-                    if batch_size.is_some() {
+                    if batch_info.is_some() {
                         let current_drawing_options = state
                             .drawing_options
                             .borrow()
@@ -366,8 +366,9 @@ impl Reducer<AppState> for ChangeImageAction {
                     .borrow()
                     .get(&id)
                     .unwrap()
-                    .batch_size
-                    .unwrap_or(1) as usize;
+                    .batch_info
+                    .as_ref()
+                    .map_or(1, |info| info.batch_size);
 
                 let current_drawing_options = state.drawing_options.borrow().get_or_default(&id);
                 let current_index = current_drawing_options.as_batch_slice.1;

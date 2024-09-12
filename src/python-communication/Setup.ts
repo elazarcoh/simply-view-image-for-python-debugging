@@ -3,6 +3,7 @@ import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logDebug, logTrace } from "../Logging";
 import { debounce } from "../utils/Utils";
 import {
+    constructGetErrorsCode,
     moduleSetupCode,
     verifyModuleExistsCode,
     viewablesSetupCode,
@@ -80,4 +81,16 @@ export async function runSetup(
     );
 
     return trySetupExtensionAndRunAgainIfFailed();
+}
+
+export async function getDiagnostics(
+    session: DebugSession
+) {
+    const code = constructGetErrorsCode();
+    logDebug("Get diagnostics", code);
+    const res = await runPython(code, true, session, {
+        context: "repl",
+    });
+    logDebug("Get diagnostics result", res);
+    return joinResult(res);
 }

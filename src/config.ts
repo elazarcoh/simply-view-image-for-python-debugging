@@ -103,6 +103,12 @@ export interface Config {
      * @experimental
      */
     "viewerUi.invertMouseWheelZoom": boolean;
+
+    /**
+     * @default false
+     * @description Show supported types diagnostic information in the tree view (mainly for debugging).
+     */
+    showDiagnosticInfoInTreeView: boolean;
 }
 
 export const EXTENSION_CONFIG_SECTION = "svifpd";

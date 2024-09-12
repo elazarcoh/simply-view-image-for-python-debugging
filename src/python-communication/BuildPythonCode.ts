@@ -21,15 +21,16 @@ except:
     from types import ModuleType
     ${PYTHON_MODULE_NAME} = ModuleType('python_view_image_mod', '')
     try:
+        raise NotImplementedError('TESTING ERROR')
         exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
     except Exception as e:
         ${SETUP_RESULT_VARIABLE_NAME} = e
         del ${PYTHON_MODULE_NAME}
-
-    try:
-        exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
-    except:
-        pass
+    else:
+        try:
+            exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
+        except:
+            pass
 `;
 
 function execInModuleCode(
@@ -43,6 +44,7 @@ exec('''
 try:
 ${indent(tryExpression, 4)}
 except:
+    ${errorCapturingVariableName} = {}
     try:
 ${indent(content, 8)}
     except Exception as e:
@@ -73,10 +75,14 @@ function concatExpressionsToPythonList(expressions: string[]): string {
     return `[${expressions.join(", ")}]`;
 }
 
+function errorCapturingVariableName(id: string): string {
+    return `${PYTHON_MODULE_NAME}_error_${id}`;
+}
+
 function combineSetupCodes(setupCodes: SetupCode[]): string {
     const setupCode = setupCodes
-        .map(({ setupCode, testSetupCode, id: errorCapuringVariableName }) =>
-            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode, errorCapuringVariableName)
+        .map(({ setupCode, testSetupCode, id }) =>
+            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode, errorCapturingVariableName(id))
         )
         .join("\n\n");
 
@@ -187,4 +193,23 @@ export function constructOpenSendAndCloseCode(
     return convertExpressionIntoValueWrappedExpression(
         `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression})`
     );
+}
+
+export function constructGetErrorsCode(): EvalCodePython<Result<unknown>> {
+    // const viewables = Container.get(AllViewables).allViewables; 
+    // const idToError = viewables.map((v) => {
+    //     const id = v.setupPythonCode.id;
+    //     const name = errorCapturingVariableName(id) ;
+    //     return `['${id}', ${name}]`;
+    // });
+
+    const asList = concatExpressionsToPythonList([
+        `['${PYTHON_MODULE_NAME}', str(${SETUP_RESULT_VARIABLE_NAME})]`,
+        // ...idToError,
+    ]);
+
+    return {
+        pythonCode: asList,
+    };
+
 }

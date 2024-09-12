@@ -3,6 +3,7 @@ import { CurrentPythonObjectsList } from "../image-watch-tree/PythonObjectsList"
 import { TrackedPythonObjects } from "../image-watch-tree/TrackedPythonObjects";
 import { SavePathHelper } from "../SerializationHelper";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
+import { ExtensionDiagnostics } from "../image-watch-tree/DiagnosticsItem";
 
 export class DebugSessionData {
     public readonly savePathHelper: SavePathHelper;
@@ -11,6 +12,7 @@ export class DebugSessionData {
     public readonly trackedPythonObjects: TrackedPythonObjects =
         new TrackedPythonObjects();
     public readonly currentPythonObjectsList: CurrentPythonObjectsList;
+    public readonly diagnostics: ExtensionDiagnostics = new ExtensionDiagnostics();
     public setupOkay: boolean = false;
     public isStopped: boolean = false;
 

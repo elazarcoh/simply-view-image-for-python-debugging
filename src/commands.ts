@@ -23,6 +23,7 @@ import {
 import Container from "typedi";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { runSetup } from "./python-communication/Setup";
+import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 
 // *********************
 // Some general commands
@@ -40,6 +41,10 @@ async function rerunSetup(): Promise<void> {
     if (debugSession) {
         await runSetup(debugSession, true);
     }
+}
+async function updateDiagnostics(): Promise<void> {
+    const debugSessionData = activeDebugSessionData();
+    debugSessionData?.diagnostics.update();
 }
 
 // *********************************
@@ -68,6 +73,7 @@ const Commands = {
     "svifpd.view-image-track": trackObjectUnderCursor,
     "svifpd.view-debug-variable": viewVariableFromVSCodeDebugViewAsImage,
     "svifpd.disable-plugin": disablePluginCommand,
+    "svifpd.update-diagnostics": updateDiagnostics,
 };
 type Commands = typeof Commands;
 type AvailableCommands = keyof Commands;
@@ -118,5 +124,6 @@ export function registerExtensionCommands(
         _registerCommandByName("svifpd.update-frame-id"),
         _registerCommandByName("svifpd.view-debug-variable"),
         _registerCommandByName("svifpd.disable-plugin"),
+        _registerCommandByName("svifpd.update-diagnostics"),
     ];
 }

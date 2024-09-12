@@ -136,6 +136,12 @@
         "command": "svifpd.disable-plugin",
         "title": "Disable Plugin",
         "category": "Debug View Python"
+      },
+      {
+        "command": "svifpd.update-diagnostics",
+        "title": "Update Diagnostics",
+        "enablement": "inDebugMode",
+        "icon": "$(timeline-refresh)"
       }
     ],
     "menus": {
@@ -190,6 +196,10 @@
         },
         {
           "command": "svifpd.remove-all-expressions",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.update-diagnostics",
           "when": "false"
         }
       ],
@@ -257,6 +267,11 @@
           "command": "svifpd.remove-expression",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
           "group": "inline@21"
+        },
+        {
+          "command": "svifpd.update-diagnostics",
+          "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
+          "group": "inline@10"
         }
       ]
     },
@@ -293,6 +308,7 @@
         },
         "svifpd.customSavePath": {
           "type": "string",
+          "default": "undefined",
           "description": "Custom path to save images. Only used if `svifpd.saveLocation` is set to `custom`."
         },
         "svifpd.debug": {
@@ -350,6 +366,11 @@
           ],
           "default": "tmp",
           "description": "Location to save images."
+        },
+        "svifpd.showDiagnosticInfoInTreeView": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show supported types diagnostic information in the tree view (mainly for debugging)."
         },
         "svifpd.useExperimentalDataTransfer": {
           "type": "boolean",
@@ -416,6 +437,7 @@
     "ts-results": "^3.3.0",
     "typedi": "^0.10.0",
     "vscode-debugprotocol": "^1.49.0",
-    "vscode-extensions-json-generator": "^0.1.5"
-  }
+    "vscode-extensions-json-generator": "^0.2.2"
+  },
+  "packageManager": "yarn@4.4.1"
 }

@@ -35,7 +35,8 @@
         "command": "svifpd.run-setup",
         "title": "Run Setup",
         "enablement": "inDebugMode",
-        "category": "Debug View Python"
+        "category": "Debug View Python",
+        "icon": "$(code)"
       },
       {
         "command": "svifpd.view-image-track",
@@ -141,7 +142,7 @@
         "command": "svifpd.update-diagnostics",
         "title": "Update Diagnostics",
         "enablement": "inDebugMode",
-        "icon": "$(timeline-refresh)"
+        "icon": "$(circuit-board)"
       }
     ],
     "menus": {
@@ -272,6 +273,11 @@
           "command": "svifpd.update-diagnostics",
           "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
           "group": "inline@10"
+        },
+        {
+          "command": "svifpd.run-setup",
+          "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
+          "group": "inline@20"
         }
       ]
     },
@@ -412,19 +418,22 @@
   "devDependencies": {
     "@types/node": "^18.11.15",
     "@types/parsimmon": "^1.10.6",
+    "@types/underscore": "^1",
     "@types/vscode": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
-    "@typescript-eslint/parser": "^5.47.0",
+    "@typescript-eslint/parser": "^5.0.1",
     "@wasm-tool/wasm-pack-plugin": "patch:@wasm-tool/wasm-pack-plugin@npm%3A1.7.0#~/.yarn/patches/@wasm-tool-wasm-pack-plugin-npm-1.7.0-05c10ff10e.patch",
     "copy-webpack-plugin": "^11.0.0",
-    "eslint": "^8.30.0",
+    "eslint": "^8.52.0",
     "eslint-webpack-plugin": "^3.0.1",
     "html-webpack-plugin": "^5.5.3",
     "mini-css-extract-plugin": "^2.7.2",
+    "prettier": "^3.1.0",
+    "prettier-eslint": "^16.1.2",
     "rimraf": "^3.0.2",
     "text-encoding": "^0.7.0",
     "ts-loader": "^9.4.2",
-    "typescript": "^4.9.4",
+    "typescript": "^4.4.4",
     "wasm-pack": "^0.13.0",
     "webpack": "^5.76.0",
     "webpack-cli": "^5.1.4"

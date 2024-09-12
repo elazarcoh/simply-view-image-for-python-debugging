@@ -12,7 +12,7 @@ export class DebugSessionData {
     public readonly trackedPythonObjects: TrackedPythonObjects =
         new TrackedPythonObjects();
     public readonly currentPythonObjectsList: CurrentPythonObjectsList;
-    public readonly diagnostics: ExtensionDiagnostics = new ExtensionDiagnostics();
+    public readonly diagnostics: ExtensionDiagnostics;
     public setupOkay: boolean = false;
     public isStopped: boolean = false;
 
@@ -22,5 +22,6 @@ export class DebugSessionData {
             this.debugVariablesTracker,
             session
         );
+        this.diagnostics = new ExtensionDiagnostics(session);
     }
 }

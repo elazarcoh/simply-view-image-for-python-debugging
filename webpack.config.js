@@ -68,6 +68,7 @@ const extensionConfig = {
     plugins: [
         new ESLintPlugin({
             extensions: ["ts"],
+            failOnError: mode
         }),
         new VSCodeExtensionsPackageJsonGenerator("vscode-ext-config.json"),
     ],

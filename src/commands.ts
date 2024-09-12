@@ -44,7 +44,7 @@ async function rerunSetup(): Promise<void> {
 }
 async function updateDiagnostics(): Promise<void> {
     const debugSessionData = activeDebugSessionData();
-    debugSessionData?.diagnostics.update();
+    await debugSessionData?.diagnostics.update();
 }
 
 // *********************************

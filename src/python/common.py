@@ -33,6 +33,13 @@ def eval_into_value(func):
         return f"Error({stringify(e)})"
 
 
+def eval_or_return_exception(func):
+    try:
+        return func()
+    except Exception as e:
+        return e
+
+
 def same_value_multiple_callables(get_value, funcs):
     try:
         val = get_value()

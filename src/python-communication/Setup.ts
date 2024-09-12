@@ -3,13 +3,15 @@ import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logDebug, logTrace } from "../Logging";
 import { debounce } from "../utils/Utils";
 import {
-    constructGetErrorsCode,
+    constructGetMainModuleErrorCode,
+    constructGetViewablesErrorsCode,
     moduleSetupCode,
     verifyModuleExistsCode,
     viewablesSetupCode,
 } from "./BuildPythonCode";
-import { execInPython, runPython } from "./RunPythonCode";
-import { joinResult } from "../utils/Result";
+import { evaluateInPython, execInPython} from "./RunPythonCode";
+import { isOkay, joinResult, Result } from "../utils/Result";
+
 
 export function setSetupIsNotOkay(): void {
     logTrace("Manual set 'setup is not okay'");
@@ -20,9 +22,8 @@ export function setSetupIsNotOkay(): void {
 }
 
 async function checkSetupOkay(session: DebugSession) {
-    const res = await runPython(verifyModuleExistsCode(), true, session, {
-        context: "repl",
-    });
+    const code = verifyModuleExistsCode();
+    const res = await evaluateInPython(code, session, { context: "repl" }, false);
     return joinResult(res);
 }
 
@@ -83,14 +84,33 @@ export async function runSetup(
     return trySetupExtensionAndRunAgainIfFailed();
 }
 
-export async function getDiagnostics(
+export async function getSetupStatus(
     session: DebugSession
-) {
-    const code = constructGetErrorsCode();
-    logDebug("Get diagnostics", code);
-    const res = await runPython(code, true, session, {
+) : Promise<{ mainModuleStatus: string, [key: string]: string }> {
+    const mainModuleCode = constructGetMainModuleErrorCode();
+    const mainModuleStatus = joinResult(await evaluateInPython(mainModuleCode, session, { context: "repl" }, false));
+    if (mainModuleStatus.err) {
+        return {
+            mainModuleStatus: mainModuleStatus.toString(),
+        };
+    }
+
+    const viewablesCode = constructGetViewablesErrorsCode();
+    const viewablesStatus: Result<Result<[string, string]>[]> = await evaluateInPython(viewablesCode, session, {
         context: "repl",
     });
-    logDebug("Get diagnostics result", res);
-    return joinResult(res);
+    if (viewablesStatus.err) {
+        return {
+            mainModuleStatus: mainModuleStatus.safeUnwrap(),
+            viewablesStatus: viewablesStatus.toString(),
+        };
+    }
+
+    return {
+        mainModuleStatus: mainModuleStatus.safeUnwrap(),
+        ...Object.fromEntries(
+            viewablesStatus.safeUnwrap().filter(isOkay).map((r) => r.safeUnwrap())
+        ),
+        
+    };
 }

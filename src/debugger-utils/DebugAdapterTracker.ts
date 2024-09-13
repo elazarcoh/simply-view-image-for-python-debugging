@@ -3,7 +3,6 @@ import Container from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { logDebug, logTrace } from "../Logging";
 import { activeDebugSessionData } from "./DebugSessionsHolder";
-import { debounce } from "../utils/Utils";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";
 import { getConfiguration } from "../config";
@@ -11,12 +10,13 @@ import { patchDebugVariableContext } from "./DebugRelatedCommands";
 import { runSetup } from "../python-communication/Setup";
 import { WebviewClient } from "../webview/communication/WebviewClient";
 import { WebviewRequests } from "../webview/communication/createMessages";
+import _ from "lodash";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
 // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
 export const createDebugAdapterTracker = (
-    session: vscode.DebugSession
+    session: vscode.DebugSession,
 ): vscode.DebugAdapterTracker => {
     type Request<T> = T & { type: "request" };
     type Response<T> = T & { type: "response" };
@@ -53,23 +53,14 @@ export const createDebugAdapterTracker = (
         webviewClient.sendRequest(WebviewRequests.replaceData());
     };
 
-    const onScopeChange = debounce(async () => {
+    const onScopeChange = _.debounce(async () => {
         logDebug("Scope changed. Update current python objects list");
         await currentPythonObjectsList.update();
         await updateWatchTree();
         await Promise.all([updateWebview(), saveTracked()]);
     }, 500);
 
-    let isSetupRunning = false;
-    const runSetupIfNotRunning = debounce(async () => {
-        if (isSetupRunning) {
-            return;
-        }
-        isSetupRunning = true;
-        const res = await runSetup(session);
-        isSetupRunning = false;
-        return res;
-    }, 500);
+    const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 500);
 
     return {
         onWillStartSession: () => {
@@ -113,16 +104,15 @@ export const createDebugAdapterTracker = (
                 logDebug("Breakpoint hit");
                 debugSessionData.isStopped = true;
 
-                await runSetupIfNotRunning().then((ok) => {
-                    if (ok === true) {
-                        return onScopeChange();
-                    }
-                });
+                const isOk = await runSetupIfNotRunning();
+                if (isOk === true) {
+                    return onScopeChange();
+                }
             } else if (msg.type === "response" && msg.command === "variables") {
                 // Add context to debug variable. This is a workaround.
                 if (
                     getConfiguration(
-                        "addViewContextEntryToVSCodeDebugVariables"
+                        "addViewContextEntryToVSCodeDebugVariables",
                     ) === true
                 ) {
                     patchDebugVariableContext(msg);
@@ -135,11 +125,10 @@ export const createDebugAdapterTracker = (
             } else if (msg.type === "response" && msg.command === "scopes") {
                 debugVariablesTracker.onScopesResponse(msg);
                 // scope has changed. Make sure setup is okay
-                await runSetupIfNotRunning().then((ok) => {
-                    if (ok === true) {
-                        return onScopeChange();
-                    }
-                });
+                const isOk = await runSetupIfNotRunning();
+                if (isOk === true) {
+                    return onScopeChange();
+                }
             }
         },
 

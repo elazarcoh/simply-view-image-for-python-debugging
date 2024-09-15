@@ -6,6 +6,7 @@
     "search.exclude": {
         "out": true // set this to false to include "out" folder in search results
     },
+    "eslint.useFlatConfig": true,
     "npm.packageManager": "yarn",
     "files.associations": {
         "vscode-ext-config.json": "jsonc"
@@ -13,7 +14,7 @@
     "cSpell.enabled": true,
     "prettier.enable": true,
     "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
     },
     // "typescript.tsserver.experimental.enableProjectDiagnostics": true,
     "python.analysis.exclude": [

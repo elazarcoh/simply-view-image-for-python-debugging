@@ -2,7 +2,7 @@
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
   "description": "simply view the image of the image variables when debugging python",
-  "version": "4.0.1",
+  "version": "4.0.3",
   "publisher": "elazarcoh",
   "icon": "icon.png",
   "preview": false,
@@ -35,7 +35,8 @@
         "command": "svifpd.run-setup",
         "title": "Run Setup",
         "enablement": "inDebugMode",
-        "category": "Debug View Python"
+        "category": "Debug View Python",
+        "icon": "$(code)"
       },
       {
         "command": "svifpd.view-image-track",
@@ -136,6 +137,12 @@
         "command": "svifpd.disable-plugin",
         "title": "Disable Plugin",
         "category": "Debug View Python"
+      },
+      {
+        "command": "svifpd.update-diagnostics",
+        "title": "Update Diagnostics",
+        "enablement": "inDebugMode",
+        "icon": "$(circuit-board)"
       }
     ],
     "menus": {
@@ -190,6 +197,10 @@
         },
         {
           "command": "svifpd.remove-all-expressions",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.update-diagnostics",
           "when": "false"
         }
       ],
@@ -257,6 +268,16 @@
           "command": "svifpd.remove-expression",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
           "group": "inline@21"
+        },
+        {
+          "command": "svifpd.update-diagnostics",
+          "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
+          "group": "inline@10"
+        },
+        {
+          "command": "svifpd.run-setup",
+          "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
+          "group": "inline@20"
         }
       ]
     },
@@ -293,6 +314,7 @@
         },
         "svifpd.customSavePath": {
           "type": "string",
+          "default": "undefined",
           "description": "Custom path to save images. Only used if `svifpd.saveLocation` is set to `custom`."
         },
         "svifpd.debug": {
@@ -351,6 +373,11 @@
           "default": "tmp",
           "description": "Location to save images."
         },
+        "svifpd.showDiagnosticInfoInTreeView": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show supported types diagnostic information in the tree view (mainly for debugging)."
+        },
         "svifpd.useExperimentalDataTransfer": {
           "type": "boolean",
           "default": true,
@@ -389,33 +416,44 @@
     "start-webview": "cd src/webview-ui && yarn start"
   },
   "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@types/lodash": "^4",
     "@types/node": "^18.11.15",
     "@types/parsimmon": "^1.10.6",
+    "@types/underscore": "^1",
     "@types/vscode": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
-    "@typescript-eslint/parser": "^5.47.0",
-    "@wasm-tool/wasm-pack-plugin": "^1.1.0",
+    "@typescript-eslint/parser": "^5.0.1",
+    "@vscode/vsce": "^3.1.0",
+    "@wasm-tool/wasm-pack-plugin": "patch:@wasm-tool/wasm-pack-plugin@npm%3A1.7.0#~/.yarn/patches/@wasm-tool-wasm-pack-plugin-npm-1.7.0-05c10ff10e.patch",
     "copy-webpack-plugin": "^11.0.0",
-    "eslint": "^8.30.0",
-    "eslint-webpack-plugin": "^3.0.1",
+    "eslint": "^9.10.0",
+    "eslint-webpack-plugin": "^4.2.0",
+    "eslit": "^6.0.0",
+    "globals": "^15.9.0",
     "html-webpack-plugin": "^5.5.3",
     "mini-css-extract-plugin": "^2.7.2",
+    "prettier": "^3.1.0",
+    "prettier-eslint": "^16.1.2",
     "rimraf": "^3.0.2",
     "text-encoding": "^0.7.0",
     "ts-loader": "^9.4.2",
-    "typescript": "^4.9.4",
-    "wasm-pack": "^0.12.1",
+    "typescript": "^4.4.4",
+    "typescript-eslint": "^8.5.0",
+    "wasm-pack": "^0.13.0",
     "webpack": "^5.76.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.33",
     "@vscode/webview-ui-toolkit": "^1.2.1",
+    "lodash": "^4.17.21",
     "parsimmon": "^1.18.1",
     "reflect-metadata": "^0.1.13",
     "ts-results": "^3.3.0",
     "typedi": "^0.10.0",
     "vscode-debugprotocol": "^1.49.0",
-    "vscode-extensions-json-generator": "^0.1.5"
-  }
+    "vscode-extensions-json-generator": "^0.2.2"
+  },
+  "packageManager": "yarn@4.4.1"
 }

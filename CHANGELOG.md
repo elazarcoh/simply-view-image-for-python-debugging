@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.0.3] - Pre-release
+
+### Added 
+
+- Show user-friendly extension setup error message.
+- Add errors for each module that failed to setup in the tree view.
+
 ## [4.0.1] - Pre-release
 
 ### Added

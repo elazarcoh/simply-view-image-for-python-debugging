@@ -14,15 +14,28 @@ import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
 import { isOf, zip } from "../utils/Utils";
 import { Err, errorMessage } from "../utils/Result";
+import { DiagnosticsTreeItem } from "./DiagnosticsItem";
+import { getConfiguration } from "../config";
 
 class ItemsRootTreeItem extends vscode.TreeItem {
+    private _items: TreeItem[] | (() => Promise<TreeItem[]>);
+
     constructor(
         public readonly label: string,
-        public readonly items: TreeItem[],
+        items: TreeItem[] | (() => Promise<TreeItem[]>),
         public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
-            .TreeItemCollapsibleState.Expanded
+            .TreeItemCollapsibleState.Expanded,
+        contextValue: string | undefined = undefined
     ) {
         super(label, collapsibleState);
+        this._items = items;
+        this.contextValue = contextValue;
+    }
+
+    async items(): Promise<TreeItem[]> {
+        return typeof this._items === "function"
+            ? this._items()
+            : this._items;
     }
 }
 
@@ -32,13 +45,16 @@ type TreeItem =
     | ErrorWatchTreeItem
     | typeof AddExpressionWatchTreeItem
     | PythonObjectInfoLineTreeItem
-    | ItemsRootTreeItem;
+    | ItemsRootTreeItem
+    | DiagnosticsTreeItem;
 
 @Service() // This is a service, the actual items are retrieved using the DebugSessionData
 export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<
         TreeItem | undefined
     >();
+
+    public showDiagnosticsTemporarily: boolean = false;
 
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
@@ -114,15 +130,27 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 }
             }
 
-            return [
+            const items = [
                 new ItemsRootTreeItem("Variables", variableItems),
                 new ItemsRootTreeItem("Expressions", [
                     ...expressionsItems,
                     AddExpressionWatchTreeItem,
                 ]),
-            ];
+            ]
+
+            if (this.showDiagnosticsTemporarily || (getConfiguration("showDiagnosticInfoInTreeView", null, false) ?? false)) {
+                const getter = async () => {
+                    const diagnostics = debugSessionData?.diagnostics.getDiagnosticsItems();
+                    return diagnostics ?? [];
+                }
+                const item = new ItemsRootTreeItem("Extension Diagnostics", getter, vscode.TreeItemCollapsibleState.Expanded, "svifpd:diagnosticsRoot")
+                debugSessionData?.diagnostics.onDidChange(() => this.refresh(item));
+                items.push(item);
+            }
+
+            return items;
         } else if (element instanceof ItemsRootTreeItem) {
-            return element.items;
+            return element.items();
         } else if (element instanceof PythonObjectTreeItem) {
             const infoItems = Object.entries(element.info).map(
                 ([name, value]) => new PythonObjectInfoLineTreeItem(name, value)

@@ -22,19 +22,19 @@ function runThroughDebugger(
     } as DebugProtocol.EvaluateArguments);
 }
 
-export async function runPython<R>(
+async function runPython<R>(
     code: EvalCodePython<R>,
     parse: true,
     session: vscode.DebugSession,
     options: RunInPythonOptions
 ): Promise<Result<R>>;
-export async function runPython<R>(
+async function runPython<R>(
     code: EvalCodePython<R>,
     parse: false,
     session: vscode.DebugSession,
     options: RunInPythonOptions
 ): Promise<Result<null>>;
-export async function runPython<R>(
+async function runPython<R>(
     code: EvalCodePython<R>,
     parse: boolean,
     session: vscode.DebugSession,
@@ -80,7 +80,9 @@ ${evalCodePython.pythonCode}
 export function evaluateInPython<R = unknown>(
     evalCodePython: EvalCodePython<R>,
     session: vscode.DebugSession,
-    options: RunInPythonOptions = { context: "repl" }
+    options: RunInPythonOptions = { context: "repl" },
+    stringify: boolean = true,
 ): Promise<Result<R>> {
-    return runPython(stringifyPython(evalCodePython), true, session, options);
+    const code = stringify ? stringifyPython(evalCodePython) : evalCodePython;
+    return runPython(code, true, session, options);
 }

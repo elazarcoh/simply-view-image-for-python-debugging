@@ -4,7 +4,7 @@ export function allFulfilled<T>(ps: Promise<T>[]): Promise<T[]> {
         return t !== FAIL_TOKEN;
     };
     const resolvedPromises: Promise<T[]> = Promise.all(
-        ps.map((p) => p.catch((_) => FAIL_TOKEN))
+        ps.map((p) => p.catch((_) => FAIL_TOKEN)),
     ).then((values) => values.filter(fulfilled) as T[]);
     return resolvedPromises;
 }
@@ -22,23 +22,6 @@ export function arrayUnique<T>(array: T[]): T[] {
 
 export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
     return [...new Map(array.map((item) => [key(item), item])).values()];
-}
-
-export function debounce<
-    F extends (...args: Args) => ReturnType<F>,
-    Args extends unknown[] = Parameters<F>
->(func: F, waitFor: number): (...args: Args) => FlattenedPromise<ReturnType<F>> {
-    let timeout: NodeJS.Timeout;
-    return (...args: Args): FlattenedPromise<ReturnType<F>> => {
-        clearTimeout(timeout);
-        const promise = new Promise<ReturnType<F>>((resolve) => {
-            timeout = setTimeout(async () => {
-                const res = await func(...args);
-                resolve(res);
-            }, waitFor);
-        });
-        return promise as FlattenedPromise<ReturnType<F>>;
-    };
 }
 
 type AnyArray<T> = T[] | readonly T[];
@@ -61,10 +44,10 @@ export function zip<Arrays extends ReadonlyArray<unknown>[]>(
 export function isOf<Constructors extends Constructor<unknown>[]>(
     ...types: Constructors
 ): (
-    value: unknown
+    value: unknown,
 ) => value is TupleToUnion<ExtractConstructorClass<Constructors>> {
     return (
-        value: unknown
+        value: unknown,
     ): value is TupleToUnion<ExtractConstructorClass<Constructors>> => {
         return types.some((type) => value instanceof type);
     };
@@ -84,4 +67,8 @@ export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion  -- we just set it
     return map.get(key)!;
+}
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

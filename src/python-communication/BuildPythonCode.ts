@@ -9,6 +9,7 @@ export const PYTHON_MODULE_NAME = "_python_view_image_mod";
 const SETUP_RESULT_VARIABLE_NAME = `${PYTHON_MODULE_NAME}_setup_result`;
 const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
+const EVAL_OR_RETURN_EXCEPTION_FUNCTION = `${PYTHON_MODULE_NAME}.eval_or_return_exception`;
 const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
 const OBJECT_SHAPE_IF_IT_HAS_ONE = `${PYTHON_MODULE_NAME}.object_shape_if_it_has_one`;
 const OPEN_SEND_AND_CLOSE = `${PYTHON_MODULE_NAME}.open_send_and_close`;
@@ -21,15 +22,16 @@ except:
     from types import ModuleType
     ${PYTHON_MODULE_NAME} = ModuleType('python_view_image_mod', '')
     try:
+        ${SETUP_RESULT_VARIABLE_NAME} = "OK"
         exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
     except Exception as e:
-        ${SETUP_RESULT_VARIABLE_NAME} = e
+        ${SETUP_RESULT_VARIABLE_NAME} = repr(e)
         del ${PYTHON_MODULE_NAME}
-
-    try:
-        exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
-    except:
-        pass
+    else:
+        try:
+            exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
+        except Exception as e:
+            ${SETUP_RESULT_VARIABLE_NAME} = repr(e)
 `;
 
 function execInModuleCode(
@@ -40,13 +42,14 @@ function execInModuleCode(
 ): string {
     const code: string = `
 exec('''
+${errorCapturingVariableName} = "OK"
 try:
 ${indent(tryExpression, 4)}
 except:
     try:
 ${indent(content, 8)}
     except Exception as e:
-        ${errorCapturingVariableName} = { 'error': e }
+        ${errorCapturingVariableName} = repr(e)
 ''', ${moduleName}.__dict__
 )
 `;
@@ -73,10 +76,14 @@ function concatExpressionsToPythonList(expressions: string[]): string {
     return `[${expressions.join(", ")}]`;
 }
 
+function errorCapturingVariableName(id: string): string {
+    return `_error_${id}`;
+}
+
 function combineSetupCodes(setupCodes: SetupCode[]): string {
     const setupCode = setupCodes
-        .map(({ setupCode, testSetupCode, id: errorCapuringVariableName }) =>
-            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode, errorCapuringVariableName)
+        .map(({ setupCode, testSetupCode, id }) =>
+            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode, errorCapturingVariableName(id))
         )
         .join("\n\n");
 
@@ -187,4 +194,24 @@ export function constructOpenSendAndCloseCode(
     return convertExpressionIntoValueWrappedExpression(
         `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression})`
     );
+}
+
+export function constructGetMainModuleErrorCode(): EvalCodePython<Result<string>> {
+    return {
+        pythonCode: `'Value("' + ${SETUP_RESULT_VARIABLE_NAME} + '")'`,
+    };
+}
+
+export function constructGetViewablesErrorsCode(): EvalCodePython<Result<[string, string]>[]> {
+    const viewables = Container.get(AllViewables).allViewables; 
+    const idToError = viewables.map((v) => {
+        const id = v.setupPythonCode.id;
+        const name = errorCapturingVariableName(id) ;
+        const nameInModule = atModule(name);
+        return convertExpressionIntoValueWrappedExpression(
+            `["${id}", ${EVAL_OR_RETURN_EXCEPTION_FUNCTION}(lambda: ${nameInModule})]`
+        );
+    });
+
+    return combineMultiEvalCodePython(idToError);
 }

@@ -66,9 +66,7 @@ const extensionConfig = {
         devtoolModuleFilenameTemplate: "../[resource-path]",
     },
     plugins: [
-        new ESLintPlugin({
-            extensions: ["ts"],
-        }),
+        new ESLintPlugin(),
         new VSCodeExtensionsPackageJsonGenerator("vscode-ext-config.json"),
     ],
     dependencies: ["webview"]

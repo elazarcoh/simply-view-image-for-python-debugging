@@ -20,6 +20,8 @@ import { HoverProvider } from "./HoverProvider";
 import { SocketServer } from "./python-communication/socket-based/Server";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
+import { ExtensionPersistentState } from "./ExtensionPersistentState";
+import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
 
 function onConfigChange(): void {
     initLog();
@@ -29,6 +31,7 @@ function onConfigChange(): void {
 // ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext) {
     Container.set(WebviewClient, new WebviewClient(context));
+    Container.set(ExtensionPersistentState, new ExtensionPersistentState(context.globalState, context.workspaceState));
 
     onConfigChange();
 
@@ -89,7 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
     logDebug("Registering image watch tree view provider");
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider(
-            "pythonDebugImageWatch",
+            EXTENSION_IMAGE_WATCH_TREE_VIEW_ID,
             Container.get(WatchTreeProvider)
         )
     );

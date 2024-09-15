@@ -6,10 +6,15 @@ use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
 use crate::{
-    app_state::app_state::AppState, common::{pixel_value::PixelValue, ViewId}, components::{
+    app_state::app_state::AppState,
+    common::{pixel_value::PixelValue, ViewId},
+    components::{
         main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar,
         view_container::ViewContainer,
-    }, math_utils::image_calculations::calc_num_bytes_per_image, mouse_events::PixelHoverHandler, rendering::rendering_context::ViewContext
+    },
+    math_utils::image_calculations::calc_num_bytes_per_image,
+    mouse_events::PixelHoverHandler,
+    rendering::rendering_context::ViewContext,
 };
 
 #[derive(Properties)]
@@ -22,6 +27,12 @@ impl PartialEq for StatusBarWrapperProps {
     fn eq(&self, other: &Self) -> bool {
         self.view_id == other.view_id && Rc::ptr_eq(&self.view_context, &other.view_context)
     }
+}
+
+pub(crate) enum PixelHoverEvent {
+    Hovered(UVec2),
+    Refresh,
+    None,
 }
 
 #[function_component]
@@ -45,8 +56,14 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                 PixelHoverHandler::install(
                     view_id,
                     Rc::clone(&view_context),
-                    Callback::from(move |hovered_pixel: Option<UVec2>| {
-                        let maybe_pixel_value = hovered_pixel.and_then(|pixel| {
+                    Callback::from(move |hovered_pixel: PixelHoverEvent| {
+                        let current_pixel = match hovered_pixel {
+                            PixelHoverEvent::Hovered(pixel) => Some(pixel),
+                            PixelHoverEvent::Refresh => *pixel,
+                            PixelHoverEvent::None => None,
+                        };
+
+                        let maybe_pixel_value = current_pixel.and_then(|pixel| {
                             let image = view_context.get_image_for_view(view_id);
                             image.and_then(|image| {
                                 image.map(|image| {
@@ -77,7 +94,11 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                         });
 
                         pixel_value.set(maybe_pixel_value);
-                        pixel.set(hovered_pixel);
+                        pixel.set(match hovered_pixel {
+                            PixelHoverEvent::Hovered(pixel) => Some(pixel),
+                            PixelHoverEvent::Refresh => current_pixel,
+                            PixelHoverEvent::None => None,
+                        });
                     }),
                 )
             };

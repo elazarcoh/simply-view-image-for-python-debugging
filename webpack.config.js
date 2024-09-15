@@ -15,6 +15,7 @@ const path = require("path");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const WebpackShellPlugin = require('webpack-shell-plugin-next');
 
 const dist = path.resolve(__dirname, "dist");
 
@@ -131,6 +132,12 @@ const WebviewConfig = {
                 },
             ],
         }),
+        new WebpackShellPlugin({
+            onBuildStart: {
+                scripts: ['lodash --output dist/lodash.js --production include=debounce,throttle --silent'],
+                blocking: false,
+            },
+        })
     ],
     experiments: {
         asyncWebAssembly: true,

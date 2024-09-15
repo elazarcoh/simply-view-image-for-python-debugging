@@ -198,7 +198,11 @@ impl Reducer<AppState> for StoreAction {
                     .get_or_default(&image_id)
                     .clone();
                 let new_drawing_option = match update {
-                    UpdateDrawingOptions::Reset => DrawingOptions::default(),
+                    UpdateDrawingOptions::Reset => DrawingOptions {
+                        // keep the batch slice index
+                        as_batch_slice: current_drawing_options.as_batch_slice,
+                        ..DrawingOptions::default()
+                    },
                     UpdateDrawingOptions::Coloring(c) => DrawingOptions {
                         coloring: c,
                         ..current_drawing_options
@@ -366,32 +370,39 @@ impl Reducer<AppState> for ChangeImageAction {
             }
             ChangeImageAction::ViewShiftScroll(view_id, cv, amount) => {
                 let id = cv.into();
-                let batch_size = state
-                    .images
-                    .borrow()
-                    .get(&id)
-                    .unwrap()
-                    .batch_info
-                    .as_ref()
-                    .map_or(1, |info| info.batch_size);
-
                 let current_drawing_options = state.drawing_options.borrow().get_or_default(&id);
-                let current_index = current_drawing_options.as_batch_slice.1;
-                let new_index =
-                    (current_index as i32 + amount).clamp(0, batch_size as i32 - 1) as u32;
-                state.drawing_options.borrow_mut().set(
-                    id,
-                    DrawingOptions {
-                        as_batch_slice: (current_drawing_options.as_batch_slice.0, new_index),
-                        ..current_drawing_options
-                    },
-                );
+                if current_drawing_options.as_batch_slice.0 {
+                    let batch_size = state
+                        .images
+                        .borrow()
+                        .get(&id)
+                        .unwrap()
+                        .batch_info
+                        .as_ref()
+                        .map_or(1, |info| info.batch_size);
 
-                // send event to view that the batch item has changed
-                state
-                    .image_views
-                    .borrow()
-                    .send_event_to_view(view_id, "svifpd:changeimage");
+                    let current_index = current_drawing_options.as_batch_slice.1;
+                    let new_index =
+                        (current_index as i32 + amount).clamp(0, batch_size as i32 - 1) as u32;
+                    if new_index != current_index {
+                        state.drawing_options.borrow_mut().set(
+                            id,
+                            DrawingOptions {
+                                as_batch_slice: (
+                                    current_drawing_options.as_batch_slice.0,
+                                    new_index,
+                                ),
+                                ..current_drawing_options
+                            },
+                        );
+
+                        // send event to view that the batch item has changed
+                        state
+                            .image_views
+                            .borrow()
+                            .send_event_to_view(view_id, "svifpd:changeimage");
+                    }
+                }
             }
         }
 

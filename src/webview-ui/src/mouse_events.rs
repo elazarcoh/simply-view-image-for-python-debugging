@@ -2,14 +2,16 @@ use std::{cell::RefCell, rc::Rc};
 
 use glam::{Mat3, UVec2, Vec2, Vec3Swizzles};
 use gloo::events::{EventListener, EventListenerOptions};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 use web_sys::{Event, MouseEvent};
 use yew::Callback;
 use yewdux::Dispatch;
 
 use crate::{
     app_state::app_state::{AppState, ChangeImageAction},
+    bindings::lodash::debounce_closure,
     common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId},
+    components::main::PixelHoverEvent,
     math_utils::{image_calculations::calculate_pixels_information, ToHom},
     rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
 };
@@ -179,8 +181,96 @@ impl ZoomHandler {
         let wheel = {
             let view_context = Rc::clone(&view_context);
 
+            let wheel_handler = debounce_closure(
+                {
+                    let view_element = view_element.clone();
+                    Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
+                        let html_element_size = Size {
+                            width: view_element.client_width() as f32,
+                            height: view_element.client_height() as f32,
+                        };
+                        let element_size = Size {
+                            width: view_element.client_width() as f32,
+                            height: view_element.client_height() as f32,
+                        };
+                        let camera = view_context.get_camera_for_view(view_id);
+                        let image_size = match view_context.get_image_size_for_view(view_id) {
+                            Some(it) => it,
+                            None => return,
+                        };
+                        let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+
+                        let view_projection = camera::calculate_view_projection(
+                            &element_size,
+                            &VIEW_SIZE,
+                            &camera,
+                            aspect_ratio,
+                        );
+                        let view_projection_matrix_inv = view_projection.inverse();
+                        let image_size = match view_context.get_image_size_for_view(view_id) {
+                            Some(it) => it,
+                            None => return,
+                        };
+                        let pixels_info = calculate_pixels_information(
+                            &image_size,
+                            &view_projection,
+                            &html_element_size,
+                        );
+
+                        let invert_scroll_direction = Dispatch::<AppState>::global()
+                            .get()
+                            .configuration
+                            .invert_scroll_direction;
+                        let delta_y =
+                            event.delta_y() * if invert_scroll_direction { -1.0 } else { 1.0 };
+                        if pixels_info.image_pixel_size_device > MAX_PIXEL_SIZE_DEVICE
+                            && delta_y > 0.0
+                        {
+                            return;
+                        }
+
+                        let clip_coordinates = get_clip_space_mouse_position(
+                            event.clone().dyn_into().unwrap(),
+                            &view_element,
+                        );
+
+                        let pre_zoom_position =
+                            (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
+
+                        let new_zoom = camera.zoom * (f32::powf(2.0, delta_y as f32 / 100.0));
+                        let new_zoom = f32::max(new_zoom, 0.5);
+
+                        let new_camera = camera::Camera {
+                            zoom: new_zoom,
+                            ..camera
+                        };
+
+                        let view_projection_matrix_inv = camera::calculate_view_projection(
+                            &element_size,
+                            &VIEW_SIZE,
+                            &new_camera,
+                            aspect_ratio,
+                        )
+                        .inverse();
+                        let post_zoom_position =
+                            (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
+
+                        let translation =
+                            camera.translation + (pre_zoom_position - post_zoom_position);
+
+                        let new_camera = camera::Camera {
+                            translation,
+                            ..new_camera
+                        };
+
+                        view_context.set_camera_for_view(view_id, new_camera);
+                    }) as Box<dyn Fn(web_sys::WheelEvent)>)
+                },
+                0,
+                Default::default(),
+            );
+
             Callback::from({
-                let view_element = view_element.clone();
                 move |event: Event| {
                     let event = event
                         .dyn_ref::<web_sys::WheelEvent>()
@@ -191,83 +281,7 @@ impl ZoomHandler {
 
                     event.prevent_default();
 
-                    let html_element_size = Size {
-                        width: view_element.client_width() as f32,
-                        height: view_element.client_height() as f32,
-                    };
-                    let element_size = Size {
-                        width: view_element.client_width() as f32,
-                        height: view_element.client_height() as f32,
-                    };
-                    let camera = view_context.get_camera_for_view(view_id);
-                    let image_size = match view_context.get_image_size_for_view(view_id) {
-                        Some(it) => it,
-                        None => return,
-                    };
-                    let aspect_ratio = image_size.width as f32 / image_size.height as f32;
-
-                    let view_projection = camera::calculate_view_projection(
-                        &element_size,
-                        &VIEW_SIZE,
-                        &camera,
-                        aspect_ratio,
-                    );
-                    let view_projection_matrix_inv = view_projection.inverse();
-                    let image_size = match view_context.get_image_size_for_view(view_id) {
-                        Some(it) => it,
-                        None => return,
-                    };
-                    let pixels_info = calculate_pixels_information(
-                        &image_size,
-                        &view_projection,
-                        &html_element_size,
-                    );
-
-                    let invert_scroll_direction = Dispatch::<AppState>::global()
-                        .get()
-                        .configuration
-                        .invert_scroll_direction;
-                    let delta_y =
-                        event.delta_y() * if invert_scroll_direction { -1.0 } else { 1.0 };
-                    if pixels_info.image_pixel_size_device > MAX_PIXEL_SIZE_DEVICE && delta_y > 0.0
-                    {
-                        return;
-                    }
-
-                    let clip_coordinates = get_clip_space_mouse_position(
-                        event.clone().dyn_into().unwrap(),
-                        &view_element,
-                    );
-
-                    let pre_zoom_position =
-                        (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
-
-                    let new_zoom = camera.zoom * (f32::powf(2.0, delta_y as f32 / 100.0));
-                    let new_zoom = f32::max(new_zoom, 0.5);
-
-                    let new_camera = camera::Camera {
-                        zoom: new_zoom,
-                        ..camera
-                    };
-
-                    let view_projection_matrix_inv = camera::calculate_view_projection(
-                        &element_size,
-                        &VIEW_SIZE,
-                        &new_camera,
-                        aspect_ratio,
-                    )
-                    .inverse();
-                    let post_zoom_position =
-                        (view_projection_matrix_inv * clip_coordinates.to_hom()).xy();
-
-                    let translation = camera.translation + (pre_zoom_position - post_zoom_position);
-
-                    let new_camera = camera::Camera {
-                        translation,
-                        ..new_camera
-                    };
-
-                    view_context.set_camera_for_view(view_id, new_camera);
+                    wheel_handler.call1(&JsValue::null(), event).unwrap();
                 }
             })
         };
@@ -285,7 +299,7 @@ impl PixelHoverHandler {
     pub(crate) fn install(
         view_id: ViewId,
         view_context: Rc<dyn ViewContext>,
-        callback: Callback<Option<UVec2>>,
+        callback: Callback<PixelHoverEvent>,
     ) -> Vec<EventListener> {
         let view_element = view_context.get_view_element(view_id);
 
@@ -337,9 +351,9 @@ impl PixelHoverHandler {
                     || mouse_position_pixels.x >= image_size.width as f32
                     || mouse_position_pixels.y >= image_size.height as f32
                 {
-                    callback.emit(None);
+                    callback.emit(PixelHoverEvent::None);
                 } else {
-                    callback.emit(Some(UVec2::new(
+                    callback.emit(PixelHoverEvent::Hovered(UVec2::new(
                         mouse_position_pixels.x as u32,
                         mouse_position_pixels.y as u32,
                     )));
@@ -350,14 +364,14 @@ impl PixelHoverHandler {
         let mouseleave = {
             let callback = callback.clone();
             Callback::from(move |_event: Event| {
-                callback.emit(None);
+                callback.emit(PixelHoverEvent::None);
             })
         };
 
         let changeimage = {
             let callback = callback.clone();
             Callback::from(move |_event: Event| {
-                callback.emit(None);
+                callback.emit(PixelHoverEvent::Refresh);
             })
         };
 
@@ -385,6 +399,18 @@ impl ShiftScrollHandler {
             let view_context = Rc::clone(&view_context);
             let view_element = view_element.clone();
 
+            let view_shift_scroll_handler = debounce_closure(
+                Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
+                    if let Some(cv) = view_context.get_currently_viewing_for_view(view_id) {
+                        let amount = event.delta_y() as i32;
+                        let dispatch = Dispatch::<AppState>::global();
+                        dispatch.apply(ChangeImageAction::ViewShiftScroll(view_id, cv, amount));
+                    }
+                }) as Box<dyn Fn(web_sys::WheelEvent)>),
+                250,
+                Default::default(),
+            );
+
             Callback::from(move |event: Event| {
                 let event = event
                     .dyn_ref::<web_sys::WheelEvent>()
@@ -395,11 +421,9 @@ impl ShiftScrollHandler {
 
                 event.prevent_default();
 
-                if let Some(cv) = view_context.get_currently_viewing_for_view(view_id) {
-                    let amount = event.delta_y() as i32;
-                    let dispatch = Dispatch::<AppState>::global();
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(view_id, cv, amount));
-                }
+                view_shift_scroll_handler
+                    .call1(&JsValue::null(), event)
+                    .unwrap();
             })
         };
 

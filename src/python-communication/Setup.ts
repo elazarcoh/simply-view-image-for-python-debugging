@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { DebugSession } from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logDebug, logTrace } from "../Logging";
@@ -12,6 +13,10 @@ import { evaluateInPython, execInPython } from "./RunPythonCode";
 import { isOkay, joinResult, Result } from "../utils/Result";
 import _ from "lodash";
 import { sleep } from "../utils/Utils";
+import Container from "typedi";
+import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
+import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "../globals";
+import { DebugSessionData } from "../debugger-utils/DebugSessionData";
 
 export function setSetupIsNotOkay(): void {
     logTrace("Manual set 'setup is not okay'");
@@ -30,6 +35,36 @@ async function checkSetupOkay(session: DebugSession) {
         false,
     );
     return joinResult(res);
+}
+
+async function handleSetupError(
+    debugSessionData: DebugSessionData
+) {
+    const KEY = "ignoreSetupError";
+    if ((debugSessionData.customState[KEY] ?? false) === true) {
+        return;
+    }
+    const options = {
+        ignore_for_session: "Ignore (current session)",
+        show: "Show errors",
+    }
+    const selection = await vscode.window.showErrorMessage(
+        "Failed to setup the python side of the extension.",
+        options.show,
+        options.ignore_for_session,
+    );
+    switch (selection) {
+        case options.show:
+            const watchTreeProvider = Container.get(WatchTreeProvider);
+            watchTreeProvider.showDiagnosticsTemporarily = true;
+            await debugSessionData.diagnostics.update();
+            watchTreeProvider.refresh();
+            await vscode.commands.executeCommand(`${EXTENSION_IMAGE_WATCH_TREE_VIEW_ID}.focus`);
+            break;
+        case options.ignore_for_session:
+            debugSessionData.customState[KEY] = true;
+            break;
+    }
 }
 
 export async function runSetup(
@@ -71,13 +106,36 @@ export async function runSetup(
         return debugSessionData.setupOkay;
     }, 500);
 
-    for (let i = 0; i < maxTries; i++) {
-        logDebug("Running setup... tries left:", maxTries - i);
-        const isOk = await runDebounced();
-        if (isOk) {
-            return true;
-        }
-        await sleep(250 * 2 ** i);
+    // run once
+    logDebug("Running setup... tries left:", maxTries);
+    const isOk = await runDebounced();
+    if (isOk) {
+        return true;
+    }
+
+    // retry show progress
+    await vscode.window.withProgress(
+        {
+            location: vscode.ProgressLocation.Notification,
+            title: "Setting up the python side of the extension...",
+            cancellable: true
+        },
+        async (progress, cancelToken) => {
+            for (let i = 1; !cancelToken.isCancellationRequested && i < maxTries; i++) {
+                const message = `tries left: ${maxTries - i}`;
+                progress.report({ message });
+                logDebug("Running setup... tries left:", maxTries - i);
+                const isOk = await runDebounced();
+                if (isOk) {
+                    return true;
+                }
+                await sleep(250 * 2 ** i);
+            }
+        },
+    );
+
+    if (!debugSessionData.setupOkay) {
+        handleSetupError(debugSessionData);
     }
 
     return debugSessionData.setupOkay;

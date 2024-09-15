@@ -23,6 +23,7 @@ except:
     ${PYTHON_MODULE_NAME} = ModuleType('python_view_image_mod', '')
     try:
         ${SETUP_RESULT_VARIABLE_NAME} = "OK"
+        raise Exception("Force exception")
         exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
     except Exception as e:
         ${SETUP_RESULT_VARIABLE_NAME} = repr(e)

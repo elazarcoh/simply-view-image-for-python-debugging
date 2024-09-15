@@ -15,6 +15,7 @@ export class DebugSessionData {
     public readonly diagnostics: ExtensionDiagnostics;
     public setupOkay: boolean = false;
     public isStopped: boolean = false;
+    public customState: Record<string, unknown | undefined> = {};
 
     constructor(session: vscode.DebugSession) {
         this.savePathHelper = new SavePathHelper(session.id);

@@ -54,6 +54,8 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         TreeItem | undefined
     >();
 
+    public showDiagnosticsTemporarily: boolean = false;
+
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     refresh(item?: TreeItem): void {
@@ -136,12 +138,12 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 ]),
             ]
 
-            if (getConfiguration("showDiagnosticInfoInTreeView", null, false) ?? false) {
+            if (this.showDiagnosticsTemporarily || (getConfiguration("showDiagnosticInfoInTreeView", null, false) ?? false)) {
                 const getter = async () => {
                     const diagnostics = debugSessionData?.diagnostics.getDiagnosticsItems();
                     return diagnostics ?? [];
                 }
-                const item = new ItemsRootTreeItem("Diagnostics", getter, vscode.TreeItemCollapsibleState.Expanded, "svifpd:diagnosticsRoot")
+                const item = new ItemsRootTreeItem("Extension Diagnostics", getter, vscode.TreeItemCollapsibleState.Expanded, "svifpd:diagnosticsRoot")
                 debugSessionData?.diagnostics.onDidChange(() => this.refresh(item));
                 items.push(item);
             }

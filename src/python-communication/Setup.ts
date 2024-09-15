@@ -38,7 +38,8 @@ async function checkSetupOkay(session: DebugSession) {
 }
 
 async function handleSetupError(
-    debugSessionData: DebugSessionData
+    debugSessionData: DebugSessionData,
+    debugSession: DebugSession,
 ) {
     const KEY = "ignoreSetupError";
     if ((debugSessionData.customState[KEY] ?? false) === true) {
@@ -47,11 +48,13 @@ async function handleSetupError(
     const options = {
         ignore_for_session: "Ignore (current session)",
         show: "Show errors",
+        retry: "Retry",
     }
     const selection = await vscode.window.showErrorMessage(
         "Failed to setup the python side of the extension.",
         options.show,
         options.ignore_for_session,
+        options.retry,
     );
     switch (selection) {
         case options.show:
@@ -60,6 +63,9 @@ async function handleSetupError(
             await debugSessionData.diagnostics.update();
             watchTreeProvider.refresh();
             await vscode.commands.executeCommand(`${EXTENSION_IMAGE_WATCH_TREE_VIEW_ID}.focus`);
+            break;
+        case options.retry:
+            await runSetup(debugSession, true);
             break;
         case options.ignore_for_session:
             debugSessionData.customState[KEY] = true;
@@ -104,7 +110,7 @@ export async function runSetup(
         const result = await isSetupOkay();
         debugSessionData.setupOkay = result;
         return debugSessionData.setupOkay;
-    }, 500);
+    }, 500, { leading: true });
 
     // run once
     logDebug("Running setup... tries left:", maxTries);
@@ -112,6 +118,7 @@ export async function runSetup(
     if (isOk) {
         return true;
     }
+    await sleep(1000);
 
     // retry show progress
     await vscode.window.withProgress(
@@ -129,13 +136,13 @@ export async function runSetup(
                 if (isOk) {
                     return true;
                 }
-                await sleep(250 * 2 ** i);
+                await sleep(500 * 2 ** i);
             }
         },
     );
 
     if (!debugSessionData.setupOkay) {
-        handleSetupError(debugSessionData);
+        handleSetupError(debugSessionData, session);
     }
 
     return debugSessionData.setupOkay;

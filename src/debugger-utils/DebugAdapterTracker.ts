@@ -58,9 +58,9 @@ export const createDebugAdapterTracker = (
         await currentPythonObjectsList.update();
         await updateWatchTree();
         await Promise.all([updateWebview(), saveTracked()]);
-    }, 500);
+    }, 500, { leading: true });
 
-    const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 500);
+    const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 500, { leading: true });
 
     return {
         onWillStartSession: () => {

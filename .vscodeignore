@@ -14,3 +14,8 @@ vsc-exdtension-quickstart.md
 webpack.config*.js
 python_test
 example-plugin
+.yarn/**/*
+*.code-workspace
+vscode-ext-config.json
+eslint*
+.yarnrc.yml

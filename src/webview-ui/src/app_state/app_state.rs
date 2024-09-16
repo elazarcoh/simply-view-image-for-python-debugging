@@ -1,5 +1,5 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
-use super::images::{ImageCache, Images, ImagesDrawingOptions};
+use super::images::{ImageAvailability, ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
 use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
@@ -40,7 +40,47 @@ impl Listener for ImagesFetcher {
                         }
                     }
                 }
-                crate::common::CurrentlyViewing::BatchItem(_) => todo!(),
+                crate::common::CurrentlyViewing::BatchItem(image_id) => {
+                    if !state.image_cache.borrow().has(&image_id) {
+                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                        if let Some(image_info) = state.images.borrow().get(&image_id) {
+                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                            VSCodeRequests::request_image_data(
+                                image_id.clone(),
+                                image_info.expression.clone(),
+                            );
+                            state.image_cache.borrow_mut().set_pending(&image_id);
+                        }
+                    } else if let ImageAvailability::Available(image) =
+                        state.image_cache.borrow().get(&image_id)
+                    {
+                        // generally available, but maybe batch item is not.
+                        let current_drawing_options = state
+                            .drawing_options
+                            .borrow()
+                            .get_or_default(&image_id)
+                            .clone();
+                        if current_drawing_options.as_batch_slice.0 {
+                            let current_index = current_drawing_options.as_batch_slice.1;
+                            if !image.textures.contains_key(&current_index) {
+                                log::debug!(
+                                    "ImagesFetcher::on_change: batch item {} not in cache",
+                                    image_id
+                                );
+                                todo!();
+                                // VSCodeRequests::request_batch_item(
+                                //     image_id.clone(),
+                                //     current_index,
+                                //     image.batch_info.as_ref().unwrap().batch_size,
+                                // );
+                                // state
+                                //     .image_cache
+                                //     .borrow_mut()
+                                //     .set_pending_batch_item(&image_id, current_index);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -88,9 +128,21 @@ impl AppState {
     }
 
     pub(crate) fn set_image_to_view(&mut self, image_id: ViewableObjectId, view_id: ViewId) {
-        self.image_views
-            .borrow_mut()
-            .set_image_to_view(image_id, view_id);
+        let is_batched = self
+            .images
+            .borrow()
+            .get(&image_id)
+            .map_or(false, |info| info.batch_info.is_some());
+
+        if is_batched {
+            self.image_views
+                .borrow_mut()
+                .set_batch_item_to_view(image_id, view_id);
+        } else {
+            self.image_views
+                .borrow_mut()
+                .set_image_to_view(image_id, view_id);
+        }
 
         // send event to view
         self.image_views
@@ -382,8 +434,8 @@ impl Reducer<AppState> for ChangeImageAction {
                         .map_or(1, |info| info.batch_size);
 
                     let current_index = current_drawing_options.as_batch_slice.1;
-                    let new_index =
-                        ((current_index as f64 + amount) as i32).clamp(0, batch_size as i32 - 1) as u32;
+                    let new_index = ((current_index as f64 + amount) as i32)
+                        .clamp(0, batch_size as i32 - 1) as u32;
                     if new_index != current_index {
                         state.drawing_options.borrow_mut().set(
                             id,

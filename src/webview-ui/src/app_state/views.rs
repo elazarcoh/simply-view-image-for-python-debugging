@@ -1,6 +1,6 @@
 use std::{collections::HashMap, iter::FromIterator};
 
-use web_sys::{HtmlElement, CustomEvent};
+use web_sys::{CustomEvent, HtmlElement};
 use yew::NodeRef;
 
 use crate::common::{constants::all_views, CurrentlyViewing, ViewId, ViewableObjectId};
@@ -46,6 +46,11 @@ impl ImageViews {
     pub(crate) fn set_image_to_view(&mut self, image_id: ViewableObjectId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
         view.0 = Some(CurrentlyViewing::Image(image_id));
+    }
+
+    pub(crate) fn set_batch_item_to_view(&mut self, batch_id: ViewableObjectId, view_id: ViewId) {
+        let view = self.0.get_mut(&view_id).unwrap();
+        view.0 = Some(CurrentlyViewing::BatchItem(batch_id));
     }
 
     pub(crate) fn send_event_to_view(&self, view_id: ViewId, event: &str) {

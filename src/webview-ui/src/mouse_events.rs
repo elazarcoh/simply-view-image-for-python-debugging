@@ -441,11 +441,11 @@ impl ShiftScrollHandler {
         let wheel = {
             let view_context = Rc::clone(&view_context);
             let view_element = view_element.clone();
-            // let lethargy = lethargy_ts::Lethargy::new(
+            let lethargy = lethargy_ts::Lethargy::new(
             //     lethargy_ts::LethargyConfigBuilder::default()
             //         .build()
             //         .unwrap(),
-            // );
+            );
 
             let view_shift_scroll_handler = debounce_closure(
                 Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {

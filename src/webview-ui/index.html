@@ -20,8 +20,14 @@
     <link href="${baseUri}/svifpd-icons.ttf" rel="stylesheet" />
 
     <script src="${baseUri}/lodash.js" charset="utf-8"></script>
-    <script src="${baseUri}/lethargy-ts.js" charset="utf-8"></script>
+    <script src="${baseUri}/lethargy_ts.js" charset="utf-8"></script>
   </head>
   <body>
+    <script nonce="${nonce}">
+      console.log("Hello from webview-ui/index.html");
+      console.log("Lethargy1", lethargy_ts);
+      const lethargyObj = new Lethargy();
+      console.log("Lethargy", lethargyObj);
+    </script>
   </body>
 </html>

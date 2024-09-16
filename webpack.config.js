@@ -73,6 +73,35 @@ const extensionConfig = {
     dependencies: ["webview"]
 };
 
+/** type WebpackConfig */
+const webview3rdParty = {
+    ...baseConfig,
+    name: "webview3rdParty",
+    entry: {
+        "lethargy_ts": path.resolve(__dirname, "node_modules/lethargy-ts/lib/index.js"),
+    },
+    output: {
+        filename: "[name].js",
+        library: {
+            name: "[name]",
+            type: 'var',
+            export: 'default',
+        },
+    },
+    resolve: {
+        extensions: [".js"],
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: ["babel-loader"],
+            },
+        ],
+    },
+}
+
 // Config for webview source code
 /** @type WebpackConfig */
 const WebviewConfig = {
@@ -85,6 +114,7 @@ const WebviewConfig = {
         path: dist,
         filename: "webview.js",
     },
+    dependencies: ["webview3rdParty"],
     plugins: [
         new HtmlWebpackPlugin({
             template: path.resolve(webviewPath, "index.html"),
@@ -130,21 +160,6 @@ const WebviewConfig = {
                         "[name][ext]"
                     ),
                 },
-                // node_modules/lethargy-ts/lib/index.js
-                {
-                    from: path.posix.join(
-                        __dirname.replace(/\\/g, "/"),
-                        "node_modules",
-                        "lethargy-ts",
-                        "lib",
-                        "index.js"
-                    ),
-                    to: path.posix.join(
-                        __dirname.replace(/\\/g, "/"),
-                        "dist",
-                        "lethargy-ts.js"
-                    ),
-                }
             ],
         }),
         new WebpackShellPlugin({
@@ -160,4 +175,4 @@ const WebviewConfig = {
     },
 };
 
-module.exports = [WebviewConfig, extensionConfig];
+module.exports = [WebviewConfig, extensionConfig, webview3rdParty];

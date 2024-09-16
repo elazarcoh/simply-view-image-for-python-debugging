@@ -334,6 +334,15 @@ impl Renderer {
                 crate::app_state::images::ImageAvailability::NotAvailable
                 | crate::app_state::images::ImageAvailability::Pending => {}
                 crate::app_state::images::ImageAvailability::Available(texture) => {
+                    // for batch, we need to check if the batch item is available
+                    let (drawing_options, _) = rendering_context
+                        .drawing_options(image_view_data.image_id.as_ref().unwrap());
+                    if drawing_options.as_batch_slice.0 {
+                        let batch_index = drawing_options.as_batch_slice.1;
+                        if !texture.textures.contains_key(&batch_index) {
+                            return Ok(());
+                        }
+                    }
                     Renderer::render_image(
                         rendering_context,
                         rendering_data,

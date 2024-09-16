@@ -9539,7 +9539,7 @@ fn batch_gray_u8(batch_size: u32) -> ImageMessage {
     let data = (0..batch_size)
         .flat_map(|r| {
             data.iter()
-                .map(|x| (*x as f32 + r as f32).min(255.0) as u8)
+                .map(|x| (*x as f32 + (r * 10) as f32).min(255.0) as u8)
                 .collect::<Vec<u8>>()
         })
         .collect::<Vec<u8>>();

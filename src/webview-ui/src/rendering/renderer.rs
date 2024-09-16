@@ -1,5 +1,6 @@
 use anyhow::Ok;
 use anyhow::Result;
+use itertools::Itertools;
 use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
@@ -17,6 +18,8 @@ use crate::common::camera;
 use crate::common::constants::all_views;
 use crate::common::pixel_value::PixelValue;
 use crate::common::texture_image::TextureImage;
+use crate::common::texture_image::TexturesGroup;
+use crate::common::Channels;
 use crate::common::DataOrdering;
 use crate::common::Datatype;
 use crate::common::Size;
@@ -353,27 +356,50 @@ impl Renderer {
         view_name: &ViewId,
     ) {
         let gl = &rendering_data.gl;
-        let program = match texture.image.info.data_ordering {
-            DataOrdering::HWC => match texture.image.info.datatype {
-                Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32 => {
-                    &rendering_data.programs.uint_image
-                }
-                Datatype::Float32 => &rendering_data.programs.normalized_image,
-                Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
-                    &rendering_data.programs.int_image
-                }
-                Datatype::Bool => &rendering_data.programs.uint_image,
-            },
+        let mut _program_name;
 
-            DataOrdering::CHW => match texture.image.info.datatype {
+        let program = match (
+            texture.image.info.data_ordering,
+            texture.image.info.channels,
+        ) {
+            (DataOrdering::HWC, _) | (DataOrdering::CHW, Channels::One) => {
+                match texture.image.info.datatype {
+                    Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32 => {
+                        _program_name = "uint_image";
+                        &rendering_data.programs.uint_image
+                    }
+                    Datatype::Float32 => {
+                        _program_name = "normalized_image";
+                        &rendering_data.programs.normalized_image
+                    }
+                    Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
+                        _program_name = "int_image";
+                        &rendering_data.programs.int_image
+                    }
+                    Datatype::Bool => {
+                        _program_name = "uint_image";
+                        &rendering_data.programs.uint_image
+                    }
+                }
+            }
+
+            (DataOrdering::CHW, _) => match texture.image.info.datatype {
                 Datatype::Uint8 | Datatype::Uint32 | Datatype::Uint16 => {
+                    _program_name = "planar_uint_image";
                     &rendering_data.programs.planar_uint_image
                 }
-                Datatype::Float32 => &rendering_data.programs.planar_normalized_image,
+                Datatype::Float32 => {
+                    _program_name = "planar_normalized_image";
+                    &rendering_data.programs.planar_normalized_image
+                }
                 Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
+                    _program_name = "planar_int_image";
                     &rendering_data.programs.planar_int_image
                 }
-                Datatype::Bool => &rendering_data.programs.planar_uint_image,
+                Datatype::Bool => {
+                    _program_name = "planar_uint_image";
+                    &rendering_data.programs.planar_uint_image
+                }
             },
         };
         let config = rendering_context.rendering_configuration();
@@ -426,81 +452,44 @@ impl Renderer {
             ("u_invert", UniformValue::Bool(&drawing_options.invert)),
         ]));
 
-        let get_textures = |offset: u32| {
-            match texture.image.info.data_ordering {
-                crate::common::DataOrdering::HWC => HashMap::from([(
-                    "u_texture",
-                    UniformValue::Texture(&texture.textures[&(0 + offset)]),
-                )]),
-
-                crate::common::DataOrdering::CHW => {
-                    let mut uniforms = HashMap::new();
-
-                    match texture.image.info.channels {
-                        crate::common::Channels::One => {
-                            // TODO: instead of using Int(0) here, add an enum
-                            uniforms.insert("u_image_type", UniformValue::Int(&0));
-                            uniforms.insert(
-                                "u_texture_r",
-                                UniformValue::Texture(&texture.textures[&(0 + offset)]),
-                            );
-                        }
-                        crate::common::Channels::Two => {
-                            assert!(texture.textures.len() == 2);
-                            // TODO: instead of using Int(0) here, add an enum
-                            uniforms.insert("u_image_type", UniformValue::Int(&3));
-                            uniforms.insert(
-                                "u_texture_r",
-                                UniformValue::Texture(&texture.textures[&(0 + offset)]),
-                            );
-                            uniforms.insert(
-                                "u_texture_g",
-                                UniformValue::Texture(&texture.textures[&(1 + offset)]),
-                            );
-                        }
-                        crate::common::Channels::Three => {
-                            assert!(texture.textures.len() == 3);
-                            // TODO: instead of using Int(0) here, add an enum
-                            uniforms.insert("u_image_type", UniformValue::Int(&1));
-                            uniforms.insert(
-                                "u_texture_r",
-                                UniformValue::Texture(&texture.textures[&(0 + offset)]),
-                            );
-                            uniforms.insert(
-                                "u_texture_g",
-                                UniformValue::Texture(&texture.textures[&(1 + offset)]),
-                            );
-                            uniforms.insert(
-                                "u_texture_b",
-                                UniformValue::Texture(&texture.textures[&(2 + offset)]),
-                            );
-                        }
-                        crate::common::Channels::Four => {
-                            assert!(texture.textures.len() == 4);
-                            // TODO: instead of using Int(0) here, add an enum
-                            uniforms.insert("u_image_type", UniformValue::Int(&2));
-                            uniforms.insert(
-                                "u_texture_r",
-                                UniformValue::Texture(&texture.textures[&(0 + offset)]),
-                            );
-                            uniforms.insert(
-                                "u_texture_g",
-                                UniformValue::Texture(&texture.textures[&(1 + offset)]),
-                            );
-                            uniforms.insert(
-                                "u_texture_b",
-                                UniformValue::Texture(&texture.textures[&(2 + offset)]),
-                            );
-                            uniforms.insert(
-                                "u_texture_a",
-                                UniformValue::Texture(&texture.textures[&(3 + offset)]),
-                            );
-                        }
-                    }
-
-                    uniforms
-                }
+        let get_textures = |batch_index: u32| match texture.textures[&batch_index] {
+            TexturesGroup::HWC(ref texture) => {
+                HashMap::from([("u_texture", UniformValue::Texture(texture))])
             }
+            TexturesGroup::CHW_G { ref gray } => {
+                // This one is using the same method as regular HWC, because it's not really a planar texture
+                HashMap::from([("u_texture", UniformValue::Texture(gray))])
+            }
+            TexturesGroup::CHW_GA {
+                ref gray,
+                ref alpha,
+            } => HashMap::from([
+                ("u_image_type", UniformValue::Int(&3)),
+                ("u_texture_r", UniformValue::Texture(gray)),
+                ("u_texture_g", UniformValue::Texture(alpha)),
+            ]),
+            TexturesGroup::CHW_RGB {
+                ref red,
+                ref green,
+                ref blue,
+            } => HashMap::from([
+                ("u_image_type", UniformValue::Int(&1)),
+                ("u_texture_r", UniformValue::Texture(red)),
+                ("u_texture_g", UniformValue::Texture(green)),
+                ("u_texture_b", UniformValue::Texture(blue)),
+            ]),
+            TexturesGroup::CHW_RGBA {
+                ref red,
+                ref green,
+                ref blue,
+                ref alpha,
+            } => HashMap::from([
+                ("u_image_type", UniformValue::Int(&2)),
+                ("u_texture_r", UniformValue::Texture(red)),
+                ("u_texture_g", UniformValue::Texture(green)),
+                ("u_texture_b", UniformValue::Texture(blue)),
+                ("u_texture_a", UniformValue::Texture(alpha)),
+            ]),
         };
 
         let (is_batched, batch_index) = drawing_options.as_batch_slice;
@@ -509,6 +498,8 @@ impl Renderer {
         } else {
             uniform_values.extend(get_textures(0));
         }
+
+        let uniform_keys_sorted: Vec<_> = uniform_values.keys().sorted().collect();
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context

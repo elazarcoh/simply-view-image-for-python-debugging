@@ -9,12 +9,55 @@ use yewdux::Dispatch;
 
 use crate::{
     app_state::app_state::{AppState, ChangeImageAction},
-    bindings::lodash::debounce_closure,
+    bindings::{lethargy_ts, lodash::debounce_closure},
     common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId},
     components::main::PixelHoverEvent,
     math_utils::{image_calculations::calculate_pixels_information, ToHom},
     rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
 };
+
+// adapted from https://github.com/schrodinger/fixed-data-table-2/blob/master/src/vendor_upstream/dom/normalizeWheel.js
+// Reasonable defaults
+const PIXEL_STEP: f64 = 10.0;
+const LINE_HEIGHT: f64 = 40.0;
+const PAGE_HEIGHT: f64 = 800.0;
+
+struct NormalizedWheel {
+    pixel_x: f64,
+    pixel_y: f64,
+}
+
+fn normalize_wheel(event: &web_sys::WheelEvent) -> NormalizedWheel {
+    log::debug!(
+        "delta_x: {}, delta_y: {}, delta_mode: {}",
+        event.delta_x(),
+        event.delta_y(),
+        event.delta_mode()
+    );
+
+    let delta_x = event.delta_x();
+    let delta_y = event.delta_y();
+
+    let mut p_x = delta_x as f64;
+    let mut p_y = delta_y as f64;
+
+    if (p_x == 0.0 || p_y == 0.0) && event.delta_mode() > 0 {
+        if event.delta_mode() == web_sys::WheelEvent::DOM_DELTA_LINE {
+            // delta in LINE units
+            p_x *= LINE_HEIGHT;
+            p_y *= LINE_HEIGHT;
+        } else {
+            // delta in PAGE units
+            p_x *= PAGE_HEIGHT;
+            p_y *= PAGE_HEIGHT;
+        }
+    }
+
+    NormalizedWheel {
+        pixel_x: p_x,
+        pixel_y: p_y,
+    }
+}
 
 fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) -> Vec2 {
     let rect = element.get_bounding_client_rect();
@@ -398,11 +441,21 @@ impl ShiftScrollHandler {
         let wheel = {
             let view_context = Rc::clone(&view_context);
             let view_element = view_element.clone();
+            // let lethargy = lethargy_ts::Lethargy::new(
+            //     lethargy_ts::LethargyConfigBuilder::default()
+            //         .build()
+            //         .unwrap(),
+            // );
 
             let view_shift_scroll_handler = debounce_closure(
                 Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
                     if let Some(cv) = view_context.get_currently_viewing_for_view(view_id) {
-                        let amount = event.delta_y() as i32;
+                        
+                        // let is_intentional = lethargy.check(&event);
+                        // log::debug!("is_intentional: {}", is_intentional);
+
+                        let normalized = normalize_wheel(&event);
+                        let amount = normalized.pixel_y;
                         let dispatch = Dispatch::<AppState>::global();
                         dispatch.apply(ChangeImageAction::ViewShiftScroll(view_id, cv, amount));
                     }

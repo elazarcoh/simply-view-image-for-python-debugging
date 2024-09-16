@@ -72,7 +72,7 @@ impl KeyboardHandler {
             } => {
                 event.prevent_default();
                 if let Some(cv) = cv {
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(ViewId::Primary, cv, 1));
+                    dispatch.apply(ChangeImageAction::ViewShiftScroll(ViewId::Primary, cv, 1.0));
                 }
             }
             KeyboardEvent {
@@ -83,7 +83,7 @@ impl KeyboardHandler {
             } => {
                 event.prevent_default();
                 if let Some(cv) = cv {
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(ViewId::Primary, cv, -1));
+                    dispatch.apply(ChangeImageAction::ViewShiftScroll(ViewId::Primary, cv, -1.0));
                 }
             }
             _ => {}

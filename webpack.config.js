@@ -130,6 +130,21 @@ const WebviewConfig = {
                         "[name][ext]"
                     ),
                 },
+                // node_modules/lethargy-ts/lib/index.js
+                {
+                    from: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "node_modules",
+                        "lethargy-ts",
+                        "lib",
+                        "index.js"
+                    ),
+                    to: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "dist",
+                        "lethargy-ts.js"
+                    ),
+                }
             ],
         }),
         new WebpackShellPlugin({

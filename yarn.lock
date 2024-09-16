@@ -4068,6 +4068,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lethargy-ts@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "lethargy-ts@npm:0.1.0"
+  checksum: 10c0/21cff27d900997c0f38d8132d65b0244083141a80f8bf04fa96e288eb32a9f2d706fea9d44ad432a0f8d6c43aa34beed26511a1ea1d4d443f97c8fb221455df1
+  languageName: node
+  linkType: hard
+
 "leven@npm:^3.1.0":
   version: 3.1.0
   resolution: "leven@npm:3.1.0"
@@ -5527,6 +5534,7 @@ __metadata:
     eslit: "npm:^6.0.0"
     globals: "npm:^15.9.0"
     html-webpack-plugin: "npm:^5.6.0"
+    lethargy-ts: "npm:^0.1.0"
     lodash: "npm:^4.17.21"
     lodash-cli: "npm:^4.17.5"
     mini-css-extract-plugin: "npm:^2.9.1"

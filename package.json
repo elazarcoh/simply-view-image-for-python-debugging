@@ -431,6 +431,7 @@
     "eslit": "^6.0.0",
     "globals": "^15.9.0",
     "html-webpack-plugin": "^5.6.0",
+    "lethargy-ts": "^0.1.0",
     "lodash-cli": "^4.17.5",
     "mini-css-extract-plugin": "^2.9.1",
     "prettier": "^3.3.3",

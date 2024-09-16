@@ -304,7 +304,7 @@ pub(crate) enum ChangeImageAction {
     Previous(ViewId),
     Pin(ViewableObjectId),
     Unpin(ViewableObjectId),
-    ViewShiftScroll(ViewId, CurrentlyViewing, i32),
+    ViewShiftScroll(ViewId, CurrentlyViewing, f64),
 }
 
 impl Reducer<AppState> for ChangeImageAction {
@@ -383,7 +383,7 @@ impl Reducer<AppState> for ChangeImageAction {
 
                     let current_index = current_drawing_options.as_batch_slice.1;
                     let new_index =
-                        (current_index as i32 + amount).clamp(0, batch_size as i32 - 1) as u32;
+                        ((current_index as f64 + amount) as i32).clamp(0, batch_size as i32 - 1) as u32;
                     if new_index != current_index {
                         state.drawing_options.borrow_mut().set(
                             id,

@@ -17,39 +17,39 @@ use wasm_bindgen::{convert::FromWasmAbi, prelude::*};
 
 #[wasm_bindgen()]
 extern "C" {
-//     #[wasm_bindgen(typescript_type = "LethargyConfig")]
-//     pub(crate) type _LethargyConfig;
+    #[wasm_bindgen(typescript_type = "LethargyConfig")]
+    pub(crate) type _LethargyConfig;
 
     pub(crate) type Lethargy;
 
     #[wasm_bindgen(js_namespace = lethargy_ts, constructor)]
     pub(crate) fn new() -> Lethargy;
 
-//     #[wasm_bindgen(constructor)]
-//     pub(crate) fn new(config: _LethargyConfig) -> Lethargy;
+    #[wasm_bindgen(js_namespace = lethargy_ts, constructor)]
+    pub(crate) fn new_with_options(config: _LethargyConfig) -> Lethargy;
 
-//     #[wasm_bindgen(method)]
-//     pub(crate) fn check(this: &Lethargy, e: &JsValue) -> bool;
+    #[wasm_bindgen(method)]
+    pub(crate) fn check(this: &Lethargy, e: &JsValue) -> bool;
 }
 
-// #[derive(Debug, Builder, Serialize, Deserialize)]
-// #[builder(build_fn(name = "_build"))]
-// pub(crate) struct LethargyConfig {
-//     #[builder(default = "32")]
-//     sensitivity: u32,
-//     #[builder(default = "150")]
-//     delay: u32,
-//     #[serde(rename = "increasingDeltasThreshold")]
-//     #[builder(default = "3")]
-//     increasing_deltas_threshold: u32,
-// }
+#[derive(Debug, Builder, Serialize, Deserialize)]
+#[builder(build_fn(name = "_build"))]
+pub(crate) struct LethargyConfig {
+    #[builder(default = "2")]
+    sensitivity: u32,
+    #[builder(default = "100")]
+    delay: u32,
+    #[serde(rename = "increasingDeltasThreshold")]
+    #[builder(default = "3")]
+    increasing_deltas_threshold: u32,
+}
 
-// impl LethargyConfigBuilder {
-//     pub(crate) fn build(&self) -> Result<_LethargyConfig> {
-//         let config = self
-//             ._build()
-//             .map_err(|e| anyhow!("Failed to build LethargyConfig: {:?}", e))?;
-//         let opts = JsValue::from_serde(&config).unwrap();
-//         Ok(opts.unchecked_into())
-//     }
-// }
+impl LethargyConfigBuilder {
+    pub(crate) fn build(&self) -> Result<_LethargyConfig> {
+        let config = self
+            ._build()
+            .map_err(|e| anyhow!("Failed to build LethargyConfig: {:?}", e))?;
+        let opts = JsValue::from_serde(&config).unwrap();
+        Ok(opts.unchecked_into())
+    }
+}

@@ -441,24 +441,27 @@ impl ShiftScrollHandler {
         let wheel = {
             let view_context = Rc::clone(&view_context);
             let view_element = view_element.clone();
-            let lethargy = lethargy_ts::Lethargy::new(
-            //     lethargy_ts::LethargyConfigBuilder::default()
-            //         .build()
-            //         .unwrap(),
+
+            let lethargy = lethargy_ts::Lethargy::new_with_options(
+                lethargy_ts::LethargyConfigBuilder::default()
+                    .build()
+                    .unwrap(),
             );
-            log::debug!("lethargy: {:?}", JsValue::from(&lethargy));
 
             let view_shift_scroll_handler = debounce_closure(
                 Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
                     if let Some(cv) = view_context.get_currently_viewing_for_view(view_id) {
-                        
-                        // let is_intentional = lethargy.check(&event);
-                        // log::debug!("is_intentional: {}", is_intentional);
+                        let is_intentional = lethargy.check(&event);
 
-                        let normalized = normalize_wheel(&event);
-                        let amount = normalized.pixel_y;
-                        let dispatch = Dispatch::<AppState>::global();
-                        dispatch.apply(ChangeImageAction::ViewShiftScroll(view_id, cv, amount));
+                        if is_intentional {
+                            let amount = event.delta_y() as f64;
+                            let dispatch = Dispatch::<AppState>::global();
+                            dispatch.apply(ChangeImageAction::ViewShiftScroll(
+                                view_id,
+                                cv,
+                                amount.signum(),
+                            ));
+                        }
                     }
                 }) as Box<dyn Fn(web_sys::WheelEvent)>),
                 250,

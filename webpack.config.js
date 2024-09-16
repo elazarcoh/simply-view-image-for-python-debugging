@@ -84,8 +84,7 @@ const webview3rdParty = {
         filename: "[name].js",
         library: {
             name: "[name]",
-            type: 'var',
-            export: 'default',
+            type: 'umd',
         },
     },
     resolve: {

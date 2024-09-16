@@ -446,6 +446,7 @@ impl ShiftScrollHandler {
             //         .build()
             //         .unwrap(),
             );
+            log::debug!("lethargy: {:?}", JsValue::from(&lethargy));
 
             let view_shift_scroll_handler = debounce_closure(
                 Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {

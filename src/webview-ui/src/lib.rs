@@ -52,7 +52,7 @@ fn run() -> Result<(), JsValue> {
     init_log();
 
     #[cfg(debug_assertions)]
-    web_sys::console::clear();
+    // web_sys::console::clear();
 
     let _ = global_style!(
         r#"

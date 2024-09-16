@@ -22,7 +22,7 @@ extern "C" {
 
     pub(crate) type Lethargy;
 
-    #[wasm_bindgen(constructor)]
+    #[wasm_bindgen(js_namespace = lethargy_ts, constructor)]
     pub(crate) fn new() -> Lethargy;
 
 //     #[wasm_bindgen(constructor)]

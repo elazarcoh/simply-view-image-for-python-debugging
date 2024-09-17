@@ -1,7 +1,7 @@
 import { getConfiguration } from "../../config";
 import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
-import { hasValue } from "../../utils/Utils";
+import { hasValue, valueOrEval } from "../../utils/Utils";
 import {
     ExtensionRequest,
     ExtensionResponse,
@@ -19,7 +19,7 @@ function expressingWithInfoIntoImageInfo(
         return undefined;
     }
     const viewables = infoOrError.safeUnwrap()[0];
-    const supported = viewables.filter((v) => v.supportsImageViewer).length > 0;
+    const supported = viewables.filter((v) => valueOrEval(v.supportsImageViewer)).length > 0;
     if (!supported) {
         return undefined;
     }

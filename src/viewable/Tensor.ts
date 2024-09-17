@@ -3,6 +3,7 @@ import TORCH_TENSOR_CODE from "../python/torch_tensor.py?raw";
 import { Viewable } from "./Viewable";
 import { atModule as m } from "../python-communication/BuildPythonCode";
 import { ArrayDataType } from "../common/datatype";
+import { getConfiguration } from "../config";
 
 export type NumpyTensorInfo = {
     type: string;
@@ -32,7 +33,7 @@ export const NumpyTensor: Viewable<NumpyTensorInfo> = {
             `${m("numpy_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: (() => getConfiguration("tensorsInViewer") ?? false) as Initializer<boolean>,
 };
 
 export type TorchTensorInfo = NumpyTensorInfo;

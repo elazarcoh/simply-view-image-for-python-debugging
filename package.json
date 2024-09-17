@@ -378,6 +378,11 @@
           "default": false,
           "description": "Show supported types diagnostic information in the tree view (mainly for debugging)."
         },
+        "svifpd.tensorsInViewer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show tensors in the viewer."
+        },
         "svifpd.useExperimentalDataTransfer": {
           "type": "boolean",
           "default": true,

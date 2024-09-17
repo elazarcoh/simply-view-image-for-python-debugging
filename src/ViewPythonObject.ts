@@ -15,6 +15,7 @@ import { serializeImageUsingSocketServer } from "./from-python-serialization/Soc
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewResponses } from "./webview/communication/createMessages";
 import { logWarn } from "./Logging";
+import { valueOrEval } from "./utils/Utils";
 
 export async function viewObject(
     obj: PythonObjectRepresentation,
@@ -26,7 +27,7 @@ export async function viewObject(
 ): Promise<void> {
     if (
         !(forceDiskSerialization ?? false) &&
-        viewable.supportsImageViewer === true &&
+        valueOrEval(viewable.supportsImageViewer) &&
         getConfiguration("useExperimentalViewer", undefined, false) === true
     ) {
         const response = await serializeImageUsingSocketServer(

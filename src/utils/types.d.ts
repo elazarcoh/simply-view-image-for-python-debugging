@@ -16,3 +16,5 @@ type FlattenedPromise<T> = unknown extends T
     : T extends Promise<infer _>
     ? T
     : Promise<T>;
+
+type Initializer<T> = T extends any ? (T | (() => T)) : never

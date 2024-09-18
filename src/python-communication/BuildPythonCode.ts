@@ -15,23 +15,37 @@ const OBJECT_SHAPE_IF_IT_HAS_ONE = `${PYTHON_MODULE_NAME}.object_shape_if_it_has
 const OPEN_SEND_AND_CLOSE = `${PYTHON_MODULE_NAME}.open_send_and_close`;
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
+
+${SETUP_RESULT_VARIABLE_NAME} = "Starting setup"
 try:
+    ${SETUP_RESULT_VARIABLE_NAME} = "Checking if module exists"
     ${PYTHON_MODULE_NAME}
+    ${SETUP_RESULT_VARIABLE_NAME} = "OK"
 except:
     
     from types import ModuleType
+    ${SETUP_RESULT_VARIABLE_NAME} = "Creating module"
     ${PYTHON_MODULE_NAME} = ModuleType('python_view_image_mod', '')
     try:
-        ${SETUP_RESULT_VARIABLE_NAME} = "OK"
+        ${SETUP_RESULT_VARIABLE_NAME} = "Running common setup"
         exec('''${COMMON}''', ${PYTHON_MODULE_NAME}.__dict__)
     except Exception as e:
         ${SETUP_RESULT_VARIABLE_NAME} = repr(e)
         del ${PYTHON_MODULE_NAME}
     else:
+        ${SETUP_RESULT_VARIABLE_NAME} = "Common setup no exceptions"
         try:
+            ${SETUP_RESULT_VARIABLE_NAME} = "Running socket client setup"
             exec('''${SOCKET_CLIENT}''', ${PYTHON_MODULE_NAME}.__dict__)
         except Exception as e:
             ${SETUP_RESULT_VARIABLE_NAME} = repr(e)
+        else:
+            ${SETUP_RESULT_VARIABLE_NAME} = "Socket client setup no exceptions"
+
+            ${SETUP_RESULT_VARIABLE_NAME} = "OK"
+
+finally:
+    globals()['${SETUP_RESULT_VARIABLE_NAME}'] = ${SETUP_RESULT_VARIABLE_NAME}
 `;
 
 function execInModuleCode(

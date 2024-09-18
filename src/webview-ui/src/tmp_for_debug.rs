@@ -8850,8 +8850,10 @@ fn image_data_with(
     width: u32,
     height: u32,
     data_ordering: DataOrdering,
-    batch_size: Option<u32>,
+    batch_info: Option<(u32, (u32, u32))>,
 ) -> ImageMessage {
+    let batch_size = batch_info.map(|(batch_size, _)| batch_size);
+    let batch_items_range = batch_info.map(|(_, range)| range);
     ImageMessage {
         image_id: ViewableObjectId::new(name),
         value_variable_kind: ValueVariableKind::Variable,
@@ -8862,7 +8864,7 @@ fn image_data_with(
         datatype,
         data_ordering,
         batch_size,
-        batch_items_range: batch_size.map(|batch_size| (0, batch_size)),
+        batch_items_range,
         min: None,
         max: None,
         additional_info: HashMap::from([
@@ -9523,7 +9525,10 @@ fn channels_first_image_gray_u8() -> ImageMessage {
     )
 }
 
-fn batch_gray_u8(batch_size: u32) -> ImageMessage {
+fn batch_gray_u8(batch_size: u32, start: u32, end: u32) -> ImageMessage {
+    if end <= start {
+        panic!("End must be greater than start");
+    }
     let (bytes_rgba, w, h) = image_rgba_data_u8();
     let data = bytes_rgba
         .chunks_exact(4)
@@ -9536,7 +9541,8 @@ fn batch_gray_u8(batch_size: u32) -> ImageMessage {
         })
         .collect::<Vec<u8>>();
 
-    let data = (0..batch_size)
+    let actual_num_items = end - start;
+    let data = (0..actual_num_items)
         .flat_map(|r| {
             data.iter()
                 .map(|x| (*x as f32 + (r * 10) as f32).min(255.0) as u8)
@@ -9552,7 +9558,7 @@ fn batch_gray_u8(batch_size: u32) -> ImageMessage {
         w,
         h,
         DataOrdering::HWC,
-        Some(batch_size),
+        Some((batch_size, (start, end))),
     )
 }
 
@@ -9596,12 +9602,12 @@ pub(crate) fn set_debug_images() {
         // matrix_4x4_with_scientific_nan_inf(),
 
         // Planar
-        channels_first_image_f32(),
-        channels_first_image_rgb_u8(),
-        channels_first_image_rgba_int16(),
-        channels_first_image_gray_u8(),
+        // channels_first_image_f32(),
+        // channels_first_image_rgb_u8(),
+        // channels_first_image_rgba_int16(),
+        // channels_first_image_gray_u8(),
         // Batch
-        batch_gray_u8(5),
+        batch_gray_u8(25, 0, 10),
     ];
 
     let dispatch = Dispatch::<AppState>::global();
@@ -9615,4 +9621,18 @@ pub(crate) fn set_debug_images() {
     }
 
     dispatch.apply(StoreAction::ReplaceData(images));
+}
+
+#[cfg(debug_assertions)]
+pub(crate) fn debug_action() {
+    use crate::app_state::app_state::{AppState, ImageObject};
+    use std::convert::TryFrom;
+
+    log::info!("Debug action!");
+
+    let new_items = batch_gray_u8(25, 10, 20);
+
+    let dispatch = Dispatch::<AppState>::global();
+    let new_item = ImageObject::try_from(new_items).unwrap();
+    dispatch.apply(StoreAction::UpdateData(new_item));
 }

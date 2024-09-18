@@ -8,12 +8,11 @@ use crate::{
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
-    },
-    vscode::vscode_requests::VSCodeRequests,
+    }, vscode::vscode_requests::VSCodeRequests
 };
 
 #[cfg(debug_assertions)]
-use crate::tmp_for_debug::set_debug_images;
+use crate::tmp_for_debug::{set_debug_images, debug_action};
 
 #[derive(PartialEq, Properties)]
 struct ToolbarProps {
@@ -192,6 +191,20 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     #[cfg(not(debug_assertions))]
     let debug_images_button = html! {};
 
+    #[cfg(debug_assertions)]
+    let debug_action_button = html! {
+        <IconButton
+            title={"Debug action"}
+            aria_label={"Debug action"}
+            icon={"codicon codicon-debug-alt"}
+            onclick={Callback::from({
+                |_| debug_action()
+            })}
+            />
+    };
+    #[cfg(not(debug_assertions))]
+    let debug_action_button = html! {};
+
     /* Expanded sidebar */
     let expanded_style = use_style!(
         r#"
@@ -236,6 +249,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
         }>
             <Toolbar>
                 {debug_images_button}
+                {debug_action_button}
                 {add_expression_button}
                 {refresh_button.clone()}
                 {pin_toggle_button}

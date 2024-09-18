@@ -222,6 +222,42 @@ pub(crate) enum StoreAction {
     UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
+    UpdateData(ImageObject),
+}
+
+fn handle_image(state: &AppState, image: ImageObject) -> Result<()> {
+    let image_id = image.image_id().clone();
+    let image_info = image.image_info().clone();
+    let batch_info = image_info.batch_info.clone();
+
+    state
+        .images
+        .borrow_mut()
+        .insert(image_id.clone(), image_info);
+
+    if batch_info.is_some() {
+        let current_drawing_options = state
+            .drawing_options
+            .borrow()
+            .get_or_default(&image_id)
+            .clone();
+        state.drawing_options.borrow_mut().set(
+            image_id.clone(),
+            DrawingOptions {
+                as_batch_slice: (true, current_drawing_options.as_batch_slice.1),
+                ..current_drawing_options
+            },
+        );
+    }
+
+    if let ImageObject::WithData(image_data) = image {
+        let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
+        tex_image.map(|tex_image| {
+            state.image_cache.borrow_mut().set(&image_id, tex_image);
+        })
+    } else {
+        Ok(())
+    }
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -285,41 +321,9 @@ impl Reducer<AppState> for StoreAction {
 
                 let mut errors = Vec::new();
                 for image in replacement_images.into_iter() {
-                    let image_id = image.image_id().clone();
-                    let image_info = image.image_info().clone();
-                    let batch_info = image_info.batch_info.clone();
-
-                    state
-                        .images
-                        .borrow_mut()
-                        .insert(image_id.clone(), image_info);
-
-                    if batch_info.is_some() {
-                        let current_drawing_options = state
-                            .drawing_options
-                            .borrow()
-                            .get_or_default(&image_id)
-                            .clone();
-                        state.drawing_options.borrow_mut().set(
-                            image_id.clone(),
-                            DrawingOptions {
-                                as_batch_slice: (true, current_drawing_options.as_batch_slice.1),
-                                ..current_drawing_options
-                            },
-                        );
-                    }
-
-                    if let ImageObject::WithData(image_data) = image {
-                        let tex_image =
-                            TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
-                        match tex_image {
-                            Ok(tex_image) => {
-                                state.image_cache.borrow_mut().set(&image_id, tex_image);
-                            }
-                            Err(e) => {
-                                errors.push(e);
-                            }
-                        }
+                    let res = handle_image(state, image);
+                    if let Err(e) = res {
+                        errors.push(e);
                     }
                 }
             }
@@ -345,6 +349,7 @@ impl Reducer<AppState> for StoreAction {
                     }
                 });
             }
+            StoreAction::UpdateData(image_object) => todo!(),
         };
 
         app_state

@@ -67,6 +67,7 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                             let image = view_context.get_image_for_view(view_id);
                             image.and_then(|image| {
                                 image.map(|image| {
+                                    let image = image.borrow();
                                     let dispatch = Dispatch::<AppState>::global();
                                     let as_batch_slice = dispatch
                                         .get()

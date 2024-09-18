@@ -43,6 +43,7 @@ fn make_info_items(
 
     // show legend if image is available and is shown as segmentation
     if let ImageAvailability::Available(texture) = image_availability {
+        let texture = texture.borrow();
         if drawing_options.coloring == Coloring::Segmentation {
             let colormap = get_segmentation_colormap(&dispatch)
                 .map_err(|e| {

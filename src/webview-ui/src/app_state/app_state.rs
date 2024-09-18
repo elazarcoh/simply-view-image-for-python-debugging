@@ -62,7 +62,7 @@ impl Listener for ImagesFetcher {
                             .clone();
                         if current_drawing_options.as_batch_slice.0 {
                             let current_index = current_drawing_options.as_batch_slice.1;
-                            if !image.textures.contains_key(&current_index) {
+                            if !image.borrow().textures.contains_key(&current_index) {
                                 log::debug!(
                                     "ImagesFetcher::on_change: batch item {} not in cache",
                                     image_id
@@ -229,13 +229,14 @@ fn handle_image(state: &AppState, image: ImageObject) -> Result<()> {
     let image_id = image.image_id().clone();
     let image_info = image.image_info().clone();
     let batch_info = image_info.batch_info.clone();
+    let is_batched = batch_info.is_some();
 
     state
         .images
         .borrow_mut()
         .insert(image_id.clone(), image_info);
 
-    if batch_info.is_some() {
+    if is_batched {
         let current_drawing_options = state
             .drawing_options
             .borrow()
@@ -253,7 +254,11 @@ fn handle_image(state: &AppState, image: ImageObject) -> Result<()> {
     if let ImageObject::WithData(image_data) = image {
         let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
         tex_image.map(|tex_image| {
-            state.image_cache.borrow_mut().set(&image_id, tex_image);
+            if is_batched {
+                state.image_cache.borrow_mut().update(&image_id, tex_image);
+            } else {
+                state.image_cache.borrow_mut().set(&image_id, tex_image);
+            }
         })
     } else {
         Ok(())
@@ -349,7 +354,9 @@ impl Reducer<AppState> for StoreAction {
                     }
                 });
             }
-            StoreAction::UpdateData(image_object) => todo!(),
+            StoreAction::UpdateData(image_object) => {
+                handle_image(state, image_object).unwrap();
+            }
         };
 
         app_state

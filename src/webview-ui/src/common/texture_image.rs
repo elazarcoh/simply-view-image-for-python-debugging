@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::Result;
 
-use super::{Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size};
+use super::{Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size, ValueVariableKind, ViewableObjectId};
 
 #[allow(non_camel_case_types)]
 pub(crate) enum TexturesGroup {
@@ -30,6 +30,22 @@ pub(crate) enum TexturesGroup {
         alpha: GLGuard<web_sys::WebGlTexture>,
     },
 }
+
+
+// #[derive(Debug, Clone, PartialEq)]
+// pub(crate) struct TextureImageInfo {
+//     pub image_id: ViewableObjectId,
+//     pub value_variable_kind: ValueVariableKind,
+//     pub expression: String,
+//     pub width: u32,
+//     pub height: u32,
+//     pub channels: Channels,
+//     pub datatype: Datatype,
+//     pub batch_info: Option<BatchInfo>,
+//     pub data_ordering: DataOrdering,
+//     pub additional_info: HashMap<String, String>,
+// }
+
 
 pub(crate) struct TextureImage {
     pub info: ImageInfo,
@@ -148,12 +164,12 @@ impl TextureImage {
             );
 
             (start..end)
-                .map(|batch_item| {
-                    let offset = (batch_item as usize * batch_item_size) as usize;
+                .map(|index| {
+                    let offset = ((index - start) as usize * batch_item_size) as usize;
                     let textures = Self::make_textures_group(&image, gl, offset)?;
                     let bytes = image.bytes[offset..offset + batch_item_size].to_vec();
 
-                    Ok((batch_item, textures, bytes))
+                    Ok((index, textures, bytes))
                 })
                 .collect::<Result<Vec<_>>>()?
                 .into_iter()
@@ -185,5 +201,14 @@ impl TextureImage {
             width: self.info.width as f32,
             height: self.info.height as f32,
         }
+    }
+
+    pub(crate) fn update(&mut self, other: TextureImage) {
+        // TODO verify that the other image has the same info
+
+        self.bytes.extend(other.bytes);
+        self.textures.extend(other.textures);
+
+        // TODO update computed info
     }
 }

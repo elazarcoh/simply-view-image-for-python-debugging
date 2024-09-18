@@ -1,6 +1,7 @@
 use anyhow::Ok;
 use anyhow::Result;
 use itertools::Itertools;
+use yewdux::mrc::Mrc;
 use std::iter::FromIterator;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
@@ -339,7 +340,7 @@ impl Renderer {
                         .drawing_options(image_view_data.image_id.as_ref().unwrap());
                     if drawing_options.as_batch_slice.0 {
                         let batch_index = drawing_options.as_batch_slice.1;
-                        if !texture.textures.contains_key(&batch_index) {
+                        if !texture.borrow().textures.contains_key(&batch_index) {
                             return Ok(());
                         }
                     }
@@ -360,10 +361,12 @@ impl Renderer {
     fn render_image(
         rendering_context: &dyn RenderingContext,
         rendering_data: &mut RenderingData,
-        texture: Rc<TextureImage>,
+        texture: Mrc<TextureImage>,
         image_view_data: &ImageViewData,
         view_name: &ViewId,
     ) {
+        let texture = texture.borrow();
+
         let gl = &rendering_data.gl;
         let mut _program_name;
         let texture_info = &texture.info;

@@ -1,6 +1,8 @@
+use yewdux::mrc::Mrc;
+
 use crate::{
     coloring::DrawingOptions,
-    common::{texture_image::TextureImage, ViewableObjectId, ImageInfo},
+    common::{texture_image::TextureImage, ImageInfo, ViewableObjectId},
 };
 use std::{collections::HashMap, rc::Rc};
 
@@ -8,13 +10,13 @@ use std::{collections::HashMap, rc::Rc};
 pub(crate) enum ImageAvailability {
     NotAvailable,
     Pending,
-    Available(Rc<TextureImage>),
+    Available(Mrc<TextureImage>),
 }
 
 impl PartialEq for ImageAvailability {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Available(l0), Self::Available(r0)) => Rc::ptr_eq(l0, r0),
+            (Self::Available(l0), Self::Available(r0)) => Mrc::eq(l0, r0),
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }
@@ -23,7 +25,7 @@ impl PartialEq for ImageAvailability {
 impl ImageAvailability {
     pub fn map<U, F>(self, f: F) -> Option<U>
     where
-        F: FnOnce(Rc<TextureImage>) -> U,
+        F: FnOnce(Mrc<TextureImage>) -> U,
     {
         match self {
             ImageAvailability::NotAvailable => None,
@@ -54,7 +56,19 @@ impl ImageCache {
 
     pub(crate) fn set(&mut self, id: &ViewableObjectId, image: TextureImage) {
         self.0
-            .insert(id.clone(), ImageAvailability::Available(Rc::new(image)));
+            .insert(id.clone(), ImageAvailability::Available(Mrc::new(image)));
+    }
+
+    pub(crate) fn update(&mut self, id: &ViewableObjectId, image: TextureImage) {
+        if let Some(ImageAvailability::Available(current_rc)) =
+            self.0.insert(id.clone(), ImageAvailability::Pending)
+        {
+            current_rc.with_mut(|current| current.update(image));
+            self.0
+                .insert(id.clone(), ImageAvailability::Available(current_rc));
+        } else {
+            self.set(id, image);
+        }
     }
 
     pub(crate) fn clear(&mut self) {
@@ -109,7 +123,10 @@ impl Images {
             .next()
     }
 
-    pub fn previous_image_id(&self, current_image_id: &ViewableObjectId) -> Option<&ViewableObjectId> {
+    pub fn previous_image_id(
+        &self,
+        current_image_id: &ViewableObjectId,
+    ) -> Option<&ViewableObjectId> {
         self.iter()
             .rev()
             .skip_while(|(id, _)| *id != current_image_id)

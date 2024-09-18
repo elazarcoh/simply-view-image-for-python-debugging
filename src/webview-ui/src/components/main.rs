@@ -72,23 +72,22 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                                         .get()
                                         .drawing_options
                                         .borrow()
-                                        .get(&image.image.info.image_id)
+                                        .get(&image.info.image_id)
                                         .map(|d| d.as_batch_slice)
                                         .unwrap_or((false, 0));
 
-                                    let (is_batched, batch_index) = as_batch_slice;
-                                    let offset = if is_batched {
-                                        calc_num_bytes_per_image(
-                                            image.image.info.width,
-                                            image.image.info.height,
-                                            image.image.info.channels,
-                                            image.image.info.datatype,
-                                        ) * batch_index as usize
+                                    let batch_index = if as_batch_slice.0 {
+                                        as_batch_slice.1
                                     } else {
                                         0
                                     };
 
-                                    PixelValue::from_image(&image.image, &pixel, offset)
+                                    PixelValue::from_image_info(
+                                        &image.info,
+                                        &image.bytes[&batch_index],
+                                        &pixel,
+                                    )
+
                                 })
                             })
                         });

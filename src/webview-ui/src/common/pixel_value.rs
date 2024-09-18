@@ -13,7 +13,7 @@ use crate::{
     math_utils::image_calculations::calc_num_bytes_per_plane,
 };
 
-use super::DataOrdering;
+use super::{DataOrdering, ImageInfo};
 
 static_assertions::const_assert_eq!(Channels::COUNT, 4); // If this is failing, you need to update the code below
 
@@ -58,20 +58,20 @@ impl PixelValue {
         }
     }
 
-    pub(crate) fn from_image(image: &ImageData, pixel: &UVec2, offest: usize) -> Self {
-        let c = image.info.channels;
-        let w = image.info.width;
-        let h = image.info.height;
-        let datatype = image.info.datatype;
+    pub(crate) fn from_image_info(info: &ImageInfo, bytes: &Vec<u8>, pixel: &UVec2) -> Self {
+        let c = info.channels;
+        let w = info.width;
+        let h = info.height;
+        let datatype = info.datatype;
 
         let pixel_index = (pixel.x + pixel.y * w) as usize;
         let bytes_per_element = datatype.num_bytes();
 
-        let bytes_array = match image.info.data_ordering {
+        let bytes_array = match info.data_ordering {
             DataOrdering::HWC => {
-                let start = offest + pixel_index * c as usize * bytes_per_element;
+                let start = pixel_index * c as usize * bytes_per_element;
                 let end = start + c as usize * bytes_per_element;
-                let bytes = &image.bytes[start..end];
+                let bytes = &bytes[start..end];
                 let mut bytes_array = [0_u8; 32];
                 bytes_array[..bytes.len()].copy_from_slice(bytes);
                 bytes_array
@@ -80,9 +80,9 @@ impl PixelValue {
                 let plane_size = calc_num_bytes_per_plane(w, h, datatype);
                 let mut bytes_array = [0_u8; 32];
                 for channel in 0..c as usize {
-                    let start = offest + plane_size * channel + pixel_index * bytes_per_element;
+                    let start = plane_size * channel + pixel_index * bytes_per_element;
                     let end = start + bytes_per_element;
-                    let bytes = &image.bytes[start..end];
+                    let bytes = &bytes[start..end];
                     bytes_array[channel * bytes_per_element..(channel + 1) * bytes_per_element]
                         .copy_from_slice(bytes);
                 }
@@ -92,9 +92,13 @@ impl PixelValue {
 
         Self {
             num_channels: c,
-            datatype: image.info.datatype,
+            datatype: info.datatype,
             bytes: bytes_array,
         }
+    }
+
+    pub(crate) fn from_image(image: &ImageData, pixel: &UVec2) -> Self {
+        Self::from_image_info(&image.info, &image.bytes, pixel)
     }
 
     pub(crate) fn get<T: Pod>(&self, channel: u32) -> &T {

@@ -271,7 +271,7 @@ impl Reducer<AppState> for StoreAction {
 
             StoreAction::AddTextureImage(image_id, texture_image) => {
                 log::debug!("AddTextureImage: {:?}", image_id);
-                let info = texture_image.image.info.clone();
+                let info = texture_image.info.clone();
                 state
                     .image_cache
                     .borrow_mut()

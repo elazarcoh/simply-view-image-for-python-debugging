@@ -366,13 +366,11 @@ impl Renderer {
     ) {
         let gl = &rendering_data.gl;
         let mut _program_name;
+        let texture_info = &texture.info;
 
-        let program = match (
-            texture.image.info.data_ordering,
-            texture.image.info.channels,
-        ) {
+        let program = match (texture_info.data_ordering, texture_info.channels) {
             (DataOrdering::HWC, _) | (DataOrdering::CHW, Channels::One) => {
-                match texture.image.info.datatype {
+                match texture_info.datatype {
                     Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32 => {
                         _program_name = "uint_image";
                         &rendering_data.programs.uint_image
@@ -392,7 +390,7 @@ impl Renderer {
                 }
             }
 
-            (DataOrdering::CHW, _) => match texture.image.info.datatype {
+            (DataOrdering::CHW, _) => match texture_info.datatype {
                 Datatype::Uint8 | Datatype::Uint32 | Datatype::Uint16 => {
                     _program_name = "planar_uint_image";
                     &rendering_data.programs.planar_uint_image
@@ -434,11 +432,8 @@ impl Renderer {
 
         let (drawing_options, global_drawing_options) =
             rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
-        let coloring_factors = calculate_color_matrix(
-            &texture.image.info,
-            &texture.image.computed_info,
-            &drawing_options,
-        );
+        let coloring_factors =
+            calculate_color_matrix(texture_info, &texture.computed_info, &drawing_options);
 
         let mut uniform_values = HashMap::new();
 
@@ -564,18 +559,13 @@ impl Renderer {
 
                     let pixel = UVec2::new(x as _, y as _);
 
-                    let offset = if is_batched {
-                        calc_num_bytes_per_image(
-                            texture.image.info.width,
-                            texture.image.info.height,
-                            texture.image.info.channels,
-                            texture.image.info.datatype,
-                        ) * batch_index as usize
-                    } else {
-                        0
-                    };
+                    let batch_index = if is_batched { batch_index } else { 0 };
 
-                    let pixel_value = PixelValue::from_image(&texture.image, &pixel, offset);
+                    let pixel_value = PixelValue::from_image_info(
+                        &texture.info,
+                        &texture.bytes[&batch_index],
+                        &pixel,
+                    );
 
                     // The actual pixel color might be different from the pixel value, depending on drawing options
                     let text_color = match drawing_options.coloring {

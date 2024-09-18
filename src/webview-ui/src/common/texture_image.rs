@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::Result;
 
-use super::{Channels, DataOrdering, Datatype, ImageData, Size};
+use super::{Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size};
 
 #[allow(non_camel_case_types)]
 pub(crate) enum TexturesGroup {
@@ -32,7 +32,9 @@ pub(crate) enum TexturesGroup {
 }
 
 pub(crate) struct TextureImage {
-    pub image: ImageData,
+    pub info: ImageInfo,
+    pub computed_info: ComputedInfo,
+    pub bytes: HashMap<u32, Vec<u8>>,
     pub textures: HashMap<u32, TexturesGroup>,
 }
 
@@ -132,7 +134,10 @@ impl TextureImage {
     }
 
     pub(crate) fn try_new(image: ImageData, gl: &web_sys::WebGl2RenderingContext) -> Result<Self> {
-        let textures = if let Some(batch_info) = &image.info.batch_info {
+        let info = image.info.clone();
+        let computed_info = image.computed_info.clone();
+
+        let items = if let Some(batch_info) = &image.info.batch_info {
             // Create textures for each batch item
             let (start, end) = batch_info.batch_items_range;
             let batch_item_size = calc_num_bytes_per_image(
@@ -144,30 +149,41 @@ impl TextureImage {
 
             (start..end)
                 .map(|batch_item| {
-                    let textures = Self::make_textures_group(
-                        &image,
-                        gl,
-                        (batch_item as usize * batch_item_size) as usize,
-                    )?;
-                    Ok((batch_item, textures))
+                    let offset = (batch_item as usize * batch_item_size) as usize;
+                    let textures = Self::make_textures_group(&image, gl, offset)?;
+                    let bytes = image.bytes[offset..offset + batch_item_size].to_vec();
+
+                    Ok((batch_item, textures, bytes))
                 })
                 .collect::<Result<Vec<_>>>()?
                 .into_iter()
-                .map(|(batch_item, textures)| Ok((batch_item, textures)))
+                .map(|(batch_item, textures, bytes)| Ok((batch_item, (textures, bytes))))
                 .collect::<Result<HashMap<_, _>>>()
         } else {
             let textures = Self::make_textures_group(&image, gl, 0)?;
-            Ok(HashMap::from_iter([(0u32, textures)]))
+            let bytes = image.bytes;
+            Ok(HashMap::from_iter([(0u32, (textures, bytes))]))
         }?;
 
-        let image = ImageData::from(image);
-        Ok(Self { image, textures })
+        let (textures, bytes): (Vec<_>, Vec<_>) = items
+            .into_iter()
+            .map(|(k, (v1, v2))| ((k, v1), (k, v2)))
+            .unzip();
+        let textures = HashMap::from_iter(textures);
+        let bytes = HashMap::from_iter(bytes);
+
+        Ok(Self {
+            info,
+            computed_info,
+            bytes,
+            textures,
+        })
     }
 
     pub(crate) fn image_size(&self) -> Size {
         Size {
-            width: self.image.info.width as f32,
-            height: self.image.info.height as f32,
+            width: self.info.width as f32,
+            height: self.info.height as f32,
         }
     }
 }

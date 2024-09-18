@@ -10,7 +10,7 @@ use crate::{
     app_state::{app_state::AppState, images::ImageAvailability},
     coloring::{self, Coloring, DrawingOptions},
     colormap::colormap,
-    common::{ViewableObjectId, ViewId},
+    common::{ViewId, ViewableObjectId},
     components::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
     },
@@ -50,14 +50,19 @@ fn make_info_items(
                 })
                 .ok()?;
             let coloring_factors = coloring::calculate_color_matrix(
-                &texture.image.info,
-                &texture.image.computed_info,
+                &texture.info,
+                &texture.computed_info,
                 &drawing_options,
             );
+            let batch_index = if drawing_options.as_batch_slice.0 {
+                drawing_options.as_batch_slice.1
+            } else {
+                0
+            };
             if let Ok(values) = math_utils::image_calculations::image_unique_values_on_bytes(
-                &texture.image.bytes,
-                texture.image.info.datatype,
-                texture.image.info.channels,
+                &texture.bytes[&batch_index],
+                texture.info.datatype,
+                texture.info.channels,
             ) {
                 let seg_values = values
                     .iter()

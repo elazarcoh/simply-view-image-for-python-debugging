@@ -9573,39 +9573,39 @@ pub(crate) fn set_debug_images() {
     log::debug!("creating debug image texture");
     let images: Vec<ImageMessage> = vec![
         // Unsigned Int
-        // image_texture_rgba_u8(),
-        // image_texture_rgba_u16(),
-        // image_texture_rgba_u32(),
-        // image_texture_bool_rgba(),
-        // image_texture_rgb_u8(),
-        // image_texture_rg_u8(),
-        // image_texture_gray_u8(),
-        // image_texture_gray_u8_not_normalized(50, 100),
-        // heatmap_texture_u16(),
-        // segmentation_texture_u8(),
-        // image_fully_transparent_u8(),
-        // rectangle_image_u8(),
+        image_texture_rgba_u8(),
+        image_texture_rgba_u16(),
+        image_texture_rgba_u32(),
+        image_texture_bool_rgba(),
+        image_texture_rgb_u8(),
+        image_texture_rg_u8(),
+        image_texture_gray_u8(),
+        image_texture_gray_u8_not_normalized(50, 100),
+        heatmap_texture_u16(),
+        segmentation_texture_u8(),
+        image_fully_transparent_u8(),
+        rectangle_image_u8(),
 
-        // // Int
-        // image_texture_rgba_i8(),
-        // image_texture_rgba_i16(),
-        // image_texture_rgba_i32(),
+        // Int
+        image_texture_rgba_i8(),
+        image_texture_rgba_i16(),
+        image_texture_rgba_i32(),
 
-        // // Float
-        // image_texture_rgba_f32(),
-        // image_texture_rgb_f32(),
-        // image_texture_gray_f32(),
-        // image_texture_gray_f32_not_normalized(0.0, 0.5),
-        // image_texture_gray_f32_not_normalized(-100.0, 100.0),
-        // image_texture_with_transparency(),
-        // image_texture_bool_gray(),
-        // matrix_4x4_with_scientific_nan_inf(),
+        // Float
+        image_texture_rgba_f32(),
+        image_texture_rgb_f32(),
+        image_texture_gray_f32(),
+        image_texture_gray_f32_not_normalized(0.0, 0.5),
+        image_texture_gray_f32_not_normalized(-100.0, 100.0),
+        image_texture_with_transparency(),
+        image_texture_bool_gray(),
+        matrix_4x4_with_scientific_nan_inf(),
 
         // Planar
-        // channels_first_image_f32(),
-        // channels_first_image_rgb_u8(),
-        // channels_first_image_rgba_int16(),
-        // channels_first_image_gray_u8(),
+        channels_first_image_f32(),
+        channels_first_image_rgb_u8(),
+        channels_first_image_rgba_int16(),
+        channels_first_image_gray_u8(),
         // Batch
         batch_gray_u8(25, 0, 10),
     ];

@@ -20,6 +20,14 @@ struct RequestImageData {
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
+struct RequestBatchItemData {
+    image_id: ViewableObjectId,
+    expression: String,
+    batch_item: u32,
+    currently_holding: Option<Vec<u32>>,
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct RequestImages {}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
@@ -36,6 +44,7 @@ struct EditExpression {
 enum FromWebviewMessage {
     WebviewReady(WebviewReady),
     RequestImageData(RequestImageData),
+    RequestBatchItemData(RequestBatchItemData),
     RequestImages(RequestImages),
     AddExpression(AddExpression),
     EditExpression(EditExpression),
@@ -92,6 +101,23 @@ impl VSCodeRequests {
             image_id,
             expression,
         }))
+    }
+
+    pub(crate) fn request_batch_item_data(
+        image_id: ViewableObjectId,
+        expression: String,
+        batch_item: u32,
+        currently_holding: Option<Vec<u32>>,
+    ) -> MessageId {
+        log::debug!("VSCodeRequests::request_batch_item_data: {:?}", image_id);
+        Self::send_message(FromWebviewMessage::RequestBatchItemData(
+            RequestBatchItemData {
+                image_id,
+                expression,
+                batch_item,
+                currently_holding,
+            },
+        ))
     }
 
     pub(crate) fn webview_ready() -> MessageId {

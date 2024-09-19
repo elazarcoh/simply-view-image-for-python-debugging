@@ -1,8 +1,8 @@
 use anyhow::Ok;
 use anyhow::Result;
 use itertools::Itertools;
-use yewdux::mrc::Mrc;
 use std::iter::FromIterator;
+use yewdux::mrc::Mrc;
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -333,7 +333,7 @@ impl Renderer {
         if let Some(image_id) = &image_view_data.image_id {
             match rendering_context.texture_by_id(image_id) {
                 crate::app_state::images::ImageAvailability::NotAvailable
-                | crate::app_state::images::ImageAvailability::Pending => {}
+                | crate::app_state::images::ImageAvailability::Pending(_) => {}
                 crate::app_state::images::ImageAvailability::Available(texture) => {
                     // for batch, we need to check if the batch item is available
                     let (drawing_options, _) = rendering_context

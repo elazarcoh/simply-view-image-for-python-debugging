@@ -137,7 +137,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                 ImageAvailability::NotAvailable => Some(html! {
                     <div>{"No Data"}</div>
                 }),
-                ImageAvailability::Pending => Some(html! {
+                ImageAvailability::Pending(_) => Some(html! {
                     <Spinner />
                 }),
                 ImageAvailability::Available(_) => None,

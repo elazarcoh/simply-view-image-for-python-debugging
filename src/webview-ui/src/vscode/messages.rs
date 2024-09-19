@@ -23,6 +23,7 @@ pub(crate) struct ImageMessage {
     pub channels: Channels,
     pub datatype: Datatype,
     pub data_ordering: DataOrdering,
+    pub is_batched: bool,
     pub batch_size: Option<u32>,
     pub batch_items_range: Option<(u32, u32)>,
     pub min: Option<Vec<f32>>,

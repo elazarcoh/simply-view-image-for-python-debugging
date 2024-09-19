@@ -7,6 +7,7 @@ use crate::common::texture_image::TextureImage;
 use crate::common::{CurrentlyViewing, ImageData, ImageInfo, ViewId, ViewableObjectId};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
+use itertools::Itertools;
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
@@ -28,7 +29,9 @@ impl Listener for ImagesFetcher {
         for cv in currently_viewing_objects {
             match cv {
                 crate::common::CurrentlyViewing::Image(image_id) => {
-                    if !state.image_cache.borrow().has(&image_id) {
+                    let current = state.image_cache.borrow().get(&image_id);
+
+                    if current == ImageAvailability::NotAvailable {
                         log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
                             log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
@@ -41,18 +44,33 @@ impl Listener for ImagesFetcher {
                     }
                 }
                 crate::common::CurrentlyViewing::BatchItem(image_id) => {
-                    if !state.image_cache.borrow().has(&image_id) {
+                    let current = state.image_cache.borrow().get(&image_id);
+
+                    if let ImageAvailability::NotAvailable = current {
                         log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
-                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                            VSCodeRequests::request_image_data(
+                            let expression = image_info.expression.clone();
+                            let current_index = state
+                                .drawing_options
+                                .borrow()
+                                .get_or_default(&image_id)
+                                .as_batch_slice
+                                .1;
+                            log::debug!(
+                                "ImagesFetcher::on_change: fetching item {} for image {}",
+                                current_index,
+                                image_id
+                            );
+                            VSCodeRequests::request_batch_item_data(
                                 image_id.clone(),
-                                image_info.expression.clone(),
+                                expression,
+                                current_index,
+                                None,
                             );
                             state.image_cache.borrow_mut().set_pending(&image_id);
                         }
-                    } else if let ImageAvailability::Available(image) =
-                        state.image_cache.borrow().get(&image_id)
+                    } else if let ImageAvailability::Pending(Some(image))
+                    | ImageAvailability::Available(image) = current
                     {
                         // generally available, but maybe batch item is not.
                         let current_drawing_options = state
@@ -60,25 +78,43 @@ impl Listener for ImagesFetcher {
                             .borrow()
                             .get_or_default(&image_id)
                             .clone();
-                        if current_drawing_options.as_batch_slice.0 {
-                            let current_index = current_drawing_options.as_batch_slice.1;
-                            if !image.borrow().textures.contains_key(&current_index) {
+
+                        let (is_batched, current_index) = current_drawing_options.as_batch_slice;
+                        if is_batched {
+                            let has_item = image.borrow().textures.contains_key(&current_index);
+                            if has_item {
+                                // changed back to batch item that is already in cache
+                                let _ = state
+                                    .image_cache
+                                    .borrow_mut()
+                                    .try_set_available(&image_id)
+                                    .map_err(|e| log::error!("ImagesFetcher::on_change: {}", e));
+                            } else {
+                                let expression = state
+                                    .images
+                                    .borrow()
+                                    .get(&image_id)
+                                    .unwrap()
+                                    .expression
+                                    .clone();
+                                let currently_holding =
+                                    image.borrow().textures.keys().copied().collect_vec();
                                 log::debug!(
-                                    "ImagesFetcher::on_change: batch item {} not in cache",
+                                    "ImagesFetcher::on_change: fetching item {} for image {}",
+                                    current_index,
                                     image_id
                                 );
-                                todo!();
-                                // VSCodeRequests::request_batch_item(
-                                //     image_id.clone(),
-                                //     current_index,
-                                //     image.batch_info.as_ref().unwrap().batch_size,
-                                // );
-                                // state
-                                //     .image_cache
-                                //     .borrow_mut()
-                                //     .set_pending_batch_item(&image_id, current_index);
+                                VSCodeRequests::request_batch_item_data(
+                                    image_id.clone(),
+                                    expression,
+                                    current_index,
+                                    Some(currently_holding),
+                                );
+                                state.image_cache.borrow_mut().set_pending(&image_id);
                             }
                         }
+                    } else {
+                        log::debug!("ImagesFetcher::on_change: current {:?} ", current);
                     }
                 }
             }
@@ -219,13 +255,14 @@ pub(crate) enum StoreAction {
     SetImageToView(ViewableObjectId, ViewId),
     SetAsBatched(ViewableObjectId, bool),
     AddTextureImage(ViewableObjectId, Box<TextureImage>),
+    AddImageWithData(ViewableObjectId, ImageData),
     UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
     UpdateData(ImageObject),
 }
 
-fn handle_image(state: &AppState, image: ImageObject) -> Result<()> {
+fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     let image_id = image.image_id().clone();
     let image_info = image.image_info().clone();
     let batch_info = image_info.batch_info.clone();
@@ -235,6 +272,24 @@ fn handle_image(state: &AppState, image: ImageObject) -> Result<()> {
         .images
         .borrow_mut()
         .insert(image_id.clone(), image_info);
+
+    if let ImageObject::WithData(image_data) = image {
+        let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;
+        log::debug!(
+            "updaing image cache: {:?} is_batched: {}, tex_image: {:?}",
+            image_id,
+            is_batched,
+            tex_image
+        );
+        if is_batched {
+            state.image_cache.borrow_mut().update(&image_id, tex_image);
+        } else {
+            state
+                .image_cache
+                .borrow_mut()
+                .set_image(&image_id, tex_image);
+        }
+    }
 
     if is_batched {
         let current_drawing_options = state
@@ -251,18 +306,7 @@ fn handle_image(state: &AppState, image: ImageObject) -> Result<()> {
         );
     }
 
-    if let ImageObject::WithData(image_data) = image {
-        let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
-        tex_image.map(|tex_image| {
-            if is_batched {
-                state.image_cache.borrow_mut().update(&image_id, tex_image);
-            } else {
-                state.image_cache.borrow_mut().set(&image_id, tex_image);
-            }
-        })
-    } else {
-        Ok(())
-    }
+    Ok(())
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -280,8 +324,18 @@ impl Reducer<AppState> for StoreAction {
                 state
                     .image_cache
                     .borrow_mut()
-                    .set(&image_id, *texture_image);
+                    .set_image(&image_id, *texture_image);
                 state.images.borrow_mut().insert(image_id, info);
+            }
+
+            StoreAction::AddImageWithData(image_id, image_data) => {
+                log::debug!("AddImageWithData: {:?}", image_id);
+                let image_object = ImageObject::WithData(image_data);
+                handle_received_image(state, image_object)
+                    .map_err(|e| {
+                        log::error!("Error handling image data: {:?}", e);
+                    })
+                    .ok();
             }
 
             StoreAction::UpdateDrawingOptions(image_id, update) => {
@@ -326,7 +380,7 @@ impl Reducer<AppState> for StoreAction {
 
                 let mut errors = Vec::new();
                 for image in replacement_images.into_iter() {
-                    let res = handle_image(state, image);
+                    let res = handle_received_image(state, image);
                     if let Err(e) = res {
                         errors.push(e);
                     }
@@ -355,7 +409,7 @@ impl Reducer<AppState> for StoreAction {
                 });
             }
             StoreAction::UpdateData(image_object) => {
-                handle_image(state, image_object).unwrap();
+                handle_received_image(state, image_object).unwrap();
             }
         };
 

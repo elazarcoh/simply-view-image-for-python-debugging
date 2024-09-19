@@ -386,6 +386,9 @@ def create_tensor_message(
     start = options.get("start", 0)
     stop = options.get("stop", start + max_num_items_to_send)
 
+    start = max(0, min(start, batch_size))
+    stop = max(0, min(stop, batch_size))
+
     sliced_tensor = tensor[start:stop]
     if _Internal.is_torch(sliced_tensor):
         sliced_tensor = sliced_tensor.cpu().numpy()

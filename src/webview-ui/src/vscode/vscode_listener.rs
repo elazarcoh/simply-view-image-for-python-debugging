@@ -35,7 +35,7 @@ impl VSCodeListener {
     }
 
     fn handle_incoming_message(message: FromExtensionMessage) {
-        let _handle_result: Result<()> = match message {
+        match message {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
                 ExtensionResponse::ReplaceData(replacement_data) => Ok(
@@ -54,7 +54,9 @@ impl VSCodeListener {
                     Self::handle_configuration_request(configurations)
                 }
             },
-        };
+        }
+        .map_err(|e| log::error!("Error handling message: {:?}", e))
+        .ok();
     }
 
     fn handle_image_data_response(image_message: ImageMessage) -> Result<()> {
@@ -63,13 +65,7 @@ impl VSCodeListener {
             let dispatch = Dispatch::<AppState>::global();
             let image_data = ImageData::try_from(image_message)?;
 
-            dispatch.apply(StoreAction::AddTextureImage(
-                image_id.clone(),
-                Box::new(TextureImage::try_new(
-                    image_data,
-                    dispatch.get().gl.as_ref().unwrap(),
-                )?),
-            ));
+            dispatch.apply(StoreAction::AddImageWithData(image_id.clone(), image_data));
             Ok(())
         } else {
             Err(anyhow!("ImageMessage without image data (`bytes` field)"))

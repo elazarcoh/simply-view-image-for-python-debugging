@@ -33,6 +33,7 @@ function expressingWithInfoIntoImageInfo(
         height: 0,
         channels: 1,
         datatype: "float32",
+        is_batched: viewables.some((v) => ["tensor"].includes(v.group)),
         batch_size: null,
         batch_items_range: null,
         additional_info: info,

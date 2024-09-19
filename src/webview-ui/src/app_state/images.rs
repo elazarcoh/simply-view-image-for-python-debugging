@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use yewdux::mrc::Mrc;
 
 use crate::{
@@ -6,10 +7,10 @@ use crate::{
 };
 use std::{collections::HashMap, rc::Rc};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) enum ImageAvailability {
     NotAvailable,
-    Pending,
+    Pending(Option<Mrc<TextureImage>>),
     Available(Mrc<TextureImage>),
 }
 
@@ -29,7 +30,7 @@ impl ImageAvailability {
     {
         match self {
             ImageAvailability::NotAvailable => None,
-            ImageAvailability::Pending => None,
+            ImageAvailability::Pending(_) => None,
             ImageAvailability::Available(image) => Some(f(image)),
         }
     }
@@ -51,23 +52,40 @@ impl ImageCache {
     }
 
     pub(crate) fn set_pending(&mut self, id: &ViewableObjectId) {
-        self.0.insert(id.clone(), ImageAvailability::Pending);
+        if let Some(ImageAvailability::Pending(_)) = self.0.get(id) {
+            // do nothing
+        } else if let Some(ImageAvailability::Available(current)) = self.0.remove(id) {
+            self.0
+                .insert(id.clone(), ImageAvailability::Pending(Some(current)));
+        } else {
+            self.0.insert(id.clone(), ImageAvailability::Pending(None));
+        }
     }
 
-    pub(crate) fn set(&mut self, id: &ViewableObjectId, image: TextureImage) {
+    pub(crate) fn try_set_available(&mut self, id: &ViewableObjectId) -> Result<()> {
+        if let Some(ImageAvailability::Available(_)) = self.0.get(id) {
+            Ok(())
+        } else if let Some(ImageAvailability::Pending(Some(image))) = self.0.remove(id) {
+            self.0
+                .insert(id.clone(), ImageAvailability::Available(image));
+            Ok(())
+        } else {
+            Err(anyhow!("Image not pending: {:?}", id))
+        }
+    }
+
+    pub(crate) fn set_image(&mut self, id: &ViewableObjectId, image: TextureImage) {
         self.0
             .insert(id.clone(), ImageAvailability::Available(Mrc::new(image)));
     }
 
     pub(crate) fn update(&mut self, id: &ViewableObjectId, image: TextureImage) {
-        if let Some(ImageAvailability::Available(current_rc)) =
-            self.0.insert(id.clone(), ImageAvailability::Pending)
-        {
-            current_rc.with_mut(|current| current.update(image));
+        if let Some(ImageAvailability::Available(current)) = self.0.remove(id) {
+            current.with_mut(|img| img.update(image));
             self.0
-                .insert(id.clone(), ImageAvailability::Available(current_rc));
+                .insert(id.clone(), ImageAvailability::Available(current));
         } else {
-            self.set(id, image);
+            self.set_image(id, image);
         }
     }
 

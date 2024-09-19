@@ -3,6 +3,7 @@ import {
     EditExpression,
     FromWebviewMessageWithId,
     MessageId,
+    RequestBatchItemData,
     RequestImageData,
 } from "../webview";
 import { findExpressionViewables } from "../../PythonObjectInfo";
@@ -21,6 +22,7 @@ import {
     editExpression,
 } from "../../image-watch-tree/PythonObjectsList";
 import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
+import { clamp } from "lodash";
 
 export class WebviewMessageHandler {
     readonly client = Container.get(WebviewClient);
@@ -28,7 +30,6 @@ export class WebviewMessageHandler {
     handleImagesRequest(id: MessageId) {
         this.client.sendResponse(id, WebviewResponses.imagesObjects());
     }
-
     async handleImageDataRequest(id: MessageId, args: RequestImageData) {
         const debugSession = vscode.debug.activeDebugSession;
         if (debugSession === undefined) {
@@ -43,7 +44,7 @@ export class WebviewMessageHandler {
 
         const objectViewables = await findExpressionViewables(
             args.expression,
-            debugSession
+            debugSession,
         );
 
         if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
@@ -55,19 +56,65 @@ export class WebviewMessageHandler {
                 ? { variable: args.expression }
                 : { expression: args.expression },
             objectViewables.safeUnwrap()[0],
-            debugSession
+            debugSession,
         );
         if (response.err) {
             logError(
                 "Error retrieving image using socket",
-                errorMessage(response)
+                errorMessage(response),
             );
             return undefined;
         }
 
         this.client.sendResponse(
             id,
-            WebviewResponses.imageData(response.safeUnwrap())
+            WebviewResponses.imageData(response.safeUnwrap()),
+        );
+    }
+
+    async handleBatchItemDataRequest(id: string, args: RequestBatchItemData) {
+        const debugSession = vscode.debug.activeDebugSession;
+        if (debugSession === undefined) {
+            return undefined;
+        }
+
+        const currentPythonObjectsList =
+            activeDebugSessionData(debugSession)?.currentPythonObjectsList;
+        const objectItemKind =
+            currentPythonObjectsList.find(args.expression)?.type ??
+            "expression";
+
+        const objectViewables = await findExpressionViewables(
+            args.expression,
+            debugSession,
+        );
+
+        if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
+            return undefined;
+        }
+
+        const start = Math.max(args.batch_item - 1, 0);
+        const stop = Math.max(args.batch_item + 1, 0);
+
+        const response = await serializeImageUsingSocketServer(
+            objectItemKind === "variable"
+                ? { variable: args.expression }
+                : { expression: args.expression },
+            objectViewables.safeUnwrap()[0],
+            debugSession,
+            { start, stop },
+        );
+        if (response.err) {
+            logError(
+                "Error retrieving image using socket",
+                errorMessage(response),
+            );
+            return undefined;
+        }
+
+        this.client.sendResponse(
+            id,
+            WebviewResponses.imageData(response.safeUnwrap()),
         );
     }
 
@@ -107,6 +154,8 @@ export class WebviewMessageHandler {
                 return this.handleWebviewReady(id);
             case "RequestImages":
                 return this.handleImagesRequest(id);
+            case "RequestBatchItemData":
+                return this.handleBatchItemDataRequest(id, message);
             case "RequestImageData":
                 return this.handleImageDataRequest(id, message);
             case "AddExpression":

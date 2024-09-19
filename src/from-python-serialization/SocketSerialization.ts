@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { Viewable } from "../viewable/Viewable";
-import { logDebug } from "../Logging";
+import { logDebug, logWarn } from "../Logging";
 import { isExpressionSelection, selectionString } from "../utils/VSCodeUtils";
-import { constructOpenSendAndCloseCode } from "../python-communication/BuildPythonCode";
+import { constructOpenSendAndCloseCode, OpenSendAndCloseOptions } from "../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../python-communication/RunPythonCode";
 import Container from "typedi";
 import { SocketServer } from "../python-communication/socket-based/Server";
@@ -44,10 +44,22 @@ const SOCKET_PROTOCOL_ORDERING_TO_WEBVIEW_ORDERING: {
     [DimensionOrder.CHW]: "chw",
 };
 
+export type SerializePythonObjectUsingSocketServerOptions = 
+    | { start: number; stop: number; }
+;
+
+function makeOptions(options: SerializePythonObjectUsingSocketServerOptions): OpenSendAndCloseOptions | undefined {
+    if (options.start !== undefined && options.stop !== undefined) {
+        return { start: options.start, stop: options.stop };
+    }
+    logWarn("Invalid options for serializePythonObjectUsingSocketServer: ", options);
+}
+
 export async function serializePythonObjectUsingSocketServer(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
-    session: vscode.DebugSession
+    session: vscode.DebugSession,
+    options?: SerializePythonObjectUsingSocketServerOptions
 ): Promise<Result<{ header: MessageChunkHeader; data: Buffer }>> {
     const socketServer = Container.get(SocketServer);
 
@@ -57,7 +69,8 @@ export async function serializePythonObjectUsingSocketServer(
     const code = constructOpenSendAndCloseCode(
         socketServer.portNumber,
         requestId,
-        objectAsString
+        objectAsString,
+        options ? makeOptions(options) : undefined
     );
     logDebug("Sending code to python: ", code);
     logDebug("Sending request to python with reqId ", requestId);
@@ -84,12 +97,14 @@ export async function serializePythonObjectUsingSocketServer(
 export async function serializeImageUsingSocketServer(
     obj: PythonObjectRepresentation,
     viewable: Viewable,
-    session: vscode.DebugSession
+    session: vscode.DebugSession,
+    options?: SerializePythonObjectUsingSocketServerOptions
 ): Promise<Result<ImageMessage>> {
     const response = await serializePythonObjectUsingSocketServer(
         obj,
         viewable,
-        session
+        session,
+        options
     );
     if (response.err) {
         return Err("Error retrieving image using socket");
@@ -148,7 +163,7 @@ export async function serializeImageUsingSocketServer(
             return Err(msg);
         }
 
-        const image_message: ImageMessage = {
+        const imageMessage: ImageMessage = {
             image_id: expression,
             value_variable_kind: isExpressionSelection(obj)
                 ? "expression"
@@ -158,14 +173,15 @@ export async function serializeImageUsingSocketServer(
             height: arrayInfo.height,
             channels: arrayInfo.channels as 1 | 2 | 3 | 4,
             datatype: webviewDatatype,
+            is_batched: arrayInfo.isBatched,
             batch_size: arrayInfo.isBatched ? arrayInfo.batchSize : null,
             batch_items_range: arrayInfo.isBatched ? [arrayInfo.batchItemsStart, arrayInfo.batchItemsEnd] : null,
             additional_info: additionalInfo,
-            min: arrayInfo.mins,
-            max: arrayInfo.maxs,
+            min: arrayInfo.mins.length === 0 ? null : arrayInfo.mins,
+            max: arrayInfo.maxs.length === 0 ? null : arrayInfo.maxs,
             data_ordering: arrayInfo.dimensionOrder,
             bytes: arrayBuffer,
         };
-        return Ok(image_message);
+        return Ok(imageMessage);
     }
 }

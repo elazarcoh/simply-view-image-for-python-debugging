@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::FromIterator};
+use std::{collections::HashMap, fmt, iter::FromIterator};
 
 use crate::{
     math_utils::image_calculations::{calc_num_bytes_per_image, calc_num_bytes_per_plane},
@@ -6,7 +6,10 @@ use crate::{
 };
 use anyhow::Result;
 
-use super::{Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size, ValueVariableKind, ViewableObjectId};
+use super::{
+    Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size, ValueVariableKind,
+    ViewableObjectId,
+};
 
 #[allow(non_camel_case_types)]
 pub(crate) enum TexturesGroup {
@@ -31,7 +34,6 @@ pub(crate) enum TexturesGroup {
     },
 }
 
-
 // #[derive(Debug, Clone, PartialEq)]
 // pub(crate) struct TextureImageInfo {
 //     pub image_id: ViewableObjectId,
@@ -45,7 +47,6 @@ pub(crate) enum TexturesGroup {
 //     pub data_ordering: DataOrdering,
 //     pub additional_info: HashMap<String, String>,
 // }
-
 
 pub(crate) struct TextureImage {
     pub info: ImageInfo,
@@ -210,5 +211,15 @@ impl TextureImage {
         self.textures.extend(other.textures);
 
         // TODO update computed info
+    }
+}
+
+impl fmt::Debug for TextureImage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TextureImage")
+            .field("info", &self.info)
+            .field("computed_info", &self.computed_info)
+            .field("bytes", &format!("[{} bytes]", self.bytes.len()))
+            .finish()
     }
 }

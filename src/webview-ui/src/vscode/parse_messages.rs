@@ -20,11 +20,10 @@ impl From<ImageMessage> for ImageInfo {
             datatype: image_message.datatype,
             data_ordering: image_message.data_ordering,
             batch_info: image_message
-                .batch_size
-                .zip(image_message.batch_items_range)
-                .map(|(batch_size, batch_items_range)| crate::common::BatchInfo {
-                    batch_size,
-                    batch_items_range,
+                .is_batched
+                .then_some(crate::common::BatchInfo {
+                    batch_size: image_message.batch_size.unwrap_or_default(),
+                    batch_items_range: image_message.batch_items_range.unwrap_or_default(),
                 }),
             additional_info: image_message.additional_info,
         }

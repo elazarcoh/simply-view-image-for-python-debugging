@@ -13,7 +13,7 @@ import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSer
 import { getConfiguration } from "./config";
 import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
 import { WebviewClient } from "./webview/communication/WebviewClient";
-import { WebviewResponses } from "./webview/communication/createMessages";
+import { WebviewRequests } from "./webview/communication/createMessages";
 import { logWarn } from "./Logging";
 import { valueOrEval } from "./utils/Utils";
 
@@ -49,7 +49,7 @@ export async function viewObject(
             const webviewClient = Container.get(WebviewClient);
             await webviewClient.reveal();
             webviewClient.sendRequest(
-                WebviewResponses.showImage(response.safeUnwrap())
+                WebviewRequests.showImage(response.safeUnwrap())
             );
         }
     } else {

@@ -75,9 +75,7 @@ export class WebviewRequests {
                 getConfiguration("viewerUi.invertMouseWheelZoom") ?? null,
         };
     }
-}
 
-export class WebviewResponses {
     static showImage(image_data: ImageMessage): ExtensionRequest & {
         type: "ShowImage";
     } {
@@ -87,6 +85,9 @@ export class WebviewResponses {
             options: {},
         };
     }
+}
+
+export class WebviewResponses {
 
     static imagesObjects(): ExtensionResponse & {
         type: "ReplaceData";

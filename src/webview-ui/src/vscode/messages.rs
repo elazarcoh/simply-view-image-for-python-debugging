@@ -41,7 +41,7 @@ pub(crate) struct ImageMessage {
 
     #[tsify(type = "ArrayBuffer | null")]
     #[serde(with = "serde_bytes")]
-    pub bytes: Option<Vec<u8>>,
+    pub bytes: Vec<u8>,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

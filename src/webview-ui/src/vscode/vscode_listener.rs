@@ -85,7 +85,7 @@ impl VSCodeListener {
         Ok(())
     }
 
-    fn handle_replace_data_request(replacement_images: ImageObjects) {
+    fn handle_replace_data_request(replacement_images: ImagePlaceholders) {
         let dispatch = Dispatch::<AppState>::global();
         let (images, errors): (Vec<_>, Vec<_>) = replacement_images
             .0

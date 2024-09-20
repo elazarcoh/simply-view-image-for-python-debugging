@@ -13,6 +13,15 @@ impl MessageId {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
+pub(crate) struct ImagePlaceholderMessage {
+    pub image_id: ViewableObjectId,
+    pub value_variable_kind: ValueVariableKind,
+    pub expression: String,
+    pub is_batched: bool,
+    pub additional_info: HashMap<String, String>,
+}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub(crate) struct ImageMessage {
     pub image_id: ViewableObjectId,
     pub value_variable_kind: ValueVariableKind,
@@ -36,11 +45,11 @@ pub(crate) struct ImageMessage {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
-pub(crate) struct ImageObjects(pub Vec<ImageMessage>);
+pub(crate) struct ImagePlaceholders(pub Vec<ImagePlaceholderMessage>);
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub(crate) struct ReplaceData {
-    pub replacement_images: ImageObjects,
+    pub replacement_images: ImagePlaceholders,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

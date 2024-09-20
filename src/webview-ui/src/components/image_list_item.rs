@@ -6,7 +6,7 @@ use yewdux::{prelude::use_selector, Dispatch};
 use crate::{
     app_state::app_state::{AppState, ChangeImageAction, StoreAction, UpdateDrawingOptions},
     coloring::Coloring,
-    common::{ImageInfo, ValueVariableKind},
+    common::{Image, ImageInfo, MinimalImageInfo, ValueVariableKind},
     vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -359,7 +359,7 @@ fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html
 #[derive(PartialEq, Properties, Clone)]
 pub(crate) struct ImageListItemProps {
     pub pinned: bool,
-    pub entry: ImageInfo,
+    pub entry: Image,
     pub selected: bool,
     pub batch_index: Option<u32>,
 }
@@ -373,7 +373,12 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         batch_index,
     } = props;
 
-    let image_id = entry.image_id.clone();
+    let MinimalImageInfo {
+        image_id,
+        value_variable_kind,
+        expression,
+        ..
+    } = entry.minimal();
 
     let info_grid_style = use_style!(
         r#"
@@ -393,6 +398,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     );
 
     let mut rows = entry
+        .minimal()
         .additional_info
         .iter()
         .sorted()
@@ -414,7 +420,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             title={"Edit"}
             icon={"codicon codicon-edit"}
             onclick={Callback::from({
-                let expression = entry.expression.clone();
+                let expression = expression.clone();
                 move |_| {
                     let _id = VSCodeRequests::edit_expression(expression.clone());
                 }
@@ -479,15 +485,17 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         <div class={item_style.clone()}>
             <div class="item-label-container">
                 {pin_unpin_button}
-                <label class="item-label" title={entry.expression.clone()}>{&entry.expression}</label>
-                if entry.value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
+                <label class="item-label" title={expression.clone()}>{&expression}</label>
+                if *value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
             </div>
 
             <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
                 {for rows}
             </vscode-data-grid>
 
-            if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+            if let Image::Full(entry) = entry {
+                if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+            } else {<></>}
         </div>
     }
 }

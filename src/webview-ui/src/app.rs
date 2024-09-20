@@ -5,14 +5,15 @@ use crate::coloring::DrawingOptions;
 use crate::colormap::colormap;
 use crate::common::camera;
 use crate::common::CurrentlyViewing;
+use crate::common::Image;
 use crate::common::Size;
 use crate::common::ViewId;
 use crate::common::ViewableObjectId;
 use crate::components::main::Main;
 use crate::configurations;
 use crate::keyboard_event::KeyboardHandler;
-use crate::mouse_events::ShiftScrollHandler;
 use crate::mouse_events::PanHandler;
+use crate::mouse_events::ShiftScrollHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::rendering::renderer::Renderer;
 use crate::rendering::rendering_context::ImageViewData;
@@ -152,9 +153,12 @@ fn view_context() -> impl ViewContext {
                 .images
                 .borrow()
                 .get(&image_id?.into())
-                .map(|image| Size {
-                    width: image.width as _,
-                    height: image.height as _,
+                .and_then(|image| match image {
+                    Image::Placeholder(_) => None,
+                    Image::Full(image_info) => Some(Size {
+                        width: image_info.width as _,
+                        height: image_info.height as _,
+                    }),
                 })
         }
 

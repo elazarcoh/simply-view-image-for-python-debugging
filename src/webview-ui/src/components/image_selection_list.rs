@@ -6,7 +6,7 @@ use yewdux::prelude::*;
 
 use crate::{
     app_state::app_state::{AppState, StoreAction},
-    common::{CurrentlyViewing, ImageInfo, ViewId},
+    common::{CurrentlyViewing, Image, ImageInfo, MinimalImageInfo, ViewId},
     components::image_list_item::ImageListItem,
 };
 
@@ -46,7 +46,7 @@ fn scroll_to_element(container: &web_sys::HtmlElement, element: &web_sys::HtmlEl
 #[derive(PartialEq, Properties)]
 struct ImageItemWrapperProps {
     container_ref: NodeRef,
-    info: ImageInfo,
+    info: Image,
     currently_viewing: Option<CurrentlyViewing>,
     is_pinned: bool,
     onclick: Callback<MouseEvent>,
@@ -65,7 +65,7 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     let node_ref = use_node_ref();
 
     let as_batch_slice = use_selector({
-        let image_id = info.image_id.clone();
+        let image_id = info.minimal().image_id.clone();
         move |state: &AppState| {
             state
                 .drawing_options
@@ -94,7 +94,11 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
         }
     });
 
-    let batch_index = if as_batch_slice.0 { Some(as_batch_slice.1) } else { None };
+    let batch_index = if as_batch_slice.0 {
+        Some(as_batch_slice.1)
+    } else {
+        None
+    };
 
     let entry_style = use_style!(
         r#"

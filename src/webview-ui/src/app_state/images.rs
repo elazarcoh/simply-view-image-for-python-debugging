@@ -3,7 +3,10 @@ use yewdux::mrc::Mrc;
 
 use crate::{
     coloring::DrawingOptions,
-    common::{texture_image::TextureImage, ImageInfo, ViewableObjectId},
+    common::{
+        texture_image::TextureImage, Image, ImageInfo, ImagePlaceholder, MinimalImageInfo,
+        ViewableObjectId,
+    },
 };
 use std::{collections::HashMap, rc::Rc};
 
@@ -96,17 +99,17 @@ impl ImageCache {
 
 #[derive(Default)]
 pub(crate) struct Images {
-    data: HashMap<ViewableObjectId, ImageInfo>,
+    data: HashMap<ViewableObjectId, Image>,
     order: Vec<ViewableObjectId>,
     pinned: Vec<ViewableObjectId>,
 }
 
 impl Images {
-    pub fn get(&self, image_id: &ViewableObjectId) -> Option<&ImageInfo> {
+    pub fn get(&self, image_id: &ViewableObjectId) -> Option<&Image> {
         self.data.get(image_id)
     }
 
-    pub fn insert(&mut self, image_id: ViewableObjectId, image_info: ImageInfo) {
+    pub fn insert(&mut self, image_id: ViewableObjectId, image_info: Image) {
         if self.data.insert(image_id.clone(), image_info).is_none() {
             self.order.push(image_id);
         }
@@ -122,7 +125,7 @@ impl Images {
         self.data.len()
     }
 
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&ViewableObjectId, &ImageInfo)> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&ViewableObjectId, &Image)> {
         let iter_item = move |id| self.data.get(id).map(|info| (id, info));
         // first pinned images, then unpinned images
         self.pinned.iter().filter_map(iter_item).chain(

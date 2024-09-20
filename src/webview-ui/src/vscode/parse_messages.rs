@@ -2,11 +2,11 @@ use std::convert::{TryFrom, TryInto};
 
 use crate::{
     app_state::app_state::ImageObject,
-    common::{pixel_value::PixelValue, ComputedInfo, ImageData, ImageInfo},
+    common::{pixel_value::PixelValue, ComputedInfo, ImageData, ImageInfo, ImagePlaceholder},
     math_utils::image_calculations::image_minmax_on_bytes,
 };
 
-use super::messages::ImageMessage;
+use super::messages::{ImageMessage, ImagePlaceholderMessage};
 
 impl From<ImageMessage> for ImageInfo {
     fn from(image_message: ImageMessage) -> Self {
@@ -83,5 +83,26 @@ impl TryFrom<ImageMessage> for ImageObject {
             Some(_) => Ok(ImageObject::WithData(ImageData::try_from(image_message)?)),
             None => Ok(ImageObject::InfoOnly(ImageInfo::from(image_message))),
         }
+    }
+}
+
+impl From<ImagePlaceholderMessage> for ImagePlaceholder {
+    fn from(image_placeholder_message: ImagePlaceholderMessage) -> Self {
+        Self {
+            image_id: image_placeholder_message.image_id,
+            value_variable_kind: image_placeholder_message.value_variable_kind,
+            expression: image_placeholder_message.expression,
+            additional_info: image_placeholder_message.additional_info,
+        }
+    }
+}
+
+impl TryFrom<ImagePlaceholderMessage> for ImageObject {
+    type Error = anyhow::Error;
+
+    fn try_from(image_placeholder_message: ImagePlaceholderMessage) -> Result<Self, Self::Error> {
+        Ok(ImageObject::Placeholder(ImagePlaceholder::from(
+            image_placeholder_message,
+        )))
     }
 }

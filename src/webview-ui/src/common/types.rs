@@ -191,6 +191,14 @@ pub(crate) struct BatchInfo {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub(crate) struct ImagePlaceholder {
+    pub image_id: ViewableObjectId,
+    pub value_variable_kind: ValueVariableKind,
+    pub expression: String,
+    pub additional_info: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ImageInfo {
     pub image_id: ViewableObjectId,
     pub value_variable_kind: ValueVariableKind,
@@ -202,6 +210,47 @@ pub(crate) struct ImageInfo {
     pub batch_info: Option<BatchInfo>,
     pub data_ordering: DataOrdering,
     pub additional_info: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct MinimalImageInfo<'a> {
+    pub image_id: &'a ViewableObjectId,
+    pub value_variable_kind: &'a ValueVariableKind,
+    pub expression: &'a String,
+    pub additional_info: &'a HashMap<String, String>,
+    pub is_batched: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum Image {
+    Placeholder(ImagePlaceholder),
+    Full(ImageInfo),
+}
+
+impl<'a> Image {
+    pub(crate) fn minimal(&'a self) -> MinimalImageInfo<'a> {
+        match self {
+            Image::Placeholder(ImagePlaceholder {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+            })
+            | Image::Full(ImageInfo {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+                ..
+            }) => MinimalImageInfo {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+                is_batched: false,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

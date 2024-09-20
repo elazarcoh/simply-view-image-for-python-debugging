@@ -4,7 +4,10 @@ use super::views::ImageViews;
 use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
-use crate::common::{CurrentlyViewing, ImageData, ImageInfo, ViewId, ViewableObjectId};
+use crate::common::{
+    CurrentlyViewing, Image, ImageData, ImageInfo, ImagePlaceholder, MinimalImageInfo, ViewId,
+    ViewableObjectId,
+};
 use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
@@ -37,7 +40,7 @@ impl Listener for ImagesFetcher {
                             log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
                             VSCodeRequests::request_image_data(
                                 image_id.clone(),
-                                image_info.expression.clone(),
+                                image_info.minimal().expression.clone(),
                             );
                             state.image_cache.borrow_mut().set_pending(&image_id);
                         }
@@ -49,7 +52,7 @@ impl Listener for ImagesFetcher {
                     if let ImageAvailability::NotAvailable = current {
                         log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
-                            let expression = image_info.expression.clone();
+                            let expression = image_info.minimal().expression.clone();
                             let current_index = state
                                 .drawing_options
                                 .borrow()
@@ -95,6 +98,7 @@ impl Listener for ImagesFetcher {
                                     .borrow()
                                     .get(&image_id)
                                     .unwrap()
+                                    .minimal()
                                     .expression
                                     .clone();
                                 let currently_holding =
@@ -168,7 +172,7 @@ impl AppState {
             .images
             .borrow()
             .get(&image_id)
-            .map_or(false, |info| info.batch_info.is_some());
+            .map_or(false, |info| info.minimal().is_batched);
 
         if is_batched {
             self.image_views
@@ -232,6 +236,7 @@ pub(crate) enum UpdateGlobalDrawingOptions {
 }
 
 pub(crate) enum ImageObject {
+    Placeholder(ImagePlaceholder),
     InfoOnly(ImageInfo),
     WithData(ImageData),
 }
@@ -241,14 +246,41 @@ impl ImageObject {
         match self {
             ImageObject::InfoOnly(info) => &info.image_id,
             ImageObject::WithData(data) => &data.info.image_id,
+            ImageObject::Placeholder(image_placeholder) => &image_placeholder.image_id,
         }
     }
-    fn image_info(&self) -> &ImageInfo {
+    fn image_minimal_info(&self) -> MinimalImageInfo {
         match self {
-            ImageObject::InfoOnly(info) => info,
-            ImageObject::WithData(data) => &data.info,
+            ImageObject::InfoOnly(info) => MinimalImageInfo {
+                image_id: &info.image_id,
+                value_variable_kind: &info.value_variable_kind,
+                expression: &info.expression,
+                additional_info: &info.additional_info,
+                is_batched: false,
+            },
+            ImageObject::WithData(data) => MinimalImageInfo {
+                image_id: &data.info.image_id,
+                value_variable_kind: &data.info.value_variable_kind,
+                expression: &data.info.expression,
+                additional_info: &data.info.additional_info,
+                is_batched: false,
+            },
+            ImageObject::Placeholder(image_placeholder) => MinimalImageInfo {
+                image_id: &image_placeholder.image_id,
+                value_variable_kind: &image_placeholder.value_variable_kind,
+                expression: &image_placeholder.expression,
+                additional_info: &image_placeholder.additional_info,
+                is_batched: false,
+            },
         }
     }
+    // fn image_info(&self) -> &ImageInfo {
+    //     match self {
+    //         ImageObject::InfoOnly(info) => info,
+    //         ImageObject::WithData(data) => &data.info,
+    //         ImageObject::Placeholder(image_placeholder) => todo!(),
+    //     }
+    // }
 }
 
 pub(crate) enum StoreAction {
@@ -264,14 +296,27 @@ pub(crate) enum StoreAction {
 
 fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     let image_id = image.image_id().clone();
-    let image_info = image.image_info().clone();
+
+    if let ImageObject::Placeholder(image_placeholder) = &image {
+        state.images.borrow_mut().insert(
+            image_id.clone(),
+            Image::Placeholder(image_placeholder.clone()),
+        );
+        return Ok(());
+    }
+
+    let image_info = match image {
+        ImageObject::InfoOnly(ref info) => info.clone(),
+        ImageObject::WithData(ref data) => data.info.clone(),
+        _ => unreachable!(),
+    };
     let batch_info = image_info.batch_info.clone();
     let is_batched = batch_info.is_some();
 
     state
         .images
         .borrow_mut()
-        .insert(image_id.clone(), image_info);
+        .insert(image_id.clone(), Image::Full(image_info));
 
     if let ImageObject::WithData(image_data) = image {
         let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;
@@ -325,7 +370,10 @@ impl Reducer<AppState> for StoreAction {
                     .image_cache
                     .borrow_mut()
                     .set_image(&image_id, *texture_image);
-                state.images.borrow_mut().insert(image_id, info);
+                state
+                    .images
+                    .borrow_mut()
+                    .insert(image_id, Image::Full(info));
             }
 
             StoreAction::AddImageWithData(image_id, image_data) => {
@@ -489,36 +537,32 @@ impl Reducer<AppState> for ChangeImageAction {
             ChangeImageAction::ViewShiftScroll(view_id, cv, amount) => {
                 let id = cv.into();
                 let current_drawing_options = state.drawing_options.borrow().get_or_default(&id);
-                if current_drawing_options.as_batch_slice.0 {
-                    let batch_size = state
-                        .images
-                        .borrow()
-                        .get(&id)
-                        .unwrap()
-                        .batch_info
-                        .as_ref()
-                        .map_or(1, |info| info.batch_size);
+                if let Image::Full(info) = state.images.borrow().get(&id).unwrap() {
+                    if current_drawing_options.as_batch_slice.0 {
+                        let batch_size = info.batch_info.as_ref().map_or(1, |info| info.batch_size);
 
-                    let current_index = current_drawing_options.as_batch_slice.1;
-                    let new_index = ((current_index as f64 + amount) as i32)
-                        .clamp(0, batch_size as i32 - 1) as u32;
-                    if new_index != current_index {
-                        state.drawing_options.borrow_mut().set(
-                            id,
-                            DrawingOptions {
-                                as_batch_slice: (
-                                    current_drawing_options.as_batch_slice.0,
-                                    new_index,
-                                ),
-                                ..current_drawing_options
-                            },
-                        );
+                        let current_index = current_drawing_options.as_batch_slice.1;
+                        let new_index = ((current_index as f64 + amount) as i32)
+                            .clamp(0, batch_size as i32 - 1)
+                            as u32;
+                        if new_index != current_index {
+                            state.drawing_options.borrow_mut().set(
+                                id,
+                                DrawingOptions {
+                                    as_batch_slice: (
+                                        current_drawing_options.as_batch_slice.0,
+                                        new_index,
+                                    ),
+                                    ..current_drawing_options
+                                },
+                            );
 
-                        // send event to view that the batch item has changed
-                        state
-                            .image_views
-                            .borrow()
-                            .send_event_to_view(view_id, "svifpd:changeimage");
+                            // send event to view that the batch item has changed
+                            state
+                                .image_views
+                                .borrow()
+                                .send_event_to_view(view_id, "svifpd:changeimage");
+                        }
                     }
                 }
             }

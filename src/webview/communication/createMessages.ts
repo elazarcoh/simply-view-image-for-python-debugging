@@ -6,7 +6,7 @@ import {
     ExtensionRequest,
     ExtensionResponse,
     ImageMessage,
-    ImageObjects,
+    ImagePlaceholderMessage,
     ValueVariableKind,
 } from "../webview";
 
@@ -14,7 +14,7 @@ function expressingWithInfoIntoImageInfo(
     exp: string,
     infoOrError: InfoOrError,
     valueVariableKind: ValueVariableKind
-): ImageMessage | undefined {
+): ImagePlaceholderMessage | undefined {
     if (infoOrError.err) {
         return undefined;
     }
@@ -29,31 +29,21 @@ function expressingWithInfoIntoImageInfo(
         image_id: exp,
         expression: exp,
         value_variable_kind: valueVariableKind,
-        width: 0,
-        height: 0,
-        channels: 1,
-        datatype: "float32",
         is_batched: viewables.some((v) => ["tensor"].includes(v.group)),
-        batch_size: null,
-        batch_items_range: null,
         additional_info: info,
-        max: null,
-        min: null,
-        bytes: null,
-        data_ordering: "hwc",
     };
 }
 
-function imageObjects(): ImageObjects {
+function imageObjects(): ImagePlaceholderMessage[] {
     const currentPythonObjectsList =
         activeDebugSessionData()?.currentPythonObjectsList;
-    const validVariables: ImageMessage[] =
+    const validVariables: ImagePlaceholderMessage[] =
         currentPythonObjectsList?.variablesList
             .map(([exp, info]) =>
                 expressingWithInfoIntoImageInfo(exp, info, "variable")
             )
             .filter(hasValue) ?? [];
-    const validExpressions: ImageMessage[] =
+    const validExpressions: ImagePlaceholderMessage[] =
         currentPythonObjectsList
             ?.expressionsList({ skipInvalid: true })
             ?.map(([exp, info]) =>
@@ -66,7 +56,7 @@ function imageObjects(): ImageObjects {
 }
 
 export class WebviewRequests {
-    static replaceData(): ExtensionRequest & {
+    static replaceImages(): ExtensionRequest & {
         type: "ReplaceData";
     } {
         const replacementImages = imageObjects();

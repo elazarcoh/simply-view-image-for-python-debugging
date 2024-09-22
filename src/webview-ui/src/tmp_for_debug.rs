@@ -8884,7 +8884,7 @@ fn image_data_with(
             ),
             ("Datatype".to_string(), format!("{:?}", datatype)),
         ]),
-        bytes: Some(bytes.to_vec()),
+        bytes: bytes.to_vec(),
     }
 }
 

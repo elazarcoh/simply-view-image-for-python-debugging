@@ -61,15 +61,11 @@ impl VSCodeListener {
 
     fn handle_image_data_response(image_message: ImageMessage) -> Result<()> {
         let image_id = image_message.image_id.clone();
-        if image_message.bytes.is_some() {
-            let dispatch = Dispatch::<AppState>::global();
-            let image_data = ImageData::try_from(image_message)?;
+        let dispatch = Dispatch::<AppState>::global();
+        let image_data = ImageData::try_from(image_message)?;
 
-            dispatch.apply(StoreAction::AddImageWithData(image_id.clone(), image_data));
-            Ok(())
-        } else {
-            Err(anyhow!("ImageMessage without image data (`bytes` field)"))
-        }
+        dispatch.apply(StoreAction::AddImageWithData(image_id.clone(), image_data));
+        Ok(())
     }
 
     fn handle_show_image_request(

@@ -63,9 +63,9 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                             PixelHoverEvent::None => None,
                         };
 
-                        let maybe_pixel_value = current_pixel.and_then(|pixel| {
-                            let image = view_context.get_image_for_view(view_id);
-                            image.and_then(|image| {
+                        let maybe_pixel_value = current_pixel
+                            .zip(view_context.get_image_for_view(view_id))
+                            .and_then(|(pixel, image)| {
                                 image.map(|image| {
                                     let image = image.borrow();
                                     let dispatch = Dispatch::<AppState>::global();
@@ -83,15 +83,12 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                                         0
                                     };
 
-                                    PixelValue::from_image_info(
-                                        &image.info,
-                                        &image.bytes[&batch_index],
-                                        &pixel,
-                                    )
-
+                                    image.bytes.get(&batch_index).map(|bytes| {
+                                        PixelValue::from_image_info(&image.info, bytes, &pixel)
+                                    })
                                 })
                             })
-                        });
+                            .flatten();
 
                         pixel_value.set(maybe_pixel_value);
                         pixel.set(match hovered_pixel {

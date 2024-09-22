@@ -8,7 +8,7 @@ use yewdux::Dispatch;
 use crate::{
     app_state::app_state::{AppState, ChangeImageAction},
     bindings::lodash::debounce_closure,
-    common::ViewId,
+    common::{constants, ViewId},
 };
 
 struct KeyboardEvent<'a> {
@@ -83,7 +83,11 @@ impl KeyboardHandler {
             } => {
                 event.prevent_default();
                 if let Some(cv) = cv {
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(ViewId::Primary, cv, -1.0));
+                    dispatch.apply(ChangeImageAction::ViewShiftScroll(
+                        ViewId::Primary,
+                        cv,
+                        -1.0,
+                    ));
                 }
             }
             _ => {}
@@ -95,7 +99,7 @@ impl KeyboardHandler {
             Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
                 KeyboardHandler::handle_key(&event);
             })),
-            100,
+            constants::TIMES.keyboard_debounce,
             Default::default(),
         );
 

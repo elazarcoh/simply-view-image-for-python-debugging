@@ -1,6 +1,7 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
-use super::images::{ImageAvailability, ImageCache, Images, ImagesDrawingOptions};
+use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
+use super::vscode_data_fetcher::ImagesFetcher;
 use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
@@ -8,123 +9,11 @@ use crate::common::{
     CurrentlyViewing, Image, ImageData, ImageInfo, ImagePlaceholder, MinimalImageInfo, ViewId,
     ViewableObjectId,
 };
-use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
+use crate::configurations;
 use anyhow::{anyhow, Result};
-use itertools::Itertools;
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
-
-struct ImagesFetcher;
-
-impl Listener for ImagesFetcher {
-    type Store = AppState;
-
-    fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
-        let currently_viewing_objects = state
-            .image_views
-            .borrow()
-            .visible_views()
-            .iter()
-            .filter_map(|view_id| state.image_views.borrow().get_currently_viewing(*view_id))
-            .collect::<Vec<_>>();
-
-        for cv in currently_viewing_objects {
-            match cv {
-                crate::common::CurrentlyViewing::Image(image_id) => {
-                    let current = state.image_cache.borrow().get(&image_id);
-
-                    if current == ImageAvailability::NotAvailable {
-                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                        if let Some(image_info) = state.images.borrow().get(&image_id) {
-                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                            VSCodeRequests::request_image_data(
-                                image_id.clone(),
-                                image_info.minimal().expression.clone(),
-                            );
-                            state.image_cache.borrow_mut().set_pending(&image_id);
-                        }
-                    }
-                }
-                crate::common::CurrentlyViewing::BatchItem(image_id) => {
-                    let current = state.image_cache.borrow().get(&image_id);
-
-                    if let ImageAvailability::NotAvailable = current {
-                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                        if let Some(image_info) = state.images.borrow().get(&image_id) {
-                            let expression = image_info.minimal().expression.clone();
-                            let current_index = state
-                                .drawing_options
-                                .borrow()
-                                .get_or_default(&image_id)
-                                .as_batch_slice
-                                .1;
-                            log::debug!(
-                                "ImagesFetcher::on_change: fetching item {} for image {}",
-                                current_index,
-                                image_id
-                            );
-                            VSCodeRequests::request_batch_item_data(
-                                image_id.clone(),
-                                expression,
-                                current_index,
-                                None,
-                            );
-                            state.image_cache.borrow_mut().set_pending(&image_id);
-                        }
-                    } else if let ImageAvailability::Pending(Some(image))
-                    | ImageAvailability::Available(image) = current
-                    {
-                        // generally available, but maybe batch item is not.
-                        let current_drawing_options = state
-                            .drawing_options
-                            .borrow()
-                            .get_or_default(&image_id)
-                            .clone();
-
-                        let (is_batched, current_index) = current_drawing_options.as_batch_slice;
-                        if is_batched {
-                            let has_item = image.borrow().textures.contains_key(&current_index);
-                            if has_item {
-                                // changed back to batch item that is already in cache
-                                let _ = state
-                                    .image_cache
-                                    .borrow_mut()
-                                    .try_set_available(&image_id)
-                                    .map_err(|e| log::error!("ImagesFetcher::on_change: {}", e));
-                            } else {
-                                let expression = state
-                                    .images
-                                    .borrow()
-                                    .get(&image_id)
-                                    .unwrap()
-                                    .minimal()
-                                    .expression
-                                    .clone();
-                                let currently_holding =
-                                    image.borrow().textures.keys().copied().collect_vec();
-                                log::debug!(
-                                    "ImagesFetcher::on_change: fetching item {} for image {}",
-                                    current_index,
-                                    image_id
-                                );
-                                VSCodeRequests::request_batch_item_data(
-                                    image_id.clone(),
-                                    expression,
-                                    current_index,
-                                    Some(currently_holding),
-                                );
-                                state.image_cache.borrow_mut().set_pending(&image_id);
-                            }
-                        }
-                    } else {
-                        log::debug!("ImagesFetcher::on_change: current {:?} ", current);
-                    }
-                }
-            }
-        }
-    }
-}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct GlobalDrawingOptions {
@@ -141,8 +30,7 @@ impl Default for GlobalDrawingOptions {
     }
 }
 
-#[derive(Store, Clone)]
-#[store(listener(ImagesFetcher))]
+#[derive(Clone)]
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
@@ -158,6 +46,17 @@ pub(crate) struct AppState {
     pub view_cameras: Mrc<ViewsCameras>,
 
     pub configuration: configurations::Configuration,
+}
+
+impl Store for AppState {
+    fn new(cx: &yewdux::Context) -> Self {
+        init_listener(ImagesFetcher::default(), cx);
+        Default::default()
+    }
+
+    fn should_notify(&self, other: &Self) -> bool {
+        self != other
+    }
 }
 
 impl AppState {
@@ -274,18 +173,11 @@ impl ImageObject {
             },
         }
     }
-    // fn image_info(&self) -> &ImageInfo {
-    //     match self {
-    //         ImageObject::InfoOnly(info) => info,
-    //         ImageObject::WithData(data) => &data.info,
-    //         ImageObject::Placeholder(image_placeholder) => todo!(),
-    //     }
-    // }
+
 }
 
 pub(crate) enum StoreAction {
     SetImageToView(ViewableObjectId, ViewId),
-    SetAsBatched(ViewableObjectId, bool),
     AddTextureImage(ViewableObjectId, Box<TextureImage>),
     AddImageWithData(ViewableObjectId, ImageData),
     UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
@@ -321,7 +213,7 @@ fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     if let ImageObject::WithData(image_data) = image {
         let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;
         log::debug!(
-            "updaing image cache: {:?} is_batched: {}, tex_image: {:?}",
+            "updating image cache: {:?} is_batched: {}, tex_image: {:?}",
             image_id,
             is_batched,
             tex_image
@@ -337,18 +229,12 @@ fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     }
 
     if is_batched {
-        let current_drawing_options = state
+        state
             .drawing_options
-            .borrow()
-            .get_or_default(&image_id)
-            .clone();
-        state.drawing_options.borrow_mut().set(
-            image_id.clone(),
-            DrawingOptions {
-                as_batch_slice: (true, current_drawing_options.as_batch_slice.1),
-                ..current_drawing_options
-            },
-        );
+            .borrow_mut()
+            .mut_ref_or_default(image_id.clone())
+            .batch_item
+            .get_or_insert(0);
     }
 
     Ok(())
@@ -395,7 +281,7 @@ impl Reducer<AppState> for StoreAction {
                 let new_drawing_option = match update {
                     UpdateDrawingOptions::Reset => DrawingOptions {
                         // keep the batch slice index
-                        as_batch_slice: current_drawing_options.as_batch_slice,
+                        batch_item: current_drawing_options.batch_item,
                         ..DrawingOptions::default()
                     },
                     UpdateDrawingOptions::Coloring(c) => DrawingOptions {
@@ -443,19 +329,6 @@ impl Reducer<AppState> for StoreAction {
                     state.global_drawing_options.segmentation_colormap_name = name;
                 }
             },
-            StoreAction::SetAsBatched(image_id, as_batched) => {
-                let current_drawing_options = state
-                    .drawing_options
-                    .borrow()
-                    .get_or_default(&image_id)
-                    .clone();
-                state.drawing_options.borrow_mut().set(image_id, {
-                    DrawingOptions {
-                        as_batch_slice: (as_batched, current_drawing_options.as_batch_slice.1),
-                        ..current_drawing_options
-                    }
-                });
-            }
             StoreAction::UpdateData(image_object) => {
                 handle_received_image(state, image_object).unwrap();
             }
@@ -487,7 +360,7 @@ impl Reducer<AppState> for ChangeImageAction {
                         state
                             .images
                             .borrow()
-                            .next_image_id(&current_image_id.into())
+                            .next_image_id(&current_image_id.id())
                             .cloned()
                     })
                     .or_else(|| {
@@ -512,7 +385,7 @@ impl Reducer<AppState> for ChangeImageAction {
                         state
                             .images
                             .borrow()
-                            .previous_image_id(&current_image_id.into())
+                            .previous_image_id(&current_image_id.id())
                             .cloned()
                     })
                     .or_else(|| {
@@ -535,34 +408,30 @@ impl Reducer<AppState> for ChangeImageAction {
                 state.images.borrow_mut().unpin(&image_id);
             }
             ChangeImageAction::ViewShiftScroll(view_id, cv, amount) => {
-                let id = cv.into();
-                let current_drawing_options = state.drawing_options.borrow().get_or_default(&id);
-                if let Image::Full(info) = state.images.borrow().get(&id).unwrap() {
-                    if current_drawing_options.as_batch_slice.0 {
-                        let batch_size = info.batch_info.as_ref().map_or(1, |info| info.batch_size);
+                let id = cv.id();
 
-                        let current_index = current_drawing_options.as_batch_slice.1;
-                        let new_index = ((current_index as f64 + amount) as i32)
-                            .clamp(0, batch_size as i32 - 1)
-                            as u32;
-                        if new_index != current_index {
-                            state.drawing_options.borrow_mut().set(
-                                id,
-                                DrawingOptions {
-                                    as_batch_slice: (
-                                        current_drawing_options.as_batch_slice.0,
-                                        new_index,
-                                    ),
-                                    ..current_drawing_options
-                                },
-                            );
+                let current_drawing_options = state.drawing_options.borrow().get_or_default(id);
+                if let (Some(current_index), Some(Image::Full(info))) = (
+                    current_drawing_options.batch_item,
+                    state.images.borrow().get(id),
+                ) {
+                    let batch_size = info.batch_info.as_ref().map_or(1, |info| info.batch_size);
 
-                            // send event to view that the batch item has changed
-                            state
-                                .image_views
-                                .borrow()
-                                .send_event_to_view(view_id, "svifpd:changeimage");
-                        }
+                    let new_index = ((current_index as f64 + amount) as i32)
+                        .clamp(0, batch_size as i32 - 1) as u32;
+
+                    if new_index != current_index {
+                        state
+                            .drawing_options
+                            .borrow_mut()
+                            .mut_ref_or_default(id.clone())
+                            .batch_item = Some(new_index);
+
+                        // send event to view that the batch item has changed
+                        state
+                            .image_views
+                            .borrow()
+                            .send_event_to_view(view_id, "svifpd:changeimage");
                     }
                 }
             }

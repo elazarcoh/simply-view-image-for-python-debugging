@@ -21,6 +21,7 @@ use crate::common::pixel_value::PixelValue;
 use crate::common::texture_image::TextureImage;
 use crate::common::texture_image::TexturesGroup;
 use crate::common::Channels;
+use crate::common::CurrentlyViewing;
 use crate::common::DataOrdering;
 use crate::common::Datatype;
 use crate::common::Size;
@@ -330,24 +331,32 @@ impl Renderer {
         canvas.set_width(canvas.client_width() as _);
         canvas.set_height(canvas.client_height() as _);
 
-        if let Some(image_id) = &image_view_data.image_id {
+        if let Some(cv) = &image_view_data.currently_viewing {
+            let image_id = cv.id();
             match rendering_context.texture_by_id(image_id) {
                 crate::app_state::images::ImageAvailability::NotAvailable
                 | crate::app_state::images::ImageAvailability::Pending(_) => {}
                 crate::app_state::images::ImageAvailability::Available(texture) => {
                     // for batch, we need to check if the batch item is available
-                    let (drawing_options, _) = rendering_context
-                        .drawing_options(image_view_data.image_id.as_ref().unwrap());
-                    if drawing_options.as_batch_slice.0 {
-                        let batch_index = drawing_options.as_batch_slice.1;
-                        if !texture.borrow().textures.contains_key(&batch_index) {
+                    let batch_index = if matches!(cv, CurrentlyViewing::BatchItem(_)) {
+                        let batch_index = rendering_context
+                            .drawing_options(image_id)
+                            .0
+                            .batch_item
+                            .filter(|i| texture.borrow().textures.contains_key(i));
+                        if !batch_index.is_some() {
                             return Ok(());
                         }
-                    }
+                        batch_index
+                    } else {
+                        None
+                    };
+
                     Renderer::render_image(
                         rendering_context,
                         rendering_data,
                         texture,
+                        batch_index,
                         image_view_data,
                         view_name,
                     );
@@ -362,6 +371,7 @@ impl Renderer {
         rendering_context: &dyn RenderingContext,
         rendering_data: &mut RenderingData,
         texture: Mrc<TextureImage>,
+        batch_item: Option<u32>,
         image_view_data: &ImageViewData,
         view_name: &ViewId,
     ) {
@@ -433,8 +443,13 @@ impl Renderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
-        let (drawing_options, global_drawing_options) =
-            rendering_context.drawing_options(image_view_data.image_id.as_ref().unwrap());
+        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
+            image_view_data
+                .currently_viewing
+                .as_ref()
+                .map(|cv| CurrentlyViewing::id(&cv))
+                .unwrap(),
+        );
         let coloring_factors =
             calculate_color_matrix(texture_info, &texture.computed_info, &drawing_options);
 
@@ -499,14 +514,9 @@ impl Renderer {
             ]),
         };
 
-        let (is_batched, batch_index) = drawing_options.as_batch_slice;
-        if is_batched {
-            uniform_values.extend(get_textures(batch_index));
-        } else {
-            uniform_values.extend(get_textures(0));
-        }
-
-        let uniform_keys_sorted: Vec<_> = uniform_values.keys().sorted().collect();
+        let is_batched = batch_item.is_some();
+        let batch_index = batch_item.unwrap_or(0);
+        uniform_values.extend(get_textures(batch_index));
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context

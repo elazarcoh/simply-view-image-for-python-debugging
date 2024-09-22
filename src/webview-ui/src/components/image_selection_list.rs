@@ -64,14 +64,14 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
 
     let node_ref = use_node_ref();
 
-    let as_batch_slice = use_selector({
+    let maybe_batch_item = use_selector({
         let image_id = info.minimal().image_id.clone();
         move |state: &AppState| {
             state
                 .drawing_options
                 .borrow()
-                .get_or_default(&image_id)
-                .as_batch_slice
+                .get(&image_id)
+                .and_then(|d| d.batch_item)
         }
     });
 
@@ -94,12 +94,6 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
         }
     });
 
-    let batch_index = if as_batch_slice.0 {
-        Some(as_batch_slice.1)
-    } else {
-        None
-    };
-
     let entry_style = use_style!(
         r#"
         padding: 5px;
@@ -114,7 +108,7 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
             {onclick}
             class={entry_style.clone()}
         >
-            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={batch_index} />
+            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={*maybe_batch_item} />
         </vscode-option>
     }
 }

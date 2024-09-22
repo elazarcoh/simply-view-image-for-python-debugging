@@ -10,7 +10,11 @@ use yewdux::Dispatch;
 use crate::{
     app_state::app_state::{AppState, ChangeImageAction},
     bindings::{lethargy_ts, lodash::debounce_closure},
-    common::{camera, constants::MAX_PIXEL_SIZE_DEVICE, Size, ViewId},
+    common::{
+        camera,
+        constants::{self, MAX_PIXEL_SIZE_DEVICE},
+        Size, ViewId,
+    },
     components::main::PixelHoverEvent,
     math_utils::{image_calculations::calculate_pixels_information, ToHom},
     rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
@@ -464,7 +468,7 @@ impl ShiftScrollHandler {
                         }
                     }
                 }) as Box<dyn Fn(web_sys::WheelEvent)>),
-                250,
+                constants::TIMES.view_shift_scroll_debounce,
                 Default::default(),
             );
 

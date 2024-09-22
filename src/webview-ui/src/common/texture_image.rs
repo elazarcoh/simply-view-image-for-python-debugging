@@ -5,6 +5,7 @@ use crate::{
     webgl_utils::{self, GLGuard},
 };
 use anyhow::Result;
+use itertools::Itertools;
 
 use super::{
     Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size, ValueVariableKind,
@@ -207,6 +208,12 @@ impl TextureImage {
 
     pub(crate) fn update(&mut self, other: TextureImage) {
         // TODO verify that the other image has the same info
+
+        log::debug!(
+            "TextureImage::update: current={:?}, other={:?}",
+            self.textures.keys().sorted(),
+            other.textures.keys().sorted(),
+        );
 
         self.bytes.extend(other.bytes);
         self.textures.extend(other.textures);

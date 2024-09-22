@@ -33,15 +33,6 @@ impl CurrentlyViewing {
     }
 }
 
-impl Into<ViewableObjectId> for CurrentlyViewing {
-    fn into(self) -> ViewableObjectId {
-        match self {
-            CurrentlyViewing::Image(id) => id,
-            CurrentlyViewing::BatchItem(id) => id,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub(crate) struct Size {
     pub width: f32,
@@ -195,6 +186,7 @@ pub(crate) struct ImagePlaceholder {
     pub image_id: ViewableObjectId,
     pub value_variable_kind: ValueVariableKind,
     pub expression: String,
+    pub is_batched: bool,
     pub additional_info: HashMap<String, String>,
 }
 
@@ -234,20 +226,28 @@ impl<'a> Image {
                 image_id,
                 value_variable_kind,
                 expression,
+                is_batched,
                 additional_info,
-            })
-            | Image::Full(ImageInfo {
+            }) => MinimalImageInfo {
                 image_id,
                 value_variable_kind,
                 expression,
                 additional_info,
+                is_batched: *is_batched,
+            },
+            Image::Full(ImageInfo {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+                batch_info,
                 ..
             }) => MinimalImageInfo {
                 image_id,
                 value_variable_kind,
                 expression,
                 additional_info,
-                is_batched: false,
+                is_batched: batch_info.is_some(),
             },
         }
     }

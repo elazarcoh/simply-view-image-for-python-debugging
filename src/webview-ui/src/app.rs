@@ -69,12 +69,11 @@ fn rendering_context() -> impl RenderingContext {
                             view_id
                         )
                     }),
-                image_id: dispatch
+                currently_viewing: dispatch
                     .get()
                     .image_views
                     .borrow()
-                    .get_currently_viewing(view_id)
-                    .map(Into::into),
+                    .get_currently_viewing(view_id),
             }
         }
 
@@ -152,7 +151,7 @@ fn view_context() -> impl ViewContext {
                 .get()
                 .images
                 .borrow()
-                .get(&image_id?.into())
+                .get(&image_id?.id())
                 .and_then(|image| match image {
                     Image::Placeholder(_) => None,
                     Image::Full(image_info) => Some(Size {
@@ -185,7 +184,7 @@ fn view_context() -> impl ViewContext {
                 .image_views
                 .borrow()
                 .get_currently_viewing(view_id);
-            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id.into()))
+            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id.id()))
         }
 
         fn get_currently_viewing_for_view(&self, view_id: ViewId) -> Option<CurrentlyViewing> {

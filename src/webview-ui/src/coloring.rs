@@ -25,7 +25,7 @@ pub(crate) struct DrawingOptions {
     pub invert: bool,
     pub high_contrast: bool,
     pub ignore_alpha: bool,
-    pub as_batch_slice: (bool, u32),
+    pub batch_item: Option<u32>,
 }
 
 impl Default for DrawingOptions {
@@ -35,7 +35,7 @@ impl Default for DrawingOptions {
             invert: false,
             high_contrast: false,
             ignore_alpha: false,
-            as_batch_slice: (false, 0),
+            batch_item: None,
         }
     }
 }

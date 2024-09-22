@@ -83,12 +83,13 @@ impl ImageCache {
     }
 
     pub(crate) fn update(&mut self, id: &ViewableObjectId, image: TextureImage) {
-        if let Some(ImageAvailability::Available(current)) = self.0.remove(id) {
-            current.with_mut(|img| img.update(image));
-            self.0
-                .insert(id.clone(), ImageAvailability::Available(current));
-        } else {
-            self.set_image(id, image);
+        match self.0.remove_entry(id) {
+            Some((id, ImageAvailability::Available(current)))
+            | Some((id, ImageAvailability::Pending(Some(current)))) => {
+                current.with_mut(|img| img.update(image));
+                self.0.insert(id, ImageAvailability::Available(current));
+            }
+            _ => self.set_image(id, image),
         }
     }
 
@@ -190,5 +191,11 @@ impl ImagesDrawingOptions {
 
     pub(crate) fn get(&self, image_id: &ViewableObjectId) -> Option<DrawingOptions> {
         self.0.get(image_id).cloned()
+    }
+
+    pub(crate) fn mut_ref_or_default(&mut self, image_id: ViewableObjectId) -> &mut DrawingOptions {
+        self.0
+            .entry(image_id)
+            .or_insert_with(DrawingOptions::default)
     }
 }

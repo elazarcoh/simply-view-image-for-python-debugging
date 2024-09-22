@@ -10,7 +10,7 @@ import {
     ValueVariableKind,
 } from "../webview";
 
-function expressingWithInfoIntoImageInfo(
+function expressingWithInfoIntoImagePlaceholder(
     exp: string,
     infoOrError: InfoOrError,
     valueVariableKind: ValueVariableKind
@@ -40,14 +40,14 @@ function imageObjects(): ImagePlaceholderMessage[] {
     const validVariables: ImagePlaceholderMessage[] =
         currentPythonObjectsList?.variablesList
             .map(([exp, info]) =>
-                expressingWithInfoIntoImageInfo(exp, info, "variable")
+                expressingWithInfoIntoImagePlaceholder(exp, info, "variable")
             )
             .filter(hasValue) ?? [];
     const validExpressions: ImagePlaceholderMessage[] =
         currentPythonObjectsList
             ?.expressionsList({ skipInvalid: true })
             ?.map(([exp, info]) =>
-                expressingWithInfoIntoImageInfo(exp, info, "expression")
+                expressingWithInfoIntoImagePlaceholder(exp, info, "expression")
             )
             .filter(hasValue) ?? [];
 

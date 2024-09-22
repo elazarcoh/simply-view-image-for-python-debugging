@@ -55,11 +55,9 @@ fn make_info_items(
                 &texture.computed_info,
                 &drawing_options,
             );
-            let batch_index = if drawing_options.as_batch_slice.0 {
-                drawing_options.as_batch_slice.1
-            } else {
-                0
-            };
+
+            let batch_index = drawing_options.batch_item.unwrap_or(0);
+
             if let Ok(values) = math_utils::image_calculations::image_unique_values_on_bytes(
                 &texture.bytes[&batch_index],
                 texture.info.datatype,
@@ -123,10 +121,11 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         let view_id = *view_id;
         use_selector(
             move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
-                let image_id = state.image_views.borrow().get_currently_viewing(view_id)?.into();
-                let availability = state.image_cache.borrow().get(&image_id);
-                let drawing_options = state.drawing_options.borrow().get(&image_id);
-                Some((image_id, availability, drawing_options))
+                let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
+                let image_id = binding.id();
+                let availability = state.image_cache.borrow().get(image_id);
+                let drawing_options = state.drawing_options.borrow().get(image_id);
+                Some((image_id.clone(), availability, drawing_options))
             },
         )
     };

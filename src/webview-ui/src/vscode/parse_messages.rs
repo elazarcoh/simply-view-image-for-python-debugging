@@ -85,6 +85,7 @@ impl From<ImagePlaceholderMessage> for ImagePlaceholder {
             image_id: image_placeholder_message.image_id,
             value_variable_kind: image_placeholder_message.value_variable_kind,
             expression: image_placeholder_message.expression,
+            is_batched: image_placeholder_message.is_batched,
             additional_info: image_placeholder_message.additional_info,
         }
     }

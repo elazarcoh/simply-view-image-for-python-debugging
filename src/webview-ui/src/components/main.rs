@@ -69,19 +69,13 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                                 image.map(|image| {
                                     let image = image.borrow();
                                     let dispatch = Dispatch::<AppState>::global();
-                                    let as_batch_slice = dispatch
+                                    let batch_index = dispatch
                                         .get()
                                         .drawing_options
                                         .borrow()
                                         .get(&image.info.image_id)
-                                        .map(|d| d.as_batch_slice)
-                                        .unwrap_or((false, 0));
-
-                                    let batch_index = if as_batch_slice.0 {
-                                        as_batch_slice.1
-                                    } else {
-                                        0
-                                    };
+                                        .and_then(|d| d.batch_item)
+                                        .unwrap_or(0);
 
                                     image.bytes.get(&batch_index).map(|bytes| {
                                         PixelValue::from_image_info(&image.info, bytes, &pixel)

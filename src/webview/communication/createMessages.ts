@@ -29,7 +29,7 @@ function expressingWithInfoIntoImagePlaceholder(
         image_id: exp,
         expression: exp,
         value_variable_kind: valueVariableKind,
-        is_batched: viewables.some((v) => ["tensor"].includes(v.group)),
+        is_batched: viewables[0].group === "tensor", // currently, support tensor only if it's the only option
         additional_info: info,
     };
 }

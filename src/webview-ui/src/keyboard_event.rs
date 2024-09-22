@@ -6,7 +6,7 @@ use yew::Callback;
 use yewdux::Dispatch;
 
 use crate::{
-    app_state::app_state::{AppState, ChangeImageAction},
+    app_state::app_state::{AppState, UiAction},
     bindings::lodash::debounce_closure,
     common::{constants, ViewId},
 };
@@ -51,7 +51,7 @@ impl KeyboardHandler {
                 alt: false,
             } => {
                 event.prevent_default();
-                dispatch.apply(ChangeImageAction::Next(ViewId::Primary));
+                dispatch.apply(UiAction::Next(ViewId::Primary));
             }
             KeyboardEvent {
                 key: "ArrowUp",
@@ -60,7 +60,7 @@ impl KeyboardHandler {
                 alt: false,
             } => {
                 event.prevent_default();
-                dispatch.apply(ChangeImageAction::Previous(ViewId::Primary));
+                dispatch.apply(UiAction::Previous(ViewId::Primary));
             }
 
             // shift + arrow up/down => scroll batch
@@ -72,7 +72,7 @@ impl KeyboardHandler {
             } => {
                 event.prevent_default();
                 if let Some(cv) = cv {
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(ViewId::Primary, cv, 1.0));
+                    dispatch.apply(UiAction::ViewShiftScroll(ViewId::Primary, cv, 1.0));
                 }
             }
             KeyboardEvent {
@@ -83,7 +83,7 @@ impl KeyboardHandler {
             } => {
                 event.prevent_default();
                 if let Some(cv) = cv {
-                    dispatch.apply(ChangeImageAction::ViewShiftScroll(
+                    dispatch.apply(UiAction::ViewShiftScroll(
                         ViewId::Primary,
                         cv,
                         -1.0,

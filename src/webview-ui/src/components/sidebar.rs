@@ -3,16 +3,20 @@ use stylist::{css, yew::use_style};
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
+    app_state::app_state::{AppState, UiAction},
+    common::ViewId,
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},
         image_selection_list::ImageSelectionList,
-    }, vscode::vscode_requests::VSCodeRequests
+    },
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 #[cfg(debug_assertions)]
-use crate::tmp_for_debug::{set_debug_images, debug_action};
+use crate::tmp_for_debug::{debug_action, set_debug_images};
 
 #[derive(PartialEq, Properties)]
 struct ToolbarProps {
@@ -67,7 +71,7 @@ pub(crate) fn RefreshButton(props: &RefreshButtonProps) -> Html {
                 let _is_loading = is_loading.clone();
                 move |_| {
                     let _id = VSCodeRequests::request_images();
-                    // is_loading.set(true);
+                    // _is_loading.set(true);
                 }})}
             spin={*is_loading}
             />
@@ -153,6 +157,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
                 Callback::from(move |_| collapsed.set(true))
             } />
     };
+
     let expand_toggle_button = html! {
         <IconButton
             title={"Toggle sidebar"}
@@ -163,9 +168,11 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
                 Callback::from(move |_| collapsed.set(false))
             } />
     };
+
     let refresh_button = html! {
         <RefreshButton />
     };
+
     let add_expression_button = html! {
         <IconButton
             title={"Add expression"}
@@ -173,6 +180,20 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
             icon={"codicon codicon-add"}
             onclick={Callback::from({
                 |_| { let _id = VSCodeRequests::add_expression(); }
+            })}
+            />
+    };
+
+    let home_button = html! {
+        <IconButton
+            title={"Home"}
+            aria_label={"Home"}
+            icon={"codicon codicon-home"}
+            onclick={Callback::from({
+                |_| {
+                    let dispatch = Dispatch::<AppState>::global();
+                    dispatch.apply(UiAction::Home(ViewId::Primary));
+                }
             })}
             />
     };
@@ -252,6 +273,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
                 {debug_action_button}
                 {add_expression_button}
                 {refresh_button.clone()}
+                {home_button}
                 {pin_toggle_button}
                 {collapse_toggle_button}
             </Toolbar>

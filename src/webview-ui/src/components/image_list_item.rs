@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, ChangeImageAction, StoreAction, UpdateDrawingOptions},
+    app_state::app_state::{AppState, UiAction, StoreAction, UpdateDrawingOptions},
     coloring::Coloring,
     common::{Image, ImageInfo, MinimalImageInfo, ValueVariableKind},
     vscode::vscode_requests::VSCodeRequests,
@@ -434,7 +434,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             aria_label={"Pin"}
             title={"Pin"}
             icon={"codicon codicon-pin"}
-            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| ChangeImageAction::Pin(image_id.clone())})}
+            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| UiAction::Pin(image_id.clone())})}
         />
     };
     let unpin_style = use_style!(
@@ -448,7 +448,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             aria_label={"Unpin"}
             title={"Unpin"}
             icon={"codicon codicon-pinned"}
-            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| ChangeImageAction::Unpin(image_id.clone())})}
+            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| UiAction::Unpin(image_id.clone())})}
             class={unpin_style}
         />
     };

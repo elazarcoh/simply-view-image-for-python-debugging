@@ -8,7 +8,7 @@ use yew::Callback;
 use yewdux::Dispatch;
 
 use crate::{
-    app_state::app_state::{AppState, ChangeImageAction},
+    app_state::app_state::{AppState, UiAction},
     bindings::{lethargy_ts, lodash::debounce_closure},
     common::{
         camera,
@@ -460,7 +460,7 @@ impl ShiftScrollHandler {
                         if is_intentional {
                             let amount = event.delta_y() as f64;
                             let dispatch = Dispatch::<AppState>::global();
-                            dispatch.apply(ChangeImageAction::ViewShiftScroll(
+                            dispatch.apply(UiAction::ViewShiftScroll(
                                 view_id,
                                 cv,
                                 amount.signum(),

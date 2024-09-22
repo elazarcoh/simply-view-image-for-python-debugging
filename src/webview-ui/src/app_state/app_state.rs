@@ -6,7 +6,7 @@ use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    CurrentlyViewing, Image, ImageData, ImageInfo, ImagePlaceholder, MinimalImageInfo, ViewId,
+    CurrentlyViewing, Image, ImageData, ImagePlaceholder, MinimalImageInfo, ViewId,
     ViewableObjectId,
 };
 use crate::configurations;
@@ -136,44 +136,16 @@ pub(crate) enum UpdateGlobalDrawingOptions {
 
 pub(crate) enum ImageObject {
     Placeholder(ImagePlaceholder),
-    InfoOnly(ImageInfo),
     WithData(ImageData),
 }
 
 impl ImageObject {
     fn image_id(&self) -> &ViewableObjectId {
         match self {
-            ImageObject::InfoOnly(info) => &info.image_id,
             ImageObject::WithData(data) => &data.info.image_id,
             ImageObject::Placeholder(image_placeholder) => &image_placeholder.image_id,
         }
     }
-    fn image_minimal_info(&self) -> MinimalImageInfo {
-        match self {
-            ImageObject::InfoOnly(info) => MinimalImageInfo {
-                image_id: &info.image_id,
-                value_variable_kind: &info.value_variable_kind,
-                expression: &info.expression,
-                additional_info: &info.additional_info,
-                is_batched: false,
-            },
-            ImageObject::WithData(data) => MinimalImageInfo {
-                image_id: &data.info.image_id,
-                value_variable_kind: &data.info.value_variable_kind,
-                expression: &data.info.expression,
-                additional_info: &data.info.additional_info,
-                is_batched: false,
-            },
-            ImageObject::Placeholder(image_placeholder) => MinimalImageInfo {
-                image_id: &image_placeholder.image_id,
-                value_variable_kind: &image_placeholder.value_variable_kind,
-                expression: &image_placeholder.expression,
-                additional_info: &image_placeholder.additional_info,
-                is_batched: false,
-            },
-        }
-    }
-
 }
 
 pub(crate) enum StoreAction {
@@ -198,7 +170,6 @@ fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     }
 
     let image_info = match image {
-        ImageObject::InfoOnly(ref info) => info.clone(),
         ImageObject::WithData(ref data) => data.info.clone(),
         _ => unreachable!(),
     };
@@ -338,20 +309,21 @@ impl Reducer<AppState> for StoreAction {
     }
 }
 
-pub(crate) enum ChangeImageAction {
+pub(crate) enum UiAction {
     Next(ViewId),
     Previous(ViewId),
     Pin(ViewableObjectId),
     Unpin(ViewableObjectId),
     ViewShiftScroll(ViewId, CurrentlyViewing, f64),
+    Home(ViewId),
 }
 
-impl Reducer<AppState> for ChangeImageAction {
+impl Reducer<AppState> for UiAction {
     fn apply(self, mut app_state: Rc<AppState>) -> Rc<AppState> {
         let state = Rc::make_mut(&mut app_state);
 
         match self {
-            ChangeImageAction::Next(view_id) => {
+            UiAction::Next(view_id) => {
                 let next_image_id = state
                     .image_views
                     .borrow()
@@ -376,7 +348,7 @@ impl Reducer<AppState> for ChangeImageAction {
                     state.set_image_to_view(next_image_id, view_id);
                 });
             }
-            ChangeImageAction::Previous(view_id) => {
+            UiAction::Previous(view_id) => {
                 let previous_image_id = state
                     .image_views
                     .borrow()
@@ -401,13 +373,13 @@ impl Reducer<AppState> for ChangeImageAction {
                     state.set_image_to_view(previous_image_id, view_id);
                 });
             }
-            ChangeImageAction::Pin(image_id) => {
+            UiAction::Pin(image_id) => {
                 state.images.borrow_mut().pin(&image_id);
             }
-            ChangeImageAction::Unpin(image_id) => {
+            UiAction::Unpin(image_id) => {
                 state.images.borrow_mut().unpin(&image_id);
             }
-            ChangeImageAction::ViewShiftScroll(view_id, cv, amount) => {
+            UiAction::ViewShiftScroll(view_id, cv, amount) => {
                 let id = cv.id();
 
                 let current_drawing_options = state.drawing_options.borrow().get_or_default(id);
@@ -434,6 +406,9 @@ impl Reducer<AppState> for ChangeImageAction {
                             .send_event_to_view(view_id, "svifpd:changeimage");
                     }
                 }
+            }
+            UiAction::Home(view_id) => {
+                state.view_cameras.borrow_mut().reset(view_id);
             }
         }
 

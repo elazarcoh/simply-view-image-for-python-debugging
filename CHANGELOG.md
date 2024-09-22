@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.0.5] - Pre-release
+
+### Added 
+
+- Trying to get more information about errors in the python setup code.
+
 ## [4.0.3] - Pre-release
 
 ### Added 

@@ -109,7 +109,8 @@ impl TextureImage {
                 let make_texture_for_channel = |channel: usize| {
                     Self::make_texture(
                         gl,
-                        &image.bytes[offset + plane_size * channel..plane_size * (channel + 1)],
+                        &image.bytes
+                            [offset + plane_size * channel..offset + plane_size * (channel + 1)],
                         image.info.width,
                         image.info.height,
                         Channels::One,

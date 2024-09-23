@@ -273,7 +273,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
                 {debug_action_button}
                 {add_expression_button}
                 {refresh_button.clone()}
-                {home_button}
+                {home_button.clone()}
                 {pin_toggle_button}
                 {collapse_toggle_button}
             </Toolbar>
@@ -297,6 +297,7 @@ pub(crate) fn Sidebar(props: &SidebarProps) -> Html {
     <div class={collapsed_style}>
         {expand_toggle_button}
         {refresh_button}
+        {home_button}
     </div>
     };
 

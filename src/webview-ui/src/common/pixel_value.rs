@@ -9,7 +9,7 @@ use glam::UVec2;
 use strum::EnumCount;
 
 use crate::{
-    common::{Channels, Datatype, ImageData},
+    common::{Channels, Datatype},
     math_utils::image_calculations::calc_num_bytes_per_plane,
 };
 
@@ -58,7 +58,7 @@ impl PixelValue {
         }
     }
 
-    pub(crate) fn from_image_info(info: &ImageInfo, bytes: &Vec<u8>, pixel: &UVec2) -> Self {
+    pub(crate) fn from_image_info(info: &ImageInfo, bytes: &[u8], pixel: &UVec2) -> Self {
         let c = info.channels;
         let w = info.width;
         let h = info.height;
@@ -95,10 +95,6 @@ impl PixelValue {
             datatype: info.datatype,
             bytes: bytes_array,
         }
-    }
-
-    pub(crate) fn from_image(image: &ImageData, pixel: &UVec2) -> Self {
-        Self::from_image_info(&image.info, &image.bytes, pixel)
     }
 
     pub(crate) fn get<T: Pod>(&self, channel: u32) -> &T {

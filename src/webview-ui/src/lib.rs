@@ -7,7 +7,7 @@ extern crate lazy_static;
 extern crate cfg_if;
 
 mod app;
-mod app_state;
+mod application_state;
 mod bindings;
 mod coloring;
 mod colormap;

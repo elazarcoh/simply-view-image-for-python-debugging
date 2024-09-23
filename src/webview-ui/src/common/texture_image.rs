@@ -7,12 +7,9 @@ use crate::{
 use anyhow::Result;
 use itertools::Itertools;
 
-use super::{
-    Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size, ValueVariableKind,
-    ViewableObjectId,
-};
+use super::{Channels, ComputedInfo, DataOrdering, Datatype, ImageData, ImageInfo, Size};
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 pub(crate) enum TexturesGroup {
     HWC(GLGuard<web_sys::WebGlTexture>),
     CHW_G {
@@ -35,20 +32,6 @@ pub(crate) enum TexturesGroup {
     },
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub(crate) struct TextureImageInfo {
-//     pub image_id: ViewableObjectId,
-//     pub value_variable_kind: ValueVariableKind,
-//     pub expression: String,
-//     pub width: u32,
-//     pub height: u32,
-//     pub channels: Channels,
-//     pub datatype: Datatype,
-//     pub batch_info: Option<BatchInfo>,
-//     pub data_ordering: DataOrdering,
-//     pub additional_info: HashMap<String, String>,
-// }
-
 pub(crate) struct TextureImage {
     pub info: ImageInfo,
     pub computed_info: ComputedInfo,
@@ -67,7 +50,7 @@ impl TextureImage {
     ) -> Result<GLGuard<web_sys::WebGlTexture>> {
         webgl_utils::textures::create_texture_from_bytes(
             gl,
-            &bytes,
+            bytes,
             width,
             height,
             channels as _,
@@ -168,7 +151,7 @@ impl TextureImage {
 
             (start..end)
                 .map(|index| {
-                    let offset = ((index - start) as usize * batch_item_size) as usize;
+                    let offset = (index - start) as usize * batch_item_size;
                     let textures = Self::make_textures_group(&image, gl, offset)?;
                     let bytes = image.bytes[offset..offset + batch_item_size].to_vec();
 

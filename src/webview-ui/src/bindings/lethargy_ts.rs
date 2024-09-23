@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use gloo_utils::format::JsValueSerdeExt;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::{convert::FromWasmAbi, prelude::*};
+use wasm_bindgen::prelude::*;
 
 // #[wasm_bindgen(typescript_custom_section)]
 // const LETHARGY_CONFIG: &'static str = r#"

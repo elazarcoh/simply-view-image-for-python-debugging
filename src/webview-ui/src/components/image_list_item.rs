@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, UiAction, StoreAction, UpdateDrawingOptions},
+    application_state::app_state::{AppState, UiAction, StoreAction, UpdateDrawingOptions},
     coloring::Coloring,
     common::{Image, ImageInfo, MinimalImageInfo, ValueVariableKind},
     vscode::vscode_requests::VSCodeRequests,

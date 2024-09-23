@@ -7,9 +7,9 @@ use yew::{prelude::*, virtual_dom::VNode};
 use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
-    app_state::{app_state::AppState, images::ImageAvailability},
+    application_state::{app_state::AppState, images::ImageAvailability},
     coloring::{self, Coloring, DrawingOptions},
-    colormap::colormap,
+    colormap,
     common::{ViewId, ViewableObjectId},
     components::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
@@ -33,7 +33,7 @@ fn get_segmentation_colormap(
 }
 
 fn make_info_items(
-    image_id: &ViewableObjectId,
+    _image_id: &ViewableObjectId,
     image_availability: &ImageAvailability,
     drawing_options: &DrawingOptions,
 ) -> Option<Vec<VNode>> {
@@ -53,7 +53,7 @@ fn make_info_items(
             let coloring_factors = coloring::calculate_color_matrix(
                 &texture.info,
                 &texture.computed_info,
-                &drawing_options,
+                drawing_options,
             );
 
             let batch_index = drawing_options.batch_item.unwrap_or(0);
@@ -74,10 +74,10 @@ fn make_info_items(
                             v,
                             &coloring_factors,
                             colormap.as_ref(),
-                            &drawing_options,
+                            drawing_options,
                         );
-                        let rgb = (color_zero_one * 255.0).xyz().to_array();
-                        rgb
+                        
+                        (color_zero_one * 255.0).xyz().to_array()
                     })
                     .collect::<Vec<_>>();
                 let pairs_sorted = seg_values

@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
 use itertools::Itertools;
-use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
+use wasm_bindgen::{prelude::Closure, JsValue};
 use yewdux::{Dispatch, Listener};
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 use crate::{
-    app_state::images::ImageAvailability, bindings::lodash, common::constants,
+    application_state::images::ImageAvailability, bindings::lodash, common::constants,
     vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -159,7 +159,7 @@ impl ImagesFetcher {
 impl Listener for ImagesFetcher {
     type Store = AppState;
 
-    fn on_change(&mut self, cx: &yewdux::Context, state: Rc<Self::Store>) {
+    fn on_change(&mut self, _cx: &yewdux::Context, _state: Rc<Self::Store>) {
         self.debounced_fetch_missing_images
             .call1(&JsValue::NULL, &JsValue::UNDEFINED)
             .expect("debounced_fetch_missing_images call failed");

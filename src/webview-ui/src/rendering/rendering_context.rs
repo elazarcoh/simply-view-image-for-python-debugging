@@ -4,9 +4,9 @@ use std::rc::Rc;
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
 use crate::{
-    app_state::{app_state::GlobalDrawingOptions, images::ImageAvailability},
+    application_state::{app_state::GlobalDrawingOptions, images::ImageAvailability},
     coloring::DrawingOptions,
-    colormap::colormap,
+    colormap,
     common::{camera, CurrentlyViewing, Size, ViewId, ViewableObjectId},
     configurations::RenderingConfiguration,
     webgl_utils,

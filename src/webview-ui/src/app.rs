@@ -1,8 +1,8 @@
-use crate::app_state::app_state::AppState;
-use crate::app_state::app_state::GlobalDrawingOptions;
-use crate::app_state::images::ImageAvailability;
+use crate::application_state::app_state::AppState;
+use crate::application_state::app_state::GlobalDrawingOptions;
+use crate::application_state::images::ImageAvailability;
 use crate::coloring::DrawingOptions;
-use crate::colormap::colormap;
+use crate::colormap;
 use crate::common::camera;
 use crate::common::CurrentlyViewing;
 use crate::common::Image;
@@ -100,12 +100,12 @@ fn rendering_context() -> impl RenderingContext {
             let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
             let gl = state.gl()?;
-            let colormap = self.get_color_map(colormap_name)?;
+            let cmap = self.get_color_map(colormap_name)?;
             dispatch
                 .get()
                 .color_map_textures_cache
                 .borrow_mut()
-                .get_or_create(gl, &colormap)
+                .get_or_create(gl, &cmap)
         }
 
         fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
@@ -151,7 +151,7 @@ fn view_context() -> impl ViewContext {
                 .get()
                 .images
                 .borrow()
-                .get(&image_id?.id())
+                .get(image_id?.id())
                 .and_then(|image| match image {
                     Image::Placeholder(_) => None,
                     Image::Full(image_info) => Some(Size {
@@ -184,7 +184,7 @@ fn view_context() -> impl ViewContext {
                 .image_views
                 .borrow()
                 .get_currently_viewing(view_id);
-            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id.id()))
+            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(image_id.id()))
         }
 
         fn get_currently_viewing_for_view(&self, view_id: ViewId) -> Option<CurrentlyViewing> {

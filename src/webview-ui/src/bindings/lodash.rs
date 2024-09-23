@@ -43,6 +43,7 @@ impl Default for DebouncedOptions {
 
 pub(crate) struct Debounced {
     debounced: _Debounced,
+    #[allow(dead_code)]
     inner: JsValue,
 }
 
@@ -60,6 +61,7 @@ where
     Debounced { debounced, inner }
 }
 
+#[allow(dead_code)]
 pub(crate) fn debounce_closure_mutable(
     func: Closure<dyn FnMut(JsValue)>,
     wait: u32,
@@ -71,6 +73,7 @@ pub(crate) fn debounce_closure_mutable(
     Debounced { debounced, inner }
 }
 
+#[allow(dead_code)]
 impl Debounced {
     pub(crate) fn cancel(&self) {
         self.debounced.cancel();

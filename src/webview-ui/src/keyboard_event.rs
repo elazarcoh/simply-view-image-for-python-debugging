@@ -6,7 +6,7 @@ use yew::Callback;
 use yewdux::Dispatch;
 
 use crate::{
-    app_state::app_state::{AppState, UiAction},
+    application_state::app_state::{AppState, UiAction},
     bindings::lodash::debounce_closure,
     common::{constants, ViewId},
 };
@@ -94,7 +94,7 @@ impl KeyboardHandler {
         }
     }
 
-    pub(crate) fn install(node_ref: &yew::NodeRef) -> Option<EventListener> {
+    pub(crate) fn install(_node_ref: &yew::NodeRef) -> Option<EventListener> {
         let key_handler = debounce_closure(
             Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
                 KeyboardHandler::handle_key(&event);
@@ -108,7 +108,7 @@ impl KeyboardHandler {
                 let event = event
                     .dyn_ref::<web_sys::KeyboardEvent>()
                     .expect("Unable to cast event to KeyboardEvent");
-                key_handler.call1(&JsValue::NULL, &event).unwrap();
+                key_handler.call1(&JsValue::NULL, event).unwrap();
             })
         };
 

@@ -5,8 +5,8 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    app_state::app_state::{AppState, StoreAction},
-    common::{CurrentlyViewing, Image, ImageInfo, MinimalImageInfo, ViewId},
+    application_state::app_state::{AppState, StoreAction},
+    common::{CurrentlyViewing, Image, ViewId},
     components::image_list_item::ImageListItem,
 };
 
@@ -35,11 +35,10 @@ fn calc_y_scroll(parent: &web_sys::HtmlElement, target: &web_sys::HtmlElement) -
 fn scroll_to_element(container: &web_sys::HtmlElement, element: &web_sys::HtmlElement) {
     let position = calc_y_scroll(container, element);
     if !position.is_visible {
-        container.scroll_to_with_scroll_to_options(
-            ScrollToOptions::new()
-                .top(position.top)
-                .behavior(ScrollBehavior::Instant),
-        );
+        let opts = ScrollToOptions::new();
+        opts.set_top(position.top);
+        opts.set_behavior(ScrollBehavior::Instant);
+        container.scroll_to_with_scroll_to_options(&opts);
     }
 }
 
@@ -81,14 +80,14 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
         let node_ref = node_ref.clone();
         let container_ref = container_ref.clone();
         move |is_selected| {
-            node_ref
+            if let Some((node, container)) = node_ref
                 .cast::<web_sys::HtmlElement>()
                 .zip(container_ref.cast::<web_sys::HtmlElement>())
-                .map(|(node, container)| {
-                    if *is_selected {
-                        scroll_to_element(&container, &node);
-                    };
-                });
+            {
+                if *is_selected {
+                    scroll_to_element(&container, &node);
+                };
+            }
 
             move || {}
         }

@@ -43,6 +43,14 @@ impl ImageViews {
         self.0.get(&view_id).unwrap().0.clone()
     }
 
+    pub(crate) fn is_currently_viewing(&self, image_id: &ViewableObjectId) -> Vec<ViewId> {
+        self.0
+            .iter()
+            .filter(|(_, (cv, _))| cv.as_ref().map_or(false, |cv| cv.id() == image_id))
+            .map(|(v, _)| *v)
+            .collect::<Vec<_>>()
+    }
+
     pub(crate) fn set_image_to_view(&mut self, image_id: ViewableObjectId, view_id: ViewId) {
         let view = self.0.get_mut(&view_id).unwrap();
         view.0 = Some(CurrentlyViewing::Image(image_id));
@@ -64,13 +72,6 @@ impl ImageViews {
             element
                 .dispatch_event(&CustomEvent::new(event).unwrap())
                 .unwrap();
-        }
-    }
-
-    pub(crate) fn send_event_to_all_views(&self, event: &str) {
-        log::debug!("ImageViews::send_event_to_all_views: event={}", event);
-        for view_id in all_views() {
-            self.send_event_to_view(view_id, event);
         }
     }
 }

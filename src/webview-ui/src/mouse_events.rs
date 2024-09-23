@@ -8,7 +8,7 @@ use yew::Callback;
 use yewdux::Dispatch;
 
 use crate::{
-    app_state::app_state::{AppState, UiAction},
+    application_state::app_state::{AppState, UiAction},
     bindings::{lethargy_ts, lodash::debounce_closure},
     common::{
         camera,
@@ -20,48 +20,48 @@ use crate::{
     rendering::{constants::VIEW_SIZE, rendering_context::ViewContext},
 };
 
-// adapted from https://github.com/schrodinger/fixed-data-table-2/blob/master/src/vendor_upstream/dom/normalizeWheel.js
-// Reasonable defaults
-const PIXEL_STEP: f64 = 10.0;
-const LINE_HEIGHT: f64 = 40.0;
-const PAGE_HEIGHT: f64 = 800.0;
+// // adapted from https://github.com/schrodinger/fixed-data-table-2/blob/master/src/vendor_upstream/dom/normalizeWheel.js
+// // Reasonable defaults
+// const PIXEL_STEP: f64 = 10.0;
+// const LINE_HEIGHT: f64 = 40.0;
+// const PAGE_HEIGHT: f64 = 800.0;
 
-struct NormalizedWheel {
-    pixel_x: f64,
-    pixel_y: f64,
-}
+// struct NormalizedWheel {
+//     pixel_x: f64,
+//     pixel_y: f64,
+// }
 
-fn normalize_wheel(event: &web_sys::WheelEvent) -> NormalizedWheel {
-    log::debug!(
-        "delta_x: {}, delta_y: {}, delta_mode: {}",
-        event.delta_x(),
-        event.delta_y(),
-        event.delta_mode()
-    );
+// fn normalize_wheel(event: &web_sys::WheelEvent) -> NormalizedWheel {
+//     log::debug!(
+//         "delta_x: {}, delta_y: {}, delta_mode: {}",
+//         event.delta_x(),
+//         event.delta_y(),
+//         event.delta_mode()
+//     );
 
-    let delta_x = event.delta_x();
-    let delta_y = event.delta_y();
+//     let delta_x = event.delta_x();
+//     let delta_y = event.delta_y();
 
-    let mut p_x = delta_x as f64;
-    let mut p_y = delta_y as f64;
+//     let mut p_x = delta_x;
+//     let mut p_y = delta_y;
 
-    if (p_x == 0.0 || p_y == 0.0) && event.delta_mode() > 0 {
-        if event.delta_mode() == web_sys::WheelEvent::DOM_DELTA_LINE {
-            // delta in LINE units
-            p_x *= LINE_HEIGHT;
-            p_y *= LINE_HEIGHT;
-        } else {
-            // delta in PAGE units
-            p_x *= PAGE_HEIGHT;
-            p_y *= PAGE_HEIGHT;
-        }
-    }
+//     if (p_x == 0.0 || p_y == 0.0) && event.delta_mode() > 0 {
+//         if event.delta_mode() == web_sys::WheelEvent::DOM_DELTA_LINE {
+//             // delta in LINE units
+//             p_x *= LINE_HEIGHT;
+//             p_y *= LINE_HEIGHT;
+//         } else {
+//             // delta in PAGE units
+//             p_x *= PAGE_HEIGHT;
+//             p_y *= PAGE_HEIGHT;
+//         }
+//     }
 
-    NormalizedWheel {
-        pixel_x: p_x,
-        pixel_y: p_y,
-    }
-}
+//     NormalizedWheel {
+//         pixel_x: p_x,
+//         pixel_y: p_y,
+//     }
+// }
 
 fn get_clip_space_mouse_position(e: MouseEvent, element: &web_sys::HtmlElement) -> Vec2 {
     let rect = element.get_bounding_client_rect();
@@ -118,7 +118,7 @@ impl PanHandler {
                     Some(it) => it,
                     None => return,
                 };
-                let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+                let aspect_ratio = image_size.width / image_size.height;
 
                 let start_in_view_projection_matrix = camera::calculate_view_projection(
                     &element_size,
@@ -245,7 +245,7 @@ impl ZoomHandler {
                             Some(it) => it,
                             None => return,
                         };
-                        let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+                        let aspect_ratio = image_size.width / image_size.height;
 
                         let view_projection = camera::calculate_view_projection(
                             &element_size,
@@ -363,7 +363,7 @@ impl PixelHoverHandler {
                     Some(it) => it,
                     None => return,
                 };
-                let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+                let aspect_ratio = image_size.width / image_size.height;
 
                 let camera = view_context.get_camera_for_view(view_id);
                 let element_size = Size {
@@ -388,15 +388,15 @@ impl PixelHoverHandler {
                 let mouse_position = view_projection_matrix_inv * clip_coordinates.to_hom();
 
                 let mouse_position_pixels = Vec2::new(
-                    mouse_position.x * image_size.width as f32,
-                    mouse_position.y * image_size.height as f32,
+                    mouse_position.x * image_size.width,
+                    mouse_position.y * image_size.height,
                 );
                 let mouse_position_pixels = mouse_position_pixels.floor();
 
                 if mouse_position_pixels.x < 0.0
                     || mouse_position_pixels.y < 0.0
-                    || mouse_position_pixels.x >= image_size.width as f32
-                    || mouse_position_pixels.y >= image_size.height as f32
+                    || mouse_position_pixels.x >= image_size.width
+                    || mouse_position_pixels.y >= image_size.height
                 {
                     callback.emit(PixelHoverEvent::None);
                 } else {
@@ -444,7 +444,7 @@ impl ShiftScrollHandler {
 
         let wheel = {
             let view_context = Rc::clone(&view_context);
-            let view_element = view_element.clone();
+            let _view_element = view_element.clone();
 
             let lethargy = lethargy_ts::Lethargy::new_with_options(
                 lethargy_ts::LethargyConfigBuilder::default()
@@ -458,13 +458,9 @@ impl ShiftScrollHandler {
                         let is_intentional = lethargy.check(&event);
 
                         if is_intentional {
-                            let amount = event.delta_y() as f64;
+                            let amount = event.delta_y();
                             let dispatch = Dispatch::<AppState>::global();
-                            dispatch.apply(UiAction::ViewShiftScroll(
-                                view_id,
-                                cv,
-                                amount.signum(),
-                            ));
+                            dispatch.apply(UiAction::ViewShiftScroll(view_id, cv, -amount.signum()));
                         }
                     }
                 }) as Box<dyn Fn(web_sys::WheelEvent)>),

@@ -1,6 +1,5 @@
 use anyhow::Ok;
 use anyhow::Result;
-use itertools::Itertools;
 use std::iter::FromIterator;
 use yewdux::mrc::Mrc;
 
@@ -26,7 +25,6 @@ use crate::common::DataOrdering;
 use crate::common::Datatype;
 use crate::common::Size;
 use crate::common::ViewId;
-use crate::math_utils::image_calculations::calc_num_bytes_per_image;
 use crate::math_utils::image_calculations::calculate_pixels_information;
 use crate::webgl_utils;
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
@@ -334,9 +332,9 @@ impl Renderer {
         if let Some(cv) = &image_view_data.currently_viewing {
             let image_id = cv.id();
             match rendering_context.texture_by_id(image_id) {
-                crate::app_state::images::ImageAvailability::NotAvailable
-                | crate::app_state::images::ImageAvailability::Pending(_) => {}
-                crate::app_state::images::ImageAvailability::Available(texture) => {
+                crate::application_state::images::ImageAvailability::NotAvailable
+                | crate::application_state::images::ImageAvailability::Pending(_) => {}
+                crate::application_state::images::ImageAvailability::Available(texture) => {
                     // for batch, we need to check if the batch item is available
                     let batch_index = if matches!(cv, CurrentlyViewing::BatchItem(_)) {
                         let batch_index = rendering_context
@@ -344,7 +342,7 @@ impl Renderer {
                             .0
                             .batch_item
                             .filter(|i| texture.borrow().textures.contains_key(i));
-                        if !batch_index.is_some() {
+                        if batch_index.is_none() {
                             return Ok(());
                         }
                         batch_index
@@ -431,7 +429,7 @@ impl Renderer {
         let camera = &image_view_data.camera;
 
         let image_size = texture.image_size();
-        let aspect_ratio = image_size.width as f32 / image_size.height as f32;
+        let aspect_ratio = image_size.width / image_size.height;
 
         let view_projection =
             camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera, aspect_ratio);
@@ -447,7 +445,7 @@ impl Renderer {
             image_view_data
                 .currently_viewing
                 .as_ref()
-                .map(|cv| CurrentlyViewing::id(&cv))
+                .map(CurrentlyViewing::id)
                 .unwrap(),
         );
         let coloring_factors =
@@ -536,10 +534,10 @@ impl Renderer {
             None
         };
 
-        if colormap_texture.is_some() {
+        if let Some(ref colormap_texture) = colormap_texture {
             uniform_values.insert(
                 "u_colormap",
-                UniformValue::Texture(colormap_texture.as_ref().unwrap()),
+                UniformValue::Texture(colormap_texture),
             );
             uniform_values.insert("u_use_colormap", UniformValue::Bool(&true));
         } else {

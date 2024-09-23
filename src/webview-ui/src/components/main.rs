@@ -6,13 +6,12 @@ use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
 use crate::{
-    app_state::app_state::AppState,
+    application_state::app_state::AppState,
     common::{pixel_value::PixelValue, ViewId},
     components::{
         main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar,
         view_container::ViewContainer,
     },
-    math_utils::image_calculations::calc_num_bytes_per_image,
     mouse_events::PixelHoverHandler,
     rendering::rendering_context::ViewContext,
 };
@@ -48,8 +47,8 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
     use_effect({
         let pixel = pixel.clone();
         let pixel_value = pixel_value.clone();
-        let view_context = Rc::clone(&view_context);
-        let view_id = view_id.clone();
+        let view_context = Rc::clone(view_context);
+        let view_id = *view_id;
 
         move || {
             let mouse_hover_listener = {

@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::{
-    colormap::colormap, common::{pixel_value::PixelValue, Channels, ComputedInfo, Datatype, ImageInfo}, math_utils::mat4::transpose
+    colormap, common::{pixel_value::PixelValue, Channels, ComputedInfo, Datatype, ImageInfo}, math_utils::mat4::transpose
 };
 
 

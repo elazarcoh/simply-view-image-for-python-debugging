@@ -1,4 +1,5 @@
-use crate::app_state::app_state::StoreAction;
+#![allow(dead_code)]
+use crate::application_state::app_state::StoreAction;
 use crate::common::{Channels, Datatype, ValueVariableKind};
 use crate::common::{DataOrdering, ViewableObjectId};
 use crate::vscode::messages::ImageMessage;
@@ -8842,6 +8843,7 @@ fn segmentation_gray_data_u8() -> (&'static [u8], u32, u32) {
     (DATA, 250, 250)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn image_data_with(
     bytes: &[u8],
     datatype: Datatype,
@@ -9569,7 +9571,7 @@ pub(crate) fn set_debug_images() {
 
     use itertools::Itertools;
 
-    use crate::app_state::app_state::{AppState, ImageObject};
+    use crate::application_state::app_state::{AppState, ImageObject};
 
     log::debug!("creating debug image texture");
     let images: Vec<ImageMessage> = vec![
@@ -9626,7 +9628,7 @@ pub(crate) fn set_debug_images() {
 
 #[cfg(debug_assertions)]
 pub(crate) fn debug_action() {
-    use crate::app_state::app_state::{AppState, ImageObject};
+    use crate::application_state::app_state::{AppState, ImageObject};
     use std::convert::TryFrom;
 
     log::info!("Debug action!");

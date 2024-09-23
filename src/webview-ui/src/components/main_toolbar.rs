@@ -7,9 +7,9 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
+    application_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
     coloring::Coloring,
-    colormap::colormap::ColorMapKind,
+    colormap::ColorMapKind,
     common::ViewId,
 };
 
@@ -52,7 +52,8 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
     let node_ref = NodeRef::default();
 
     // Hacky way to get the current value of the dropdown
-    let cb: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+    type CallbackContainer = Rc<RefCell<Option<Box<dyn Fn()>>>>;
+    let cb: CallbackContainer = Rc::new(RefCell::new(None));
     *cb.borrow_mut() = Some(Box::new({
         let cb = Rc::clone(&cb);
         let node_ref = node_ref.clone();
@@ -115,7 +116,7 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             .image_views
             .borrow()
             .get_currently_viewing(ViewId::Primary)
-            .map(|cv| state.drawing_options.borrow().get_or_default(&cv.id()))
+            .map(|cv| state.drawing_options.borrow().get_or_default(cv.id()))
             .unwrap_or_default()
     });
 

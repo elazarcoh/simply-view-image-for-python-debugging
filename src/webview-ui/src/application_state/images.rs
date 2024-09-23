@@ -4,11 +4,11 @@ use yewdux::mrc::Mrc;
 use crate::{
     coloring::DrawingOptions,
     common::{
-        texture_image::TextureImage, Image, ImageInfo, ImagePlaceholder, MinimalImageInfo,
+        texture_image::TextureImage, Image,
         ViewableObjectId,
     },
 };
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub(crate) enum ImageAvailability {
@@ -43,9 +43,6 @@ impl ImageAvailability {
 pub(crate) struct ImageCache(HashMap<ViewableObjectId, ImageAvailability>);
 
 impl ImageCache {
-    pub(crate) fn has(&self, id: &ViewableObjectId) -> bool {
-        self.0.contains_key(id)
-    }
 
     pub(crate) fn get(&self, id: &ViewableObjectId) -> ImageAvailability {
         self.0
@@ -196,6 +193,6 @@ impl ImagesDrawingOptions {
     pub(crate) fn mut_ref_or_default(&mut self, image_id: ViewableObjectId) -> &mut DrawingOptions {
         self.0
             .entry(image_id)
-            .or_insert_with(DrawingOptions::default)
+            .or_default()
     }
 }

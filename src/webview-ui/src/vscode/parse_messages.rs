@@ -1,7 +1,7 @@
 use std::convert::{TryFrom, TryInto};
 
 use crate::{
-    app_state::app_state::ImageObject,
+    application_state::app_state::ImageObject,
     common::{pixel_value::PixelValue, ComputedInfo, ImageData, ImageInfo, ImagePlaceholder},
     math_utils::image_calculations::image_minmax_on_bytes,
 };
@@ -66,7 +66,7 @@ impl TryFrom<ImageMessage> for ImageData {
         Ok(Self {
             info,
             computed_info: ComputedInfo { min, max },
-            bytes: bytes,
+            bytes,
         })
     }
 }

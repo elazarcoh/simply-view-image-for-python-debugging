@@ -428,7 +428,7 @@ impl PixelTextRenderer {
                     "u_gylphTexture",
                     UniformValue::Texture(&self.glyph_texture.texture),
                 ),
-                ("u_textColor", UniformValue::Vec4(&data.text_color)),
+                ("u_textColor", UniformValue::Vec4(data.text_color)),
                 (
                     "u_imageToScreenMatrix",
                     UniformValue::Mat3(&(*data.image_coords_to_view_coord_mat * text_to_image)),

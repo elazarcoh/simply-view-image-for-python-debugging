@@ -1,8 +1,7 @@
-use crate::app_state::app_state::{AppState, ImageObject, StoreAction};
-use crate::common::texture_image::TextureImage;
+use crate::application_state::app_state::{AppState, ImageObject, StoreAction};
 use crate::common::{ImageData, ViewId};
 use crate::vscode::messages::*;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use gloo::events::EventListener;
 use itertools::Itertools;
 use std::convert::TryFrom;
@@ -38,18 +37,20 @@ impl VSCodeListener {
         match message {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
-                ExtensionResponse::ReplaceData(replacement_data) => Ok(
-                    Self::handle_replace_data_request(replacement_data.replacement_images),
-                ),
+                ExtensionResponse::ReplaceData(replacement_data) => {
+                    Self::handle_replace_data_request(replacement_data.replacement_images);
+                    Ok(())
+                }
             },
             FromExtensionMessage::Request(message) => match message {
                 ExtensionRequest::ShowImage {
                     image_data,
                     options,
                 } => Self::handle_show_image_request(image_data, options),
-                ExtensionRequest::ReplaceData(replacement_data) => Ok(
-                    Self::handle_replace_data_request(replacement_data.replacement_images),
-                ),
+                ExtensionRequest::ReplaceData(replacement_data) => {
+                    Self::handle_replace_data_request(replacement_data.replacement_images);
+                    Ok(())
+                }
                 ExtensionRequest::Configuration(configurations) => {
                     Self::handle_configuration_request(configurations)
                 }

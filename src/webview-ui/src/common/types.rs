@@ -150,14 +150,6 @@ impl Datatype {
         }
     }
 
-    pub(crate) fn is_floating(&self) -> bool {
-        matches!(
-            self,
-            Datatype::Float32,
-            // Datatype::Float64
-        )
-    }
-
     pub(crate) fn is_unsigned_integer(&self) -> bool {
         matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
     }
@@ -167,6 +159,7 @@ impl Datatype {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub(crate) enum DataOrdering {
     #[serde(rename = "hwc")]

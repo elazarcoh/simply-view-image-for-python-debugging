@@ -6,8 +6,7 @@ use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    CurrentlyViewing, Image, ImageData, ImagePlaceholder, MinimalImageInfo, ViewId,
-    ViewableObjectId,
+    CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
 };
 use crate::configurations;
 use anyhow::{anyhow, Result};
@@ -30,7 +29,7 @@ impl Default for GlobalDrawingOptions {
     }
 }
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
@@ -90,23 +89,6 @@ impl AppState {
     }
 }
 
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            gl: None,
-            images: Default::default(),
-            image_views: Default::default(),
-            image_cache: Default::default(),
-            view_cameras: Default::default(),
-            color_map_registry: Default::default(),
-            color_map_textures_cache: Default::default(),
-            configuration: Default::default(),
-            drawing_options: Default::default(),
-            global_drawing_options: Default::default(),
-        }
-    }
-}
-
 impl PartialEq for AppState {
     fn eq(&self, other: &Self) -> bool {
         self.images == other.images
@@ -150,7 +132,6 @@ impl ImageObject {
 
 pub(crate) enum StoreAction {
     SetImageToView(ViewableObjectId, ViewId),
-    AddTextureImage(ViewableObjectId, Box<TextureImage>),
     AddImageWithData(ViewableObjectId, ImageData),
     UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
@@ -208,6 +189,22 @@ fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
             .get_or_insert(0);
     }
 
+    // if the image is currently displayed, update the view
+    let views_for_image = state.image_views.borrow().is_currently_viewing(&image_id);
+    views_for_image.iter().for_each(|view_id| {
+        if is_batched {
+            state
+                .image_views
+                .borrow_mut()
+                .set_batch_item_to_view(image_id.clone(), *view_id);
+        } else {
+            state
+                .image_views
+                .borrow_mut()
+                .set_image_to_view(image_id.clone(), *view_id);
+        }
+    });
+
     Ok(())
 }
 
@@ -218,19 +215,6 @@ impl Reducer<AppState> for StoreAction {
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
                 state.set_image_to_view(image_id, view_id);
-            }
-
-            StoreAction::AddTextureImage(image_id, texture_image) => {
-                log::debug!("AddTextureImage: {:?}", image_id);
-                let info = texture_image.info.clone();
-                state
-                    .image_cache
-                    .borrow_mut()
-                    .set_image(&image_id, *texture_image);
-                state
-                    .images
-                    .borrow_mut()
-                    .insert(image_id, Image::Full(info));
             }
 
             StoreAction::AddImageWithData(image_id, image_data) => {
@@ -332,7 +316,7 @@ impl Reducer<AppState> for UiAction {
                         state
                             .images
                             .borrow()
-                            .next_image_id(&current_image_id.id())
+                            .next_image_id(current_image_id.id())
                             .cloned()
                     })
                     .or_else(|| {
@@ -344,9 +328,9 @@ impl Reducer<AppState> for UiAction {
                             .next()
                             .map(|(image_id, _)| image_id.clone())
                     });
-                next_image_id.map(|next_image_id| {
+                if let Some(next_image_id) = next_image_id {
                     state.set_image_to_view(next_image_id, view_id);
-                });
+                }
             }
             UiAction::Previous(view_id) => {
                 let previous_image_id = state
@@ -357,7 +341,7 @@ impl Reducer<AppState> for UiAction {
                         state
                             .images
                             .borrow()
-                            .previous_image_id(&current_image_id.id())
+                            .previous_image_id(current_image_id.id())
                             .cloned()
                     })
                     .or_else(|| {
@@ -369,9 +353,9 @@ impl Reducer<AppState> for UiAction {
                             .next_back()
                             .map(|(image_id, _)| image_id.clone())
                     });
-                previous_image_id.map(|previous_image_id| {
+                if let Some(previous_image_id) = previous_image_id {
                     state.set_image_to_view(previous_image_id, view_id);
-                });
+                }
             }
             UiAction::Pin(image_id) => {
                 state.images.borrow_mut().pin(&image_id);

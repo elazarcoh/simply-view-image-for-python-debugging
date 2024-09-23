@@ -1,12 +1,12 @@
 use gloo::events::EventListener;
-use stylist::{css, yew::use_style};
+use stylist::yew::use_style;
 use wasm_bindgen::JsCast;
 
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::{
-    app_state::app_state::{AppState, UiAction},
+    application_state::app_state::{AppState, UiAction},
     common::ViewId,
     components::{
         icon_button::{IconButton, IconToggleButton, ToggleState},

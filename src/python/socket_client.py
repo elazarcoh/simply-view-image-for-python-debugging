@@ -521,7 +521,7 @@ def open_send_and_close(port, request_id, obj, options=None):
             elif _Internal.is_pillow_image(obj):
                 message = create_pillow_message(obj)
             elif _Internal.is_torch(obj):
-                raise NotImplementedError("Sending torch tensors is not supported")
+                message = create_tensor_message(obj, options)
             else:
                 raise ValueError(f"Cant send object of type {type(obj)}")
         except Exception as e:

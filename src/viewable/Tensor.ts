@@ -60,5 +60,5 @@ export const TorchTensor: Viewable<TorchTensorInfo> = {
             `${m("torch_tensor_save")}('${savePath}', ${expression})`,
     },
     suffix: ".png",
-    supportsImageViewer: false,
+    supportsImageViewer: (() => getConfiguration("tensorsInViewer") ?? false) as Initializer<boolean>,
 };

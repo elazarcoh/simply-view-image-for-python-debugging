@@ -122,7 +122,6 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     let style = use_style!(
         r#"
-            width: 100%;
             height: calc(var(--input-height) * 1px);
 
             background-color: var(--vscode-sideBar-background);
@@ -138,12 +137,45 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             justify-content: flex-start;
             flex-direction: row;
             gap: 10px;
+
+            .help {
+                margin-left: auto;
+            }
+            .help .tooltiptext {
+                background: var(--vscode-editorHoverWidget-background);
+                border: 1px solid var(--vscode-editorHoverWidget-border);
+                border-radius: 3px;
+                box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+
+                visibility: hidden;
+                width: 120px;
+                color: var(--vscode-foreground);
+                text-align: center;
+                padding: 2px 8px;
+                border-radius: 6px;
+                
+                position: absolute;
+                z-index: 1;
+                right: 10px;
+
+            }
+            .help:hover .tooltiptext {
+                visibility: visible;
+
+                animation: fadein .1s linear;
+
+            }
         "#
     );
 
     html! {
         <div class={style}>
             <HeatmapColormapDropdown disabled={drawing_options.coloring != Coloring::Heatmap} />
+            <div class={classes!("codicon", "codicon-question", "help")} >
+                <span class={classes!("tooltiptext")}>
+                    {"Help"}
+                </span>
+            </div>
         </div>
     }
 }

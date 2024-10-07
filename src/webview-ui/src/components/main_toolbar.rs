@@ -146,24 +146,29 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
                 border: 1px solid var(--vscode-editorHoverWidget-border);
                 border-radius: 3px;
                 box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+                font-family: var(--font-family);
+                font-size: var(--vscode-font-size);
+                font-weight: var(--font-weight);
 
                 visibility: hidden;
-                width: 120px;
+                width: fit-content;
+                min-width: 30dvh;
                 color: var(--vscode-foreground);
                 text-align: center;
                 padding: 2px 8px;
-                border-radius: 6px;
                 
                 position: absolute;
                 z-index: 1;
                 right: 10px;
 
+                opacity: 0;
+
             }
             .help:hover .tooltiptext {
                 visibility: visible;
-
-                animation: fadein .1s linear;
-
+                opacity: 1;
+                transition: opacity 0.3s;
+                transition-delay: 0.5s;
             }
         "#
     );
@@ -173,7 +178,9 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             <HeatmapColormapDropdown disabled={drawing_options.coloring != Coloring::Heatmap} />
             <div class={classes!("codicon", "codicon-question", "help")} >
                 <span class={classes!("tooltiptext")}>
-                    {"Help"}
+                    <p>{"Click + Drag to pan"}</p>
+                    <p>{"Scroll to zoom"}</p>
+                    <p>{"Shift + Scroll/Up/Down to change batch item"}</p>
                 </span>
             </div>
         </div>

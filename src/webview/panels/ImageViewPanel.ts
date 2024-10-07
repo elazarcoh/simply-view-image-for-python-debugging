@@ -15,6 +15,7 @@ import { getNonce } from "../utilities/getNonce";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
 import Container from "typedi";
 import { WebviewClient } from "../communication/WebviewClient";
+import { logInfo } from "../../Logging";
 
 /**
  * This class manages the state and behavior of HelloWorld webview panels.
@@ -127,14 +128,17 @@ export class ImageViewPanel {
             path.join(extensionUri.fsPath, "dist", "index.html"),
             "utf8"
         );
+        logInfo("indexHtml", indexHtml);
         // replace script with vscode-resource URIs
         const htmlWithVscodeResourceUris = indexHtml
             .replaceAll(/\${nonce}/g, nonce)
             .replaceAll(/\${webviewCspSource}/g, webview.cspSource)
             .replaceAll(/\${baseUri}/g, baseUri.toString())
-            .replaceAll(/<script.*?src="webview\.js"><\/script>/g, () => {
+            .replaceAll(/<script[^>]*?src="webview\.js"><\/script>/g, () => {
                 return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
-            });
+            })
+            ;
+        logInfo("htmlWithVscodeResourceUris", htmlWithVscodeResourceUris);
         return htmlWithVscodeResourceUris;
     }
 }

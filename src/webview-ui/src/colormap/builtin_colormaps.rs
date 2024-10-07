@@ -254,7 +254,7 @@ Creative Commons Attribution 4.0 International Public License (CC-BY)
        any jurisdiction or authority.
 */
 
-use super::colormap::{ColorMap, ColorMapKind};
+use super::{ColorMap, ColorMapKind};
 
 lazy_static! {
     pub(crate) static ref BUILTIN_COLORMAPS: Vec<ColorMap> = {

@@ -5,7 +5,7 @@ use wasm_bindgen::JsValue;
 
 use yewdux::prelude::*;
 
-use crate::common::ImageId;
+use crate::common::ViewableObjectId;
 use crate::vscode::WebviewApi;
 
 use super::messages::MessageId;
@@ -15,8 +15,16 @@ struct WebviewReady {}
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct RequestImageData {
-    image_id: ImageId,
+    image_id: ViewableObjectId,
     expression: String,
+}
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
+struct RequestBatchItemData {
+    image_id: ViewableObjectId,
+    expression: String,
+    batch_item: u32,
+    currently_holding: Option<Vec<u32>>,
 }
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
@@ -36,6 +44,7 @@ struct EditExpression {
 enum FromWebviewMessage {
     WebviewReady(WebviewReady),
     RequestImageData(RequestImageData),
+    RequestBatchItemData(RequestBatchItemData),
     RequestImages(RequestImages),
     AddExpression(AddExpression),
     EditExpression(EditExpression),
@@ -86,12 +95,29 @@ impl VSCodeRequests {
         Self::send_message(FromWebviewMessage::RequestImages(RequestImages {}))
     }
 
-    pub(crate) fn request_image_data(image_id: ImageId, expression: String) -> MessageId {
+    pub(crate) fn request_image_data(image_id: ViewableObjectId, expression: String) -> MessageId {
         log::debug!("VSCodeRequests::request_image_data: {:?}", image_id);
         Self::send_message(FromWebviewMessage::RequestImageData(RequestImageData {
             image_id,
             expression,
         }))
+    }
+
+    pub(crate) fn request_batch_item_data(
+        image_id: ViewableObjectId,
+        expression: String,
+        batch_item: u32,
+        currently_holding: Option<Vec<u32>>,
+    ) -> MessageId {
+        log::debug!("VSCodeRequests::request_batch_item_data: {:?}", image_id);
+        Self::send_message(FromWebviewMessage::RequestBatchItemData(
+            RequestBatchItemData {
+                image_id,
+                expression,
+                batch_item,
+                currently_holding,
+            },
+        ))
     }
 
     pub(crate) fn webview_ready() -> MessageId {

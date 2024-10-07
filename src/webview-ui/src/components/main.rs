@@ -6,9 +6,12 @@ use yew::prelude::*;
 use yewdux::prelude::Dispatch;
 
 use crate::{
-    app_state::app_state::AppState,
+    application_state::app_state::AppState,
     common::{pixel_value::PixelValue, ViewId},
-    components::{main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar, view_container::ViewContainer},
+    components::{
+        main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar,
+        view_container::ViewContainer,
+    },
     mouse_events::PixelHoverHandler,
     rendering::rendering_context::ViewContext,
 };
@@ -25,6 +28,12 @@ impl PartialEq for StatusBarWrapperProps {
     }
 }
 
+pub(crate) enum PixelHoverEvent {
+    Hovered(UVec2),
+    Refresh,
+    None,
+}
+
 #[function_component]
 fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
     let StatusBarWrapperProps {
@@ -38,24 +47,48 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
     use_effect({
         let pixel = pixel.clone();
         let pixel_value = pixel_value.clone();
-        let view_context = Rc::clone(&view_context);
-        let view_id = view_id.clone();
+        let view_context = Rc::clone(view_context);
+        let view_id = *view_id;
 
         move || {
             let mouse_hover_listener = {
                 PixelHoverHandler::install(
                     view_id,
                     Rc::clone(&view_context),
-                    Callback::from(move |hovered_pixel: Option<UVec2>| {
-                        let maybe_pixel_value = hovered_pixel.and_then(|pixel| {
-                            let image = view_context.get_image_for_view(view_id);
-                            image.and_then(|image| {
-                                image.map(|image| PixelValue::from_image(&image.image, &pixel))
+                    Callback::from(move |hovered_pixel: PixelHoverEvent| {
+                        let current_pixel = match hovered_pixel {
+                            PixelHoverEvent::Hovered(pixel) => Some(pixel),
+                            PixelHoverEvent::Refresh => *pixel,
+                            PixelHoverEvent::None => None,
+                        };
+
+                        let maybe_pixel_value = current_pixel
+                            .zip(view_context.get_image_for_view(view_id))
+                            .and_then(|(pixel, image)| {
+                                image.map(|image| {
+                                    let image = image.borrow();
+                                    let dispatch = Dispatch::<AppState>::global();
+                                    let batch_index = dispatch
+                                        .get()
+                                        .drawing_options
+                                        .borrow()
+                                        .get(&image.info.image_id)
+                                        .and_then(|d| d.batch_item)
+                                        .unwrap_or(0);
+
+                                    image.bytes.get(&batch_index).map(|bytes| {
+                                        PixelValue::from_image_info(&image.info, bytes, &pixel)
+                                    })
+                                })
                             })
-                        });
+                            .flatten();
 
                         pixel_value.set(maybe_pixel_value);
-                        pixel.set(hovered_pixel);
+                        pixel.set(match hovered_pixel {
+                            PixelHoverEvent::Hovered(pixel) => Some(pixel),
+                            PixelHoverEvent::Refresh => current_pixel,
+                            PixelHoverEvent::None => None,
+                        });
                     }),
                 )
             };

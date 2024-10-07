@@ -205,6 +205,10 @@ type ArrayInfo = {
     height: number;
     channels: number;
     dimensionOrder: DimensionOrderString;
+    isBatched: boolean;
+    batchSize: number;
+    batchItemsStart: number;
+    batchItemsEnd: number;
     mins: number[];
     maxs: number[];
     data: Buffer;
@@ -225,6 +229,11 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
         const height = reader.readUInt32();
         const channels = reader.readUInt32();
         const dimensionOrder = reader.readUInt8();
+
+        const isBatched = reader.readUInt8();
+        const batchSize = reader.readUInt32();
+        const batchItemsStart = reader.readUInt32();
+        const batchItemsEnd = reader.readUInt32();
 
         const numStats = reader.readUInt8();
         const mins = [];
@@ -249,6 +258,10 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
             height,
             channels,
             dimensionOrder: dimensionOrderToString(dimensionOrder),
+            isBatched: isBatched !== 0,
+            batchSize,
+            batchItemsStart,
+            batchItemsEnd,
             mins,
             maxs,
             data,

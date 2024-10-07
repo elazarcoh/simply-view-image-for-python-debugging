@@ -9,5 +9,6 @@
   "toggle-transparency": 60008,
   "heatmap": 60009,
   "segmentation": 60010,
-  "legend": 60011
+  "legend": 60011,
+  "tensor": 60012
 }

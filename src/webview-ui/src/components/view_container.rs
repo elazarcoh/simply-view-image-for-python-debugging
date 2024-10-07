@@ -7,10 +7,10 @@ use yew::{prelude::*, virtual_dom::VNode};
 use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
-    app_state::{app_state::AppState, images::ImageAvailability},
+    application_state::{app_state::AppState, images::ImageAvailability},
     coloring::{self, Coloring, DrawingOptions},
-    colormap::colormap,
-    common::{ImageId, ViewId},
+    colormap,
+    common::{ViewId, ViewableObjectId},
     components::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
     },
@@ -33,7 +33,7 @@ fn get_segmentation_colormap(
 }
 
 fn make_info_items(
-    image_id: &ImageId,
+    _image_id: &ViewableObjectId,
     image_availability: &ImageAvailability,
     drawing_options: &DrawingOptions,
 ) -> Option<Vec<VNode>> {
@@ -43,6 +43,7 @@ fn make_info_items(
 
     // show legend if image is available and is shown as segmentation
     if let ImageAvailability::Available(texture) = image_availability {
+        let texture = texture.borrow();
         if drawing_options.coloring == Coloring::Segmentation {
             let colormap = get_segmentation_colormap(&dispatch)
                 .map_err(|e| {
@@ -50,14 +51,17 @@ fn make_info_items(
                 })
                 .ok()?;
             let coloring_factors = coloring::calculate_color_matrix(
-                &texture.image.info,
-                &texture.image.computed_info,
-                &drawing_options,
+                &texture.info,
+                &texture.computed_info,
+                drawing_options,
             );
+
+            let batch_index = drawing_options.batch_item.unwrap_or(0);
+
             if let Ok(values) = math_utils::image_calculations::image_unique_values_on_bytes(
-                &texture.image.bytes,
-                texture.image.info.datatype,
-                texture.image.info.channels,
+                &texture.bytes[&batch_index],
+                texture.info.datatype,
+                texture.info.channels,
             ) {
                 let seg_values = values
                     .iter()
@@ -70,10 +74,10 @@ fn make_info_items(
                             v,
                             &coloring_factors,
                             colormap.as_ref(),
-                            &drawing_options,
+                            drawing_options,
                         );
-                        let rgb = (color_zero_one * 255.0).xyz().to_array();
-                        rgb
+                        
+                        (color_zero_one * 255.0).xyz().to_array()
                     })
                     .collect::<Vec<_>>();
                 let pairs_sorted = seg_values
@@ -116,11 +120,12 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
     let current_image = {
         let view_id = *view_id;
         use_selector(
-            move |state: &AppState| -> Option<(ImageId, ImageAvailability, Option<DrawingOptions>)> {
-                let image_id = state.image_views.borrow().get_image_id(view_id)?;
-                let availability = state.image_cache.borrow().get(&image_id);
-                let drawing_options = state.drawing_options.borrow().get(&image_id);
-                Some((image_id, availability, drawing_options))
+            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
+                let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
+                let image_id = binding.id();
+                let availability = state.image_cache.borrow().get(image_id);
+                let drawing_options = state.drawing_options.borrow().get(image_id);
+                Some((image_id.clone(), availability, drawing_options))
             },
         )
     };
@@ -131,7 +136,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                 ImageAvailability::NotAvailable => Some(html! {
                     <div>{"No Data"}</div>
                 }),
-                ImageAvailability::Pending => Some(html! {
+                ImageAvailability::Pending(_) => Some(html! {
                     <Spinner />
                 }),
                 ImageAvailability::Available(_) => None,

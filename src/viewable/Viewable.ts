@@ -8,7 +8,7 @@ export interface Viewable<T = unknown> {
     serializeObjectPythonCode: EvalCode<null, [string]>;
     suffix: string;
     onShow?: (path: string) => void | Promise<void>;
-    supportsImageViewer: boolean;
+    supportsImageViewer: boolean | Initializer<boolean>;
 }
 
 export interface PluginViewable<T = unknown> extends Viewable<T> {

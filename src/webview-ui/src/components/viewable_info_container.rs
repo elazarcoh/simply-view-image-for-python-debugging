@@ -58,8 +58,8 @@ pub(crate) fn ViewableInfoContainer(props: &ViewableInfoContainerProps) -> Html 
     let expanded_html = html! {
         <div class="expanded">
             <IconButton
-                title={"Toggle"}
-                aria_label={"Toggle"}
+                title={"Collapse"}
+                aria_label={"Collapse"}
                 icon={"codicon codicon-chevron-right"}
                 onclick={
                     let collapsed = collapsed.clone();
@@ -73,8 +73,8 @@ pub(crate) fn ViewableInfoContainer(props: &ViewableInfoContainerProps) -> Html 
     let collapsed_html = html! {
         <div class="collapsed">
             <IconButton
-                title={"Toggle"}
-                aria_label={"Toggle"}
+                title={"Expand"}
+                aria_label={"Expand"}
                 icon={"svifpd-icons svifpd-icons-legend"}
                 onclick={
                     let collapsed = collapsed.clone();

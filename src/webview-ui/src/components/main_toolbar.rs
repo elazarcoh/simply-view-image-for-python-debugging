@@ -7,9 +7,9 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
+    application_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
     coloring::Coloring,
-    colormap::colormap::ColorMapKind,
+    colormap::ColorMapKind,
     common::ViewId,
 };
 
@@ -52,7 +52,8 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
     let node_ref = NodeRef::default();
 
     // Hacky way to get the current value of the dropdown
-    let cb: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+    type CallbackContainer = Rc<RefCell<Option<Box<dyn Fn()>>>>;
+    let cb: CallbackContainer = Rc::new(RefCell::new(None));
     *cb.borrow_mut() = Some(Box::new({
         let cb = Rc::clone(&cb);
         let node_ref = node_ref.clone();
@@ -114,14 +115,13 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         state
             .image_views
             .borrow()
-            .get_image_id(ViewId::Primary)
-            .map(|image_id| state.drawing_options.borrow().get_or_default(&image_id))
+            .get_currently_viewing(ViewId::Primary)
+            .map(|cv| state.drawing_options.borrow().get_or_default(cv.id()))
             .unwrap_or_default()
     });
 
     let style = use_style!(
         r#"
-            width: 100%;
             height: calc(var(--input-height) * 1px);
 
             background-color: var(--vscode-sideBar-background);
@@ -137,12 +137,52 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             justify-content: flex-start;
             flex-direction: row;
             gap: 10px;
+
+            .help {
+                margin-left: auto;
+            }
+            .help .tooltiptext {
+                background: var(--vscode-editorHoverWidget-background);
+                border: 1px solid var(--vscode-editorHoverWidget-border);
+                border-radius: 3px;
+                box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+                font-family: var(--font-family);
+                font-size: var(--vscode-font-size);
+                font-weight: var(--font-weight);
+
+                visibility: hidden;
+                width: fit-content;
+                min-width: 30dvh;
+                color: var(--vscode-foreground);
+                text-align: center;
+                padding: 2px 8px;
+                
+                position: absolute;
+                z-index: 1;
+                right: 10px;
+
+                opacity: 0;
+
+            }
+            .help:hover .tooltiptext {
+                visibility: visible;
+                opacity: 1;
+                transition: opacity 0.3s;
+                transition-delay: 0.5s;
+            }
         "#
     );
 
     html! {
         <div class={style}>
             <HeatmapColormapDropdown disabled={drawing_options.coloring != Coloring::Heatmap} />
+            <div class={classes!("codicon", "codicon-question", "help")} >
+                <span class={classes!("tooltiptext")}>
+                    <p>{"Click + Drag to pan"}</p>
+                    <p>{"Scroll to zoom"}</p>
+                    <p>{"Shift + Scroll/Up/Down to change batch item"}</p>
+                </span>
+            </div>
         </div>
     }
 }

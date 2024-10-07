@@ -92,6 +92,13 @@ export interface Config {
 
     /**
      * @default true
+     * @description Whether to show tensors in the viewer.
+     * @experimental
+     */
+    tensorsInViewer: boolean;
+
+    /**
+     * @default true
      * @description Whether to use the new data-transfer protocol (using a socket server, instead of a file).
      * @experimental
      */

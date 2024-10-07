@@ -186,13 +186,27 @@ export function constructObjectShapeCode(
     );
 }
 
+export type OpenSendAndCloseTensorOptions = {
+    max_size_bytes?: number;
+    start: number;
+    stop: number;
+};
+export type OpenSendAndCloseOptions = OpenSendAndCloseTensorOptions;
+
 export function constructOpenSendAndCloseCode(
     port: number,
     request_id: number,
     expression: string,
+    options?: OpenSendAndCloseOptions,
 ): EvalCodePython<Result<PythonObjectShape>> {
+    function makeOptionsString(options: OpenSendAndCloseOptions): string {
+        return `dict(${Object.entries(options)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(", ")})`;
+    }
+    const optionsStr = options ? makeOptionsString(options) : "{}";
     return convertExpressionIntoValueWrappedExpression(
-        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression})`
+        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${optionsStr})`
     );
 }
 

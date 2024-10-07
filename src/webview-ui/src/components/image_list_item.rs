@@ -4,9 +4,9 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    app_state::app_state::{AppState, ChangeImageAction, StoreAction, UpdateDrawingOptions},
+    application_state::app_state::{AppState, UiAction, StoreAction, UpdateDrawingOptions},
     coloring::Coloring,
-    common::{ImageInfo, ValueVariableKind},
+    common::{Image, ImageInfo, MinimalImageInfo, ValueVariableKind},
     vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -20,7 +20,7 @@ pub(crate) struct DisplayOptionProps {
 mod features {
     use enumset::{EnumSet, EnumSetType};
 
-    use crate::common::{Channels, Datatype};
+    use crate::common::{Channels, Datatype, ImageInfo};
 
     #[derive(EnumSetType, Debug)]
     #[allow(clippy::upper_case_acronyms)]
@@ -39,8 +39,12 @@ mod features {
     }
 
     #[rustfmt::skip]
-    pub(crate) fn list_features(datatype: Datatype, channels: Channels) -> EnumSet<Feature> {
-        let for_all = EnumSet::from(Feature::Invert);
+    pub(crate) fn list_features(entry: &ImageInfo) -> EnumSet<Feature> {
+
+        let datatype = entry.datatype;
+        let channels = entry.channels;
+
+        let for_all = EnumSet::only(Feature::Invert);
         let rgb_features = Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B | Feature::Grayscale  | Feature::HighContrast;
         let bool_rgb_features = Feature::SwapRgbBgr | Feature::R | Feature::G | Feature::B ;
         let alpha_features = Feature::IgnoreAlpha;
@@ -48,6 +52,7 @@ mod features {
         let gray_alpha_features = Feature::HighContrast | alpha_features;
         let gray_features = Feature::HighContrast | Feature::Heatmap | alpha_features;
         let integer_gray_features = Feature::Segmentation | gray_features;
+        // let batched_features = EnumSet::only(Feature::Batched);
         let no_additional_features = EnumSet::empty();
 
         for_all | match (channels, datatype) {
@@ -83,8 +88,7 @@ mod features {
             (Channels::Four, Datatype::Int16) => rgba_features,
             (Channels::Four, Datatype::Int32) => rgba_features,
             (Channels::Four, Datatype::Bool) => bool_rgb_features,
-            
-        }
+        } 
 
     }
 }
@@ -98,7 +102,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
         state.drawing_options.borrow().get_or_default(&image_id)
     });
 
-    let features = features::list_features(entry.datatype, entry.channels);
+    let features = features::list_features(entry);
 
     let currently_selected_style = use_style!(
         r#"
@@ -254,6 +258,20 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             }}
         />
     };
+    // let tensor_button = html! {
+    //     <IconButton
+    //         class={ if drawing_options.as_batch_slice.0 { currently_selected_style.clone() } else { default_style.clone() }}
+    //         aria_label={"Tensor"}
+    //         title={"Tensor"}
+    //         icon={"svifpd-icons svifpd-icons-tensor"}
+    //         onclick={{
+    //             let image_id = image_id.clone();
+    //             let dispatch = Dispatch::<AppState>::global();
+    //             let drawing_options = drawing_options.clone();
+    //             move |_| { dispatch.apply(StoreAction::SetAsBatched(image_id.clone(), !drawing_options.as_batch_slice.0)); }
+    //         }}
+    //     />
+    // };
 
     let mut buttons = Vec::new();
     if features.contains(features::Feature::HighContrast) {
@@ -288,6 +306,9 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
     // if features.contains(features::Feature::Transpose) {
     //     buttons.push(transpose_button);
+    // }
+    // if features.contains(features::Feature::Batched) {
+    //     buttons.push(tensor_button);
     // }
 
     if !buttons.is_empty() {
@@ -338,8 +359,9 @@ fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html
 #[derive(PartialEq, Properties, Clone)]
 pub(crate) struct ImageListItemProps {
     pub pinned: bool,
-    pub entry: ImageInfo,
+    pub entry: Image,
     pub selected: bool,
+    pub batch_index: Option<u32>,
 }
 
 #[function_component]
@@ -348,8 +370,15 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         pinned,
         entry,
         selected,
+        batch_index,
     } = props;
-    let image_id = entry.image_id.clone();
+
+    let MinimalImageInfo {
+        image_id,
+        value_variable_kind,
+        expression,
+        ..
+    } = entry.minimal();
 
     let info_grid_style = use_style!(
         r#"
@@ -368,11 +397,22 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     "#,
     );
 
-    let rows = entry
+    let mut rows = entry
+        .minimal()
         .additional_info
         .iter()
         .sorted()
-        .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style));
+        .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style))
+        .collect::<Vec<_>>();
+
+    if let Some(batch_index) = batch_index {
+        let batch_row = make_info_row(
+            "Batch Index",
+            &batch_index.to_string(),
+            &info_grid_cell_style,
+        );
+        rows.push(batch_row);
+    }
 
     let edit_button = html! {
         <IconButton
@@ -380,7 +420,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             title={"Edit"}
             icon={"codicon codicon-edit"}
             onclick={Callback::from({
-                let expression = entry.expression.clone();
+                let expression = expression.clone();
                 move |_| {
                     let _id = VSCodeRequests::edit_expression(expression.clone());
                 }
@@ -394,7 +434,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             aria_label={"Pin"}
             title={"Pin"}
             icon={"codicon codicon-pin"}
-            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| ChangeImageAction::Pin(image_id.clone())})}
+            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| UiAction::Pin(image_id.clone())})}
         />
     };
     let unpin_style = use_style!(
@@ -408,7 +448,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             aria_label={"Unpin"}
             title={"Unpin"}
             icon={"codicon codicon-pinned"}
-            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| ChangeImageAction::Unpin(image_id.clone())})}
+            onclick={dispatch.apply_callback({let image_id = image_id.clone(); move |_| UiAction::Unpin(image_id.clone())})}
             class={unpin_style}
         />
     };
@@ -445,15 +485,17 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         <div class={item_style.clone()}>
             <div class="item-label-container">
                 {pin_unpin_button}
-                <label class="item-label" title={entry.expression.clone()}>{&entry.expression}</label>
-                if entry.value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
+                <label class="item-label" title={expression.clone()}>{&expression}</label>
+                if *value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
             </div>
 
             <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
                 {for rows}
             </vscode-data-grid>
 
-            if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+            if let Image::Full(entry) = entry {
+                if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+            } else {<></>}
         </div>
     }
 }

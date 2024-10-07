@@ -116,6 +116,7 @@ fn make_sampler_setter(
     })
 }
 
+#[allow(dead_code)]
 trait GLVerifyType {
     fn verify(&self, gl_type: GLConstant) -> Result<()>;
 }

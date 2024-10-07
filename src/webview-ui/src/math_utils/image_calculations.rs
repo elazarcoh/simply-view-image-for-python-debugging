@@ -236,3 +236,17 @@ pub(crate) fn image_unique_values_on_bytes(
 
     Ok(unique_values)
 }
+
+pub(crate) fn calc_num_bytes_per_plane(width: u32, height: u32, datatype: Datatype) -> usize {
+    let bytes_per_element = datatype.num_bytes();
+    (width * height) as usize * bytes_per_element
+}
+
+pub(crate) fn calc_num_bytes_per_image(
+    width: u32,
+    height: u32,
+    channels: Channels,
+    datatype: Datatype,
+) -> usize {
+    calc_num_bytes_per_plane(width, height, datatype) * channels as usize
+}

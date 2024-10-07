@@ -4,10 +4,8 @@ use std::{collections::HashMap, rc::Rc};
 
 use web_sys::WebGl2RenderingContext;
 
-use crate::{
-    colormap::{builtin_colormaps::BUILTIN_COLORMAPS, colormap},
-    webgl_utils::GLGuard,
-};
+use crate::colormap::{self, builtin_colormaps::BUILTIN_COLORMAPS};
+use crate::webgl_utils::GLGuard;
 
 pub(crate) struct ColorMapTexturesCache(HashMap<String, Rc<GLGuard<web_sys::WebGlTexture>>>);
 

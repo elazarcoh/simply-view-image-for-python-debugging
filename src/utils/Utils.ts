@@ -72,3 +72,10 @@ export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
 export function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export function valueOrEval<T>(
+    valueOrFunction: Initializer<T>
+) {
+    return typeof valueOrFunction === "function" ? valueOrFunction() : valueOrFunction;
+}
+

@@ -18,6 +18,7 @@ pub(crate) struct Configuration {
     pub invert_scroll_direction: bool,
 }
 
+#[allow(clippy::derivable_impls)] // we want to manually implement Default, because I want to have it explicit here
 impl Default for Configuration {
     fn default() -> Self {
         Self {

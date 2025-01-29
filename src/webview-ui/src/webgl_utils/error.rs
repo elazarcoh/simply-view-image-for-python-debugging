@@ -12,11 +12,12 @@ use super::WebGlErrorCode;
 #[allow(dead_code)]
 pub(crate) enum WebGlError {
     UnknownConstant(u32, &'static str),
+    #[allow(clippy::enum_variant_names)]
     WebGlError {
         code: WebGlErrorCode,
         context: String,
     },
-    UnknownWebGlError(String),
+    Unknown(String),
     JsError {
         // NOTE: We can't store the original error because it's not Send.
         // js_error: Option<js_sys::Error>,
@@ -39,7 +40,7 @@ impl WebGlError {
     }
 
     pub(crate) fn last_webgl_error_or_unknown(gl: &WebGl2RenderingContext, context: &str) -> Self {
-        Self::last_webgl_error(gl, context).unwrap_or_else(|| Self::UnknownWebGlError(context.into()))
+        Self::last_webgl_error(gl, context).unwrap_or_else(|| Self::Unknown(context.into()))
     }
 
     pub(crate) fn from_js_value(js_value: &JsValue, context: &str) -> Self {
@@ -53,7 +54,7 @@ impl WebGlError {
         Self::JsError {
             // js_error: js_value.dyn_ref::<js_sys::Error>().cloned(),
             // original_value: js_value.clone(),
-            string_repr: string_repr,
+            string_repr,
             context: context.to_string(),
         }
     }

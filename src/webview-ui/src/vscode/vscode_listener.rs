@@ -1,8 +1,7 @@
-use crate::app_state::app_state::{AppState, ImageObject, StoreAction};
-use crate::common::texture_image::TextureImage;
+use crate::application_state::app_state::{AppState, ImageObject, StoreAction};
 use crate::common::{ImageData, ViewId};
 use crate::vscode::messages::*;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use gloo::events::EventListener;
 use itertools::Itertools;
 use std::convert::TryFrom;
@@ -35,45 +34,39 @@ impl VSCodeListener {
     }
 
     fn handle_incoming_message(message: FromExtensionMessage) {
-        let _handle_result: Result<()> = match message {
+        match message {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
-                ExtensionResponse::ReplaceData(replacement_data) => Ok(
-                    Self::handle_replace_data_request(replacement_data.replacement_images),
-                ),
+                ExtensionResponse::ReplaceData(replacement_data) => {
+                    Self::handle_replace_data_request(replacement_data.replacement_images);
+                    Ok(())
+                }
             },
             FromExtensionMessage::Request(message) => match message {
                 ExtensionRequest::ShowImage {
                     image_data,
                     options,
                 } => Self::handle_show_image_request(image_data, options),
-                ExtensionRequest::ReplaceData(replacement_data) => Ok(
-                    Self::handle_replace_data_request(replacement_data.replacement_images),
-                ),
+                ExtensionRequest::ReplaceData(replacement_data) => {
+                    Self::handle_replace_data_request(replacement_data.replacement_images);
+                    Ok(())
+                }
                 ExtensionRequest::Configuration(configurations) => {
                     Self::handle_configuration_request(configurations)
                 }
             },
-        };
+        }
+        .map_err(|e| log::error!("Error handling message: {:?}", e))
+        .ok();
     }
 
     fn handle_image_data_response(image_message: ImageMessage) -> Result<()> {
         let image_id = image_message.image_id.clone();
-        if image_message.bytes.is_some() {
-            let dispatch = Dispatch::<AppState>::global();
-            let image_data = ImageData::try_from(image_message)?;
+        let dispatch = Dispatch::<AppState>::global();
+        let image_data = ImageData::try_from(image_message)?;
 
-            dispatch.apply(StoreAction::AddTextureImage(
-                image_id.clone(),
-                Box::new(TextureImage::try_new(
-                    image_data,
-                    dispatch.get().gl.as_ref().unwrap(),
-                )?),
-            ));
-            Ok(())
-        } else {
-            Err(anyhow!("ImageMessage without image data (`bytes` field)"))
-        }
+        dispatch.apply(StoreAction::AddImageWithData(image_id.clone(), image_data));
+        Ok(())
     }
 
     fn handle_show_image_request(
@@ -89,7 +82,7 @@ impl VSCodeListener {
         Ok(())
     }
 
-    fn handle_replace_data_request(replacement_images: ImageObjects) {
+    fn handle_replace_data_request(replacement_images: ImagePlaceholders) {
         let dispatch = Dispatch::<AppState>::global();
         let (images, errors): (Vec<_>, Vec<_>) = replacement_images
             .0

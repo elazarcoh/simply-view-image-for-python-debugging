@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-const [extensionConfigDev, WebviewConfigDev] = require("./webpack.config");
+const [WebviewConfigDev, extensionConfigDev, Webview3rdPartyDev] = require("./webpack.config");
 
 /**@type {import('webpack').Configuration}*/
 const prodConfig = {
@@ -14,6 +14,10 @@ module.exports = [
     },
     {
         ...extensionConfigDev,
+        ...prodConfig,
+    },
+    {
+        ...Webview3rdPartyDev,
         ...prodConfig,
     },
 ];

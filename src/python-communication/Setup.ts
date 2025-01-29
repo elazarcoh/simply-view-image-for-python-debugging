@@ -50,6 +50,9 @@ async function handleSetupError(
         show: "Show errors",
         retry: "Retry",
     }
+    if (!debugSessionData.isDebuggerAttached) {
+        return;
+    }
     const selection = await vscode.window.showErrorMessage(
         "Failed to setup the python side of the extension.",
         options.show,
@@ -73,7 +76,7 @@ async function handleSetupError(
     }
 }
 
-export async function runSetup(
+async function _runSetup(
     session: DebugSession,
     force?: boolean,
 ): Promise<boolean> {
@@ -102,7 +105,7 @@ export async function runSetup(
         }
     }
 
-    const runDebounced = _.debounce(async () => {
+    const run = async () => {
         logDebug("Run module setup code");
         await execInPython(moduleSetupCode(), session);
         logDebug("Run viewables setup code");
@@ -110,15 +113,17 @@ export async function runSetup(
         const result = await isSetupOkay();
         debugSessionData.setupOkay = result;
         return debugSessionData.setupOkay;
-    }, 500, { leading: true });
+    };
 
-    // run once
-    logDebug("Running setup... tries left:", maxTries);
-    const isOk = await runDebounced();
-    if (isOk) {
-        return true;
+    // run N times without progress
+    const numTriesWithoutProgress = 3;
+    for (let i = 0; i < numTriesWithoutProgress; i++) {
+        const isOk = await run();
+        if (isOk) {
+            return true;
+        }
+        await sleep(500 * 2 ** (i + 1));
     }
-    await sleep(1000);
 
     // retry show progress
     await vscode.window.withProgress(
@@ -128,15 +133,18 @@ export async function runSetup(
             cancellable: true
         },
         async (progress, cancelToken) => {
-            for (let i = 1; !cancelToken.isCancellationRequested && i < maxTries; i++) {
+            for (let i = numTriesWithoutProgress;
+                debugSessionData.isDebuggerAttached && !cancelToken.isCancellationRequested && i < maxTries;
+                i++
+            ) {
                 const message = `tries left: ${maxTries - i}`;
                 progress.report({ message });
                 logDebug("Running setup... tries left:", maxTries - i);
-                const isOk = await runDebounced();
+                const isOk = await run();
                 if (isOk) {
                     return true;
                 }
-                await sleep(500 * 2 ** i);
+                await sleep(500 * 2 ** (i + 1));
             }
         },
     );
@@ -147,6 +155,8 @@ export async function runSetup(
 
     return debugSessionData.setupOkay;
 }
+
+export const runSetup = _.debounce(_runSetup, 1000, { leading: true });
 
 export async function getSetupStatus(
     session: DebugSession,

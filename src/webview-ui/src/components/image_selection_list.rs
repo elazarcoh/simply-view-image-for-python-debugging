@@ -5,8 +5,8 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    app_state::app_state::{AppState, StoreAction},
-    common::{ImageInfo, ViewId},
+    application_state::app_state::{AppState, StoreAction},
+    common::{CurrentlyViewing, Image, ViewId},
     components::image_list_item::ImageListItem,
 };
 
@@ -35,19 +35,18 @@ fn calc_y_scroll(parent: &web_sys::HtmlElement, target: &web_sys::HtmlElement) -
 fn scroll_to_element(container: &web_sys::HtmlElement, element: &web_sys::HtmlElement) {
     let position = calc_y_scroll(container, element);
     if !position.is_visible {
-        container.scroll_to_with_scroll_to_options(
-            ScrollToOptions::new()
-                .top(position.top)
-                .behavior(ScrollBehavior::Instant),
-        );
+        let opts = ScrollToOptions::new();
+        opts.set_top(position.top);
+        opts.set_behavior(ScrollBehavior::Instant);
+        container.scroll_to_with_scroll_to_options(&opts);
     }
 }
 
 #[derive(PartialEq, Properties)]
 struct ImageItemWrapperProps {
     container_ref: NodeRef,
-    info: ImageInfo,
-    is_selected: bool,
+    info: Image,
+    currently_viewing: Option<CurrentlyViewing>,
     is_pinned: bool,
     onclick: Callback<MouseEvent>,
 }
@@ -57,25 +56,38 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     let ImageItemWrapperProps {
         container_ref,
         info,
-        is_selected,
+        currently_viewing,
         is_pinned,
         onclick,
     } = props;
 
     let node_ref = use_node_ref();
 
-    use_effect_with(*is_selected, {
+    let maybe_batch_item = use_selector({
+        let image_id = info.minimal().image_id.clone();
+        move |state: &AppState| {
+            state
+                .drawing_options
+                .borrow()
+                .get(&image_id)
+                .and_then(|d| d.batch_item)
+        }
+    });
+
+    let is_selected = currently_viewing.is_some();
+
+    use_effect_with(is_selected, {
         let node_ref = node_ref.clone();
         let container_ref = container_ref.clone();
         move |is_selected| {
-            node_ref
+            if let Some((node, container)) = node_ref
                 .cast::<web_sys::HtmlElement>()
                 .zip(container_ref.cast::<web_sys::HtmlElement>())
-                .map(|(node, container)| {
-                    if *is_selected {
-                        scroll_to_element(&container, &node);
-                    };
-                });
+            {
+                if *is_selected {
+                    scroll_to_element(&container, &node);
+                };
+            }
 
             move || {}
         }
@@ -91,11 +103,11 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     html! {
         <vscode-option
             ref={node_ref.clone()}
-            aria-selected={if *is_selected {"true"} else {"false"}}
+            aria-selected={if is_selected {"true"} else {"false"}}
             {onclick}
             class={entry_style.clone()}
         >
-            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} />
+            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={*maybe_batch_item} />
         </vscode-option>
     }
 }
@@ -110,8 +122,12 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let node_ref = use_node_ref();
 
     let images_data = use_selector(|state: &AppState| state.images.clone());
-    let selected_entry =
-        use_selector(|state: &AppState| state.image_views.borrow().get_image_id(ViewId::Primary));
+    let selected_entry = use_selector(|state: &AppState| {
+        state
+            .image_views
+            .borrow()
+            .get_currently_viewing(ViewId::Primary)
+    });
 
     let num_entries = images_data.borrow().len();
     let entries = images_data
@@ -129,14 +145,23 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 })
             };
 
-            let is_selected = *selected_entry == Some(id.clone());
+            let cv = {
+                let cv = selected_entry.as_ref().as_ref().cloned();
+                let current_id = cv.as_ref().map(|cv| cv.id());
+                if current_id == Some(id) {
+                    cv
+                } else {
+                    None
+                }
+            };
+
             let is_pinned = images_data.borrow().is_pinned(id);
 
             html! {
                 <ImageItemWrapper
                     container_ref={node_ref.clone()}
                     info={info.clone()}
-                    is_selected={is_selected}
+                    currently_viewing={cv}
                     is_pinned={is_pinned}
                     onclick={onclick}
                 />

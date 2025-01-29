@@ -1,16 +1,19 @@
-use crate::app_state::app_state::AppState;
-use crate::app_state::app_state::GlobalDrawingOptions;
-use crate::app_state::images::ImageAvailability;
+use crate::application_state::app_state::AppState;
+use crate::application_state::app_state::GlobalDrawingOptions;
+use crate::application_state::images::ImageAvailability;
 use crate::coloring::DrawingOptions;
-use crate::colormap::colormap;
+use crate::colormap;
 use crate::common::camera;
-use crate::common::ImageId;
+use crate::common::CurrentlyViewing;
+use crate::common::Image;
 use crate::common::Size;
 use crate::common::ViewId;
+use crate::common::ViewableObjectId;
 use crate::components::main::Main;
 use crate::configurations;
 use crate::keyboard_event::KeyboardHandler;
 use crate::mouse_events::PanHandler;
+use crate::mouse_events::ShiftScrollHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::rendering::renderer::Renderer;
 use crate::rendering::rendering_context::ImageViewData;
@@ -40,7 +43,7 @@ fn rendering_context() -> impl RenderingContext {
             dispatch.get().gl.clone().unwrap()
         }
 
-        fn texture_by_id(&self, id: &ImageId) -> ImageAvailability {
+        fn texture_by_id(&self, id: &ViewableObjectId) -> ImageAvailability {
             let dispatch = Dispatch::<AppState>::global();
             dispatch.get().image_cache.borrow().get(id)
         }
@@ -66,7 +69,11 @@ fn rendering_context() -> impl RenderingContext {
                             view_id
                         )
                     }),
-                image_id: dispatch.get().image_views.borrow().get_image_id(view_id),
+                currently_viewing: dispatch
+                    .get()
+                    .image_views
+                    .borrow()
+                    .get_currently_viewing(view_id),
             }
         }
 
@@ -75,7 +82,10 @@ fn rendering_context() -> impl RenderingContext {
             dispatch.get().configuration.rendering.clone()
         }
 
-        fn drawing_options(&self, image_id: &ImageId) -> (DrawingOptions, GlobalDrawingOptions) {
+        fn drawing_options(
+            &self,
+            image_id: &ViewableObjectId,
+        ) -> (DrawingOptions, GlobalDrawingOptions) {
             let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
             let drawing_options = state.drawing_options.borrow().get_or_default(image_id);
@@ -90,12 +100,12 @@ fn rendering_context() -> impl RenderingContext {
             let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
             let gl = state.gl()?;
-            let colormap = self.get_color_map(colormap_name)?;
+            let cmap = self.get_color_map(colormap_name)?;
             dispatch
                 .get()
                 .color_map_textures_cache
                 .borrow_mut()
-                .get_or_create(gl, &colormap)
+                .get_or_create(gl, &cmap)
         }
 
         fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>> {
@@ -132,15 +142,22 @@ fn view_context() -> impl ViewContext {
 
         fn get_image_size_for_view(&self, view_id: ViewId) -> Option<Size> {
             let dispatch = Dispatch::<AppState>::global();
-            let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
+            let image_id = dispatch
+                .get()
+                .image_views
+                .borrow()
+                .get_currently_viewing(view_id);
             dispatch
                 .get()
                 .images
                 .borrow()
-                .get(&image_id?)
-                .map(|image| Size {
-                    width: image.width as _,
-                    height: image.height as _,
+                .get(image_id?.id())
+                .and_then(|image| match image {
+                    Image::Placeholder(_) => None,
+                    Image::Full(image_info) => Some(Size {
+                        width: image_info.width as _,
+                        height: image_info.height as _,
+                    }),
                 })
         }
 
@@ -162,8 +179,21 @@ fn view_context() -> impl ViewContext {
 
         fn get_image_for_view(&self, view_id: ViewId) -> Option<ImageAvailability> {
             let dispatch = Dispatch::<AppState>::global();
-            let image_id = dispatch.get().image_views.borrow().get_image_id(view_id);
-            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(&image_id))
+            let image_id = dispatch
+                .get()
+                .image_views
+                .borrow()
+                .get_currently_viewing(view_id);
+            image_id.map(|image_id| dispatch.get().image_cache.borrow().get(image_id.id()))
+        }
+
+        fn get_currently_viewing_for_view(&self, view_id: ViewId) -> Option<CurrentlyViewing> {
+            let dispatch = Dispatch::<AppState>::global();
+            dispatch
+                .get()
+                .image_views
+                .borrow()
+                .get_currently_viewing(view_id)
         }
     }
 
@@ -193,6 +223,8 @@ pub(crate) fn App() -> Html {
 
             let zoom_listener = ZoomHandler::install(view_id, Rc::clone(&view_context_rc));
             let pan_listener = PanHandler::install(view_id, Rc::clone(&view_context_rc));
+            let batch_item_scroll_listener =
+                ShiftScrollHandler::install(view_id, Rc::clone(&view_context_rc));
 
             let keyboard_listener = KeyboardHandler::install(&canvas_ref);
 
@@ -200,6 +232,7 @@ pub(crate) fn App() -> Html {
                 drop(message_listener);
                 drop(zoom_listener);
                 drop(pan_listener);
+                drop(batch_item_scroll_listener);
                 drop(keyboard_listener);
             }
         }

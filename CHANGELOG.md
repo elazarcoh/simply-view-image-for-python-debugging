@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.0.5] - Pre-release
+
+### Added 
+
+- Support for tensors in the new image viewer.
+- General improvements.
+
 ## [4.0.3] - Pre-release
 
 ### Added 

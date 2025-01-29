@@ -15,6 +15,7 @@ pub(crate) use super::constants::*;
 
 pub(crate) type GLConstant = u32;
 
+#[allow(dead_code)]
 pub(crate) trait GLValue: GLVerifyType + GLSet {}
 impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 
@@ -245,6 +246,7 @@ pub(crate) fn take_into_owned<T: GLDrop + JsCast>(mut guard: GLGuard<T>) -> T {
 }
 
 // #[enum_dispatch]
+#[allow(dead_code)]
 pub(crate) trait GLSet {
     fn set(&self, gl: &GL, location: &WebGlUniformLocation);
 }
@@ -298,6 +300,8 @@ impl GLSet for &glam::Mat4 {
 }
 
 // #[enum_dispatch]
+
+#[allow(dead_code)]
 pub(crate) trait GLVerifyType {
     fn verify(&self, expected_type: GLConstant) -> Result<()>;
 }

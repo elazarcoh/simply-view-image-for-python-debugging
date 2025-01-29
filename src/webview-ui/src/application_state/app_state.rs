@@ -1,45 +1,18 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
+use super::vscode_data_fetcher::ImagesFetcher;
 use crate::coloring::{Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
-use crate::common::{ImageData, ImageId, ImageInfo, ViewId};
-use crate::{configurations, vscode::vscode_requests::VSCodeRequests};
+use crate::common::{
+    CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
+};
+use crate::configurations;
 use anyhow::{anyhow, Result};
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
-
-struct ImagesFetcher;
-
-impl Listener for ImagesFetcher {
-    type Store = AppState;
-
-    fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
-        let currently_viewing_image_ids = state
-            .image_views
-            .borrow()
-            .visible_views()
-            .iter()
-            .filter_map(|view_id| state.image_views.borrow().get_image_id(*view_id))
-            .collect::<Vec<_>>();
-
-        for image_id in currently_viewing_image_ids {
-            if !state.image_cache.borrow().has(&image_id) {
-                log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
-                if let Some(image_info) = state.images.borrow().get(&image_id) {
-                    log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
-                    VSCodeRequests::request_image_data(
-                        image_id.clone(),
-                        image_info.expression.clone(),
-                    );
-                    state.image_cache.borrow_mut().set_pending(&image_id);
-                }
-            }
-        }
-    }
-}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct GlobalDrawingOptions {
@@ -56,8 +29,7 @@ impl Default for GlobalDrawingOptions {
     }
 }
 
-#[derive(Store, Clone)]
-#[store(listener(ImagesFetcher))]
+#[derive(Default, Clone)]
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
@@ -75,6 +47,17 @@ pub(crate) struct AppState {
     pub configuration: configurations::Configuration,
 }
 
+impl Store for AppState {
+    fn new(cx: &yewdux::Context) -> Self {
+        init_listener(ImagesFetcher::default(), cx);
+        Default::default()
+    }
+
+    fn should_notify(&self, other: &Self) -> bool {
+        self != other
+    }
+}
+
 impl AppState {
     pub(crate) fn gl(&self) -> Result<&WebGl2RenderingContext> {
         self.gl
@@ -82,27 +65,27 @@ impl AppState {
             .ok_or(anyhow!("WebGL context not initialized"))
     }
 
-    pub(crate) fn set_image_to_view(&mut self, image_id: ImageId, view_id: ViewId) {
-        self.image_views
-            .borrow_mut()
-            .set_image_to_view(image_id, view_id);
-    }
-}
+    pub(crate) fn set_image_to_view(&mut self, image_id: ViewableObjectId, view_id: ViewId) {
+        let is_batched = self
+            .images
+            .borrow()
+            .get(&image_id)
+            .map_or(false, |info| info.minimal().is_batched);
 
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            gl: None,
-            images: Default::default(),
-            image_views: Default::default(),
-            image_cache: Default::default(),
-            view_cameras: Default::default(),
-            color_map_registry: Default::default(),
-            color_map_textures_cache: Default::default(),
-            configuration: Default::default(),
-            drawing_options: Default::default(),
-            global_drawing_options: Default::default(),
+        if is_batched {
+            self.image_views
+                .borrow_mut()
+                .set_batch_item_to_view(image_id, view_id);
+        } else {
+            self.image_views
+                .borrow_mut()
+                .set_image_to_view(image_id, view_id);
         }
+
+        // send event to view
+        self.image_views
+            .borrow()
+            .send_event_to_view(view_id, "svifpd:changeimage");
     }
 }
 
@@ -134,31 +117,95 @@ pub(crate) enum UpdateGlobalDrawingOptions {
 }
 
 pub(crate) enum ImageObject {
-    InfoOnly(ImageInfo),
+    Placeholder(ImagePlaceholder),
     WithData(ImageData),
 }
 
 impl ImageObject {
-    fn image_id(&self) -> &ImageId {
+    fn image_id(&self) -> &ViewableObjectId {
         match self {
-            ImageObject::InfoOnly(info) => &info.image_id,
             ImageObject::WithData(data) => &data.info.image_id,
-        }
-    }
-    fn image_info(&self) -> &ImageInfo {
-        match self {
-            ImageObject::InfoOnly(info) => info,
-            ImageObject::WithData(data) => &data.info,
+            ImageObject::Placeholder(image_placeholder) => &image_placeholder.image_id,
         }
     }
 }
 
 pub(crate) enum StoreAction {
-    SetImageToView(ImageId, ViewId),
-    AddTextureImage(ImageId, Box<TextureImage>),
-    UpdateDrawingOptions(ImageId, UpdateDrawingOptions),
+    SetImageToView(ViewableObjectId, ViewId),
+    AddImageWithData(ViewableObjectId, ImageData),
+    UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
+    UpdateData(ImageObject),
+}
+
+fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
+    let image_id = image.image_id().clone();
+
+    if let ImageObject::Placeholder(image_placeholder) = &image {
+        state.images.borrow_mut().insert(
+            image_id.clone(),
+            Image::Placeholder(image_placeholder.clone()),
+        );
+        return Ok(());
+    }
+
+    let image_info = match image {
+        ImageObject::WithData(ref data) => data.info.clone(),
+        _ => unreachable!(),
+    };
+    let batch_info = image_info.batch_info.clone();
+    let is_batched = batch_info.is_some();
+
+    state
+        .images
+        .borrow_mut()
+        .insert(image_id.clone(), Image::Full(image_info));
+
+    if let ImageObject::WithData(image_data) = image {
+        let tex_image = TextureImage::try_new(image_data, state.gl.as_ref().unwrap())?;
+        log::debug!(
+            "updating image cache: {:?} is_batched: {}, tex_image: {:?}",
+            image_id,
+            is_batched,
+            tex_image
+        );
+        if is_batched {
+            state.image_cache.borrow_mut().update(&image_id, tex_image);
+        } else {
+            state
+                .image_cache
+                .borrow_mut()
+                .set_image(&image_id, tex_image);
+        }
+    }
+
+    if is_batched {
+        state
+            .drawing_options
+            .borrow_mut()
+            .mut_ref_or_default(image_id.clone())
+            .batch_item
+            .get_or_insert(0);
+    }
+
+    // if the image is currently displayed, update the view
+    let views_for_image = state.image_views.borrow().is_currently_viewing(&image_id);
+    views_for_image.iter().for_each(|view_id| {
+        if is_batched {
+            state
+                .image_views
+                .borrow_mut()
+                .set_batch_item_to_view(image_id.clone(), *view_id);
+        } else {
+            state
+                .image_views
+                .borrow_mut()
+                .set_image_to_view(image_id.clone(), *view_id);
+        }
+    });
+
+    Ok(())
 }
 
 impl Reducer<AppState> for StoreAction {
@@ -170,14 +217,14 @@ impl Reducer<AppState> for StoreAction {
                 state.set_image_to_view(image_id, view_id);
             }
 
-            StoreAction::AddTextureImage(image_id, texture_image) => {
-                log::debug!("AddTextureImage: {:?}", image_id);
-                let info = texture_image.image.info.clone();
-                state
-                    .image_cache
-                    .borrow_mut()
-                    .set(&image_id, *texture_image);
-                state.images.borrow_mut().insert(image_id, info);
+            StoreAction::AddImageWithData(image_id, image_data) => {
+                log::debug!("AddImageWithData: {:?}", image_id);
+                let image_object = ImageObject::WithData(image_data);
+                handle_received_image(state, image_object)
+                    .map_err(|e| {
+                        log::error!("Error handling image data: {:?}", e);
+                    })
+                    .ok();
             }
 
             StoreAction::UpdateDrawingOptions(image_id, update) => {
@@ -187,7 +234,11 @@ impl Reducer<AppState> for StoreAction {
                     .get_or_default(&image_id)
                     .clone();
                 let new_drawing_option = match update {
-                    UpdateDrawingOptions::Reset => DrawingOptions::default(),
+                    UpdateDrawingOptions::Reset => DrawingOptions {
+                        // keep the batch slice index
+                        batch_item: current_drawing_options.batch_item,
+                        ..DrawingOptions::default()
+                    },
                     UpdateDrawingOptions::Coloring(c) => DrawingOptions {
                         coloring: c,
                         ..current_drawing_options
@@ -218,25 +269,9 @@ impl Reducer<AppState> for StoreAction {
 
                 let mut errors = Vec::new();
                 for image in replacement_images.into_iter() {
-                    let image_id = image.image_id().clone();
-                    let image_info = image.image_info().clone();
-
-                    state
-                        .images
-                        .borrow_mut()
-                        .insert(image_id.clone(), image_info);
-
-                    if let ImageObject::WithData(image_data) = image {
-                        let tex_image =
-                            TextureImage::try_new(image_data, state.gl.as_ref().unwrap());
-                        match tex_image {
-                            Ok(tex_image) => {
-                                state.image_cache.borrow_mut().set(&image_id, tex_image);
-                            }
-                            Err(e) => {
-                                errors.push(e);
-                            }
-                        }
+                    let res = handle_received_image(state, image);
+                    if let Err(e) = res {
+                        errors.push(e);
                     }
                 }
             }
@@ -249,34 +284,39 @@ impl Reducer<AppState> for StoreAction {
                     state.global_drawing_options.segmentation_colormap_name = name;
                 }
             },
+            StoreAction::UpdateData(image_object) => {
+                handle_received_image(state, image_object).unwrap();
+            }
         };
 
         app_state
     }
 }
 
-pub(crate) enum ChangeImageAction {
+pub(crate) enum UiAction {
     Next(ViewId),
     Previous(ViewId),
-    Pin(ImageId),
-    Unpin(ImageId),
+    Pin(ViewableObjectId),
+    Unpin(ViewableObjectId),
+    ViewShiftScroll(ViewId, CurrentlyViewing, f64),
+    Home(ViewId),
 }
 
-impl Reducer<AppState> for ChangeImageAction {
+impl Reducer<AppState> for UiAction {
     fn apply(self, mut app_state: Rc<AppState>) -> Rc<AppState> {
         let state = Rc::make_mut(&mut app_state);
 
         match self {
-            ChangeImageAction::Next(view_id) => {
+            UiAction::Next(view_id) => {
                 let next_image_id = state
                     .image_views
                     .borrow()
-                    .get_image_id(view_id)
+                    .get_currently_viewing(view_id)
                     .and_then(|current_image_id| {
                         state
                             .images
                             .borrow()
-                            .next_image_id(&current_image_id)
+                            .next_image_id(current_image_id.id())
                             .cloned()
                     })
                     .or_else(|| {
@@ -288,20 +328,20 @@ impl Reducer<AppState> for ChangeImageAction {
                             .next()
                             .map(|(image_id, _)| image_id.clone())
                     });
-                next_image_id.map(|next_image_id| {
+                if let Some(next_image_id) = next_image_id {
                     state.set_image_to_view(next_image_id, view_id);
-                });
+                }
             }
-            ChangeImageAction::Previous(view_id) => {
+            UiAction::Previous(view_id) => {
                 let previous_image_id = state
                     .image_views
                     .borrow()
-                    .get_image_id(view_id)
+                    .get_currently_viewing(view_id)
                     .and_then(|current_image_id| {
                         state
                             .images
                             .borrow()
-                            .previous_image_id(&current_image_id)
+                            .previous_image_id(current_image_id.id())
                             .cloned()
                     })
                     .or_else(|| {
@@ -313,15 +353,46 @@ impl Reducer<AppState> for ChangeImageAction {
                             .next_back()
                             .map(|(image_id, _)| image_id.clone())
                     });
-                previous_image_id.map(|previous_image_id| {
+                if let Some(previous_image_id) = previous_image_id {
                     state.set_image_to_view(previous_image_id, view_id);
-                });
+                }
             }
-            ChangeImageAction::Pin(image_id) => {
+            UiAction::Pin(image_id) => {
                 state.images.borrow_mut().pin(&image_id);
             }
-            ChangeImageAction::Unpin(image_id) => {
+            UiAction::Unpin(image_id) => {
                 state.images.borrow_mut().unpin(&image_id);
+            }
+            UiAction::ViewShiftScroll(view_id, cv, amount) => {
+                let id = cv.id();
+
+                let current_drawing_options = state.drawing_options.borrow().get_or_default(id);
+                if let (Some(current_index), Some(Image::Full(info))) = (
+                    current_drawing_options.batch_item,
+                    state.images.borrow().get(id),
+                ) {
+                    let batch_size = info.batch_info.as_ref().map_or(1, |info| info.batch_size);
+
+                    let new_index = ((current_index as f64 + amount) as i32)
+                        .clamp(0, batch_size as i32 - 1) as u32;
+
+                    if new_index != current_index {
+                        state
+                            .drawing_options
+                            .borrow_mut()
+                            .mut_ref_or_default(id.clone())
+                            .batch_item = Some(new_index);
+
+                        // send event to view that the batch item has changed
+                        state
+                            .image_views
+                            .borrow()
+                            .send_event_to_view(view_id, "svifpd:changeimage");
+                    }
+                }
+            }
+            UiAction::Home(view_id) => {
+                state.view_cameras.borrow_mut().reset(view_id);
             }
         }
 

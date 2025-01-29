@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec3, Vec4};
 
 use crate::{
-    colormap::colormap, common::{pixel_value::PixelValue, Channels, ComputedInfo, Datatype, ImageInfo}, math_utils::mat4::transpose
+    colormap, common::{pixel_value::PixelValue, Channels, ComputedInfo, Datatype, ImageInfo}, math_utils::mat4::transpose
 };
 
 
@@ -25,6 +25,7 @@ pub(crate) struct DrawingOptions {
     pub invert: bool,
     pub high_contrast: bool,
     pub ignore_alpha: bool,
+    pub batch_item: Option<u32>,
 }
 
 impl Default for DrawingOptions {
@@ -34,6 +35,7 @@ impl Default for DrawingOptions {
             invert: false,
             high_contrast: false,
             ignore_alpha: false,
+            batch_item: None,
         }
     }
 }

@@ -3,18 +3,33 @@ use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 use super::pixel_value::PixelValue;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct ImageId(String);
+pub(crate) struct ViewableObjectId(String);
 
 #[cfg(debug_assertions)]
-impl ImageId {
+impl ViewableObjectId {
     pub(crate) fn new(id: &str) -> Self {
         Self(id.to_owned())
     }
 }
 
-impl Display for ImageId {
+impl Display for ViewableObjectId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum CurrentlyViewing {
+    Image(ViewableObjectId),
+    BatchItem(ViewableObjectId),
+}
+
+impl CurrentlyViewing {
+    pub(crate) fn id(&self) -> &ViewableObjectId {
+        match self {
+            CurrentlyViewing::Image(id) => id,
+            CurrentlyViewing::BatchItem(id) => id,
+        }
     }
 }
 
@@ -135,14 +150,6 @@ impl Datatype {
         }
     }
 
-    pub(crate) fn is_floating(&self) -> bool {
-        matches!(
-            self,
-            Datatype::Float32,
-            // Datatype::Float64
-        )
-    }
-
     pub(crate) fn is_unsigned_integer(&self) -> bool {
         matches!(self, Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32)
     }
@@ -152,6 +159,7 @@ impl Datatype {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub(crate) enum DataOrdering {
     #[serde(rename = "hwc")]
@@ -161,16 +169,81 @@ pub(crate) enum DataOrdering {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub(crate) struct BatchInfo {
+    pub batch_size: u32,
+    pub batch_items_range: (u32, u32),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct ImagePlaceholder {
+    pub image_id: ViewableObjectId,
+    pub value_variable_kind: ValueVariableKind,
+    pub expression: String,
+    pub is_batched: bool,
+    pub additional_info: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ImageInfo {
-    pub image_id: ImageId,
+    pub image_id: ViewableObjectId,
     pub value_variable_kind: ValueVariableKind,
     pub expression: String,
     pub width: u32,
     pub height: u32,
     pub channels: Channels,
     pub datatype: Datatype,
+    pub batch_info: Option<BatchInfo>,
     pub data_ordering: DataOrdering,
     pub additional_info: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct MinimalImageInfo<'a> {
+    pub image_id: &'a ViewableObjectId,
+    pub value_variable_kind: &'a ValueVariableKind,
+    pub expression: &'a String,
+    pub additional_info: &'a HashMap<String, String>,
+    pub is_batched: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum Image {
+    Placeholder(ImagePlaceholder),
+    Full(ImageInfo),
+}
+
+impl<'a> Image {
+    pub(crate) fn minimal(&'a self) -> MinimalImageInfo<'a> {
+        match self {
+            Image::Placeholder(ImagePlaceholder {
+                image_id,
+                value_variable_kind,
+                expression,
+                is_batched,
+                additional_info,
+            }) => MinimalImageInfo {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+                is_batched: *is_batched,
+            },
+            Image::Full(ImageInfo {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+                batch_info,
+                ..
+            }) => MinimalImageInfo {
+                image_id,
+                value_variable_kind,
+                expression,
+                additional_info,
+                is_batched: batch_info.is_some(),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

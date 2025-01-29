@@ -1,16 +1,12 @@
 [package]
-name = "dom"
-version = "0.1.0"
-authors = ["The wasm-bindgen Developers"]
-edition = "2018"
-rust-version = "1.56"
+name = "svifpd-webview-ui"
+authors = ["elazar <elazarcoh@gmail.com>"]
+edition = "2021"
+rust-version = "1.62"
 resolver = "2"
 
 [lib]
 crate-type = ["cdylib"]
-
-[build]
-target = "wasm32-unknown-unknown"
 
 [profile.release]
 # This makes the compiled code faster and smaller, but it makes compiling slower,
@@ -96,6 +92,7 @@ features = [
   'HtmlCanvasElement',
   'CssStyleDeclaration',
   'console',
+  "CustomEvent",
   'WebGlBuffer',
   'WebGlProgram',
   'WebGl2RenderingContext',

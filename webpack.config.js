@@ -15,6 +15,7 @@ const path = require("path");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const WebpackShellPlugin = require('webpack-shell-plugin-next');
 
 const dist = path.resolve(__dirname, "dist");
 
@@ -72,6 +73,34 @@ const extensionConfig = {
     dependencies: ["webview"]
 };
 
+/** type WebpackConfig */
+const webview3rdParty = {
+    ...baseConfig,
+    name: "webview3rdParty",
+    entry: {
+        "lethargy_ts": path.resolve(__dirname, "node_modules/lethargy-ts/lib/index.js"),
+    },
+    output: {
+        filename: "[name].js",
+        library: {
+            name: "[name]",
+            type: 'umd',
+        },
+    },
+    resolve: {
+        extensions: [".js"],
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: ["babel-loader"],
+            },
+        ],
+    },
+}
+
 // Config for webview source code
 /** @type WebpackConfig */
 const WebviewConfig = {
@@ -84,6 +113,7 @@ const WebviewConfig = {
         path: dist,
         filename: "webview.js",
     },
+    dependencies: ["webview3rdParty"],
     plugins: [
         new HtmlWebpackPlugin({
             template: path.resolve(webviewPath, "index.html"),
@@ -131,6 +161,12 @@ const WebviewConfig = {
                 },
             ],
         }),
+        new WebpackShellPlugin({
+            onBuildStart: {
+                scripts: ['lodash --output dist/lodash.js --production include=debounce,throttle --silent'],
+                blocking: false,
+            },
+        })
     ],
     experiments: {
         asyncWebAssembly: true,
@@ -138,4 +174,4 @@ const WebviewConfig = {
     },
 };
 
-module.exports = [WebviewConfig, extensionConfig];
+module.exports = [WebviewConfig, extensionConfig, webview3rdParty];

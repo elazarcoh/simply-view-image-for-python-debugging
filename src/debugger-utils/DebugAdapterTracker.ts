@@ -50,7 +50,7 @@ export const createDebugAdapterTracker = (
 
     const updateWebview = async () => {
         const webviewClient = Container.get(WebviewClient);
-        webviewClient.sendRequest(WebviewRequests.replaceData());
+        webviewClient.sendRequest(WebviewRequests.replaceImages());
     };
 
     const onScopeChange = _.debounce(async () => {
@@ -60,16 +60,18 @@ export const createDebugAdapterTracker = (
         await Promise.all([updateWebview(), saveTracked()]);
     }, 500, { leading: true });
 
-    const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 500, { leading: true });
+    const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 1000, { leading: true });
 
     return {
         onWillStartSession: () => {
             logTrace("onWillStartSession");
+            debugSessionData.isDebuggerAttached = true;
             debugSessionData.isStopped = false;
         },
 
         onWillStopSession: async () => {
             logTrace("onWillStopSession");
+            debugSessionData.isDebuggerAttached = false;
             debugSessionData.isStopped = false;
             currentPythonObjectsList.clear();
             trackedPythonObjects.clear();
@@ -140,6 +142,7 @@ export const createDebugAdapterTracker = (
             // same as onWillStopSession
             logTrace("onExit");
             debugSessionData.isStopped = false;
+            debugSessionData.isDebuggerAttached = false;
             currentPythonObjectsList.clear();
             trackedPythonObjects.clear();
             watchTreeProvider.refresh();

@@ -56,7 +56,7 @@ export async function addExpressionTreeItem(): Promise<void> {
     if (added) {
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
-        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
     }
 }
 
@@ -73,7 +73,7 @@ export async function removeExpressionTreeItem(
         }
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
-        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
     }
 }
 
@@ -85,7 +85,7 @@ export async function editExpressionTreeItem(
     if (changed) {
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
-        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
     }
 }
 
@@ -106,6 +106,6 @@ export async function removeAllExpressionsTree(): Promise<void> {
         }
         await activeDebugSessionData()?.currentPythonObjectsList.update();
         Container.get(WatchTreeProvider).refresh();
-        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceData());
+        Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
     }
 }

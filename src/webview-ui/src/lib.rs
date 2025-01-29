@@ -7,21 +7,21 @@ extern crate lazy_static;
 extern crate cfg_if;
 
 mod app;
-mod app_state;
+mod application_state;
+mod bindings;
+mod coloring;
+mod colormap;
 mod common;
 mod components;
 mod configurations;
+mod keyboard_event;
 mod math_utils;
 mod mouse_events;
-mod keyboard_event;
-mod vscode;
-mod webgl_utils;
-
-mod colormap;
 mod rendering;
 #[cfg(debug_assertions)]
 mod tmp_for_debug;
-mod coloring;
+mod vscode;
+mod webgl_utils;
 
 use app::App;
 use cfg_if::cfg_if;

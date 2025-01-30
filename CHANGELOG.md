@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.0.6] - Release
+
+### Added
+
+- Support for value clipping via manual input.
+
 ## [4.0.5] - Pre-release
 
 ### Added 

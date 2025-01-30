@@ -7,10 +7,13 @@ use yew::{prelude::*, virtual_dom::VNode};
 use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
-    application_state::{app_state::AppState, images::ImageAvailability},
+    application_state::{
+        app_state::{AppState, StoreAction, UpdateDrawingOptions},
+        images::ImageAvailability,
+    },
     coloring::{self, Coloring, DrawingOptions},
     colormap,
-    common::{ViewId, ViewableObjectId},
+    common::{Channels, ViewId, ViewableObjectId},
     components::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
     },
@@ -32,6 +35,125 @@ fn get_segmentation_colormap(
     colormap
 }
 
+#[derive(PartialEq, Properties)]
+pub struct ClippingInputProps {
+    pub image_id: ViewableObjectId,
+}
+
+#[function_component]
+pub fn ClippingInput(props: &ClippingInputProps) -> Html {
+    let ClippingInputProps { image_id } = props;
+    let clip = {
+        let image_id = image_id.clone();
+        use_selector(move |state: &AppState| {
+            state
+                .drawing_options
+                .borrow()
+                .get_or_default(&image_id)
+                .clip
+        })
+    };
+    let style = use_style!(
+        r#"
+        padding: 0.5rem;
+
+        .label {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        input::placeholder {
+            color: transparent;
+        }
+        input:placeholder-shown + .vscode-action-button {
+            opacity: 0;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        "#,
+    );
+    let min_input_ref = use_node_ref();
+    let max_input_ref = use_node_ref();
+    enum ClippingInputType {
+        Min,
+        Max,
+    }
+
+    let onchange = |clip: ClippingInputType| {
+        let image_id = image_id.clone();
+        let node_ref = match clip {
+            ClippingInputType::Min => min_input_ref.clone(),
+            ClippingInputType::Max => max_input_ref.clone(),
+        };
+        let dispatch = Dispatch::<AppState>::global();
+        Callback::from(move |_| {
+            if let Some(input) = node_ref.cast::<web_sys::HtmlInputElement>() {
+                let value_str = input.value();
+                let value: Option<f32> = value_str.parse().ok();
+                dispatch.apply(StoreAction::UpdateDrawingOptions(
+                    image_id.clone(),
+                    match clip {
+                        ClippingInputType::Min => UpdateDrawingOptions::ClipMin(value),
+                        ClippingInputType::Max => UpdateDrawingOptions::ClipMax(value),
+                    },
+                ));
+            }
+        })
+    };
+    let clear = |clip: ClippingInputType| {
+        let image_id = image_id.clone();
+        let dispatch = Dispatch::<AppState>::global();
+        Callback::from(move |_| {
+            dispatch.apply(StoreAction::UpdateDrawingOptions(
+                image_id.clone(),
+                match clip {
+                    ClippingInputType::Min => UpdateDrawingOptions::ClipMin(None),
+                    ClippingInputType::Max => UpdateDrawingOptions::ClipMax(None),
+                },
+            ));
+        })
+    };
+
+    html! {
+        <div class={style}>
+            <div>
+                <div class="label">{"clip min"}</div>
+                <div class="vscode-textfield">
+                    <input
+                        type="number"
+                        step="any"
+                        placeholder="min"
+                        ref={min_input_ref.clone()}
+                        oninput={onchange(ClippingInputType::Min)}
+                        value={clip.min.map(|v| v.to_string()).unwrap_or_default()} />
+                    <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Min)}>
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+            </div>
+
+             <div>
+                <div class="label">{"clip max"}</div>
+                <div class="vscode-textfield">
+                    <input
+                        type="number"
+                        step="any"
+                        placeholder="max"
+                        ref={max_input_ref.clone()}
+                        oninput={onchange(ClippingInputType::Max)}
+                        value={clip.max.map(|v| v.to_string()).unwrap_or_default()} />
+                    <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Max)}>
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
 fn make_info_items(
     _image_id: &ViewableObjectId,
     image_availability: &ImageAvailability,
@@ -44,6 +166,13 @@ fn make_info_items(
     // show legend if image is available and is shown as segmentation
     if let ImageAvailability::Available(texture) = image_availability {
         let texture = texture.borrow();
+
+        if texture.info.channels == Channels::One {
+            info_items.push(html! {
+                <ClippingInput image_id={texture.info.image_id.clone()} />
+            });
+        }
+
         if drawing_options.coloring == Coloring::Segmentation {
             let colormap = get_segmentation_colormap(&dispatch)
                 .map_err(|e| {
@@ -76,7 +205,7 @@ fn make_info_items(
                             colormap.as_ref(),
                             drawing_options,
                         );
-                        
+
                         (color_zero_one * 255.0).xyz().to_array()
                     })
                     .collect::<Vec<_>>();
@@ -169,6 +298,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         position: absolute;
         top: 0;
         right: 0;
+        max-width: 144px;
         "#,
     );
 

@@ -17,8 +17,14 @@ pub(crate) enum Coloring {
     Heatmap,
 }
 
+#[derive(Clone, Default, Debug, PartialEq, serde::Serialize, serde::Deserialize, tsify::Tsify)]
+pub(crate) struct Clip {
+    pub(crate) min: Option<f32>,
+    pub(crate) max: Option<f32>,
+}
+
 #[derive(
-    Builder, tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash,
+    Builder, tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq,
 )]
 pub(crate) struct DrawingOptions {
     pub coloring: Coloring,
@@ -26,6 +32,7 @@ pub(crate) struct DrawingOptions {
     pub high_contrast: bool,
     pub ignore_alpha: bool,
     pub batch_item: Option<u32>,
+    pub clip: Clip,
 }
 
 impl Default for DrawingOptions {
@@ -36,6 +43,7 @@ impl Default for DrawingOptions {
             high_contrast: false,
             ignore_alpha: false,
             batch_item: None,
+            clip: Clip::default(),
         }
     }
 }
@@ -132,6 +140,7 @@ const fn only_max_alpha(datatype: Datatype) -> Vec4 {
 fn stretch_values_matrix(
     image_info: &ImageInfo,
     image_computed_info: &ComputedInfo,
+    clip: &Clip,
 ) -> (Mat4, Vec4) {
     // x = MAX * (x - min) / (max - min) 
     // x = MAX * x / (max - min) - MAX * min / (max - min)
@@ -142,8 +151,8 @@ fn stretch_values_matrix(
     let dt_max = max_by_datatype(datatype);
 
     let calc_normalizer = |c| {
-        let min = image_computed_info.min.get::<f32>(c);
-        let max = image_computed_info.max.get::<f32>(c);
+        let min = clip.min.unwrap_or(*image_computed_info.min.get::<f32>(c));
+        let max = clip.max.unwrap_or(*image_computed_info.max.get::<f32>(c));
         let denom = max - min;
 
         (dt_max / denom, -dt_max * min / denom)
@@ -177,6 +186,7 @@ pub(crate) struct ColoringFactors {
     pub(crate) normalization_factor: f32,
     pub(crate) color_multiplier: Mat4,
     pub(crate) color_addition: Vec4,
+    pub(crate) clip: Clip,
 }
 
 pub(crate) fn calculate_color_matrix(
@@ -297,7 +307,7 @@ pub(crate) fn calculate_color_matrix(
 
     let heatmap: bool = matches!(drawing_options.coloring, Coloring::Heatmap{..});
     let (modify_value_mult, modify_value_add) = if drawing_options.high_contrast || heatmap  {
-        stretch_values_matrix(image_info, image_computed_info)
+        stretch_values_matrix(image_info, image_computed_info, &drawing_options.clip)
     } else {
         (modify_value_mult, modify_value_add)
     };
@@ -315,6 +325,7 @@ pub(crate) fn calculate_color_matrix(
         normalization_factor,
         color_multiplier,
         color_addition,
+        clip: drawing_options.clip.clone(),
     }
 }
 

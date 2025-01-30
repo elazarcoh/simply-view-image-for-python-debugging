@@ -25,6 +25,7 @@ pub(crate) fn ViewableInfoContainer(props: &ViewableInfoContainerProps) -> Html 
         border: 1px solid var(--vscode-sideBar-border);
         height: 100%;
         width: 100%;
+        box-sizing: border-box;
 
         .content_container {
             direction: ltr;  /* parent is rtl, reset to ltr */
@@ -47,6 +48,9 @@ pub(crate) fn ViewableInfoContainer(props: &ViewableInfoContainerProps) -> Html 
             display: flex;
             flex-direction: row-reverse;
             align-items: flex-start;
+        }
+        .collapsed button {
+            padding: 2px;
         }
         "#,
     );

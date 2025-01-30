@@ -132,6 +132,7 @@ const WebviewConfig = {
         new CopyPlugin({
             patterns: [
                 {
+                    // node_modules/@vscode/codicons/dist/codicon.{ttf,css}
                     from: path.posix.join(
                         __dirname.replace(/\\/g, "/"),
                         "node_modules",
@@ -147,6 +148,7 @@ const WebviewConfig = {
                     ),
                 },
                 {
+                    // node_modules/svifpd-icons/dist/svifpd-icons.{ttf,css}
                     from: path.posix.join(
                         webviewPath.replace(/\\/g, "/"),
                         "icons",
@@ -159,6 +161,18 @@ const WebviewConfig = {
                         "[name][ext]"
                     ),
                 },
+                {
+                    // webview-ui/main.css
+                    from: path.posix.join(
+                        webviewPath.replace(/\\/g, "/"),
+                        "main.css"
+                    ),
+                    to: path.posix.join(
+                        __dirname.replace(/\\/g, "/"),
+                        "dist",
+                        "webview-ui.css"
+                    ),
+                }
             ],
         }),
         new WebpackShellPlugin({

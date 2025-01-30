@@ -101,14 +101,14 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     );
 
     html! {
-        <vscode-option
+        <div
             ref={node_ref.clone()}
             aria-selected={if is_selected {"true"} else {"false"}}
             {onclick}
             class={entry_style.clone()}
         >
             <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={*maybe_batch_item} />
-        </vscode-option>
+        </div>
     }
 }
 
@@ -174,9 +174,26 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
         )
         .collect::<Vec<_>>();
 
+    let style = use_style!(
+        r#"
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: 100%;
+
+        .inner {
+            width: 100%;
+            margin-bottom: 100px;
+        }
+
+        .inner > div[aria-selected="true"] {
+            background-color: var(--vscode-list-activeSelectionBackground);
+        }
+    "#,
+    );
+
     html! {
-        <div class={css!("overflow-y: auto; height: 100%;")} ref={node_ref}>
-            <div class={css!("width: 100%; margin-bottom: 100px;")}>
+        <div class={style} ref={node_ref}>
+            <div class={"inner"}>
                 {for entries}
             </div>
         </div>

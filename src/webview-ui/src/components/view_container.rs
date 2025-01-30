@@ -125,6 +125,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                 <div class="vscode-textfield">
                     <input
                         type="number"
+                        step="any"
                         placeholder="min"
                         ref={min_input_ref.clone()}
                         oninput={onchange(ClippingInputType::Min)}
@@ -140,6 +141,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                 <div class="vscode-textfield">
                     <input
                         type="number"
+                        step="any"
                         placeholder="max"
                         ref={max_input_ref.clone()}
                         oninput={onchange(ClippingInputType::Max)}
@@ -308,7 +310,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             </div>
             if !info_items.is_empty() {
                 <div class={info_container_style}>
-                    <ViewableInfoContainer collapsed={false}>
+                    <ViewableInfoContainer collapsed={true}>
                         {info_items}
                     </ViewableInfoContainer>
                 </div>

@@ -523,6 +523,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            user-select: none;
         }
         "#
     );

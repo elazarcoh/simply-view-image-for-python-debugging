@@ -177,6 +177,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let style = use_style!(
         r#"
         overflow-y: auto;
+        overflow-x: hidden;
         height: 100%;
 
         .inner {

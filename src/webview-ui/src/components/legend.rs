@@ -32,7 +32,8 @@ fn LegendItem(props: &LegendItemProps) -> Html {
     };
     let style = use_style!(
         r#"
-        width: max-content;
+        box-sizing: border-box;
+        width: fit-content;
         user-select: none;
         display: flex;
         justify-content: flex-start;
@@ -42,7 +43,7 @@ fn LegendItem(props: &LegendItemProps) -> Html {
     );
 
     html! {
-        <div class={style}>
+        <div class={classes!(style, "legend-item")}>
             {rect_svg}
             <span>{label}</span>
         </div>
@@ -60,10 +61,15 @@ pub(crate) fn Legend(props: &LegendProps) -> Html {
     let style = use_style!(
         r#"
         width: 100%;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-        grid-gap: 0.25rem;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.25rem;
         padding: 8px;
+
+        .legend-item {
+            flex: 1;
+        }
         "#,
     );
 

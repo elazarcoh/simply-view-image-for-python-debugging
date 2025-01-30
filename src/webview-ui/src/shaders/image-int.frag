@@ -13,6 +13,10 @@ uniform float u_normalization_factor;
 uniform mat4 u_color_multiplier;
 uniform vec4 u_color_addition;
 uniform bool u_invert;
+uniform bool u_clip_min;
+uniform bool u_clip_max;
+uniform float u_min_clip_value;
+uniform float u_max_clip_value;
 
 uniform bool u_use_colormap;
 uniform sampler2D u_colormap;
@@ -34,10 +38,21 @@ void main() {
   vec2 pix = vout_uv;
 
   ivec4 texel = texture(u_texture, pix);
-  vec4 sampled = vec4(float(texel.r) / u_normalization_factor,
-                      float(texel.g) / u_normalization_factor,
-                      float(texel.b) / u_normalization_factor,
-                      float(texel.a) / u_normalization_factor);
+  vec4 sampled =
+      vec4(float(texel.r), float(texel.g), float(texel.b), float(texel.a));
+
+  if (u_clip_min) {
+    sampled =
+        vec4(max(sampled.r, u_min_clip_value), max(sampled.g, u_min_clip_value),
+             max(sampled.b, u_min_clip_value), sampled.a);
+  }
+  if (u_clip_max) {
+    sampled =
+        vec4(min(sampled.r, u_max_clip_value), min(sampled.g, u_max_clip_value),
+             min(sampled.b, u_max_clip_value), sampled.a);
+  }
+
+  sampled /= u_normalization_factor;
 
   vec4 color = u_color_multiplier * sampled + u_color_addition;
 

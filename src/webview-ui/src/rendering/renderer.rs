@@ -534,6 +534,17 @@ impl Renderer {
             None
         };
 
+        if texture_info.channels == Channels::One {
+            if let Some(ref clip_min) = drawing_options.clip.min {
+                uniform_values.insert("u_clip_min", UniformValue::Bool(&true));
+                uniform_values.insert("u_min_clip_value", UniformValue::Float(clip_min));
+            }
+            if let Some(ref clip_max) = drawing_options.clip.max {
+                uniform_values.insert("u_clip_max", UniformValue::Bool(&true));
+                uniform_values.insert("u_max_clip_value", UniformValue::Float(clip_max));
+            }
+        }
+
         if let Some(ref colormap_texture) = colormap_texture {
             uniform_values.insert(
                 "u_colormap",

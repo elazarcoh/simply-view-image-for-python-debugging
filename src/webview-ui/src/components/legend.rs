@@ -25,13 +25,15 @@ fn LegendItem(props: &LegendItemProps) -> Html {
             <rect
                 width={rect_size.width.to_string()}
                 height={rect_size.height.to_string()}
-                fill={format!("rgb({},{},{})", color[0], color[1], color[2])} />
+                fill={format!("rgb({},{},{})", color[0], color[1], color[2])} >
+                <title>{label}</title>
+            </rect>
         </svg>
     };
     let style = use_style!(
         r#"
+        width: max-content;
         user-select: none;
-        pointer-events: none;
         display: flex;
         justify-content: flex-start;
         align-items: center;
@@ -57,13 +59,11 @@ pub(crate) fn Legend(props: &LegendProps) -> Html {
     let LegendProps { content } = props;
     let style = use_style!(
         r#"
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        row-gap: 8px;
-        padding: 8px;
         width: 100%;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        grid-gap: 0.25rem;
+        padding: 8px;
         "#,
     );
 

@@ -2,7 +2,7 @@ use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::views::ImageViews;
 use super::vscode_data_fetcher::ImagesFetcher;
-use crate::coloring::{Coloring, DrawingOptions};
+use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
@@ -108,6 +108,8 @@ pub(crate) enum UpdateDrawingOptions {
     Invert(bool),
     HighContrast(bool),
     IgnoreAlpha(bool),
+    ClipMin(Option<f32>),
+    ClipMax(Option<f32>),
 }
 
 #[allow(dead_code)]
@@ -253,6 +255,20 @@ impl Reducer<AppState> for StoreAction {
                     },
                     UpdateDrawingOptions::IgnoreAlpha(ia) => DrawingOptions {
                         ignore_alpha: ia,
+                        ..current_drawing_options
+                    },
+                    UpdateDrawingOptions::ClipMin(min) => DrawingOptions {
+                        clip: Clip {
+                            min,
+                            ..current_drawing_options.clip
+                        },
+                        ..current_drawing_options
+                    },
+                    UpdateDrawingOptions::ClipMax(max) => DrawingOptions {
+                        clip: Clip {
+                            max,
+                            ..current_drawing_options.clip
+                        },
                         ..current_drawing_options
                     },
                 };

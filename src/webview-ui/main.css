@@ -249,3 +249,125 @@
   background-color: var(--vscode-list-activeSelectionBackground) !important;
   color: var(--vscode-list-activeSelectionForeground) !important;
 }
+
+input.vscode-textfield,
+div.vscode-textfield {
+  background-color: var(--vscode-settings-textInputBackground);
+  border-color: var(--vscode-settings-textInputBorder, var(--vscode-settings-textInputBackground));
+  border-radius: 2px;
+  border-style: solid;
+  border-width: 1px;
+  box-sizing: border-box;
+  color: var(--vscode-settings-textInputForeground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  line-height: 18px;
+  max-width: 100%;
+  outline: none;
+  position: relative;
+}
+
+input.vscode-textfield {
+  display: inline-block;
+  padding-bottom: 3px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 3px;
+}
+
+div.vscode-textfield {
+  align-items: center;
+  display: inline-flex;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+div.vscode-textfield input {
+  background-color: transparent;
+  border: 0;
+  color: var(--vscode-settings-textInputForeground);
+  display: block;
+  line-height: 18px;
+  margin: 0;
+  outline: 0;
+  padding-bottom: 3px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 3px;
+  width: 100%;
+}
+
+input.vscode-textfield:read-only:not([type="file"]) {
+  cursor: not-allowed;
+}
+
+input.vscode-textfield::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  opacity: 1;
+}
+
+input.vscode-textfield:invalid,
+input.vscode-textfield.invalid,
+div.vscode-textfield:has(:invalid),
+div.vscode-textfield.invalid {
+  background-color: var(--vscode-inputValidation-errorBackground);
+  border-color: var(--vscode-inputValidation-errorBorder, #be1100);
+}
+
+input.vscode-textfield:focus,
+input.vscode-textfield:focus:invalid,
+div.vscode-textfield:focus-within {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+input.vscode-textfield[type='file'] {
+  line-height: 24px;
+  padding-bottom: 0;
+  padding-left: 2px;
+  padding-top: 0;
+}
+
+.vscode-textfield:has(input[type='file']) {
+  box-sizing: border-box;
+  height: 26px;
+  overflow: hidden;
+  padding-left: 0;
+}
+
+input.vscode-textfield[type='file']::file-selector-button,
+.vscode-textfield input[type='file']::file-selector-button {
+  background-color: var(--vscode-button-background);
+  border: 0;
+  border-radius: 2px;
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
+  display: inline-block;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  line-height: 20px;
+  margin-right: 4px;
+  padding: 0 14px;
+}
+
+input.vscode-textfield[type='file']::file-selector-button:hover,
+.vscode-textfield input[type='file']::file-selector-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.vscode-textfield input[type='file'] {
+  line-height: 24px;
+  margin-top: 1px;
+  padding-bottom: 0;
+  padding-left: 2px;
+  padding-top: 0;
+}
+
+.vscode-textfield:has(input[type='file']) > .codicon:not(:last-child),
+.vscode-textfield:has(input[type='file']) > .vscode-action-button:not(:last-child),
+.vscode-textfield:has(input[type='file']) > .vscode-badge:not(:last-child) {
+  margin-left: 4px;
+  margin-right: 4px;
+}

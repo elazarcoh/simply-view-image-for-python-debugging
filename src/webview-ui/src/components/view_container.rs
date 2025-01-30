@@ -3,11 +3,15 @@ use std::rc::Rc;
 use glam::Vec4Swizzles;
 use itertools::Itertools;
 use stylist::{css, yew::use_style};
+use web_sys::Node;
 use yew::{prelude::*, virtual_dom::VNode};
-use yewdux::{functional::use_selector, Dispatch};
+use yewdux::{dispatch, functional::use_selector, Dispatch};
 
 use crate::{
-    application_state::{app_state::AppState, images::ImageAvailability},
+    application_state::{
+        app_state::{AppState, StoreAction, UpdateDrawingOptions},
+        images::ImageAvailability,
+    },
     coloring::{self, Coloring, DrawingOptions},
     colormap,
     common::{Channels, ViewId, ViewableObjectId},
@@ -33,101 +37,118 @@ fn get_segmentation_colormap(
 }
 
 #[derive(PartialEq, Properties)]
-pub struct ClippingInputProps {}
+pub struct ClippingInputProps {
+    pub image_id: ViewableObjectId,
+}
 
 #[function_component]
 pub fn ClippingInput(props: &ClippingInputProps) -> Html {
-    let ClippingInputProps {} = props;
+    let ClippingInputProps { image_id } = props;
+    let clip = {
+        let image_id = image_id.clone();
+        use_selector(move |state: &AppState| {
+            state
+                .drawing_options
+                .borrow()
+                .get_or_default(&image_id)
+                .clip
+        })
+    };
     let style = use_style!(
         r#"
+        padding: 0.5rem;
 
-        .container {
-            background-color: var(--vscode-input-background);
-            position: relative;
-            display: block;
-            overflow: hidden;
-            border-radius: 0.375rem;
-            border: 1px solid #e2e8f0;
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-            padding-top: 0.5rem;
-            --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
-            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+        .label {
+            font-size: 0.75rem;
+            line-height: 1rem;
         }
-
-        .container:focus-within {
-            --tw-border-opacity: 1;
-            border-color: rgb(37 99 235 / var(--tw-border-opacity, 1)) /* #2563eb */;
-        }
-
-        .container input {
-            background-color: transparent;
-            color: var(--vscode-input-foreground);
-            height: 2rem;
-            width: 100%;
-            border: none;
-            padding: 0;
-        }
-
-        .container input::placeholder {
+        input::placeholder {
             color: transparent;
         }
-
-        .container input:focus {
-            border-color: transparent;
-            outline: 2px solid transparent;
-            outline-offset: 2px;
+        input:placeholder-shown + .vscode-action-button {
+            opacity: 0;
         }
 
-        .container span {
-            position: absolute;
-            inset-inline-start: 0.75rem;
-            top: 0.75rem;
-            transform: translateY(-50%);
-            font-size: 0.6rem;
-            line-height: 1rem;
-            color: #9ca3af;
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
-
-        .container .peer:placeholder-shown ~ .peer-placeholder-shown {
-            top: 50%;
-            font-size: 0.75rem;
-            line-height: 1.25rem;
-        }
-
-        .container .peer:focus ~ .peer-focus {
-            top: 0.75rem;
-            font-size: 0.6rem;
-            line-height: 1rem;
-        }
-
         "#,
     );
+    let min_input_ref = use_node_ref();
+    let max_input_ref = use_node_ref();
+    enum ClippingInputType {
+        Min,
+        Max,
+    }
+
+    let onchange = |clip: ClippingInputType| {
+        let image_id = image_id.clone();
+        let node_ref = match clip {
+            ClippingInputType::Min => min_input_ref.clone(),
+            ClippingInputType::Max => max_input_ref.clone(),
+        };
+        let dispatch = Dispatch::<AppState>::global();
+        Callback::from(move |_| {
+            if let Some(input) = node_ref.cast::<web_sys::HtmlInputElement>() {
+                let value_str = input.value();
+                let value: Option<f32> = value_str.parse().ok();
+                dispatch.apply(StoreAction::UpdateDrawingOptions(
+                    image_id.clone(),
+                    match clip {
+                        ClippingInputType::Min => UpdateDrawingOptions::ClipMin(value),
+                        ClippingInputType::Max => UpdateDrawingOptions::ClipMax(value),
+                    },
+                ));
+            }
+        })
+    };
+    let clear = |clip: ClippingInputType| {
+        let image_id = image_id.clone();
+        let dispatch = Dispatch::<AppState>::global();
+        Callback::from(move |_| {
+            dispatch.apply(StoreAction::UpdateDrawingOptions(
+                image_id.clone(),
+                match clip {
+                    ClippingInputType::Min => UpdateDrawingOptions::ClipMin(None),
+                    ClippingInputType::Max => UpdateDrawingOptions::ClipMax(None),
+                },
+            ));
+        })
+    };
+
     html! {
         <div class={style}>
-            <div>{"Clipping"}</div>
+            <div>
+                <div class="label">{"clip min"}</div>
+                <div class="vscode-textfield">
+                    <input
+                        type="number"
+                        placeholder="min"
+                        ref={min_input_ref.clone()}
+                        oninput={onchange(ClippingInputType::Min)}
+                        value={clip.min.map(|v| v.to_string()).unwrap_or_default()} />
+                    <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Min)}>
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+            </div>
 
-            <label
-                for="UserEmail"
-                class="container"
-            >
-                <input
-                    type="email"
-                    id="UserEmail"
-                    placeholder="Email"
-                    class="peer"
-                />
-
-                <span
-                    class="peer-placeholder-shown peer-focus"
-                    >
-                    {"Email"}
-                </span>
-            </label>
+             <div>
+                <div class="label">{"clip max"}</div>
+                <div class="vscode-textfield">
+                    <input
+                        type="number"
+                        placeholder="max"
+                        ref={max_input_ref.clone()}
+                        oninput={onchange(ClippingInputType::Max)}
+                        value={clip.max.map(|v| v.to_string()).unwrap_or_default()} />
+                    <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Max)}>
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     }
 }
@@ -144,6 +165,13 @@ fn make_info_items(
     // show legend if image is available and is shown as segmentation
     if let ImageAvailability::Available(texture) = image_availability {
         let texture = texture.borrow();
+
+        if texture.info.channels == Channels::One {
+            info_items.push(html! {
+                <ClippingInput image_id={texture.info.image_id.clone()} />
+            });
+        }
+
         if drawing_options.coloring == Coloring::Segmentation {
             let colormap = get_segmentation_colormap(&dispatch)
                 .map_err(|e| {
@@ -195,12 +223,6 @@ fn make_info_items(
                     />
                 });
             }
-        }
-
-        if texture.info.channels == Channels::One {
-            info_items.push(html! {
-                <ClippingInput />
-            });
         }
     }
 
@@ -275,6 +297,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         position: absolute;
         top: 0;
         right: 0;
+        max-width: 144px;
         "#,
     );
 

@@ -90,9 +90,9 @@ pub(crate) fn IconButton(props: &IconButtonProps) -> Html {
     );
 
     html! {
-        <vscode-button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={classes!(css!("visibility: hidden;"), class.clone())} title={title.clone()}>
+        <button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={classes!("vscode-action-button", class.clone())} title={title.clone()}>
             <span class={classes!(icon, spin_style, spin.map(|v| if v { "spin" } else { "" }))}></span>
-        </vscode-button>
+        </button>
     }
 }
 

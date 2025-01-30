@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use itertools::Itertools;
 use stylist::yew::{styled_component, use_style};
+use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
 use yewdux::{prelude::use_selector, Dispatch};
@@ -37,7 +38,7 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
         .sorted()
         .map(|name| {
             html! {
-                <vscode-option value={name.clone()}>{name.clone()}</vscode-option>
+                <option value={name.clone()} selected={name == global_drawing_options.heatmap_colormap_name}>{name.clone()}</option>
             }
         });
     let style = use_style!(
@@ -49,57 +50,44 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
         gap: 10px;
         "#
     );
-    let node_ref = NodeRef::default();
 
-    // Hacky way to get the current value of the dropdown
-    type CallbackContainer = Rc<RefCell<Option<Box<dyn Fn()>>>>;
-    let cb: CallbackContainer = Rc::new(RefCell::new(None));
-    *cb.borrow_mut() = Some(Box::new({
-        let cb = Rc::clone(&cb);
-        let node_ref = node_ref.clone();
-        move || {
-            let timer = gloo::timers::callback::Timeout::new(100, {
-                let node_ref = node_ref.clone();
-                let cb = Rc::clone(&cb);
-                move || {
-                    let current_value = node_ref
-                        .cast::<web_sys::HtmlElement>()
-                        .unwrap()
-                        .get_attribute("current-value")
-                        .filter(|v| !v.is_empty());
-                    log::debug!("current_value: {:?}", current_value);
-                    match current_value {
-                        Some(name) => {
-                            let dispatch = Dispatch::<AppState>::global();
-                            dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
-                                UpdateGlobalDrawingOptions::GlobalHeatmapColormap(name),
-                            ));
-                        }
-                        None => cb.borrow().as_ref().unwrap()(),
-                    }
-                }
-            });
-            timer.forget();
-        }
-    }) as Box<dyn Fn()>);
     let onchange = Callback::from({
-        move |_: Event| {
-            cb.borrow().as_ref().unwrap()();
+        move |e: Event| {
+            let value = e
+                .target()
+                .unwrap()
+                .dyn_ref::<web_sys::HtmlSelectElement>()
+                .unwrap()
+                .value();
+            if !value.is_empty() {
+                let dispatch = Dispatch::<AppState>::global();
+                dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
+                    UpdateGlobalDrawingOptions::GlobalHeatmapColormap(value),
+                ));
+            }
         }
     });
 
-    let current_name = global_drawing_options.heatmap_colormap_name.clone();
     html! {
         <div class={style}>
             <label>{"Colormap"}</label>
-            <vscode-dropdown
-                current-value={current_name}
-                ref={node_ref.clone()}
+            <div class="vscode-select">
+            <select
                 disabled={disabled.unwrap_or(false)}
                 {onchange}
             >
                 {for options}
-            </vscode-dropdown>
+            </select>
+            <span class="chevron-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                    <path
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"
+                    />
+                </svg>
+            </span>
+            </div>
         </div>
     }
 }
@@ -146,9 +134,9 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
                 border: 1px solid var(--vscode-editorHoverWidget-border);
                 border-radius: 3px;
                 box-shadow: 0 2px 8px var(--vscode-widget-shadow);
-                font-family: var(--font-family);
+                font-family: var(--vscode-font-family);
                 font-size: var(--vscode-font-size);
-                font-weight: var(--font-weight);
+                font-weight: var(--vscode-font-weight);
 
                 visibility: hidden;
                 width: fit-content;

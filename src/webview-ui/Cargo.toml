@@ -46,7 +46,7 @@ gloo-utils = { version = "0.1.7", features = ["serde"] }
 gloo-events = "0.2"
 gloo-timers = "0.3.0"
 tsify = "0.4.5"
-yew-hooks = "0.2.0"
+yew-hooks = "0.3.3"
 stylist = { version = "0.13.0", features = ["yew_integration"] }
 getrandom = { version = "0.2", features = ["js"] }
 
@@ -78,6 +78,7 @@ thiserror = "1.0.50"
 ndarray = "0.15.6"
 ndarray-stats = "0.5.1"
 num-traits = "0.2.17"
+wasm-bindgen-futures = "0.4.42"
 
 
 [dependencies.web-sys]
@@ -86,6 +87,7 @@ features = [
   'Document',
   'Element',
   'HtmlElement',
+  'HtmlSelectElement',
   'DomRect',
   'Node',
   'Window',

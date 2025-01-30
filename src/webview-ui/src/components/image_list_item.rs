@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
-    application_state::app_state::{AppState, UiAction, StoreAction, UpdateDrawingOptions},
+    application_state::app_state::{AppState, StoreAction, UiAction, UpdateDrawingOptions},
     coloring::Coloring,
     common::{Image, ImageInfo, MinimalImageInfo, ValueVariableKind},
     vscode::vscode_requests::VSCodeRequests,
@@ -104,9 +104,17 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
 
     let features = features::list_features(entry);
 
+    let base_style = use_style!(
+        r#"
+        padding: 1px;
+        "#,
+    );
     let currently_selected_style = use_style!(
         r#"
         background-color: var(--vscode-button-background);
+        :hover {
+            background-color: var(--vscode-button-background);
+        }
     "#
     );
     let default_style = use_style!(r#" "#);
@@ -115,6 +123,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
 
     let reset_button = html! {
         <IconButton
+            class={base_style.clone()}
             aria_label={"Reset"}
             title={"Reset"}
             icon={"codicon codicon-discard"}
@@ -127,7 +136,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let high_contrast_button = html! {
         <IconButton
-            class={if drawing_options.high_contrast { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.high_contrast { currently_selected_style.clone() } else { default_style.clone() })
+            }
             aria_label={"High Contrast"}
             title={"High Contrast"}
             icon={"svifpd-icons svifpd-icons-contrast"}
@@ -141,7 +153,12 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let grayscale_button = html! {
         <IconButton
-            class={if drawing_options.coloring == Coloring::Grayscale { currently_selected_style.clone() } else { default_style.clone() }}
+            class={
+                classes!(
+                    base_style.clone(),
+                    if drawing_options.coloring == Coloring::Grayscale { currently_selected_style.clone() } else { default_style.clone() }
+                )
+            }
             aria_label={"Grayscale"}
             title={"Grayscale"}
             icon={"svifpd-icons svifpd-icons-grayscale"}
@@ -154,7 +171,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let swap_rgb_bgr_button = html! {
         <IconButton
-            class={if drawing_options.coloring == Coloring::SwapRgbBgr { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::SwapRgbBgr { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Swap RGB/BGR"}
             title={"Swap RGB/BGR"}
             icon={"svifpd-icons svifpd-icons-BGR"}
@@ -167,7 +187,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let r_button = html! {
         <IconButton
-            class={if drawing_options.coloring == Coloring::R { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::R { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Red Channel"}
             title={"Red Channel"}
             icon={"svifpd-icons svifpd-icons-R"}
@@ -180,7 +203,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let g_button = html! {
         <IconButton
-            class={if drawing_options.coloring == Coloring::G { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::G { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Green Channel"}
             title={"Green Channel"}
             icon={"svifpd-icons svifpd-icons-G"}
@@ -193,7 +219,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let b_button = html! {
         <IconButton
-            class={if drawing_options.coloring == Coloring::B { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::B { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Blue Channel"}
             title={"Blue Channel"}
             icon={"svifpd-icons svifpd-icons-B"}
@@ -206,7 +235,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let invert_button = html! {
         <IconButton
-            class={if drawing_options.invert { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.invert { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Invert Colors"}
             title={"Invert Colors"}
             icon={"svifpd-icons svifpd-icons-invert"}
@@ -220,7 +252,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let ignore_alpha_button = html! {
         <IconButton
-            class={if drawing_options.ignore_alpha { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.ignore_alpha { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Ignore Alpha"}
             title={"Ignore Alpha"}
             icon={"svifpd-icons svifpd-icons-toggle-transparency"}
@@ -234,7 +269,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let heatmap_button = html! {
         <IconButton
-            class={ if Coloring::Heatmap == drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::Heatmap { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Heatmap"}
             title={"Heatmap"}
             icon={"svifpd-icons svifpd-icons-heatmap"}
@@ -247,7 +285,10 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     };
     let segmentation_button = html! {
         <IconButton
-            class={ if Coloring::Segmentation == drawing_options.coloring { currently_selected_style.clone() } else { default_style.clone() }}
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::Segmentation { currently_selected_style.clone() } else { default_style.clone() }
+            )}
             aria_label={"Segmentation"}
             title={"Segmentation"}
             icon={"svifpd-icons svifpd-icons-segmentation"}
@@ -317,12 +358,12 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
 
     let style = use_style!(
         r#"
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-start;
-        flex-wrap: nowrap;
-        gap: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
+            gap: 10px;
         "#
     );
 
@@ -340,18 +381,17 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             <div class={toolbar_style}>
                 {for buttons.into_iter()}
             </div>
-
         </div>
     }
 }
 
-fn make_info_row(label: &str, value: &str, info_grid_cell_style: &Style) -> Html {
+fn make_info_row(label: &str, value: &str) -> Html {
     html! {
     <>
-        <vscode-data-grid-row>
-            <vscode-data-grid-cell class={info_grid_cell_style.clone()} cell-type="columnheader" grid-column="1">{label}</vscode-data-grid-cell>
-            <vscode-data-grid-cell class={info_grid_cell_style.clone()} grid-column="2">{value}</vscode-data-grid-cell>
-        </vscode-data-grid-row>
+        <div class={"info-row"}>
+            <div class={"info-label"}>{label}</div>
+            <div class={"info-data"}>{value}</div>
+        </div>
     </>
     }
 }
@@ -384,16 +424,26 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         r#"
         user-select: none;
         pointer-events: none;
-    "#,
-    );
-
-    let info_grid_cell_style = use_style!(
-        r#"
+        display: grid;
+        grid-template-columns: max-content auto;
+        grid-template-rows: auto;
         padding-top: 1px;
-        padding-bottom: 1px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        padding-bottom: 5px;
+        padding-left: 5px;
+        row-gap: 1px;
+        column-gap: 5px;
+
+        .info-row {
+            display: contents;
+        }
+        .info-row .info-label {
+            font-weight: bold;
+        }
+        .info-row .info-data {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     "#,
     );
 
@@ -402,15 +452,11 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         .additional_info
         .iter()
         .sorted()
-        .map(|(k, v)| make_info_row(k, v, &info_grid_cell_style))
+        .map(|(k, v)| make_info_row(k, v))
         .collect::<Vec<_>>();
 
     if let Some(batch_index) = batch_index {
-        let batch_row = make_info_row(
-            "Batch Index",
-            &batch_index.to_string(),
-            &info_grid_cell_style,
-        );
+        let batch_row = make_info_row("Batch Index", &batch_index.to_string());
         rows.push(batch_row);
     }
 
@@ -489,9 +535,9 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
                 if *value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}
             </div>
 
-            <vscode-data-grid aria-label="Basic" grid-template-columns="max-content auto" class={info_grid_style.clone()}>
+            <div class={info_grid_style.clone()}>
                 {for rows}
-            </vscode-data-grid>
+            </div>
 
             if let Image::Full(entry) = entry {
                 if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}

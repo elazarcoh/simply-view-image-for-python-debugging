@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use stylist::{yew::use_style, Style};
+use stylist::yew::use_style;
 use yew::prelude::*;
 use yewdux::{prelude::use_selector, Dispatch};
 

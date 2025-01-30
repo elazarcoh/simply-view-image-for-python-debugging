@@ -3,9 +3,8 @@ use std::rc::Rc;
 use glam::Vec4Swizzles;
 use itertools::Itertools;
 use stylist::{css, yew::use_style};
-use web_sys::Node;
 use yew::{prelude::*, virtual_dom::VNode};
-use yewdux::{dispatch, functional::use_selector, Dispatch};
+use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
     application_state::{

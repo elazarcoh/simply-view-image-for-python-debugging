@@ -184,7 +184,6 @@ impl ColorBarRenderer {
         uniform_values.insert("u_direction", UniformValue::Int(&1));
 
         uniform_values.insert("u_colormap", UniformValue::Texture(&colormap_texture));
-        uniform_values.insert("u_use_colormap", UniformValue::Bool(&true));
 
         let drawing_options = DrawingOptions {
             coloring: crate::coloring::Coloring::Heatmap,
@@ -193,8 +192,8 @@ impl ColorBarRenderer {
             ignore_alpha: false,
             batch_item: None,
             clip: Clip {
-                min: None,
-                max: None,
+                min: Some(0.3),
+                max: Some(0.8)
             },
         };
 

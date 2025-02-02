@@ -5,7 +5,7 @@ use crate::{
 };
 
 
-#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub(crate) enum Coloring {
     Default,
     Grayscale,

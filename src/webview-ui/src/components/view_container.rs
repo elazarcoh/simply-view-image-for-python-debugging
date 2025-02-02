@@ -18,6 +18,7 @@ use crate::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
     },
     math_utils,
+    webgl_utils::draw,
 };
 
 fn get_segmentation_colormap(
@@ -89,7 +90,8 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
             ClippingInputType::Max => max_input_ref.clone(),
         };
         let dispatch = Dispatch::<AppState>::global();
-        Callback::from(move |_| {
+        Callback::from(move |ev: InputEvent| {
+            ev.stop_propagation();
             if let Some(input) = node_ref.cast::<web_sys::HtmlInputElement>() {
                 let value_str = input.value();
                 let value: Option<f32> = value_str.parse().ok();
@@ -128,6 +130,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                         placeholder="min"
                         ref={min_input_ref.clone()}
                         oninput={onchange(ClippingInputType::Min)}
+                        onkeydown={|ev: KeyboardEvent| { ev.stop_propagation(); }}
                         value={clip.min.map(|v| v.to_string()).unwrap_or_default()} />
                     <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Min)}>
                         <i class="codicon codicon-close"></i>
@@ -144,6 +147,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                         placeholder="max"
                         ref={max_input_ref.clone()}
                         oninput={onchange(ClippingInputType::Max)}
+                        onkeydown={|ev: KeyboardEvent| { ev.stop_propagation(); }}
                         value={clip.max.map(|v| v.to_string()).unwrap_or_default()} />
                     <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Max)}>
                         <i class="codicon codicon-close"></i>
@@ -231,6 +235,83 @@ fn make_info_items(
 }
 
 #[derive(PartialEq, Properties)]
+pub struct ColorbarProps {
+    pub min: f32,
+    pub max: f32,
+    pub clip_min: Option<f32>,
+    pub clip_max: Option<f32>,
+}
+
+#[function_component]
+pub fn Colorbar(props: &ColorbarProps) -> Html {
+    let ColorbarProps {
+        min,
+        max,
+        clip_min,
+        clip_max,
+    } = props;
+
+    let colorbar_style = use_style!(
+        r#"
+        position: absolute;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        .colorbar-container {
+            position: relative;
+            border: 1px solid #f00;
+            width: 40px;
+            height: 200px;
+            padding-right: 5px;
+            padding-left: 5px;
+        }
+
+        .colorbar {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .handle {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: #000;
+            cursor: ns-resize;
+        }
+
+        "#,
+    );
+    let colorbar_ref = use_selector(|state: &AppState| {
+        state
+            .elements_refs_store
+            .borrow()
+            .get(&ElementsStoreKey::ColorBar)
+            .cloned()
+    });
+    let min_percent = ((clip_min.unwrap_or(*min) - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
+    let max_percent = ((clip_max.unwrap_or(*max) - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
+    let min_percent_style = format!("bottom: {}%;", min_percent);
+    let max_percent_style = format!("bottom: {}%;", max_percent);
+
+    if let Some(ref colorbar_ref) = *colorbar_ref {
+        html! {
+            <div class={colorbar_style}>
+                <div class="colorbar-container">
+                    <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
+                    <div class={classes!("handle")} style={min_percent_style}></div>
+                    <div class={classes!("handle")} style={max_percent_style}></div>
+                </div>
+            </div>
+        }
+    } else {
+        html! {}
+    }
+}
+
+#[derive(PartialEq, Properties)]
 pub(crate) struct ViewContainerProps {
     #[prop_or_default]
     pub class: Classes,
@@ -302,63 +383,25 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         "#,
     );
 
-    let colorbar_style = use_style!(
-        r#"
-        position: absolute;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        
-        .colorbar-container {
-            position: relative;
-            border: 1px solid #f00;
-            width: 40px;
-            height: 200px;
-            padding-right: 5px;
-            padding-left: 5px;
+    let mut colorbar = html! {};
+    if let Some((_, availability, drawing_options)) = current_image.as_ref() {
+        if drawing_options.as_ref().map(|o| o.coloring) == Some(Coloring::Heatmap) {
+            if let ImageAvailability::Available(texture) = availability {
+                let image_info = &texture.borrow().computed_info;
+                let min = image_info.min.as_rgba_f32()[0];
+                let max = image_info.max.as_rgba_f32()[0];
+                let clip_min = drawing_options.as_ref().and_then(|o| o.clip.min);
+                let clip_max = drawing_options.as_ref().and_then(|o| o.clip.max);
+                colorbar = html! {
+                    <Colorbar min={min} max={max} clip_min={clip_min} clip_max={clip_max} />
+                };
+            }
         }
-
-        .colorbar {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-        }
-
-        .handle {
-            position: absolute;
-            width: 100%;
-            height: 1px;
-            background: #000;
-            cursor: ns-resize;
-        }
-
-        "#,
-    );
-    let colorbar_ref = use_selector(|state: &AppState| {
-        state
-            .elements_refs_store
-            .borrow()
-            .get(&ElementsStoreKey::ColorBar)
-            .cloned()
-    });
-    let colorbar_element = if let Some(ref colorbar_ref) = *colorbar_ref {
-        html! {
-            <div class={colorbar_style}>
-                <div class="colorbar-container">
-                    <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
-                    <div class={classes!("handle", css!("top: 20px;" ))}></div>
-                    <div class={classes!("handle", css!("top: 60px;" ))}></div>
-                </div>
-            </div>
-        }
-    } else {
-        html! {}
-    };
+    }
 
     html! {
         <div class={classes!(class.clone(), css!("position: relative;"))}>
-            {colorbar_element}
+            {colorbar}
             <div ref={node_ref.clone()} class={style}>
                 {inner_element}
             </div>

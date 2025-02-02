@@ -2,6 +2,7 @@ use crate::application_state::app_state::AppState;
 use crate::application_state::app_state::ElementsStoreKey;
 use crate::application_state::app_state::GlobalDrawingOptions;
 use crate::application_state::images::ImageAvailability;
+use crate::coloring::Coloring;
 use crate::coloring::DrawingOptions;
 use crate::colormap;
 use crate::common::camera;
@@ -27,6 +28,7 @@ use crate::vscode;
 use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
+use crate::webgl_utils::draw;
 use anyhow::{anyhow, Result};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -122,15 +124,33 @@ fn rendering_context() -> impl RenderingContext {
                 .ok_or(anyhow!("Color map {} not found", name))
         }
 
-        fn get_color_bar_data(&self) -> Option<ColorBarData> {
+        fn get_colorbar_data(&self, view_id: ViewId) -> Option<ColorBarData> {
             let dispatch = Dispatch::<AppState>::global();
-            let html_element = dispatch
-                .get()
+            let state = dispatch.get();
+            let html_element = state
                 .elements_refs_store
                 .borrow()
                 .get(&ElementsStoreKey::ColorBar)
                 .and_then(|element| element.cast::<HtmlElement>());
-            html_element.map(|html_element| ColorBarData { html_element })
+            let cv = state.image_views.borrow().get_currently_viewing(view_id)?;
+            let drawing_options = state
+                .drawing_options
+                .borrow()
+                .get(cv.id())
+                .take_if(|drawing_options| drawing_options.coloring == Coloring::Heatmap);
+            let global_drawing_options = state.global_drawing_options.clone();
+            if let ImageAvailability::Available(texture_image) = self.texture_by_id(cv.id()) {
+                html_element
+                    .zip(drawing_options)
+                    .map(|(html_element, drawing_options)| ColorBarData {
+                        html_element,
+                        drawing_options,
+                        global_drawing_options,
+                        texture_image,
+                    })
+            } else {
+                None
+            }
         }
     }
 

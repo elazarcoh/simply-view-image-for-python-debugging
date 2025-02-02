@@ -1,12 +1,13 @@
 use anyhow::Result;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::iter::FromIterator;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use web_sys::WebGl2RenderingContext;
 use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL};
 
-use crate::coloring::{Clip, DrawingOptions};
+use crate::coloring::{calculate_color_matrix, Clip, DrawingOptions};
 use crate::common::Datatype;
 use crate::rendering::utils::gl_canvas;
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
@@ -154,8 +155,20 @@ impl ColorBarRenderer {
         rendering_data: &mut RenderingData,
         rendering_context: &dyn RenderingContext,
     ) {
-        if let Some(ref data) = rendering_context.get_color_bar_data() {
-            Self::render_color_bar(gl, rendering_data, rendering_context, data);
+        let render_result = rendering_context
+            .visible_nodes()
+            .iter()
+            .map(|view_id| {
+                if let Some(ref data) = rendering_context.get_colorbar_data(*view_id) {
+                    Self::render_color_bar(gl, rendering_data, rendering_context, data)
+                } else {
+                    Ok(())
+                }
+            })
+            .collect::<Result<Vec<_>, _>>();
+
+        if let Err(e) = render_result {
+            log::error!("Renderer::render: {}", e);
         }
     }
 
@@ -164,7 +177,7 @@ impl ColorBarRenderer {
         rendering_data: &mut RenderingData,
         rendering_context: &dyn RenderingContext,
         data: &ColorBarData,
-    ) {
+    ) -> Result<()> {
         scissor_view(gl, &data.html_element);
 
         // fill
@@ -173,11 +186,35 @@ impl ColorBarRenderer {
 
         let program = &rendering_data.programs.colorbar;
 
-        let color_map_texture = rendering_context
-            .get_color_map_texture("fire")
-            .expect("Could not get color map texture");
+        let clip = &data.drawing_options.clip;
+        let texture_image = &data.texture_image.borrow();
+        let coloring_factors = calculate_color_matrix(
+            &texture_image.info,
+            &texture_image.computed_info,
+            &data.drawing_options,
+        );
+        let min_value_normalized = {
+            let mut min = texture_image.computed_info.min.as_rgba_f32()[0];
+            if let Some(clip_min) = clip.min {
+                min = clip_min;
+            }
+            min / coloring_factors.normalization_factor
+        };
+        let max_value_normalized = {
+            let mut max = texture_image.computed_info.max.as_rgba_f32()[0];
+            if let Some(clip_max) = clip.max {
+                max = clip_max;
+            }
+            max / coloring_factors.normalization_factor
+        };
 
-        let colormap_texture: web_sys::WebGlTexture = color_map_texture.obj.clone();
+        let colormap_name = &data.global_drawing_options.heatmap_colormap_name;
+
+        let colormap_texture: web_sys::WebGlTexture = rendering_context
+            .get_color_map_texture(colormap_name)
+            .expect("Could not get color map texture")
+            .obj
+            .clone();
 
         let mut uniform_values = HashMap::new();
 
@@ -185,27 +222,21 @@ impl ColorBarRenderer {
 
         uniform_values.insert("u_colormap", UniformValue::Texture(&colormap_texture));
 
-        let drawing_options = DrawingOptions {
-            coloring: crate::coloring::Coloring::Heatmap,
-            invert: false,
-            high_contrast: false,
-            ignore_alpha: false,
-            batch_item: None,
-            clip: Clip {
-                min: Some(0.3),
-                max: Some(0.8)
-            },
-        };
-
-        if let Some(ref clip_min) = drawing_options.clip.min {
+        if clip.min.is_some() {
             uniform_values.insert("u_clip_min", UniformValue::Bool(&true));
-            uniform_values.insert("u_min_clip_value", UniformValue::Float(clip_min));
+            uniform_values.insert(
+                "u_min_clip_value",
+                UniformValue::Float(&min_value_normalized),
+            );
         } else {
             uniform_values.insert("u_clip_min", UniformValue::Bool(&false));
         }
-        if let Some(ref clip_max) = drawing_options.clip.max {
+        if clip.max.is_some() {
             uniform_values.insert("u_clip_max", UniformValue::Bool(&true));
-            uniform_values.insert("u_max_clip_value", UniformValue::Float(clip_max));
+            uniform_values.insert(
+                "u_max_clip_value",
+                UniformValue::Float(&max_value_normalized),
+            );
         } else {
             uniform_values.insert("u_clip_max", UniformValue::Bool(&false));
         }
@@ -215,5 +246,7 @@ impl ColorBarRenderer {
         set_uniforms(program, &uniform_values);
         set_buffers_and_attributes(program, &rendering_data.buffer);
         draw_buffer_info(gl, &rendering_data.buffer, DrawMode::Triangles);
+
+        Ok(())
     }
 }

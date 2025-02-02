@@ -1,4 +1,5 @@
 use anyhow::Result;
+use yewdux::mrc::Mrc;
 use std::rc::Rc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
@@ -7,7 +8,9 @@ use crate::{
     application_state::{app_state::GlobalDrawingOptions, images::ImageAvailability},
     coloring::DrawingOptions,
     colormap,
-    common::{camera, CurrentlyViewing, Size, ViewId, ViewableObjectId},
+    common::{
+        camera, texture_image::TextureImage, CurrentlyViewing, Size, ViewId, ViewableObjectId,
+    },
     configurations::RenderingConfiguration,
     webgl_utils,
 };
@@ -20,6 +23,9 @@ pub(crate) struct ImageViewData {
 
 pub(crate) struct ColorBarData {
     pub html_element: HtmlElement,
+    pub drawing_options: DrawingOptions,
+    pub global_drawing_options: GlobalDrawingOptions,
+    pub texture_image: Mrc<TextureImage>,
 }
 
 pub(crate) trait RenderingContext {
@@ -37,7 +43,7 @@ pub(crate) trait RenderingContext {
         &self,
         colormap_name: &str,
     ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>>;
-    fn get_color_bar_data(&self) -> Option<ColorBarData>;
+    fn get_colorbar_data(&self, view_id: ViewId) -> Option<ColorBarData>;
 }
 
 pub(crate) trait ViewContext {

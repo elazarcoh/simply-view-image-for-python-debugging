@@ -18,6 +18,10 @@ pub(crate) struct ImageViewData {
     pub camera: camera::Camera,
 }
 
+pub(crate) struct ColorBarData {
+    pub html_element: HtmlElement,
+}
+
 pub(crate) trait RenderingContext {
     fn gl(&self) -> WebGl2RenderingContext;
     fn visible_nodes(&self) -> Vec<ViewId>;
@@ -33,6 +37,7 @@ pub(crate) trait RenderingContext {
         &self,
         colormap_name: &str,
     ) -> Result<Rc<webgl_utils::GLGuard<web_sys::WebGlTexture>>>;
+    fn get_color_bar_data(&self) -> Option<ColorBarData>;
 }
 
 pub(crate) trait ViewContext {

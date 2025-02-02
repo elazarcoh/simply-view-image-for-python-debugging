@@ -10,6 +10,8 @@ use crate::common::{
 };
 use crate::configurations;
 use anyhow::{anyhow, Result};
+use yew::NodeRef;
+use std::collections::HashMap;
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
 use yewdux::{mrc::Mrc, prelude::*};
@@ -29,6 +31,11 @@ impl Default for GlobalDrawingOptions {
     }
 }
 
+#[derive(Clone, PartialEq, Hash, Eq)]
+pub(crate) enum ElementsStoreKey {
+    ColorBar,
+}
+
 #[derive(Default, Clone)]
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
@@ -43,6 +50,8 @@ pub(crate) struct AppState {
     pub color_map_textures_cache: Mrc<ColorMapTexturesCache>,
 
     pub view_cameras: Mrc<ViewsCameras>,
+
+    pub elements_refs_store: Mrc<HashMap<ElementsStoreKey, NodeRef>>,
 
     pub configuration: configurations::Configuration,
 }

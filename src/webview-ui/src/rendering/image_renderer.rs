@@ -3,14 +3,12 @@ use anyhow::Result;
 use std::iter::FromIterator;
 use yewdux::mrc::Mrc;
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
 use glam::{Mat3, UVec2, Vec2, Vec4};
 
 use wasm_bindgen::prelude::*;
-use web_sys::{
-    HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL, WebGl2RenderingContext,
-};
+use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 use crate::coloring;
 use crate::coloring::{calculate_color_matrix, Coloring, DrawingOptions};
@@ -32,11 +30,8 @@ use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::types::*;
 
-use super::colorbar_renderer::ColorBarRenderer;
 use super::constants::VIEW_SIZE;
-use super::image_renderer::ImageRenderer;
 use super::rendering_context::{ImageViewData, RenderingContext};
-use super::utils::gl_canvas;
 use super::utils::scissor_view;
 use crate::rendering::pixel_text_rendering::{
     PixelTextCache, PixelTextRenderer, PixelTextRenderingData,
@@ -160,85 +155,112 @@ fn text_color(pixel_color: Vec4, drawing_options: &DrawingOptions) -> Vec4 {
     }
 }
 
-pub(crate) struct Renderer {}
+pub(crate) struct ImageRenderer {}
 
-impl Renderer {
-    pub(crate) fn new() -> Self {
-        Self {}
-    }
-
-    fn request_animation_frame(f: &Closure<dyn FnMut()>) {
-        web_sys::window()
-            .unwrap()
-            .request_animation_frame(f.as_ref().unchecked_ref())
-            .expect("should register `requestAnimationFrame` OK");
-    }
-
-    pub(crate) fn setup_rendering(&mut self, rendering_context: Rc<dyn RenderingContext>) {
-        log::debug!("Renderer::set_rendering_context");
-        Renderer::setup_rendering_callback_if_ready(rendering_context);
-    }
-
-    fn setup_rendering_callback_if_ready(rendering_context: Rc<dyn RenderingContext>) {
+impl ImageRenderer {
+    pub(crate) fn setup_rendering_callback(
+        rendering_context: Rc<dyn RenderingContext>,
+    ) -> Result<Box<dyn FnMut()>> {
         let gl = rendering_context.gl().clone();
 
         gl.enable(WebGl2RenderingContext::SCISSOR_TEST);
 
-        let mut render_image =
-            ImageRenderer::setup_rendering_callback(Rc::clone(&rendering_context))
-                .expect("Could not setup rendering callback");
-        let mut render_colorbar =
-            ColorBarRenderer::setup_rendering_callback(Rc::clone(&rendering_context))
-                .expect("Could not setup rendering callback");
+        let programs = ImageRenderer::create_programs(&gl).unwrap();
 
-        // Gloo-render's request_animation_frame has this extra closure
-        // wrapping logic running every frame, unnecessary cost.
-        // Here constructing the wrapped closure just once.
-        let cb = Rc::new(RefCell::new(None));
+        let placeholder_texture = create_placeholder_texture(&gl).unwrap();
 
-        *cb.borrow_mut() = Some(Closure::wrap(Box::new({
-            let cb = Rc::clone(&cb);
-            move || {
-                if gl.is_context_lost() {
-                    // Drop our handle to this closure so that it will get cleaned
-                    // up once we return.
-                    let _ = cb.borrow_mut().take();
-                } else {
-                    // Clean the canvas
-                    gl.clear_color(0.0, 0.0, 0.0, 0.0);
-                    gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+        let image_plane_attributes =
+            create_image_plane_attributes(&gl, 0.0, 0.0, VIEW_SIZE.width, VIEW_SIZE.height)
+                .unwrap();
 
-                    let canvas = gl_canvas(&gl);
+        let text_renderer = PixelTextRenderer::try_new(&gl).unwrap();
 
-                    // The following two lines set the size (in CSS pixels) of
-                    // the drawing buffer to be identical to the size of the
-                    // canvas HTML element, as determined by CSS.
-                    canvas.set_width(canvas.client_width() as _);
-                    canvas.set_height(canvas.client_height() as _);
+        let pixel_text_cache_per_view = HashMap::from_iter(
+            all_views()
+                .into_iter()
+                .map(|v| (v, text_renderer.make_pixel_text_cache())),
+        );
 
-                    render_image();
+        let mut rendering_data = RenderingData {
+            pixel_text_cache_per_view,
+            gl: gl.clone(),
+            programs,
+            text_renderer,
+            placeholder_texture,
+            image_plane_buffer: image_plane_attributes,
+        };
 
-                    render_colorbar();
-
-                    Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
-                }
-            }
-        }) as Box<dyn FnMut()>));
-
-        Renderer::request_animation_frame(cb.borrow().as_ref().unwrap());
+        Ok(Box::new(move || {
+            ImageRenderer::render(&gl, &mut rendering_data, rendering_context.as_ref());
+        }))
     }
 
-    // fn render(
-    //     gl: &WebGl2RenderingContext,
-    //     renderers: &mut Renderers,
-    //     rendering_context: &dyn RenderingContext,
-    // ) {
-    //     // Clean the canvas
-    //     gl.clear_color(0.0, 0.0, 0.0, 0.0);
-    //     gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+    fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs> {
+        let normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-normalized.frag"))
+            .attribute("vin_position")
+            .build()?;
+        let uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-uint.frag"))
+            .attribute("vin_position")
+            .build()?;
+        let int_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-int.frag"))
+            .attribute("vin_position")
+            .build()?;
+        let planar_normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-planar-normalized.frag"))
+            .attribute("vin_position")
+            .build()?;
+        let planar_uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-planar-uint.frag"))
+            .attribute("vin_position")
+            .build()?;
+        let planar_int_image = webgl_utils::program::GLProgramBuilder::create(gl)
+            .vertex_shader(include_str!("../shaders/image.vert"))
+            .fragment_shader(include_str!("../shaders/image-planar-int.frag"))
+            .attribute("vin_position")
+            .build()?;
 
-    //     // renderers.image_renderer.render()
-    // }
+        Ok(Programs {
+            normalized_image,
+            uint_image,
+            int_image,
+            planar_normalized_image,
+            planar_uint_image,
+            planar_int_image,
+        })
+    }
+
+    fn render(
+        gl: &WebGl2RenderingContext,
+        rendering_data: &mut RenderingData,
+        rendering_context: &dyn RenderingContext,
+    ) {
+        let render_result = rendering_context
+            .visible_nodes()
+            .iter()
+            .map(|view_id| {
+                let view_data = rendering_context.view_data(*view_id);
+                ImageRenderer::render_view(
+                    gl,
+                    rendering_data,
+                    &view_data,
+                    rendering_context,
+                    view_id,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>();
+
+        if let Err(e) = render_result {
+            log::error!("Renderer::render: {}", e);
+        }
+    }
 
     fn render_view(
         gl: &WebGl2RenderingContext,
@@ -248,18 +270,6 @@ impl Renderer {
         view_name: &ViewId,
     ) -> Result<()> {
         scissor_view(gl, &image_view_data.html_element);
-
-        // Clean the canvas
-        gl.clear_color(0.0, 0.0, 0.0, 0.0);
-        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-
-        let canvas = gl_canvas(gl);
-
-        // The following two lines set the size (in CSS pixels) of
-        // the drawing buffer to be identical to the size of the
-        // canvas HTML element, as determined by CSS.
-        canvas.set_width(canvas.client_width() as _);
-        canvas.set_height(canvas.client_height() as _);
 
         if let Some(cv) = &image_view_data.currently_viewing {
             let image_id = cv.id();
@@ -282,7 +292,7 @@ impl Renderer {
                         None
                     };
 
-                    Renderer::render_image(
+                    ImageRenderer::render_image(
                         rendering_context,
                         rendering_data,
                         texture,

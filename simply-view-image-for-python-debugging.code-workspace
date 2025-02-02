@@ -23,5 +23,8 @@
 			"rust": "html",
 		},
 		"rust-analyzer.check.command": "clippy",
+		"cSpell.words": [
+			"colorbar"
+		],
 	}
 }

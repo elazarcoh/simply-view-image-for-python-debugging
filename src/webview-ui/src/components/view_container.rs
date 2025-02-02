@@ -8,7 +8,7 @@ use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
     application_state::{
-        app_state::{AppState, StoreAction, UpdateDrawingOptions},
+        app_state::{AppState, ElementsStoreKey, StoreAction, UpdateDrawingOptions},
         images::ImageAvailability,
     },
     coloring::{self, Coloring, DrawingOptions},
@@ -302,8 +302,63 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         "#,
     );
 
+    let colorbar_style = use_style!(
+        r#"
+        position: absolute;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        .colorbar-container {
+            position: relative;
+            border: 1px solid #f00;
+            width: 40px;
+            height: 200px;
+            padding-right: 5px;
+            padding-left: 5px;
+        }
+
+        .colorbar {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .handle {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: #000;
+            cursor: ns-resize;
+        }
+
+        "#,
+    );
+    let colorbar_ref = use_selector(|state: &AppState| {
+        state
+            .elements_refs_store
+            .borrow()
+            .get(&ElementsStoreKey::ColorBar)
+            .cloned()
+    });
+    let colorbar_element = if let Some(ref colorbar_ref) = *colorbar_ref {
+        html! {
+            <div class={colorbar_style}>
+                <div class="colorbar-container">
+                    <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
+                    <div class={classes!("handle", css!("top: 20px;" ))}></div>
+                    <div class={classes!("handle", css!("top: 60px;" ))}></div>
+                </div>
+            </div>
+        }
+    } else {
+        html! {}
+    };
+
     html! {
         <div class={classes!(class.clone(), css!("position: relative;"))}>
+            {colorbar_element}
             <div ref={node_ref.clone()} class={style}>
                 {inner_element}
             </div>

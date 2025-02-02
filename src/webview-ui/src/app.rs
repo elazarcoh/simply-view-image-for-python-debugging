@@ -1,4 +1,5 @@
 use crate::application_state::app_state::AppState;
+use crate::application_state::app_state::ElementsStoreKey;
 use crate::application_state::app_state::GlobalDrawingOptions;
 use crate::application_state::images::ImageAvailability;
 use crate::coloring::DrawingOptions;
@@ -15,7 +16,10 @@ use crate::keyboard_event::KeyboardHandler;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ShiftScrollHandler;
 use crate::mouse_events::ZoomHandler;
+use crate::rendering::colorbar_renderer::ColorBarRenderer;
+use crate::rendering::image_renderer::ImageRenderer;
 use crate::rendering::renderer::Renderer;
+use crate::rendering::rendering_context::ColorBarData;
 use crate::rendering::rendering_context::ImageViewData;
 use crate::rendering::rendering_context::RenderingContext;
 use crate::rendering::rendering_context::ViewContext;
@@ -116,6 +120,17 @@ fn rendering_context() -> impl RenderingContext {
                 .borrow()
                 .get(name)
                 .ok_or(anyhow!("Color map {} not found", name))
+        }
+
+        fn get_color_bar_data(&self) -> Option<ColorBarData> {
+            let dispatch = Dispatch::<AppState>::global();
+            let html_element = dispatch
+                .get()
+                .elements_refs_store
+                .borrow()
+                .get(&ElementsStoreKey::ColorBar)
+                .and_then(|element| element.cast::<HtmlElement>());
+            html_element.map(|html_element| ColorBarData { html_element })
         }
     }
 
@@ -239,6 +254,7 @@ pub(crate) fn App() -> Html {
     });
 
     let renderer = use_memo((), |_| RefCell::new(Renderer::new()));
+    let colorbar_renderer = use_memo((), |_| RefCell::new(ColorBarRenderer::new()));
     use_effect_with(canvas_ref.clone(), {
         let renderer = Rc::clone(&renderer);
 
@@ -266,9 +282,17 @@ pub(crate) fn App() -> Html {
                 state.gl = Some(gl.clone());
             });
 
+            dispatch.reduce_mut(|state| {
+                state
+                    .elements_refs_store
+                    .borrow_mut()
+                    .insert(ElementsStoreKey::ColorBar, NodeRef::default());
+            });
+
+            let rendering_context: Rc<dyn RenderingContext> = Rc::new(rendering_context());
             renderer
                 .borrow_mut()
-                .set_rendering_context(Rc::new(rendering_context()));
+                .setup_rendering(Rc::clone(&rendering_context));
 
             move || {
                 dispatch.reduce_mut(|state| {

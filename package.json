@@ -21,7 +21,17 @@
     "image",
     "debug",
     "plot",
-    "view"
+    "view",
+    "opencv",
+    "Pillow",
+    "matplotlib",
+    "tensor",
+    "debugging",
+    "preview",
+    "watch",
+    "viewer",
+    "numpy",
+    "PIL"
   ],
   "activationEvents": [
     "onDebugResolve:python",

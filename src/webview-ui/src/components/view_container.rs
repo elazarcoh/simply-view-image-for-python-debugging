@@ -4,7 +4,7 @@ use glam::Vec4Swizzles;
 use itertools::Itertools;
 use stylist::{css, yew::use_style};
 use yew::{prelude::*, virtual_dom::VNode};
-use yewdux::{functional::use_selector, Dispatch};
+use yewdux::{dispatch, functional::use_selector, Dispatch};
 
 use crate::{
     application_state::{
@@ -17,8 +17,8 @@ use crate::{
     components::{
         legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
     },
+    hooks::{use_drag, use_event, UseDragOptions},
     math_utils,
-    webgl_utils::draw,
 };
 
 fn get_segmentation_colormap(
@@ -251,6 +251,9 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         clip_max,
     } = props;
 
+    let clip_min = clip_min.unwrap_or(*min);
+    let clip_max = clip_max.unwrap_or(*max);
+
     let colorbar_style = use_style!(
         r#"
         position: absolute;
@@ -291,18 +294,134 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             .get(&ElementsStoreKey::ColorBar)
             .cloned()
     });
-    let min_percent = ((clip_min.unwrap_or(*min) - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
-    let max_percent = ((clip_max.unwrap_or(*max) - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
-    let min_percent_style = format!("bottom: {}%;", min_percent);
+
+    let clip_min_state = use_state(|| clip_min);
+    let clip_max_state = use_state(|| clip_max);
+    let min_handle_ref = use_node_ref();
+    let max_handle_ref = use_node_ref();
+    let start_state = use_state(|| (0.0, 0.0));
+
+    let min_percent = ((*clip_min_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
+    let max_percent = ((*clip_max_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
+    let min_percent_style = format!("bottom: {}%; background: #0f0;", min_percent);
     let max_percent_style = format!("bottom: {}%;", max_percent);
+
+    let throttle = {
+        let dispatch = Dispatch::<AppState>::global();
+        let clip_min_state = clip_min_state.clone();
+        let clip_max_state = clip_max_state.clone();
+        yew_hooks::use_throttle(
+            move || {
+                let clip_min = *clip_min_state;
+                let clip_max = *clip_max_state;
+                // swap min and max if min > max
+                let (clip_min, clip_max) = if clip_min > clip_max {
+                    (clip_max, clip_min)
+                } else {
+                    (clip_min, clip_max)
+                };
+                dispatch.apply(StoreAction::UpdateDrawingOptions(
+                    ViewableObjectId::new("image_gray_u8"),
+                    UpdateDrawingOptions::ClipMin(Some(clip_min)),
+                ));
+                dispatch.apply(StoreAction::UpdateDrawingOptions(
+                    ViewableObjectId::new("image_gray_u8"),
+                    UpdateDrawingOptions::ClipMax(Some(clip_max)),
+                ));
+            },
+            50,
+        )
+    };
+
+    let (_, colorbar_height) =
+        yew_hooks::use_size(colorbar_ref.as_ref().clone().unwrap_or_default());
+
+    {
+        let min = *min;
+        let max = *max;
+        use_drag(
+            min_handle_ref.clone(),
+            UseDragOptions {
+                on_relative_position_change: Some({
+                    let clip_min_state = clip_min_state.clone();
+                    let start_state = start_state.clone();
+                    let throttle = throttle.clone();
+                    Box::new(move |_, y| {
+                        let colorbar_relative_move = -y / colorbar_height as f32;
+                        let width = max - min;
+                        let (clip_min, _) = *start_state;
+                        let new_clip_min =
+                            (clip_min + colorbar_relative_move * width).clamp(min, max);
+
+                        clip_min_state.set(new_clip_min);
+
+                        throttle.run();
+                    })
+                }),
+                on_start: Some(Box::new({
+                    let clip_min_state = clip_min_state.clone();
+                    let clip_max_state = clip_max_state.clone();
+                    let start_state = start_state.clone();
+                    move || {
+                        start_state.set((*clip_min_state, *clip_max_state));
+                    }
+                })),
+                on_end: Some({
+                    let throttle = throttle.clone();
+                    Box::new(move |x, y| {
+                        throttle.run();
+                    })
+                }),
+            },
+        );
+    }
+    {
+        let min = *min;
+        let max = *max;
+        use_drag(
+            max_handle_ref.clone(),
+            UseDragOptions {
+                on_relative_position_change: Some({
+                    let clip_max_state = clip_max_state.clone();
+                    let start_state = start_state.clone();
+                    let throttle = throttle.clone();
+                    Box::new(move |_, y| {
+                        let colorbar_relative_move = -y / colorbar_height as f32;
+                        let width = max - min;
+                        let (_, clip_max) = *start_state;
+                        let new_clip_max =
+                            (clip_max + colorbar_relative_move * width).clamp(min, max);
+
+                        clip_max_state.set(new_clip_max);
+
+                        throttle.run();
+                    })
+                }),
+                on_start: Some(Box::new({
+                    let clip_min_state = clip_min_state.clone();
+                    let clip_max_state = clip_max_state.clone();
+                    let start_state = start_state.clone();
+                    move || {
+                        start_state.set((*clip_min_state, *clip_max_state));
+                    }
+                })),
+                on_end: Some({
+                    let throttle = throttle.clone();
+                    Box::new(move |x, y| {
+                        throttle.run();
+                    })
+                }),
+            },
+        );
+    };
 
     if let Some(ref colorbar_ref) = *colorbar_ref {
         html! {
             <div class={colorbar_style}>
                 <div class="colorbar-container">
                     <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
-                    <div class={classes!("handle")} style={min_percent_style}></div>
-                    <div class={classes!("handle")} style={max_percent_style}></div>
+                    <div ref={min_handle_ref} class={classes!("handle")} style={min_percent_style}></div>
+                    <div ref={max_handle_ref} class={classes!("handle")} style={max_percent_style}></div>
                 </div>
             </div>
         }

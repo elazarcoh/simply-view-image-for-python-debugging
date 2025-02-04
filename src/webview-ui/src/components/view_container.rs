@@ -261,6 +261,14 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         display: flex;
         justify-content: center;
         align-items: center;
+        --handle1-position: 0%;
+        --handle2-position: 100%;
+        --handle-border: 1.5px;
+        --handle-height: 0px;
+
+        :hover {
+            --handle-height: 3px;
+        }
         
         .colorbar-container {
             position: relative;
@@ -279,10 +287,32 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
 
         .handle {
             position: absolute;
-            width: 100%;
-            height: 1px;
-            background: #000;
+            left: 0;
+            right: 0;
+            height: var(--handle-height);
+            border-top: var(--handle-border) solid white;
+            border-bottom: var(--handle-border) solid white;
+            background: black;
             cursor: ns-resize;
+        }
+
+        .box {
+            top: calc(100% - var(--handle2-position));
+            bottom: var(--handle1-position);
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-left: 1px solid #f0f;
+            border-right: 1px solid #f0f;
+            pointer-events: none;
+        }
+
+        .handle1 {
+            bottom: calc(var(--handle1-position) - var(--handle-border) - calc(var(--handle-height) / 2));
+        }
+
+        .handle2 {
+            bottom: calc(var(--handle2-position) - var(--handle-border) - calc(var(--handle-height) / 2));
         }
 
         "#,
@@ -303,8 +333,10 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
 
     let min_percent = ((*clip_min_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
     let max_percent = ((*clip_max_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
-    let min_percent_style = format!("bottom: {}%; background: #0f0;", min_percent);
-    let max_percent_style = format!("bottom: {}%;", max_percent);
+    let vars = format!(
+        "--handle1-position: {}%; --handle2-position: {}%;",
+        min_percent, max_percent
+    );
 
     let throttle = {
         let dispatch = Dispatch::<AppState>::global();
@@ -417,11 +449,12 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
 
     if let Some(ref colorbar_ref) = *colorbar_ref {
         html! {
-            <div class={colorbar_style}>
+            <div class={colorbar_style} style={vars}>
                 <div class="colorbar-container">
                     <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
-                    <div ref={min_handle_ref} class={classes!("handle")} style={min_percent_style}></div>
-                    <div ref={max_handle_ref} class={classes!("handle")} style={max_percent_style}></div>
+                    <div ref={min_handle_ref} class={classes!("handle", "handle1")}></div>
+                    <div ref={max_handle_ref} class={classes!("handle", "handle2")}></div>
+                    <div class="box"></div>
                 </div>
             </div>
         }
@@ -520,6 +553,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
 
     html! {
         <div class={classes!(class.clone(), css!("position: relative;"))}>
+            <Colorbar min={0.0} max={1.0} clip_min={0.3} clip_max={0.6} />
             {colorbar}
             <div ref={node_ref.clone()} class={style}>
                 {inner_element}

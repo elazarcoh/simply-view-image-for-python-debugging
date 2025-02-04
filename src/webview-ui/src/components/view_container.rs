@@ -261,22 +261,38 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         display: flex;
         justify-content: center;
         align-items: center;
-        --handle1-position: 0%;
-        --handle2-position: 100%;
-        --handle-border: 1.5px;
-        --handle-height: 0px;
 
-        :hover {
-            --handle-height: 3px;
+        --handle1-position: 0;
+        --handle2-position: 100;
+
+        --is-h1-top: clamp(0, round(down, var(--handle1-position) / var(--handle2-position)), 1);
+        --is-h2-top: clamp(0, round(down, var(--handle2-position) / var(--handle1-position)), 1);
+        --top-handle-position: calc(
+            var(--is-h1-top) * var(--handle1-position) +
+            var(--is-h2-top) * var(--handle2-position)
+        );
+        --bottom-handle-position: calc(
+            var(--is-h1-top) * var(--handle2-position) +
+            var(--is-h2-top) * var(--handle1-position)
+        );
+
+        --handle-height: 2px;
+        --handle-border: 1.5px;
+        --box-border: 2px;
+
+        :hover,
+        [data-dragging="true"]
+        {
+            --handle-height: 4px;
+            --handle-border: 2px;
         }
         
         .colorbar-container {
             position: relative;
-            border: 1px solid #f00;
             width: 40px;
             height: 200px;
-            padding-right: 5px;
-            padding-left: 5px;
+            padding-right: var(--box-border);
+            padding-left: var(--box-border);
         }
 
         .colorbar {
@@ -292,27 +308,39 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             height: var(--handle-height);
             border-top: var(--handle-border) solid white;
             border-bottom: var(--handle-border) solid white;
+
+            --is-top-handle: clamp(0, round(down, var(--this-handle-position) / var(--other-handle-position)), 1);
+            --is-bottom-handle: clamp(0, round(down, var(--other-handle-position) / var(--this-handle-position)), 1);
+            bottom: calc(var(--this-handle-position) * 1% - var(--handle-border) - calc(var(--handle-height) * var(--is-bottom-handle)));
+
             background: black;
             cursor: ns-resize;
+
+            border-top-left-radius: calc(var(--is-top-handle) * 99px);
+            border-top-right-radius: calc(var(--is-top-handle) * 99px);
+            border-bottom-left-radius: calc(var(--is-bottom-handle) * 99px);
+            border-bottom-right-radius: calc(var(--is-bottom-handle) * 99px);
         }
 
         .box {
-            top: calc(100% - var(--handle2-position));
-            bottom: var(--handle1-position);
+            top: calc(100% - var(--top-handle-position) * 1%);
+            bottom: calc(var(--bottom-handle-position) * 1%);
             position: absolute;
             left: 0;
             right: 0;
-            border-left: 1px solid #f0f;
-            border-right: 1px solid #f0f;
+            border-left: var(--box-border) solid white;
+            border-right: var(--box-border) solid white;
             pointer-events: none;
         }
 
         .handle1 {
-            bottom: calc(var(--handle1-position) - var(--handle-border) - calc(var(--handle-height) / 2));
+            --this-handle-position: var(--handle1-position);
+            --other-handle-position: var(--handle2-position);
         }
 
         .handle2 {
-            bottom: calc(var(--handle2-position) - var(--handle-border) - calc(var(--handle-height) / 2));
+            --this-handle-position: var(--handle2-position);
+            --other-handle-position: var(--handle1-position);
         }
 
         "#,
@@ -334,7 +362,7 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
     let min_percent = ((*clip_min_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
     let max_percent = ((*clip_max_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
     let vars = format!(
-        "--handle1-position: {}%; --handle2-position: {}%;",
+        "--handle1-position: {}; --handle2-position: {};",
         min_percent, max_percent
     );
 
@@ -368,7 +396,7 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
     let (_, colorbar_height) =
         yew_hooks::use_size(colorbar_ref.as_ref().clone().unwrap_or_default());
 
-    {
+    let min_dragging = {
         let min = *min;
         let max = *max;
         use_drag(
@@ -405,9 +433,9 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                     })
                 }),
             },
-        );
-    }
-    {
+        )
+    };
+    let max_dragging = {
         let min = *min;
         let max = *max;
         use_drag(
@@ -444,12 +472,12 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                     })
                 }),
             },
-        );
+        )
     };
 
     if let Some(ref colorbar_ref) = *colorbar_ref {
         html! {
-            <div class={colorbar_style} style={vars}>
+            <div class={colorbar_style} style={vars} data-dragging={if min_dragging || max_dragging { "true" } else { "false" }}>
                 <div class="colorbar-container">
                     <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
                     <div ref={min_handle_ref} class={classes!("handle", "handle1")}></div>
@@ -553,7 +581,6 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
 
     html! {
         <div class={classes!(class.clone(), css!("position: relative;"))}>
-            <Colorbar min={0.0} max={1.0} clip_min={0.3} clip_max={0.6} />
             {colorbar}
             <div ref={node_ref.clone()} class={style}>
                 {inner_element}

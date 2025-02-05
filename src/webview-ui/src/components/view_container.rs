@@ -280,6 +280,9 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         --handle-border: 1.5px;
         --box-border: 2px;
 
+        --border-color: var(--vscode-foreground);
+        --background-color: var(--vscode-editor-background);
+
         :hover,
         [data-dragging="true"]
         {
@@ -302,18 +305,19 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         }
 
         .handle {
+            background-color: var(--background-color);
+
             position: absolute;
             left: 0;
             right: 0;
             height: var(--handle-height);
-            border-top: var(--handle-border) solid white;
-            border-bottom: var(--handle-border) solid white;
+            border-top: var(--handle-border) solid var(--border-color);
+            border-bottom: var(--handle-border) solid var(--border-color);
 
             --is-top-handle: clamp(0, round(down, var(--this-handle-position) / var(--other-handle-position)), 1);
             --is-bottom-handle: clamp(0, round(down, var(--other-handle-position) / var(--this-handle-position)), 1);
             bottom: calc(var(--this-handle-position) * 1% - var(--handle-border) - calc(var(--handle-height) * var(--is-bottom-handle)));
 
-            background: black;
             cursor: ns-resize;
 
             border-top-left-radius: calc(var(--is-top-handle) * 99px);
@@ -328,8 +332,8 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             position: absolute;
             left: 0;
             right: 0;
-            border-left: var(--box-border) solid white;
-            border-right: var(--box-border) solid white;
+            border-left: var(--box-border) solid var(--border-color);
+            border-right: var(--box-border) solid var(--border-color);
             pointer-events: none;
         }
 

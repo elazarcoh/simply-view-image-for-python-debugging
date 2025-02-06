@@ -46,6 +46,10 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
         justify-content: flex-start;
         flex-direction: row;
         gap: 10px;
+
+        label {
+            user-select: none;
+        }
         "#
     );
 

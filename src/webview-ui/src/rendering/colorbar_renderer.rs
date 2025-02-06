@@ -1,17 +1,13 @@
 use anyhow::Result;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::iter::FromIterator;
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use web_sys::WebGl2RenderingContext;
-use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext as GL};
+use web_sys::WebGl2RenderingContext as GL;
 
-use crate::coloring::{calculate_color_matrix, Clip, DrawingOptions};
+use crate::coloring::calculate_color_matrix;
 use crate::common::Datatype;
-use crate::rendering::utils::gl_canvas;
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
-use crate::webgl_utils::draw::{self, draw_buffer_info};
+use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
 use crate::webgl_utils::{
     self, ArraySpec, BindingPoint, BufferInfo, DrawMode, GLGuard, ProgramBundle, UniformValue,
@@ -181,7 +177,7 @@ impl ColorBarRenderer {
         scissor_view(gl, &data.html_element);
 
         // fill
-        gl.clear_color(1.0, 1.0, 0.0, 1.0);
+        gl.clear_color(0.0, 0.0, 0.0, 0.0);
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
         let program = &rendering_data.programs.colorbar;

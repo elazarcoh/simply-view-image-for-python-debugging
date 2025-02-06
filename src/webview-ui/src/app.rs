@@ -325,24 +325,22 @@ pub(crate) fn App() -> Html {
     let main_style = use_style!(
         r#"
 
-    "#,
-    );
-    let canvas_style = use_style!(
-        r#"
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        border: 0;
-        padding: 0;
+        #gl-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            padding: 0;
+            pointer-events: none;
+        }
     "#,
     );
 
     html! {
         <div class={main_style}>
-            <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
+            <canvas id="gl-canvas" ref={canvas_ref}></canvas>
             <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
         </div>
     }

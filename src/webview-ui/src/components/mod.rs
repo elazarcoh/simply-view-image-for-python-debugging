@@ -12,3 +12,4 @@ pub(crate) mod spinner;
 pub(crate) mod status_bar;
 pub(crate) mod view_container;
 pub(crate) mod viewable_info_container;
+mod colorbar;

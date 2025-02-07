@@ -55,17 +55,15 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         --box-border: 3px;
         --colorbar-border: 2px;
 
-        --border-color: var(--vscode-foreground);
-        --handle-color: green;
+        --border-color: rgba(204, 204, 204, 0.5);
+        --handle-color: var(--vscode-foreground);
 
         &:hover,
         &[data-dragging="true"]
         {
             --handle-height: 4px;
-            --handle-border: 2px;
         }
 
-        
         .colorbar-container {
             position: relative;
             display: flex;
@@ -76,14 +74,15 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         }
 
         .colorbar {
-            width: 100%;
-            height: 100%;
+            position: absolute;
             background: transparent;
 
-            margin-right: calc(var(--box-border) + var(--colorbar-border));
-            margin-left: calc(var(--box-border) + var(--colorbar-border));
+            right: calc(var(--box-border) + var(--colorbar-border));
+            left: calc(var(--box-border) + var(--colorbar-border));
+            top: var(--colorbar-border);
+            bottom: var(--colorbar-border);
             box-shadow: 0 0 0 var(--colorbar-border) var(--border-color);
-            border: none; 
+            border: none;
 
             z-index: 1;
         }
@@ -92,32 +91,37 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             background-color: var(--handle-color);
 
             position: absolute;
-            left: 0;
-            right: 0;
+            left: var(--handle-border);
+            right: var(--handle-border);
             height: var(--handle-height);
-            
-            --is-top-handle: clamp(0, round(down, var(--this-handle-position) / var(--other-handle-position)), 1);
-            --is-bottom-handle: clamp(0, round(down, var(--other-handle-position) / var(--this-handle-position)), 1);
+
+            --is-top-handle: clamp(
+                0,
+                round(down, var(--this-handle-position) / var(--other-handle-position)),
+                1
+                );
+            --is-bottom-handle: clamp(
+                0,
+                round(down, var(--other-handle-position) / var(--this-handle-position)),
+                1
+                );
 
             bottom: calc(
-                var(--this-handle-position) * 1%
-                - (var(--is-bottom-handle) * var(--handle-height))
-            );
+                var(--this-handle-position) * 1% -
+                    (var(--is-bottom-handle) * var(--handle-height))
+                );
 
-            margin-right: var(--handle-border);
-            margin-left: var(--handle-border);
-            /* TODO */
-            box-shadow: 
-                calc(-1 * var(--handle-border)) 0 0 var(--border-color),
-                var(--handle-border) 0 0 var(--border-color),
-                0 calc(var(--is-top-handle) * var(--handle-border)) 0 var(--border-color);
-
-            cursor: ns-resize;
-
+            box-shadow:
+                0 var(--handle-border) 0 0 var(--border-color),
+                0 calc(-1 * var(--handle-border)) 0 0 var(--border-color),
+                var(--handle-border) 0 0 0 var(--border-color),
+                calc(-1 * var(--handle-border)) 0 0 0 var(--border-color);
             border-top-left-radius: calc(var(--is-top-handle) * 99px);
             border-top-right-radius: calc(var(--is-top-handle) * 99px);
             border-bottom-left-radius: calc(var(--is-bottom-handle) * 99px);
             border-bottom-right-radius: calc(var(--is-bottom-handle) * 99px);
+
+            cursor: ns-resize;
 
             z-index: 3;
         }
@@ -125,15 +129,13 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
         .box {
             pointer-events: none;
 
+            position: absolute;
             top: calc(100% - var(--top-handle-position) * 1%);
             bottom: calc(var(--bottom-handle-position) * 1%);
-            position: absolute;
-            left: 0;
-            right: 0;
+            left: var(--box-border);
+            right: var(--box-border);
 
-            margin-right: var(--box-border);
-            margin-left: var(--box-border);
-            box-shadow: 
+            box-shadow:
                 calc(-1 * var(--box-border)) 0 0 var(--border-color),
                 var(--box-border) 0 0 var(--border-color);
 

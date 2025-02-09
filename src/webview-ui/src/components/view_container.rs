@@ -233,6 +233,47 @@ fn make_info_items(
 
     Some(info_items)
 }
+#[derive(PartialEq, Properties)]
+pub struct ColorbarContainerProps {
+    pub view_id: ViewId,
+}
+
+#[function_component]
+pub fn ColorbarContainer(props: &ColorbarContainerProps) -> Html {
+    let ColorbarContainerProps { view_id } = props;
+
+    let current_image = {
+        let view_id = *view_id;
+        use_selector(
+            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
+                let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
+                let image_id = binding.id();
+                let availability = state.image_cache.borrow().get(image_id);
+                let drawing_options = state.drawing_options.borrow().get(image_id);
+                Some((image_id.clone(), availability, drawing_options))
+            },
+        )
+    };
+
+    if let Some((_, availability, drawing_options)) = current_image.as_ref() {
+        if drawing_options.as_ref().map(|o| o.coloring) == Some(Coloring::Heatmap) {
+            if let ImageAvailability::Available(texture) = availability {
+                let image_info = &texture.borrow().computed_info;
+                let image_id = texture.borrow().info.image_id.clone();
+                let min = image_info.min.as_rgba_f32()[0];
+                let max = image_info.max.as_rgba_f32()[0];
+                let clip_min = drawing_options.as_ref().and_then(|o| o.clip.min);
+                let clip_max = drawing_options.as_ref().and_then(|o| o.clip.max);
+
+                return html! {
+                    <Colorbar image_id={image_id} min={min} max={max} clip_min={clip_min} clip_max={clip_max} />
+                };
+            }
+        }
+    }
+    html! {
+    }
+}
 
 #[derive(PartialEq, Properties)]
 pub(crate) struct ViewContainerProps {
@@ -306,25 +347,21 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         "#,
     );
 
-    let mut colorbar = html! {};
-    if let Some((_, availability, drawing_options)) = current_image.as_ref() {
-        if drawing_options.as_ref().map(|o| o.coloring) == Some(Coloring::Heatmap) {
-            if let ImageAvailability::Available(texture) = availability {
-                let image_info = &texture.borrow().computed_info;
-                let min = image_info.min.as_rgba_f32()[0];
-                let max = image_info.max.as_rgba_f32()[0];
-                let clip_min = drawing_options.as_ref().and_then(|o| o.clip.min);
-                let clip_max = drawing_options.as_ref().and_then(|o| o.clip.max);
-                colorbar = html! {
-                    <Colorbar min={min} max={max} clip_min={clip_min} clip_max={clip_max} />
-                };
-            }
-        }
-    }
+    let colorbar_container_style = use_style!(
+        r#"
+        height: 100%;
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        "#,
+    );
 
     html! {
         <div class={classes!(class.clone(), css!("position: relative;"))}>
-            {colorbar}
             <div ref={node_ref.clone()} class={style}>
                 {inner_element}
             </div>
@@ -335,6 +372,9 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                     </ViewableInfoContainer>
                 </div>
             }
+            <div class={colorbar_container_style}>
+                <ColorbarContainer view_id={*view_id} />
+            </div>
         </div>
     }
 }

@@ -10,10 +10,10 @@ use crate::common::{
 };
 use crate::configurations;
 use anyhow::{anyhow, Result};
-use yew::NodeRef;
 use std::collections::HashMap;
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
+use yew::NodeRef;
 use yewdux::{mrc::Mrc, prelude::*};
 
 #[derive(Clone, PartialEq)]
@@ -79,7 +79,7 @@ impl AppState {
             .images
             .borrow()
             .get(&image_id)
-            .map_or(false, |info| info.minimal().is_batched);
+            .is_some_and(|info| info.minimal().is_batched);
 
         if is_batched {
             self.image_views

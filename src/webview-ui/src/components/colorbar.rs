@@ -10,6 +10,7 @@ use crate::{
 
 #[derive(PartialEq, Properties)]
 pub struct ColorbarProps {
+    pub image_id: ViewableObjectId,
     pub min: f32,
     pub max: f32,
     pub clip_min: Option<f32>,
@@ -19,6 +20,7 @@ pub struct ColorbarProps {
 #[function_component]
 pub fn Colorbar(props: &ColorbarProps) -> Html {
     let ColorbarProps {
+        image_id,
         min,
         max,
         clip_min,
@@ -30,11 +32,8 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
 
     let colorbar_style = use_style!(
         r#"
-        position: absolute;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        width: 40px;
+        height: 200px;
 
         --handle1-position: 0;
         --handle2-position: 100;
@@ -66,11 +65,8 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
 
         .colorbar-container {
             position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 40px;
-            height: 200px;
+            height: 100%;
+            width: 100%;
         }
 
         .colorbar {
@@ -94,17 +90,6 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             left: var(--handle-border);
             right: var(--handle-border);
             height: var(--handle-height);
-
-            --is-top-handle: clamp(
-                0,
-                round(down, var(--this-handle-position) / var(--other-handle-position)),
-                1
-                );
-            --is-bottom-handle: clamp(
-                0,
-                round(down, var(--other-handle-position) / var(--this-handle-position)),
-                1
-                );
 
             bottom: calc(
                 var(--this-handle-position) * 1% -
@@ -142,14 +127,113 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             z-index: 2;
         }
 
-        .handle1 {
+        .handle1-position {
             --this-handle-position: var(--handle1-position);
             --other-handle-position: var(--handle2-position);
+
+            --is-top-handle: clamp(
+                0,
+                round(down, var(--this-handle-position) / var(--other-handle-position)),
+                1
+                );
+            --is-bottom-handle: clamp(
+                0,
+                round(down, var(--other-handle-position) / var(--this-handle-position)),
+                1
+                );
         }
 
-        .handle2 {
+        .handle2-position {
             --this-handle-position: var(--handle2-position);
             --other-handle-position: var(--handle1-position);
+
+            --is-top-handle: clamp(
+                0,
+                round(down, var(--this-handle-position) / var(--other-handle-position)),
+                1
+                );
+            --is-bottom-handle: clamp(
+                0,
+                round(down, var(--other-handle-position) / var(--this-handle-position)),
+                1
+                );
+        }
+        
+        .handle-text-container {
+            position: relative;
+            display: block;
+        }
+
+
+        &:hover .handle-text,
+        &[data-dragging="true"] .handle-text {
+            display: block;
+        }
+
+        .handle-text {
+            display: none;
+
+            position: absolute;
+            bottom: calc(var(--this-handle-position) * 1%);
+
+            left: -0.5em;
+            transform: translateX(-100%) translateY(50%);
+            user-select: none;
+
+            border-width: 1px;
+            border-style: solid;
+            border-color: var(--vscode-sideBar-border);
+            background-color: var(--vscode-sideBar-background);
+            padding: 0.1em 0.5em;
+            border-radius: 0.5em;
+
+            height: 1em;
+            line-height: 1em;
+        }
+
+        .handle-text::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            transform: translateY(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent transparent var(--vscode-sideBar-background);
+        }
+
+        .bound-text {
+            position: absolute;
+            bottom: var(--position);
+            transform: translateY(50%);
+            right: 0;
+            left: 0;
+            z-index: 4;
+            pointer-events: none;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bound-text > div {
+            font-size: 8px;
+ 
+            user-select: none;
+            border-width: 1px;
+            border-style: solid;
+            border-color: var(--vscode-sideBar-border);
+            background-color: var(--vscode-sideBar-background);
+            padding: 0.1em 0.5em;
+            border-radius: 0.5em;
+            height: 1em;
+            line-height: 1em;
+            text-align: center;       
+        }
+
+        &:hover .bound-text > div,
+        &[data-dragging="true"] .bound-text > div {
+            transform: scale(1.2);
         }
 
         "#,
@@ -162,41 +246,43 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             .cloned()
     });
 
-    let clip_min_state = use_state(|| clip_min);
-    let clip_max_state = use_state(|| clip_max);
-    let min_handle_ref = use_node_ref();
-    let max_handle_ref = use_node_ref();
+    let clip1_state = use_state(|| clip_min);
+    let clip2_state = use_state(|| clip_max);
+    let handle1_ref = use_node_ref();
+    let handle2_ref = use_node_ref();
     let start_state = use_state(|| (0.0, 0.0));
 
-    let min_percent = ((*clip_min_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
-    let max_percent = ((*clip_max_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
+    let pos1_percents = ((*clip1_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
+    let pos2_percents = ((*clip2_state - min) / (max - min)).clamp(0.0, 1.0) * 100.0;
     let vars = format!(
         "--handle1-position: {}; --handle2-position: {};",
-        min_percent, max_percent
+        pos1_percents, pos2_percents
     );
 
     let throttle = {
-        let dispatch = Dispatch::<AppState>::global();
-        let clip_min_state = clip_min_state.clone();
-        let clip_max_state = clip_max_state.clone();
         yew_hooks::use_throttle(
-            move || {
-                let clip_min = *clip_min_state;
-                let clip_max = *clip_max_state;
-                // swap min and max if min > max
-                let (clip_min, clip_max) = if clip_min > clip_max {
-                    (clip_max, clip_min)
-                } else {
-                    (clip_min, clip_max)
-                };
-                dispatch.apply(StoreAction::UpdateDrawingOptions(
-                    ViewableObjectId::new("image_gray_u8"),
-                    UpdateDrawingOptions::ClipMin(Some(clip_min)),
-                ));
-                dispatch.apply(StoreAction::UpdateDrawingOptions(
-                    ViewableObjectId::new("image_gray_u8"),
-                    UpdateDrawingOptions::ClipMax(Some(clip_max)),
-                ));
+            {
+                let dispatch = Dispatch::<AppState>::global();
+                let clip1_state = clip1_state.clone();
+                let clip2_state = clip2_state.clone();
+                let image_id = image_id.clone();
+                move || {
+                    let clip1 = *clip1_state;
+                    let clip2 = *clip2_state;
+                    let (clip_min, clip_max) = if clip1 < clip2 {
+                        (clip1, clip2)
+                    } else {
+                        (clip2, clip1)
+                    };
+                    dispatch.apply(StoreAction::UpdateDrawingOptions(
+                        image_id.clone(),
+                        UpdateDrawingOptions::ClipMin(Some(clip_min)),
+                    ));
+                    dispatch.apply(StoreAction::UpdateDrawingOptions(
+                        image_id.clone(),
+                        UpdateDrawingOptions::ClipMax(Some(clip_max)),
+                    ));
+                }
             },
             50,
         )
@@ -205,34 +291,33 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
     let (_, colorbar_height) =
         yew_hooks::use_size(colorbar_ref.as_ref().clone().unwrap_or_default());
 
-    let min_dragging = {
+    let dragging1 = {
         let min = *min;
         let max = *max;
         use_drag(
-            min_handle_ref.clone(),
+            handle1_ref.clone(),
             UseDragOptions {
                 on_relative_position_change: Some({
-                    let clip_min_state = clip_min_state.clone();
+                    let clip1_state = clip1_state.clone();
                     let start_state = start_state.clone();
                     let throttle = throttle.clone();
                     Box::new(move |_, y| {
                         let colorbar_relative_move = -y / colorbar_height as f32;
                         let width = max - min;
-                        let (clip_min, _) = *start_state;
-                        let new_clip_min =
-                            (clip_min + colorbar_relative_move * width).clamp(min, max);
+                        let (clip, _) = *start_state;
+                        let new_clip = (clip + colorbar_relative_move * width).clamp(min, max);
 
-                        clip_min_state.set(new_clip_min);
+                        clip1_state.set(new_clip);
 
                         throttle.run();
                     })
                 }),
                 on_start: Some(Box::new({
-                    let clip_min_state = clip_min_state.clone();
-                    let clip_max_state = clip_max_state.clone();
+                    let clip1_state = clip1_state.clone();
+                    let clip2_state = clip2_state.clone();
                     let start_state = start_state.clone();
                     move || {
-                        start_state.set((*clip_min_state, *clip_max_state));
+                        start_state.set((*clip1_state, *clip2_state));
                     }
                 })),
                 on_end: Some({
@@ -244,34 +329,33 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             },
         )
     };
-    let max_dragging = {
+    let dragging2 = {
         let min = *min;
         let max = *max;
         use_drag(
-            max_handle_ref.clone(),
+            handle2_ref.clone(),
             UseDragOptions {
                 on_relative_position_change: Some({
-                    let clip_max_state = clip_max_state.clone();
+                    let clip2_state = clip2_state.clone();
                     let start_state = start_state.clone();
                     let throttle = throttle.clone();
                     Box::new(move |_, y| {
                         let colorbar_relative_move = -y / colorbar_height as f32;
                         let width = max - min;
-                        let (_, clip_max) = *start_state;
-                        let new_clip_max =
-                            (clip_max + colorbar_relative_move * width).clamp(min, max);
+                        let (_, clip) = *start_state;
+                        let new_clip = (clip + colorbar_relative_move * width).clamp(min, max);
 
-                        clip_max_state.set(new_clip_max);
+                        clip2_state.set(new_clip);
 
                         throttle.run();
                     })
                 }),
                 on_start: Some(Box::new({
-                    let clip_min_state = clip_min_state.clone();
-                    let clip_max_state = clip_max_state.clone();
+                    let clip1_state = clip1_state.clone();
+                    let clip2_state = clip2_state.clone();
                     let start_state = start_state.clone();
                     move || {
-                        start_state.set((*clip_min_state, *clip_max_state));
+                        start_state.set((*clip1_state, *clip2_state));
                     }
                 })),
                 on_end: Some({
@@ -286,10 +370,24 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
 
     if let Some(ref colorbar_ref) = *colorbar_ref {
         html! {
-            <div class={colorbar_style} style={vars} data-dragging={if min_dragging || max_dragging { "true" } else { "false" }}>
+            <div class={colorbar_style} style={vars} data-dragging={if dragging1 || dragging2 { "true" } else { "false" }}>
                 <div class="colorbar-container">
-                    <div ref={min_handle_ref} class={classes!("handle", "handle1")}></div>
-                    <div ref={max_handle_ref} class={classes!("handle", "handle2")}></div>
+                    <div class="bound-text" style="--position: 0;">
+                        <div>{format!("{:.7}", float_pretty_print::PrettyPrintFloat(*min as f64))}</div>
+                    </div>
+                    <div class="bound-text" style="--position: 100%;">
+                        <div>{format!("{:.7}", float_pretty_print::PrettyPrintFloat(*max as f64))}</div>
+                    </div>
+
+                    <div ref={handle1_ref} class={classes!("handle", "handle1-position")}></div>
+                    <div class="handle-text handle1-position">
+                        {format!("{:.7}", float_pretty_print::PrettyPrintFloat(*clip1_state as f64))}
+                    </div>
+                    <div ref={handle2_ref} class={classes!("handle", "handle2-position")}></div>
+                    <div class="handle-text handle2-position">
+                        {format!("{:.7}", float_pretty_print::PrettyPrintFloat(*clip2_state as f64))}
+                    </div>
+
                     <div class="box"></div>
                     <div class="colorbar" id="colorbar" ref={colorbar_ref}></div>
                 </div>

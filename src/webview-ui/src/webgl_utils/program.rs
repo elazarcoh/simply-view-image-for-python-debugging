@@ -277,22 +277,20 @@ pub(crate) fn create_program_bundle(
     let gl_vertex_shader = gl_guarded(gl.clone(), |gl| {
         gl.create_shader(WebGl2RenderingContext::VERTEX_SHADER)
             .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_shader"))
-            .map(|shader| {
-                gl.shader_source(&shader, vertex_shader);
-                gl.compile_shader(&shader);
-                gl.attach_shader(&program, &shader);
-                shader
+            .inspect(|shader| {
+                gl.shader_source(shader, vertex_shader);
+                gl.compile_shader(shader);
+                gl.attach_shader(&program, shader);
             })
     })?;
 
     let gl_fragment_shader = gl_guarded(gl.clone(), |gl| {
         gl.create_shader(WebGl2RenderingContext::FRAGMENT_SHADER)
             .ok_or_else(|| WebGlError::last_webgl_error_or_unknown(gl, "create_shader"))
-            .map(|shader| {
-                gl.shader_source(&shader, fragment_shader);
-                gl.compile_shader(&shader);
-                gl.attach_shader(&program, &shader);
-                shader
+            .inspect(|shader| {
+                gl.shader_source(shader, fragment_shader);
+                gl.compile_shader(shader);
+                gl.attach_shader(&program, shader);
             })
     })?;
 
@@ -342,7 +340,7 @@ pub(crate) struct GLProgramBuilder<'a> {
     attributes: Vec<&'a str>,
 }
 
-impl<'a> GLProgramBuilder<'a> {
+impl GLProgramBuilder<'_> {
     pub(crate) fn create(gl: &GL) -> GLProgramBuilderBuilder<'_> {
         GLProgramBuilderBuilder {
             gl: Some(gl),
@@ -351,7 +349,7 @@ impl<'a> GLProgramBuilder<'a> {
     }
 }
 
-impl<'a> GLProgramBuilderBuilder<'a> {
+impl GLProgramBuilderBuilder<'_> {
     pub(crate) fn build(self) -> Result<ProgramBundle> {
         self.fallible_build()
             .map_err(|e| anyhow!("GLProgramBuilder error: {}", e))

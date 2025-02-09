@@ -28,21 +28,21 @@ pub(crate) trait IntoJsArray {
     fn into_js_array(self) -> Self::JsArray;
 }
 
-impl<'a> IntoJsArray for &'a [f32] {
+impl IntoJsArray for &[f32] {
     type JsArray = js_sys::Float32Array;
     fn into_js_array(self) -> Self::JsArray {
         js_sys::Float32Array::from(self)
     }
 }
 
-impl<'a> IntoJsArray for &'a [u8] {
+impl IntoJsArray for &[u8] {
     type JsArray = js_sys::Uint8Array;
     fn into_js_array(self) -> Self::JsArray {
         js_sys::Uint8Array::from(self)
     }
 }
 
-impl<'a> IntoJsArray for &'a [u16] {
+impl IntoJsArray for &[u16] {
     type JsArray = js_sys::Uint16Array;
     fn into_js_array(self) -> Self::JsArray {
         js_sys::Uint16Array::from(self)

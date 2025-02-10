@@ -20,6 +20,7 @@ use yewdux::{mrc::Mrc, prelude::*};
 pub(crate) struct GlobalDrawingOptions {
     pub heatmap_colormap_name: String,
     pub segmentation_colormap_name: String,
+    pub display_colorbar: bool,
 }
 
 impl Default for GlobalDrawingOptions {
@@ -27,6 +28,7 @@ impl Default for GlobalDrawingOptions {
         Self {
             heatmap_colormap_name: "fire".to_string(),
             segmentation_colormap_name: "glasbey".to_string(),
+            display_colorbar: true,
         }
     }
 }
@@ -125,6 +127,7 @@ pub(crate) enum UpdateDrawingOptions {
 pub(crate) enum UpdateGlobalDrawingOptions {
     GlobalHeatmapColormap(String),
     GlobalSegmentationColormap(String),
+    DisplayColorbar(bool),
 }
 
 pub(crate) enum ImageObject {
@@ -307,6 +310,9 @@ impl Reducer<AppState> for StoreAction {
                 }
                 UpdateGlobalDrawingOptions::GlobalSegmentationColormap(name) => {
                     state.global_drawing_options.segmentation_colormap_name = name;
+                }
+                UpdateGlobalDrawingOptions::DisplayColorbar(display) => {
+                    state.global_drawing_options.display_colorbar = display;
                 }
             },
             StoreAction::UpdateData(image_object) => {

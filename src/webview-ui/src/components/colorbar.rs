@@ -240,8 +240,17 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             .cloned()
     });
 
-    let clip1_state = use_state(|| clip_min);
-    let clip2_state = use_state(|| clip_max);
+    let clip1_state = use_state(|| 0.0);
+    let clip2_state = use_state(|| 0.0);
+    use_effect_with((clip_min, clip_max), {
+        let clip1_state = clip1_state.clone();
+        let clip2_state = clip2_state.clone();
+        move |(clip_min, clip_max)| {
+            clip1_state.set(*clip_min);
+            clip2_state.set(*clip_max);
+            || {}
+        }
+    });
     let handle1_ref = use_node_ref();
     let handle2_ref = use_node_ref();
     let start_state = use_state(|| (0.0, 0.0));
@@ -316,7 +325,7 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                 })),
                 on_end: Some({
                     let throttle = throttle.clone();
-                    Box::new(move |_x,_y| {
+                    Box::new(move |_x, _y| {
                         throttle.run();
                     })
                 }),

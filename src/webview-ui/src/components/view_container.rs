@@ -303,6 +303,8 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             },
         )
     };
+    let display_colorbar =
+        use_selector(|state: &AppState| state.global_drawing_options.display_colorbar);
 
     let inner_element =
         if let Some(availability) = current_image.as_ref().as_ref().map(|(_, a, _)| a) {
@@ -344,6 +346,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         top: 0;
         right: 0;
         max-width: 144px;
+        z-index: 2;
         "#,
     );
 
@@ -357,6 +360,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         flex-direction: row;
         align-items: center;
         justify-content: center;
+        z-index: 1;
         "#,
     );
 
@@ -372,7 +376,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                     </ViewableInfoContainer>
                 </div>
             }
-            <div class={colorbar_container_style}>
+            <div class={classes!(colorbar_container_style, if *display_colorbar { "" } else { "hidden" })}>
                 <ColorbarContainer view_id={*view_id} />
             </div>
         </div>

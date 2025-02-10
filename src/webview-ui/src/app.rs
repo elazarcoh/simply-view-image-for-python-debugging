@@ -331,6 +331,10 @@ pub(crate) fn App() -> Html {
             padding: 0;
             pointer-events: none;
         }
+
+        .hidden {
+            display: none;
+        }
     "#,
     );
 

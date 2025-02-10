@@ -15,5 +15,6 @@ pub(crate) mod viewable_info_container;
 mod colorbar;
 mod button;
 mod types;
+mod checkbox;
 
 pub(crate) use types::ToggleState;

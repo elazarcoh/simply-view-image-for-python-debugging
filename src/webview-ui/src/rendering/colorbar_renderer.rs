@@ -4,7 +4,7 @@ use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
 use web_sys::WebGl2RenderingContext as GL;
 
-use crate::coloring::calculate_color_matrix;
+use crate::coloring::{calculate_color_matrix, Clip, DrawingOptions};
 use crate::webgl_utils::attributes::{create_buffer_info_from_arrays, Arrays};
 use crate::webgl_utils::draw::draw_buffer_info;
 use crate::webgl_utils::program::{set_buffers_and_attributes, set_uniforms};
@@ -74,7 +74,6 @@ struct RenderingData {
 pub(crate) struct ColorBarRenderer {}
 
 impl ColorBarRenderer {
-
     pub(crate) fn setup_rendering_callback(
         rendering_context: Rc<dyn RenderingContext>,
     ) -> Result<Box<dyn FnMut()>> {
@@ -140,22 +139,36 @@ impl ColorBarRenderer {
         let coloring_factors = calculate_color_matrix(
             &texture_image.info,
             &texture_image.computed_info,
-            &data.drawing_options,
+            &DrawingOptions {
+                // We don't want to calculate the color matrix with the clip applied,
+                // since we calculate the clipping values separately.
+                clip: Clip::default(),
+                ..data.drawing_options
+            },
         );
         let min_value_normalized = {
             let mut min = texture_image.computed_info.min.as_rgba_f32()[0];
             if let Some(clip_min) = clip.min {
                 min = clip_min;
             }
-            min / coloring_factors.normalization_factor
+            coloring_factors.color_multiplier.x_axis.x
+                * (min / coloring_factors.normalization_factor)
+                + coloring_factors.color_addition.x
         };
         let max_value_normalized = {
             let mut max = texture_image.computed_info.max.as_rgba_f32()[0];
             if let Some(clip_max) = clip.max {
                 max = clip_max;
             }
-            max / coloring_factors.normalization_factor
+            coloring_factors.color_multiplier.x_axis.x
+                * (max / coloring_factors.normalization_factor)
+                + coloring_factors.color_addition.x
         };
+        log::debug!(
+            "ColorBarRenderer::render_color_bar: min_value_normalized: {}, max_value_normalized: {}",
+            min_value_normalized,
+            max_value_normalized
+        );
 
         let colormap_name = &data.global_drawing_options.heatmap_colormap_name;
 

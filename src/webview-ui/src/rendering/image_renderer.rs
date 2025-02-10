@@ -7,7 +7,6 @@ use std::{collections::HashMap, rc::Rc};
 
 use glam::{Mat3, UVec2, Vec2, Vec4};
 
-use wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 use crate::coloring;

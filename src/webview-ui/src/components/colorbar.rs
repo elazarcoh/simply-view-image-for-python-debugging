@@ -322,7 +322,7 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                 })),
                 on_end: Some({
                     let throttle = throttle.clone();
-                    Box::new(move |x, y| {
+                    Box::new(move |_x,_y| {
                         throttle.run();
                     })
                 }),
@@ -360,7 +360,7 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                 })),
                 on_end: Some({
                     let throttle = throttle.clone();
-                    Box::new(move |x, y| {
+                    Box::new(move |_x, _y| {
                         throttle.run();
                     })
                 }),

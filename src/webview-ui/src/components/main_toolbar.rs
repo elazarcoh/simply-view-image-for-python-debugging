@@ -112,8 +112,6 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     let style = use_style!(
         r#"
-            height: calc(var(--input-height) * 1px);
-
             background-color: var(--vscode-sideBar-background);
             border-bottom: 1px var(--vscode-panel-border) solid;
 

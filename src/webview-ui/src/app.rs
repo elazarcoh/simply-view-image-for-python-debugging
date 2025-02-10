@@ -17,8 +17,6 @@ use crate::keyboard_event::KeyboardHandler;
 use crate::mouse_events::PanHandler;
 use crate::mouse_events::ShiftScrollHandler;
 use crate::mouse_events::ZoomHandler;
-use crate::rendering::colorbar_renderer::ColorBarRenderer;
-use crate::rendering::image_renderer::ImageRenderer;
 use crate::rendering::renderer::Renderer;
 use crate::rendering::rendering_context::ColorBarData;
 use crate::rendering::rendering_context::ImageViewData;
@@ -28,7 +26,6 @@ use crate::vscode;
 use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
-use crate::webgl_utils::draw;
 use anyhow::{anyhow, Result};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -274,7 +271,6 @@ pub(crate) fn App() -> Html {
     });
 
     let renderer = use_memo((), |_| RefCell::new(Renderer::new()));
-    let colorbar_renderer = use_memo((), |_| RefCell::new(ColorBarRenderer::new()));
     use_effect_with(canvas_ref.clone(), {
         let renderer = Rc::clone(&renderer);
 

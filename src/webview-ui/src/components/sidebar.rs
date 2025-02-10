@@ -9,8 +9,9 @@ use crate::{
     application_state::app_state::{AppState, UiAction},
     common::ViewId,
     components::{
-        icon_button::{IconButton, IconToggleButton, ToggleState},
+        icon_button::{IconButton, IconToggleButton},
         image_selection_list::ImageSelectionList,
+        ToggleState,
     },
     vscode::vscode_requests::VSCodeRequests,
 };

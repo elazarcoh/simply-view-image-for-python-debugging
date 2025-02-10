@@ -158,12 +158,6 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                 1
                 );
         }
-        
-        .handle-text-container {
-            position: relative;
-            display: block;
-        }
-
 
         &:hover .handle-text,
         &[data-dragging="true"] .handle-text {
@@ -373,19 +367,19 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
             <div class={colorbar_style} style={vars} data-dragging={if dragging1 || dragging2 { "true" } else { "false" }}>
                 <div class="colorbar-container">
                     <div class="bound-text" style="--position: 0;">
-                        <div>{format!("{:.7}", float_pretty_print::PrettyPrintFloat(*min as f64))}</div>
+                        <div>{format!("{:.5}", float_pretty_print::PrettyPrintFloat(*min as f64))}</div>
                     </div>
                     <div class="bound-text" style="--position: 100%;">
-                        <div>{format!("{:.7}", float_pretty_print::PrettyPrintFloat(*max as f64))}</div>
+                        <div>{format!("{:.5}", float_pretty_print::PrettyPrintFloat(*max as f64))}</div>
                     </div>
 
                     <div ref={handle1_ref} class={classes!("handle", "handle1-position")}></div>
                     <div class="handle-text handle1-position">
-                        {format!("{:.7}", float_pretty_print::PrettyPrintFloat(*clip1_state as f64))}
+                        {format!("{:.5}", float_pretty_print::PrettyPrintFloat(*clip1_state as f64))}
                     </div>
                     <div ref={handle2_ref} class={classes!("handle", "handle2-position")}></div>
                     <div class="handle-text handle2-position">
-                        {format!("{:.7}", float_pretty_print::PrettyPrintFloat(*clip2_state as f64))}
+                        {format!("{:.5}", float_pretty_print::PrettyPrintFloat(*clip2_state as f64))}
                     </div>
 
                     <div class="box"></div>

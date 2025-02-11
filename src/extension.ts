@@ -22,7 +22,7 @@ import { WebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
 import { ExtensionPersistentState } from "./ExtensionPersistentState";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
-import { ImagePreviewCustomEditor } from "./openImageFileInWebview";
+import { ImagePreviewCustomEditor } from "./ImagePreviewCustomEditor";
 
 function onConfigChange(): void {
     initLog();

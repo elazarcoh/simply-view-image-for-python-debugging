@@ -6,7 +6,7 @@ use stylist::{
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
-use yewdux::{dispatch, prelude::use_selector, Dispatch};
+use yewdux::{prelude::use_selector, Dispatch};
 
 use crate::{
     application_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},

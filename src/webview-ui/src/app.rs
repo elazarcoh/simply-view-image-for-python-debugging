@@ -1,6 +1,8 @@
 use crate::application_state::app_state::AppState;
+use crate::application_state::app_state::ElementsStoreKey;
 use crate::application_state::app_state::GlobalDrawingOptions;
 use crate::application_state::images::ImageAvailability;
+use crate::coloring::Coloring;
 use crate::coloring::DrawingOptions;
 use crate::colormap;
 use crate::common::camera;
@@ -16,6 +18,7 @@ use crate::mouse_events::PanHandler;
 use crate::mouse_events::ShiftScrollHandler;
 use crate::mouse_events::ZoomHandler;
 use crate::rendering::renderer::Renderer;
+use crate::rendering::rendering_context::ColorBarData;
 use crate::rendering::rendering_context::ImageViewData;
 use crate::rendering::rendering_context::RenderingContext;
 use crate::rendering::rendering_context::ViewContext;
@@ -116,6 +119,35 @@ fn rendering_context() -> impl RenderingContext {
                 .borrow()
                 .get(name)
                 .ok_or(anyhow!("Color map {} not found", name))
+        }
+
+        fn get_colorbar_data(&self, view_id: ViewId) -> Option<ColorBarData> {
+            let dispatch = Dispatch::<AppState>::global();
+            let state = dispatch.get();
+            let html_element = state
+                .elements_refs_store
+                .borrow()
+                .get(&ElementsStoreKey::ColorBar)
+                .and_then(|element| element.cast::<HtmlElement>());
+            let cv = state.image_views.borrow().get_currently_viewing(view_id)?;
+            let drawing_options = state
+                .drawing_options
+                .borrow()
+                .get(cv.id())
+                .take_if(|drawing_options| drawing_options.coloring == Coloring::Heatmap);
+            let global_drawing_options = state.global_drawing_options.clone();
+            if let ImageAvailability::Available(texture_image) = self.texture_by_id(cv.id()) {
+                html_element
+                    .zip(drawing_options)
+                    .map(|(html_element, drawing_options)| ColorBarData {
+                        html_element,
+                        drawing_options,
+                        global_drawing_options,
+                        texture_image,
+                    })
+            } else {
+                None
+            }
         }
     }
 
@@ -266,9 +298,17 @@ pub(crate) fn App() -> Html {
                 state.gl = Some(gl.clone());
             });
 
+            dispatch.reduce_mut(|state| {
+                state
+                    .elements_refs_store
+                    .borrow_mut()
+                    .insert(ElementsStoreKey::ColorBar, NodeRef::default());
+            });
+
+            let rendering_context: Rc<dyn RenderingContext> = Rc::new(rendering_context());
             renderer
                 .borrow_mut()
-                .set_rendering_context(Rc::new(rendering_context()));
+                .setup_rendering(Rc::clone(&rendering_context));
 
             move || {
                 dispatch.reduce_mut(|state| {
@@ -281,24 +321,26 @@ pub(crate) fn App() -> Html {
     let main_style = use_style!(
         r#"
 
-    "#,
-    );
-    let canvas_style = use_style!(
-        r#"
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        border: 0;
-        padding: 0;
+        #gl-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            padding: 0;
+            pointer-events: none;
+        }
+
+        .hidden {
+            display: none;
+        }
     "#,
     );
 
     html! {
         <div class={main_style}>
-            <canvas id="gl-canvas" ref={canvas_ref} class={canvas_style}></canvas>
+            <canvas id="gl-canvas" ref={canvas_ref}></canvas>
             <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
         </div>
     }

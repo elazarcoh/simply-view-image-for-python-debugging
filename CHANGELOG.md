@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.0.8] - Release
+
+### Added
+
+- Colorbar for heatmap images.
+  - Can be toggled via the toolbar.
+  - Handles for clipping values.
+
 ## [4.0.6] - Release
 
 ### Added

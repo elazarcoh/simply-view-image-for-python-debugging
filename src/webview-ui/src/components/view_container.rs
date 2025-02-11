@@ -15,7 +15,8 @@ use crate::{
     colormap,
     common::{Channels, ViewId, ViewableObjectId},
     components::{
-        legend::Legend, spinner::Spinner, viewable_info_container::ViewableInfoContainer,
+        colorbar::Colorbar, legend::Legend, spinner::Spinner,
+        viewable_info_container::ViewableInfoContainer,
     },
     math_utils,
 };
@@ -89,7 +90,8 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
             ClippingInputType::Max => max_input_ref.clone(),
         };
         let dispatch = Dispatch::<AppState>::global();
-        Callback::from(move |_| {
+        Callback::from(move |ev: InputEvent| {
+            ev.stop_propagation();
             if let Some(input) = node_ref.cast::<web_sys::HtmlInputElement>() {
                 let value_str = input.value();
                 let value: Option<f32> = value_str.parse().ok();
@@ -128,6 +130,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                         placeholder="min"
                         ref={min_input_ref.clone()}
                         oninput={onchange(ClippingInputType::Min)}
+                        onkeydown={|ev: KeyboardEvent| { ev.stop_propagation(); }}
                         value={clip.min.map(|v| v.to_string()).unwrap_or_default()} />
                     <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Min)}>
                         <i class="codicon codicon-close"></i>
@@ -144,6 +147,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                         placeholder="max"
                         ref={max_input_ref.clone()}
                         oninput={onchange(ClippingInputType::Max)}
+                        onkeydown={|ev: KeyboardEvent| { ev.stop_propagation(); }}
                         value={clip.max.map(|v| v.to_string()).unwrap_or_default()} />
                     <button class="vscode-action-button" title="Clear" onclick={clear(ClippingInputType::Max)}>
                         <i class="codicon codicon-close"></i>
@@ -229,6 +233,47 @@ fn make_info_items(
 
     Some(info_items)
 }
+#[derive(PartialEq, Properties)]
+pub struct ColorbarContainerProps {
+    pub view_id: ViewId,
+}
+
+#[function_component]
+pub fn ColorbarContainer(props: &ColorbarContainerProps) -> Html {
+    let ColorbarContainerProps { view_id } = props;
+
+    let current_image = {
+        let view_id = *view_id;
+        use_selector(
+            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
+                let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
+                let image_id = binding.id();
+                let availability = state.image_cache.borrow().get(image_id);
+                let drawing_options = state.drawing_options.borrow().get(image_id);
+                Some((image_id.clone(), availability, drawing_options))
+            },
+        )
+    };
+
+    if let Some((_, availability, drawing_options)) = current_image.as_ref() {
+        if drawing_options.as_ref().map(|o| o.coloring) == Some(Coloring::Heatmap) {
+            if let ImageAvailability::Available(texture) = availability {
+                let image_info = &texture.borrow().computed_info;
+                let image_id = texture.borrow().info.image_id.clone();
+                let min = image_info.min.as_rgba_f32()[0];
+                let max = image_info.max.as_rgba_f32()[0];
+                let clip_min = drawing_options.as_ref().and_then(|o| o.clip.min);
+                let clip_max = drawing_options.as_ref().and_then(|o| o.clip.max);
+
+                return html! {
+                    <Colorbar image_id={image_id} min={min} max={max} clip_min={clip_min} clip_max={clip_max} />
+                };
+            }
+        }
+    }
+    html! {
+    }
+}
 
 #[derive(PartialEq, Properties)]
 pub(crate) struct ViewContainerProps {
@@ -258,6 +303,8 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             },
         )
     };
+    let display_colorbar =
+        use_selector(|state: &AppState| state.global_drawing_options.display_colorbar);
 
     let inner_element =
         if let Some(availability) = current_image.as_ref().as_ref().map(|(_, a, _)| a) {
@@ -299,6 +346,21 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         top: 0;
         right: 0;
         max-width: 144px;
+        z-index: 2;
+        "#,
+    );
+
+    let colorbar_container_style = use_style!(
+        r#"
+        height: 100%;
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
         "#,
     );
 
@@ -314,6 +376,9 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
                     </ViewableInfoContainer>
                 </div>
             }
+            <div class={classes!(colorbar_container_style, if *display_colorbar { "" } else { "hidden" })}>
+                <ColorbarContainer view_id={*view_id} />
+            </div>
         </div>
     }
 }

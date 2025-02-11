@@ -46,7 +46,7 @@ impl ImageViews {
     pub(crate) fn is_currently_viewing(&self, image_id: &ViewableObjectId) -> Vec<ViewId> {
         self.0
             .iter()
-            .filter(|(_, (cv, _))| cv.as_ref().map_or(false, |cv| cv.id() == image_id))
+            .filter(|(_, (cv, _))| cv.as_ref().is_some_and(|cv| cv.id() == image_id))
             .map(|(v, _)| *v)
             .collect::<Vec<_>>()
     }

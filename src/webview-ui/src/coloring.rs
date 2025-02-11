@@ -5,7 +5,7 @@ use crate::{
 };
 
 
-#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub(crate) enum Coloring {
     Default,
     Grayscale,
@@ -186,7 +186,6 @@ pub(crate) struct ColoringFactors {
     pub(crate) normalization_factor: f32,
     pub(crate) color_multiplier: Mat4,
     pub(crate) color_addition: Vec4,
-    pub(crate) clip: Clip,
 }
 
 pub(crate) fn calculate_color_matrix(
@@ -325,7 +324,6 @@ pub(crate) fn calculate_color_matrix(
         normalization_factor,
         color_multiplier,
         color_addition,
-        clip: drawing_options.clip.clone(),
     }
 }
 

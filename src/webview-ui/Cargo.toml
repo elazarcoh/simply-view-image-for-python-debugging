@@ -2,7 +2,7 @@
 name = "svifpd-webview-ui"
 authors = ["elazar <elazarcoh@gmail.com>"]
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.80"
 resolver = "2"
 
 [lib]

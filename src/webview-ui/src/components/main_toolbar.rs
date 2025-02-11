@@ -1,5 +1,8 @@
 use itertools::Itertools;
-use stylist::yew::{styled_component, use_style};
+use stylist::{
+    css,
+    yew::{styled_component, use_style},
+};
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
@@ -10,6 +13,7 @@ use crate::{
     coloring::Coloring,
     colormap::ColorMapKind,
     common::ViewId,
+    components::checkbox::Checkbox,
 };
 
 #[derive(PartialEq, Properties)]
@@ -46,6 +50,18 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
         justify-content: flex-start;
         flex-direction: row;
         gap: 10px;
+
+        label {
+            user-select: none;
+        }
+
+        &[disabled] label {
+            opacity: 0.5;
+        }
+        &[disabled] select {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
         "#
     );
 
@@ -66,25 +82,27 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
         }
     });
 
+    let disabled = disabled.unwrap_or(false);
+
     html! {
-        <div class={style}>
+        <div class={style} disabled={disabled}>
             <label>{"Colormap"}</label>
             <div class="vscode-select">
-            <select
-                disabled={disabled.unwrap_or(false)}
-                {onchange}
-            >
-                {for options}
-            </select>
-            <span class="chevron-icon">
-                <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                    <path
-                        fill-rule="evenodd"
-                        clip-rule="evenodd"
-                        d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"
-                    />
-                </svg>
-            </span>
+                <select
+                    disabled={disabled}
+                    {onchange}
+                >
+                    {for options}
+                </select>
+                <span class="chevron-icon">
+                    <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                        <path
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z"
+                        />
+                    </svg>
+                </span>
             </div>
         </div>
     }
@@ -108,7 +126,8 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     let style = use_style!(
         r#"
-            height: calc(var(--input-height) * 1px);
+            box-sizing: border-box;
+            height: 100%;
 
             background-color: var(--vscode-sideBar-background);
             border-bottom: 1px var(--vscode-panel-border) solid;
@@ -159,8 +178,25 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         "#
     );
 
+    let display_colorbar =
+        use_selector(|state: &AppState| state.global_drawing_options.display_colorbar);
+    let dispatch = Dispatch::<AppState>::global();
+    let on_colorbar_change = Callback::from(move |checked: bool| {
+        dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
+            UpdateGlobalDrawingOptions::DisplayColorbar(checked),
+        ));
+    });
+
     html! {
         <div class={style}>
+            <Checkbox
+                checked={*display_colorbar}
+                disabled={drawing_options.coloring != Coloring::Heatmap}
+                on_change={on_colorbar_change}
+            >
+                {"Colorbar"}
+            </Checkbox>
+            <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
             <HeatmapColormapDropdown disabled={drawing_options.coloring != Coloring::Heatmap} />
             <div class={classes!("codicon", "codicon-question", "help")} >
                 <span class={classes!("tooltiptext")}>

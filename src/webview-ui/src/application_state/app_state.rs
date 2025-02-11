@@ -10,14 +10,17 @@ use crate::common::{
 };
 use crate::configurations;
 use anyhow::{anyhow, Result};
+use std::collections::HashMap;
 use std::rc::Rc;
 use web_sys::WebGl2RenderingContext;
+use yew::NodeRef;
 use yewdux::{mrc::Mrc, prelude::*};
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct GlobalDrawingOptions {
     pub heatmap_colormap_name: String,
     pub segmentation_colormap_name: String,
+    pub display_colorbar: bool,
 }
 
 impl Default for GlobalDrawingOptions {
@@ -25,8 +28,14 @@ impl Default for GlobalDrawingOptions {
         Self {
             heatmap_colormap_name: "fire".to_string(),
             segmentation_colormap_name: "glasbey".to_string(),
+            display_colorbar: true,
         }
     }
+}
+
+#[derive(Clone, PartialEq, Hash, Eq)]
+pub(crate) enum ElementsStoreKey {
+    ColorBar,
 }
 
 #[derive(Default, Clone)]
@@ -43,6 +52,8 @@ pub(crate) struct AppState {
     pub color_map_textures_cache: Mrc<ColorMapTexturesCache>,
 
     pub view_cameras: Mrc<ViewsCameras>,
+
+    pub elements_refs_store: Mrc<HashMap<ElementsStoreKey, NodeRef>>,
 
     pub configuration: configurations::Configuration,
 }
@@ -70,7 +81,7 @@ impl AppState {
             .images
             .borrow()
             .get(&image_id)
-            .map_or(false, |info| info.minimal().is_batched);
+            .is_some_and(|info| info.minimal().is_batched);
 
         if is_batched {
             self.image_views
@@ -116,6 +127,7 @@ pub(crate) enum UpdateDrawingOptions {
 pub(crate) enum UpdateGlobalDrawingOptions {
     GlobalHeatmapColormap(String),
     GlobalSegmentationColormap(String),
+    DisplayColorbar(bool),
 }
 
 pub(crate) enum ImageObject {
@@ -298,6 +310,9 @@ impl Reducer<AppState> for StoreAction {
                 }
                 UpdateGlobalDrawingOptions::GlobalSegmentationColormap(name) => {
                     state.global_drawing_options.segmentation_colormap_name = name;
+                }
+                UpdateGlobalDrawingOptions::DisplayColorbar(display) => {
+                    state.global_drawing_options.display_colorbar = display;
                 }
             },
             StoreAction::UpdateData(image_object) => {

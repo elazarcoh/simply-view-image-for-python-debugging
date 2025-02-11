@@ -22,6 +22,7 @@ mod rendering;
 mod tmp_for_debug;
 mod vscode;
 mod webgl_utils;
+mod hooks;
 
 use app::App;
 use cfg_if::cfg_if;

@@ -52,7 +52,7 @@ export class ImageViewPanel {
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
         // Set the HTML content for the webview panel
-        this._panel.webview.html = this._getWebviewContent(
+        this._panel.webview.html = ImageViewPanel._getWebviewContent(
             this._panel.webview,
             extensionUri
         );
@@ -75,9 +75,15 @@ export class ImageViewPanel {
      *
      * @param extensionUri The URI of the directory containing the extension.
      */
-    public static render(context: vscode.ExtensionContext) {
+    public static render(context: vscode.ExtensionContext, panel: WebviewPanel | null = null) { 
         const extensionUri = context.extensionUri;
-        if (ImageViewPanel.currentPanel) {
+        if (panel) {
+            panel.webview.html = ImageViewPanel._getWebviewContent(panel.webview, extensionUri);
+            panel.webview.options = {
+                enableScripts: true,
+                localResourceRoots: [Uri.joinPath(extensionUri, "dist")],
+            };
+        } else if (ImageViewPanel.currentPanel) {
             ImageViewPanel.currentPanel._panel.reveal(ViewColumn.Beside);
         } else {
             const panel = window.createWebviewPanel(
@@ -118,7 +124,7 @@ export class ImageViewPanel {
         }
     }
 
-    private _getWebviewContent(webview: Webview, extensionUri: Uri) {
+    private static _getWebviewContent(webview: Webview, extensionUri: Uri) {
         const baseUri = getUri(webview, extensionUri, ["dist"]);
 
         const nonce = getNonce();

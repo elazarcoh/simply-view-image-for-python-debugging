@@ -416,7 +416,28 @@
           "description": "Invert mouse wheel zoom direction in the image viewer."
         }
       }
-    }
+    },
+    "customEditors": [
+      {
+        "viewType": "svifpd.previewEditor",
+        "displayName": "Image View",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.png"
+          },
+          {
+            "filenamePattern": "*.jpg"
+          },
+          {
+            "filenamePattern": "*.jpeg"
+          },
+          {
+            "filenamePattern": "*.bmp"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "update-package-json": "update-package-json",

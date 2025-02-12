@@ -8,7 +8,7 @@ import * as ExifReader from "exifreader";
 import { Jimp } from "jimp";
 import { ImageMessage } from "./webview/webview";
 
-const PNG_COLOR_TYPE = {
+const PNG_COLOR_TYPE: Record<number, { channels: 1 | 2 | 3 | 4 }> = {
   0: { channels: 1 },
   2: { channels: 3 },
   3: { channels: 1 },

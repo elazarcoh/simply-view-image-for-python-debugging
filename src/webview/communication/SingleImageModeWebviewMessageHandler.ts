@@ -21,7 +21,7 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
     disposeAll(this._disposables);
   }
 
-  private async handleWebviewReady(id: MessageId) {
+  private async handleWebviewReady(_id: MessageId) {
     this.webviewCommunication.setReady();
     this.webviewCommunication.sendRequest(WebviewRequests.configuration());
     this.webviewCommunication.sendRequest(

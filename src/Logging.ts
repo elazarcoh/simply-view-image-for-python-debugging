@@ -2,95 +2,93 @@ import * as vscode from "vscode";
 import { getConfiguration } from "./config";
 
 function replaceErrors(key: unknown, value: unknown) {
-    if (value instanceof Error) {
-        const error: Record<string, unknown> = {};
+  if (value instanceof Error) {
+    const error: Record<string, unknown> = {};
 
-        Object.getOwnPropertyNames(value).forEach(function (propName) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any  -- we know value is an Error object
-            error[propName] = (value as any)[propName];
-        });
+    Object.getOwnPropertyNames(value).forEach(function (propName) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any  -- we know value is an Error object
+      error[propName] = (value as any)[propName];
+    });
 
-        return error;
-    }
+    return error;
+  }
 
-    return value;
+  return value;
 }
 
 enum LogLevel {
-    None = 0,
-    Trace = 1,
-    Debug = 2,
-    Info = 3,
-    Warn = 4,
-    Error = 5,
+  None = 0,
+  Trace = 1,
+  Debug = 2,
+  Info = 3,
+  Warn = 4,
+  Error = 5,
 }
 let logLevel: LogLevel = LogLevel.Trace;
 let outputChannel: vscode.OutputChannel | undefined;
 
 export function initLog(): void {
-    const debug = getConfiguration("debug");
-    if (debug !== "none" && outputChannel === undefined) {
-        outputChannel = vscode.window.createOutputChannel(
-            "View Image for Python"
-        );
-    } else if (debug === "none" && outputChannel !== undefined) {
-        outputChannel.dispose();
-        outputChannel = undefined;
-    }
+  const debug = getConfiguration("debug");
+  if (debug !== "none" && outputChannel === undefined) {
+    outputChannel = vscode.window.createOutputChannel("View Image for Python");
+  } else if (debug === "none" && outputChannel !== undefined) {
+    outputChannel.dispose();
+    outputChannel = undefined;
+  }
 
-    switch (debug) {
-        case "verbose":
-            logLevel = LogLevel.Trace;
-            break;
-        case "debug":
-            logLevel = LogLevel.Debug;
-            break;
-        default:
-            logLevel = LogLevel.None;
-            break;
-    }
+  switch (debug) {
+    case "verbose":
+      logLevel = LogLevel.Trace;
+      break;
+    case "debug":
+      logLevel = LogLevel.Debug;
+      break;
+    default:
+      logLevel = LogLevel.None;
+      break;
+  }
 }
 
 const levelNames = {
-    [LogLevel.None]: "None",
-    [LogLevel.Trace]: "Trace",
-    [LogLevel.Debug]: "Debug",
-    [LogLevel.Info]: "Info",
-    [LogLevel.Warn]: "Warn",
-    [LogLevel.Error]: "Error",
+  [LogLevel.None]: "None",
+  [LogLevel.Trace]: "Trace",
+  [LogLevel.Debug]: "Debug",
+  [LogLevel.Info]: "Info",
+  [LogLevel.Warn]: "Warn",
+  [LogLevel.Error]: "Error",
 };
 
 function log(level: LogLevel, ...obj: any[]): void {
-    if (outputChannel === undefined) {
-        return;
-    }
+  if (outputChannel === undefined) {
+    return;
+  }
 
-    obj = [`[${levelNames[level]}]`, ...obj];
-    const msg = obj.map((o) => JSON.stringify(o, replaceErrors, 2)).join(" ");
-    outputChannel.appendLine(msg);
+  obj = [`[${levelNames[level]}]`, ...obj];
+  const msg = obj.map((o) => JSON.stringify(o, replaceErrors, 2)).join(" ");
+  outputChannel.appendLine(msg);
 }
 
 // ts-unused-exports:disable-next-line
 export function logTrace(...obj: any[]): void {
-    if (logLevel <= LogLevel.Trace) log(LogLevel.Trace, ...obj);
+  if (logLevel <= LogLevel.Trace) log(LogLevel.Trace, ...obj);
 }
 
 // ts-unused-exports:disable-next-line
 export function logDebug(...obj: any[]): void {
-    if (logLevel <= LogLevel.Debug) log(LogLevel.Debug, ...obj);
+  if (logLevel <= LogLevel.Debug) log(LogLevel.Debug, ...obj);
 }
 
 // ts-unused-exports:disable-next-line
 export function logInfo(...obj: any[]): void {
-    if (logLevel <= LogLevel.Info) log(LogLevel.Info, ...obj);
+  if (logLevel <= LogLevel.Info) log(LogLevel.Info, ...obj);
 }
 
 // ts-unused-exports:disable-next-line
 export function logWarn(...obj: any[]): void {
-    if (logLevel <= LogLevel.Warn) log(LogLevel.Warn, ...obj);
+  if (logLevel <= LogLevel.Warn) log(LogLevel.Warn, ...obj);
 }
 
 // ts-unused-exports:disable-next-line
 export function logError(...obj: any[]): void {
-    if (logLevel <= LogLevel.Error) log(LogLevel.Error, ...obj);
+  if (logLevel <= LogLevel.Error) log(LogLevel.Error, ...obj);
 }

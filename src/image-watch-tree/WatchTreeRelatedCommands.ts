@@ -7,110 +7,110 @@ import { VariableWatchTreeItem } from "./WatchVariable";
 import { viewObject } from "../ViewPythonObject";
 
 function pythonObjectTreeItemSavePath(
-    pythonObjectTreeItem: PythonObjectTreeItem,
-    session: vscode.DebugSession
+  pythonObjectTreeItem: PythonObjectTreeItem,
+  session: vscode.DebugSession,
 ): string {
-    const debugSessionData = activeDebugSessionData(session);
+  const debugSessionData = activeDebugSessionData(session);
 
-    let savePath: string | undefined;
-    if (pythonObjectTreeItem.trackingId) {
-        savePath = debugSessionData.trackedPythonObjects.savePath(
-            pythonObjectTreeItem.trackingId
-        );
-    }
-    if (savePath === undefined) {
-        savePath = debugSessionData.savePathHelper.savePathFor(
-            pythonObjectTreeItem instanceof VariableWatchTreeItem
-                ? { variable: pythonObjectTreeItem.variableName }
-                : { expression: pythonObjectTreeItem.expression }
-        );
-    }
+  let savePath: string | undefined;
+  if (pythonObjectTreeItem.trackingId) {
+    savePath = debugSessionData.trackedPythonObjects.savePath(
+      pythonObjectTreeItem.trackingId,
+    );
+  }
+  if (savePath === undefined) {
+    savePath = debugSessionData.savePathHelper.savePathFor(
+      pythonObjectTreeItem instanceof VariableWatchTreeItem
+        ? { variable: pythonObjectTreeItem.variableName }
+        : { expression: pythonObjectTreeItem.expression },
+    );
+  }
 
-    return savePath;
+  return savePath;
 }
 
 export function trackPythonObjectTreeItem(
-    pythonObjectTreeItem: PythonObjectTreeItem
+  pythonObjectTreeItem: PythonObjectTreeItem,
 ): void {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession !== undefined) {
-        const debugSessionData = activeDebugSessionData(debugSession);
-        const savePath = pythonObjectTreeItemSavePath(
-            pythonObjectTreeItem,
-            debugSession
-        );
+  const debugSession = vscode.debug.activeDebugSession;
+  if (debugSession !== undefined) {
+    const debugSessionData = activeDebugSessionData(debugSession);
+    const savePath = pythonObjectTreeItemSavePath(
+      pythonObjectTreeItem,
+      debugSession,
+    );
 
-        const trackingId = debugSessionData.trackedPythonObjects.track(
-            { expression: pythonObjectTreeItem.expression },
-            pythonObjectTreeItem.lastUsedViewable,
-            savePath,
-            pythonObjectTreeItem.trackingId
-        );
+    const trackingId = debugSessionData.trackedPythonObjects.track(
+      { expression: pythonObjectTreeItem.expression },
+      pythonObjectTreeItem.lastUsedViewable,
+      savePath,
+      pythonObjectTreeItem.trackingId,
+    );
 
-        pythonObjectTreeItem.setTracked(trackingId);
-        Container.get(WatchTreeProvider).refresh(pythonObjectTreeItem);
-    }
+    pythonObjectTreeItem.setTracked(trackingId);
+    Container.get(WatchTreeProvider).refresh(pythonObjectTreeItem);
+  }
 }
 
 export function untrackPythonObjectTreeItem(
-    pythonObjectTreeItem: PythonObjectTreeItem
+  pythonObjectTreeItem: PythonObjectTreeItem,
 ): void {
-    if (pythonObjectTreeItem.trackingId) {
-        activeDebugSessionData()?.trackedPythonObjects.untrack(
-            pythonObjectTreeItem.trackingId
-        );
-    }
-    pythonObjectTreeItem.setNonTracked();
-    Container.get(WatchTreeProvider).refresh(pythonObjectTreeItem);
+  if (pythonObjectTreeItem.trackingId) {
+    activeDebugSessionData()?.trackedPythonObjects.untrack(
+      pythonObjectTreeItem.trackingId,
+    );
+  }
+  pythonObjectTreeItem.setNonTracked();
+  Container.get(WatchTreeProvider).refresh(pythonObjectTreeItem);
 }
 
 export async function refreshWatchTree(): Promise<void> {
-    await activeDebugSessionData()?.currentPythonObjectsList.update();
-    Container.get(WatchTreeProvider).refresh();
+  await activeDebugSessionData()?.currentPythonObjectsList.update();
+  Container.get(WatchTreeProvider).refresh();
 }
 
 async function viewWatchTreeItem(
-    group: string,
-    item: PythonObjectTreeItem,
-    session: vscode.DebugSession
+  group: string,
+  item: PythonObjectTreeItem,
+  session: vscode.DebugSession,
 ): Promise<void> {
-    const viewableToUse =
-        item.lastUsedViewable.group === group
-            ? item.lastUsedViewable
-            : item.viewables.find((v) => v.group === group) ??
-              item.lastUsedViewable;
-    item.lastUsedViewable = viewableToUse;
+  const viewableToUse =
+    item.lastUsedViewable.group === group
+      ? item.lastUsedViewable
+      : (item.viewables.find((v) => v.group === group) ??
+        item.lastUsedViewable);
+  item.lastUsedViewable = viewableToUse;
 
-    if (item.trackingId) {
-        activeDebugSessionData(session).trackedPythonObjects.changeViewable(
-            item.trackingId,
-            viewableToUse
-        );
-    }
-
-    const savePath = pythonObjectTreeItemSavePath(item, session);
-
-    return viewObject(
-        { expression: item.expression },
-        viewableToUse,
-        session,
-        savePath
+  if (item.trackingId) {
+    activeDebugSessionData(session).trackedPythonObjects.changeViewable(
+      item.trackingId,
+      viewableToUse,
     );
+  }
+
+  const savePath = pythonObjectTreeItemSavePath(item, session);
+
+  return viewObject(
+    { expression: item.expression },
+    viewableToUse,
+    session,
+    savePath,
+  );
 }
 
 export function makeViewWatchTreeItemCommand(
-    group: string
+  group: string,
 ): (item: PythonObjectTreeItem) => Promise<void> {
-    return async (item: PythonObjectTreeItem): Promise<void> => {
-        const debugSession = vscode.debug.activeDebugSession;
-        if (debugSession !== undefined) {
-            if (activeDebugSessionData(debugSession).isStopped) {
-                await viewWatchTreeItem(group, item, debugSession);
-            } else {
-                vscode.window.showWarningMessage(
-                    "Cannot view object while debugging is not paused."
-                );
-            }
-        }
-    };
+  return async (item: PythonObjectTreeItem): Promise<void> => {
+    const debugSession = vscode.debug.activeDebugSession;
+    if (debugSession !== undefined) {
+      if (activeDebugSessionData(debugSession).isStopped) {
+        await viewWatchTreeItem(group, item, debugSession);
+      } else {
+        vscode.window.showWarningMessage(
+          "Cannot view object while debugging is not paused.",
+        );
+      }
+    }
+  };
 }

@@ -3,11 +3,11 @@ use std::rc::Rc;
 use glam::UVec2;
 use stylist::yew::use_style;
 use yew::prelude::*;
-use yewdux::prelude::Dispatch;
+use yewdux::{prelude::Dispatch, use_selector};
 
 use crate::{
     application_state::app_state::AppState,
-    common::{pixel_value::PixelValue, ViewId},
+    common::{pixel_value::PixelValue, AppMode, ViewId},
     components::{
         main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar,
         view_container::ViewContainer,
@@ -129,6 +129,8 @@ pub(crate) fn Main(props: &MainProps) -> Html {
         .borrow()
         .get_node_ref(*view_id)
         .clone();
+    let app_mode = use_selector(|state: &AppState| state.app_mode);
+    log::info!("app_mode: {:?}", app_mode);
 
     let main_style = use_style!(
         r#"
@@ -174,7 +176,10 @@ pub(crate) fn Main(props: &MainProps) -> Html {
             <div class={"main-toolbar"}>
                 <MainToolbar />
             </div>
-            <Sidebar class="sidebar" />
+            if *app_mode == AppMode::ImageList {
+                <Sidebar class="sidebar" />
+            } else {
+            }
             <div class={"main"}>
                 <ViewContainer node_ref={view_container_node_ref} class="view-container" view_id={ViewId::Primary}/>
             </div>

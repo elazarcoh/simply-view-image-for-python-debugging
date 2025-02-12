@@ -6,7 +6,7 @@ use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
+    AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
 };
 use crate::configurations;
 use anyhow::{anyhow, Result};
@@ -38,7 +38,7 @@ pub(crate) enum ElementsStoreKey {
     ColorBar,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, PartialEq)]
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
@@ -55,7 +55,28 @@ pub(crate) struct AppState {
 
     pub elements_refs_store: Mrc<HashMap<ElementsStoreKey, NodeRef>>,
 
+    pub app_mode: AppMode,
+
     pub configuration: configurations::Configuration,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            gl: None,
+            images: Default::default(),
+            image_views: Default::default(),
+            image_cache: Default::default(),
+            drawing_options: Default::default(),
+            global_drawing_options: Default::default(),
+            color_map_registry: Default::default(),
+            color_map_textures_cache: Default::default(),
+            view_cameras: Default::default(),
+            elements_refs_store: Default::default(),
+            app_mode: AppMode::ImageList,
+            configuration: configurations::Configuration::default(),
+        }
+    }
 }
 
 impl Store for AppState {
@@ -100,19 +121,6 @@ impl AppState {
     }
 }
 
-impl PartialEq for AppState {
-    fn eq(&self, other: &Self) -> bool {
-        self.images == other.images
-            && self.image_views == other.image_views
-            && self.image_cache == other.image_cache
-            && self.view_cameras == other.view_cameras
-            && self.configuration == other.configuration
-            && self.gl == other.gl
-            && self.drawing_options == other.drawing_options
-            && self.global_drawing_options == other.global_drawing_options
-    }
-}
-
 pub(crate) enum UpdateDrawingOptions {
     Reset,
     Coloring(Coloring),
@@ -151,6 +159,7 @@ pub(crate) enum StoreAction {
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
     UpdateData(ImageObject),
+    SetMode(AppMode),
 }
 
 fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
@@ -317,6 +326,10 @@ impl Reducer<AppState> for StoreAction {
             },
             StoreAction::UpdateData(image_object) => {
                 handle_received_image(state, image_object).unwrap();
+            }
+            StoreAction::SetMode(app_mode) => {
+                state.app_mode = app_mode;
+                log::info!("App mode set to: {:?}", app_mode);
             }
         };
 

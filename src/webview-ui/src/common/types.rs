@@ -268,3 +268,11 @@ pub(crate) struct LegendItem {
     pub color: [f32; 3],
     pub label: String,
 }
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum AppMode {
+    #[serde(rename = "single-image")]
+    SingleImage,
+    #[serde(rename = "image-list")]
+    ImageList,
+}

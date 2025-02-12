@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::common::{Channels, DataOrdering, Datatype, ValueVariableKind, ViewableObjectId};
+use crate::common::{
+    AppMode, Channels, DataOrdering, Datatype, ValueVariableKind, ViewableObjectId,
+};
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub(crate) struct MessageId(String);
@@ -76,6 +78,9 @@ pub(crate) enum ExtensionRequest {
     },
     ReplaceData(ReplaceData),
     Configuration(Configuration),
+    SetMode {
+        mode: AppMode,
+    },
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

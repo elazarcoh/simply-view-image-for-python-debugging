@@ -6,14 +6,14 @@ use stylist::{
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
-use yewdux::{prelude::use_selector, Dispatch};
+use yewdux::{prelude::use_selector, use_selector_with_deps, Dispatch};
 
 use crate::{
     application_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
     coloring::Coloring,
     colormap::ColorMapKind,
-    common::ViewId,
-    components::checkbox::Checkbox,
+    common::{AppMode, CurrentlyViewing, Image, ViewId},
+    components::{checkbox::Checkbox, display_options::DisplayOption},
 };
 
 #[derive(PartialEq, Properties)]
@@ -115,14 +115,36 @@ pub(crate) struct MainToolbarProps {}
 pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
     let MainToolbarProps {} = props;
 
-    let drawing_options = use_selector(move |state: &AppState| {
+    let cv = use_selector(move |state: &AppState| {
         state
             .image_views
             .borrow()
             .get_currently_viewing(ViewId::Primary)
-            .map(|cv| state.drawing_options.borrow().get_or_default(cv.id()))
-            .unwrap_or_default()
     });
+    let drawing_options = use_selector_with_deps(
+        |state: &AppState, cv| {
+            cv.as_ref()
+                .as_ref()
+                .map(|cv| state.drawing_options.borrow().get_or_default(cv.id()))
+                .unwrap_or_default()
+        },
+        cv.clone(),
+    );
+
+    let app_mode = use_selector(|state: &AppState| state.app_mode);
+
+    let cv_image_info = use_selector_with_deps(
+        |state: &AppState, (cv, app_mode)| {
+            if (**app_mode == AppMode::SingleImage) {
+                cv.as_ref()
+                    .as_ref()
+                    .and_then(|cv| state.images.borrow().get(cv.id()).cloned())
+            } else {
+                None
+            }
+        },
+        (cv.clone(), app_mode.clone()),
+    );
 
     let style = use_style!(
         r#"
@@ -189,6 +211,15 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     html! {
         <div class={style}>
+
+            if let Some(ref cv_image_info) = cv_image_info.as_ref() {
+                if let Image::Full(image) = cv_image_info {
+                        <DisplayOption
+                            entry={image.clone()}
+                        />
+                }
+            }
+
             <Checkbox
                 checked={*display_colorbar}
                 disabled={drawing_options.coloring != Coloring::Heatmap}

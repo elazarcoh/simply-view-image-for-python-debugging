@@ -16,5 +16,6 @@ mod colorbar;
 mod button;
 mod types;
 mod checkbox;
+mod display_options;
 
 pub(crate) use types::ToggleState;

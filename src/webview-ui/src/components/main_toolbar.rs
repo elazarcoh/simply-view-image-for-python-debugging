@@ -12,7 +12,7 @@ use crate::{
     application_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
     coloring::Coloring,
     colormap::ColorMapKind,
-    common::{AppMode, CurrentlyViewing, Image, ViewId},
+    common::{AppMode, Image, ViewId},
     components::{checkbox::Checkbox, display_options::DisplayOption},
 };
 
@@ -135,7 +135,7 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     let cv_image_info = use_selector_with_deps(
         |state: &AppState, (cv, app_mode)| {
-            if (**app_mode == AppMode::SingleImage) {
+            if **app_mode == AppMode::SingleImage {
                 cv.as_ref()
                     .as_ref()
                     .and_then(|cv| state.images.borrow().get(cv.id()).cloned())

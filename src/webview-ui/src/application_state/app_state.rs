@@ -9,6 +9,8 @@ use crate::common::{
     AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
 };
 use crate::configurations;
+use crate::vscode::state::HostExtensionState;
+use crate::vscode::vscode_requests::VSCodeRequests;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -122,6 +124,7 @@ impl AppState {
 }
 
 pub(crate) enum UpdateDrawingOptions {
+    Full(DrawingOptions),
     Reset,
     Coloring(Coloring),
     Invert(bool),
@@ -237,6 +240,14 @@ impl Reducer<AppState> for StoreAction {
 
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
+                let drawing_options = state.drawing_options.borrow().get_or_default(&image_id);
+                VSCodeRequests::set_state(&HostExtensionState {
+                    current_image: Some(crate::vscode::state::CurrentImage {
+                        id: image_id.to_string(),
+                        expression: image_id.to_string(),
+                        drawing_options,
+                    }),
+                });
                 state.set_image_to_view(image_id, view_id);
             }
 
@@ -257,6 +268,8 @@ impl Reducer<AppState> for StoreAction {
                     .get_or_default(&image_id)
                     .clone();
                 let new_drawing_option = match update {
+                    UpdateDrawingOptions::Full(drawing_options) => drawing_options,
+
                     UpdateDrawingOptions::Reset => DrawingOptions {
                         // keep the batch slice index
                         batch_item: current_drawing_options.batch_item,

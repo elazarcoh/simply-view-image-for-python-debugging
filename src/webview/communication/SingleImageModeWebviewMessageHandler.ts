@@ -1,14 +1,25 @@
 import * as vscode from "vscode";
-import { FromWebviewMessageWithId, MessageId } from "../webview";
+import {
+  FromWebviewMessageWithId,
+  ImageMessage,
+  MessageId,
+  RequestImageData,
+} from "../webview";
 import { logTrace } from "../../Logging";
 import { WebviewCommunication } from "./WebviewClient";
-import { WebviewRequests } from "./createMessages";
+import { WebviewRequests, WebviewResponses } from "./createMessages";
 import { disposeAll } from "../../utils/VSCodeUtils";
+import { errorMessage, Result } from "../../utils/Result";
 
 export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
 
-  constructor(readonly webviewCommunication: WebviewCommunication) {
+  constructor(
+    readonly webviewCommunication: WebviewCommunication,
+    private readonly getData: (
+      args: RequestImageData,
+    ) => Promise<Result<ImageMessage>>,
+  ) {
     // Set an event listener to listen for messages passed from the webview context
     this.webviewCommunication.webview.onDidReceiveMessage(
       this.onWebviewMessage,
@@ -29,6 +40,19 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
     );
   }
 
+  async handleImageDataRequest(id: MessageId, args: RequestImageData) {
+    const imageMessage = await this.getData(args);
+    if (imageMessage.ok) {
+      this.webviewCommunication.sendResponse(
+        id,
+        WebviewResponses.imageData(imageMessage.safeUnwrap()),
+      );
+    } else {
+      // TODO: show error message in webview
+      vscode.window.showErrorMessage(errorMessage(imageMessage));
+    }
+  }
+
   private async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
     logTrace("Received message from webview", messageWithId);
 
@@ -39,10 +63,11 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
     switch (type) {
       case "WebviewReady":
         return this.handleWebviewReady(id);
+      case "RequestImageData":
+        return this.handleImageDataRequest(id, message);
       // not need to handle these messages in single image mode
       case "RequestImages":
       case "RequestBatchItemData":
-      case "RequestImageData":
       case "AddExpression":
       case "EditExpression":
         return;

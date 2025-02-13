@@ -153,6 +153,11 @@
         "title": "Update Diagnostics",
         "enablement": "inDebugMode",
         "icon": "$(circuit-board)"
+      },
+      {
+        "command": "svifpd.open-file-image",
+        "title": "Extended Preview",
+        "icon": "$(file-media)"
       }
     ],
     "menus": {
@@ -288,6 +293,13 @@
           "command": "svifpd.run-setup",
           "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
           "group": "inline@20"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "svifpd.open-file-image",
+          "when": "resourceScheme == file && resourceExtname =~ /png|jpg|jpeg|bmp/ && activeCustomEditorId != svifpd.previewEditor",
+          "group": "navigation"
         }
       ]
     },

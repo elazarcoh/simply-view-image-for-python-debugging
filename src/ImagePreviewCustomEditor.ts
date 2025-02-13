@@ -7,6 +7,7 @@ import { SingleImageModeWebviewMessageHandler } from "./webview/communication/Si
 import * as ExifReader from "exifreader";
 import { Jimp } from "jimp";
 import { ImageMessage } from "./webview/webview";
+import { Ok } from "./utils/Result";
 
 const PNG_COLOR_TYPE: Record<number, { channels: 1 | 2 | 3 | 4 }> = {
   0: { channels: 1 },
@@ -152,8 +153,6 @@ export class ImagePreviewCustomEditor
     document: vscode.CustomDocument,
     webviewEditor: vscode.WebviewPanel,
   ): Promise<void> {
-    console.log("resolveCustomEditor", document.uri.toString());
-
     try {
       const imageMessage = await createMessage(document.uri);
 
@@ -162,11 +161,11 @@ export class ImagePreviewCustomEditor
       );
       this._webviewMessageHandler = new SingleImageModeWebviewMessageHandler(
         webviewCommunication,
+        () => Promise.resolve(Ok(imageMessage)),
       );
 
       ImageViewPanel.render(this.context, webviewEditor);
       webviewCommunication.waitForReady().then(() => {
-        console.log("isReady", webviewCommunication.isReady);
         webviewCommunication.sendRequest({
           type: "ShowImage",
           image_data: imageMessage,
@@ -180,5 +179,23 @@ export class ImagePreviewCustomEditor
 
   dispose() {
     disposeAll(this._disposables);
+  }
+}
+
+export async function openFileImage() {
+  const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+  if (activeTab === undefined) {
+    return;
+  }
+  const input = activeTab.input;
+  if (typeof input === "object" && input !== null && "uri" in input) {
+    const { uri } = input;
+    await vscode.commands.executeCommand(
+      "vscode.openWith",
+      uri,
+      ImagePreviewCustomEditor.viewType,
+    );
+  } else {
+    vscode.window.showErrorMessage("Failed to open the file");
   }
 }

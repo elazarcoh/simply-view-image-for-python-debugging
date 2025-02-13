@@ -24,6 +24,7 @@ import Container from "typedi";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { runSetup } from "./python-communication/Setup";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { openFileImage } from "./ImagePreviewCustomEditor";
 
 // *********************
 // Some general commands
@@ -74,6 +75,7 @@ const Commands = {
   "svifpd.view-debug-variable": viewVariableFromVSCodeDebugViewAsImage,
   "svifpd.disable-plugin": disablePluginCommand,
   "svifpd.update-diagnostics": updateDiagnostics,
+  "svifpd.open-file-image": openFileImage,
 };
 type Commands = typeof Commands;
 type AvailableCommands = keyof Commands;
@@ -125,5 +127,6 @@ export function registerExtensionCommands(
     _registerCommandByName("svifpd.view-debug-variable"),
     _registerCommandByName("svifpd.disable-plugin"),
     _registerCommandByName("svifpd.update-diagnostics"),
+    _registerCommandByName("svifpd.open-file-image"),
   ];
 }

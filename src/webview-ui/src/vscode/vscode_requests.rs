@@ -9,6 +9,7 @@ use crate::common::ViewableObjectId;
 use crate::vscode::WebviewApi;
 
 use super::messages::MessageId;
+use super::state::HostExtensionState;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct WebviewReady {}
@@ -57,7 +58,7 @@ struct FromWebviewMessageWithId {
 }
 
 #[derive(Store, Clone, PartialEq, Default)]
-struct WebviewApiStore {
+pub(crate) struct WebviewApiStore {
     vscode: Option<Rc<WebviewApi>>,
 }
 
@@ -86,6 +87,22 @@ impl VSCodeRequests {
             .unwrap(),
         );
         id
+    }
+
+    fn _set_state<T: serde::Serialize>(state: T) {
+        Self::vscode().set_state(JsValue::from_serde(&state).unwrap());
+    }
+
+    fn _get_state<T: for<'de> serde::Deserialize<'de>>() -> T {
+        Self::vscode().get_state().into_serde().unwrap()
+    }
+
+    pub(crate) fn set_state(state: &HostExtensionState) {
+        Self::_set_state(state);
+    }
+
+    pub(crate) fn get_state() -> Option<HostExtensionState> {
+        Self::_get_state()
     }
 }
 

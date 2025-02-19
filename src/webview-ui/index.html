@@ -23,6 +23,10 @@
 
     <script type="module" defer src="${baseUri}/lodash.js" charset="utf-8" nonce=${nonce}></script>
     <script type="module" defer src="${baseUri}/lethargy_ts.js" charset="utf-8" nonce=${nonce}></script>
+
+    <script nonce="${nonce}">
+      window.webviewId = '${webviewUniqueId}';
+    </script>
   </head>
   <body>
   </body>

@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
+import _ from "lodash";
 
 export class ImageViewPanel {
   public static render(context: vscode.ExtensionContext, panel: WebviewPanel) {
@@ -19,6 +20,9 @@ export class ImageViewPanel {
   }
 
   private static _getWebviewContent(webview: Webview, extensionUri: Uri) {
+    // generate id for the webview
+    const uuid = _.uniqueId("image-view-");
+
     const baseUri = getUri(webview, extensionUri, ["dist"]);
 
     const nonce = getNonce();
@@ -35,7 +39,8 @@ export class ImageViewPanel {
       .replaceAll(/\${baseUri}/g, baseUri.toString())
       .replaceAll(/<script[^>]*?src="webview\.js"><\/script>/g, () => {
         return `<script type="module" defer src="${baseUri}/webview.js" nonce=${nonce}></script>`;
-      });
+      })
+      .replaceAll(/\${webviewUniqueId}/g, uuid);
     return htmlWithVscodeResourceUris;
   }
 }

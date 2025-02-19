@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
+use gloo_utils::window;
 use tsify::JsValueSerdeExt;
 use wasm_bindgen::JsValue;
 
@@ -62,6 +64,9 @@ pub(crate) struct WebviewApiStore {
     vscode: Option<Rc<WebviewApi>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+struct ActualExtensionHostState(HashMap<String, HostExtensionState>);
+
 pub(crate) struct VSCodeRequests;
 
 impl VSCodeRequests {
@@ -89,6 +94,10 @@ impl VSCodeRequests {
         id
     }
 
+    fn _get_webview_id() -> String {
+        window().get("webviewId").unwrap().as_string().unwrap()
+    }
+
     fn _set_state<T: serde::Serialize>(state: T) {
         Self::vscode().set_state(JsValue::from_serde(&state).unwrap());
     }
@@ -98,11 +107,18 @@ impl VSCodeRequests {
     }
 
     pub(crate) fn set_state(state: &HostExtensionState) {
-        Self::_set_state(state);
+        let webview_id = Self::_get_webview_id();
+        let mut ext_state = Self::_get_state::<ActualExtensionHostState>();
+
+        ext_state.0.insert(webview_id, state.clone());
+        Self::_set_state(&ext_state);
     }
 
     pub(crate) fn get_state() -> Option<HostExtensionState> {
-        Self::_get_state()
+        let webview_id = Self::_get_webview_id();
+        let ext_state = Self::_get_state::<ActualExtensionHostState>();
+
+        ext_state.0.get(&webview_id).cloned()
     }
 }
 

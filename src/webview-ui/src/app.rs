@@ -32,6 +32,7 @@ use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
 use anyhow::{anyhow, Result};
+use gloo_utils::window;
 use itertools::Update;
 use std::cell::RefCell;
 use std::rc::Rc;

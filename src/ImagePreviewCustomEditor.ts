@@ -93,6 +93,14 @@ async function getByFileType(
     const width = tags["Image Width"]?.value;
     const height = tags["Image Height"]?.value;
     const colorComponents = tags["Color Components"]?.value;
+    if (typeof colorComponents !== "number") {
+      throw new Error("Missing color components");
+    }
+    if ([1, 3, 4].includes(colorComponents) === false) {
+      throw new Error(
+        `Unsupported number of color components: ${colorComponents}`,
+      );
+    }
 
     return {
       width: width as number,

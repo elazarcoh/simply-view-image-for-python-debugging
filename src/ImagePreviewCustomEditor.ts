@@ -8,6 +8,9 @@ import * as ExifReader from "exifreader";
 import { Jimp } from "jimp";
 import { ImageMessage } from "./webview/webview";
 import { Ok } from "./utils/Result";
+import { JimpMime } from "jimp";
+
+type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
 
 const PNG_COLOR_TYPE: Record<number, { channels: 1 | 2 | 3 | 4 }> = {
   0: { channels: 1 },
@@ -17,13 +20,12 @@ const PNG_COLOR_TYPE: Record<number, { channels: 1 | 2 | 3 | 4 }> = {
   6: { channels: 4 },
 };
 
-function getByFileType(tags: ExifReader.Tags): {
-  width: number;
-  height: number;
-  channels: 1 | 2 | 3 | 4;
-} {
-  const fileType = tags.FileType?.value;
-  if (fileType.toUpperCase() === "PNG") {
+async function getByFileType(
+  image: JimpImage,
+  uri: vscode.Uri,
+): Promise<{ width: number; height: number; channels: 1 | 2 | 3 | 4 }> {
+  if (image.mime === JimpMime.png) {
+    const tags = await ExifReader.load(uri.fsPath);
     const width = tags["Image Width"]?.value;
     const height = tags["Image Height"]?.value;
     const colorType = tags["Color Type"]?.value as
@@ -37,8 +39,68 @@ function getByFileType(tags: ExifReader.Tags): {
     }
 
     return { width, height, channels };
+  } else if (image.mime === JimpMime.bmp) {
+    let channels: 1 | 2 | 3 | 4;
+    const bp = image.bitmap;
+    if ("bitPP" in bp === false) {
+      throw new Error("Unsupported BMP image. Missing bitPP property");
+    }
+    const bitsPerPixel = bp.bitPP;
+    switch (bitsPerPixel) {
+      case 1: {
+        channels = 1;
+        break;
+      }
+      case 8: {
+        channels = 1;
+        break;
+      }
+      case 16: {
+        channels = 4;
+        throw new Error("16-bit BMP images are not supported yet");
+      }
+      case 24: {
+        channels = 3;
+        break;
+      }
+      case 32: {
+        channels = 4;
+        break;
+      }
+      default: {
+        throw new Error(`Unsupported bits per pixel: ${bitsPerPixel}`);
+      }
+    }
+
+    return {
+      width: image.bitmap.width,
+      height: image.bitmap.height,
+      channels,
+    };
+  } else if (image.mime === JimpMime.tiff) {
+    const tags = await ExifReader.load(uri.fsPath);
+    const width = tags["ImageWidth"]?.value;
+    const height = tags["ImageLength"]?.value;
+    const samplesPerPixel = tags["SamplesPerPixel"]?.value;
+
+    return {
+      width: width as number,
+      height: height as number,
+      channels: samplesPerPixel as 1 | 2 | 3 | 4,
+    };
+  } else if (image.mime === JimpMime.jpeg) {
+    const tags = await ExifReader.load(uri.fsPath);
+    const width = tags["Image Width"]?.value;
+    const height = tags["Image Height"]?.value;
+    const colorComponents = tags["Color Components"]?.value;
+
+    return {
+      width: width as number,
+      height: height as number,
+      channels: colorComponents as 1 | 2 | 3 | 4,
+    };
   } else {
-    throw new Error(`Unsupported file type: ${fileType}`);
+    throw new Error(`Unsupported file type: ${image.mime}`);
   }
 }
 
@@ -97,10 +159,9 @@ function prepareBuffer(
   return arrayBuffer;
 }
 async function createMessage(uri: vscode.Uri): Promise<ImageMessage> {
-  const tags = await ExifReader.load(uri.fsPath);
   const image = await Jimp.read(uri.fsPath);
 
-  const { width, height, channels } = getByFileType(tags);
+  const { width, height, channels } = await getByFileType(image, uri);
 
   const outputLength = width * height * channels;
   const inputChannels = image.bitmap.data.length / (width * height);

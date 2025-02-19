@@ -298,7 +298,7 @@
       "editor/title": [
         {
           "command": "svifpd.open-file-image",
-          "when": "resourceScheme == file && resourceExtname =~ /png|jpg|jpeg|bmp/ && activeCustomEditorId != svifpd.previewEditor",
+          "when": "resourceScheme == file && resourceExtname =~ /png|jpg|jpeg|bmp|tiff/ && activeCustomEditorId != svifpd.previewEditor",
           "group": "navigation"
         }
       ]
@@ -446,6 +446,9 @@
           },
           {
             "filenamePattern": "*.bmp"
+          },
+          {
+            "filenamePattern": "*.tiff"
           }
         ]
       }

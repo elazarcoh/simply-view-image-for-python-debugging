@@ -10,5 +10,7 @@
   "heatmap": 60009,
   "segmentation": 60010,
   "legend": 60011,
-  "tensor": 60012
+  "tensor": 60012,
+  "image": 60013,
+  "inspect-image": 60014
 }

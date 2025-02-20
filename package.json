@@ -64,10 +64,7 @@
         "command": "svifpd.watch-view-image",
         "title": "View Image",
         "enablement": "inDebugMode",
-        "icon": {
-          "light": "resources/light/image.svg",
-          "dark": "resources/dark/image.svg"
-        }
+        "icon": "$(svifpd-image)"
       },
       {
         "command": "svifpd.watch-view-plot",
@@ -79,10 +76,7 @@
         "command": "svifpd.watch-view-tensor",
         "title": "View Tensor",
         "enablement": "inDebugMode",
-        "icon": {
-          "light": "resources/light/tensor.svg",
-          "dark": "resources/dark/tensor.svg"
-        }
+        "icon": "$(svifpd-tensor)"
       },
       {
         "command": "svifpd.watch-track-enable",
@@ -157,7 +151,7 @@
       {
         "command": "svifpd.open-file-image",
         "title": "Extended Preview",
-        "icon": "$(file-media)"
+        "icon": "$(svifpd-inspect-image)"
       }
     ],
     "menus": {
@@ -452,7 +446,30 @@
           }
         ]
       }
-    ]
+    ],
+    "icons": {
+      "svifpd-tensor": {
+        "description": "Tensor",
+        "default": {
+          "fontPath": "dist/svifpd-icons.woff2",
+          "fontCharacter": "\\ea6c"
+        }
+      },
+      "svifpd-image": {
+        "description": "Image",
+        "default": {
+          "fontPath": "dist/svifpd-icons.woff2",
+          "fontCharacter": "\\ea6d"
+        }
+      },
+      "svifpd-inspect-image": {
+        "description": "Inspect Image",
+        "default": {
+          "fontPath": "dist/svifpd-icons.woff2",
+          "fontCharacter": "\\ea6e"
+        }
+      }
+    }
   },
   "scripts": {
     "update-package-json": "update-package-json",

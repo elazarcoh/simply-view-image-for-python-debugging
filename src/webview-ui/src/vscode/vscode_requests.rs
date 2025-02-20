@@ -108,12 +108,13 @@ impl VSCodeRequests {
 
     pub(crate) fn set_state(state: &HostExtensionState) {
         let webview_id = Self::_get_webview_id();
-        let mut ext_state = Self::_get_state::<ActualExtensionHostState>();
+        let mut ext_state =
+            Self::_get_state::<Option<ActualExtensionHostState>>().unwrap_or_default();
 
         ext_state.0.insert(webview_id, state.clone());
         Self::_set_state(&ext_state);
     }
-    
+
     pub(crate) fn update_state(update: HostExtensionStateUpdate) {
         let state = Self::get_state().unwrap_or_default();
         Self::set_state(&update_host_extension_state(state, update));
@@ -121,7 +122,7 @@ impl VSCodeRequests {
 
     pub(crate) fn get_state() -> Option<HostExtensionState> {
         let webview_id = Self::_get_webview_id();
-        let ext_state = Self::_get_state::<ActualExtensionHostState>();
+        let ext_state = Self::_get_state::<Option<ActualExtensionHostState>>().unwrap_or_default();
 
         ext_state.0.get(&webview_id).cloned()
     }

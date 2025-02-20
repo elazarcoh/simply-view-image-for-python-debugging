@@ -164,11 +164,6 @@ impl ColorBarRenderer {
                 * (max / coloring_factors.normalization_factor)
                 + coloring_factors.color_addition.x
         };
-        log::debug!(
-            "ColorBarRenderer::render_color_bar: min_value_normalized: {}, max_value_normalized: {}",
-            min_value_normalized,
-            max_value_normalized
-        );
 
         let colormap_name = &data.global_drawing_options.heatmap_colormap_name;
 

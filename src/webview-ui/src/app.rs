@@ -261,10 +261,9 @@ pub(crate) fn App() -> Html {
                 "Loading previous image: {:?}",
                 (id, expression, drawing_options)
             );
-            let view_object_id = ViewableObjectId::new(id);
             dispatch.apply(StoreAction::UpdateData(ImageObject::Placeholder(
                 ImagePlaceholder {
-                    image_id: view_object_id.clone(),
+                    image_id: id.clone(),
                     expression: expression.clone(),
                     additional_info: Default::default(),
                     is_batched: false,
@@ -272,10 +271,10 @@ pub(crate) fn App() -> Html {
                 },
             )));
             dispatch.apply(StoreAction::UpdateDrawingOptions(
-                view_object_id.clone(),
+                id.clone(),
                 UpdateDrawingOptions::Full(drawing_options.clone()),
             ));
-            dispatch.apply(StoreAction::SetImageToView(view_object_id, view_id));
+            dispatch.apply(StoreAction::SetImageToView(id.clone(), view_id));
         }
         move || {}
     });

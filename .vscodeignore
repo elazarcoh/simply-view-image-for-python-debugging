@@ -19,3 +19,4 @@ example-plugin
 vscode-ext-config.json
 eslint*
 .yarnrc.yml
+icons/**

@@ -148,12 +148,12 @@ const WebviewConfig = {
                     ),
                 },
                 {
-                    // node_modules/svifpd-icons/dist/svifpd-icons.{ttf,css}
+                    // icons/dist/svifpd-icons.{woff2,css}
                     from: path.posix.join(
-                        webviewPath.replace(/\\/g, "/"),
+                        __dirname.replace(/\\/g, "/"),
                         "icons",
                         "dist",
-                        "svifpd-icons.{ttf,css}"
+                        "svifpd-icons.{woff2,css}"
                     ),
                     to: path.posix.join(
                         __dirname.replace(/\\/g, "/"),

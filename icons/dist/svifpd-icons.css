@@ -6,7 +6,7 @@
 @font-face {
 	font-family: "svifpd-icons";
 	font-display: block;
-	src: url("./svifpd-icons.ttf?3346bb66bd7c86e76cb536f7da79d26c") format("truetype");
+	src: url("./svifpd-icons.woff2?3346bb66bd7c86e76cb536f7da79d26c") format("woff2");
 }
 
 .svifpd-icons[class*='svifpd-icons-'] {

@@ -331,3 +331,11 @@ ASALocalRun/
 
 temp
 .DS_STORE
+
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+

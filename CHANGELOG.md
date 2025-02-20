@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.0.9] - Pre-release
+
+### Added 
+
+- Open local files in the image viewer.
+  - Supports: png, jpg, bmp, tiff.
+
+
 ## [4.0.8] - Release
 
 ### Added

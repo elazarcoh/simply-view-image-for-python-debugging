@@ -1,5 +1,5 @@
 use crate::application_state::app_state::{AppState, ImageObject, StoreAction};
-use crate::common::{ImageData, ViewId};
+use crate::common::{AppMode, ImageData, ViewId};
 use crate::vscode::messages::*;
 use anyhow::Result;
 use gloo::events::EventListener;
@@ -54,6 +54,7 @@ impl VSCodeListener {
                 ExtensionRequest::Configuration(configurations) => {
                     Self::handle_configuration_request(configurations)
                 }
+                ExtensionRequest::SetMode { mode } => Self::handle_set_mode_request(mode),
             },
         }
         .map_err(|e| log::error!("Error handling message: {:?}", e))
@@ -104,6 +105,12 @@ impl VSCodeListener {
                 state.configuration.invert_scroll_direction = invert_scroll_direction;
             }
         });
+        Ok(())
+    }
+
+    fn handle_set_mode_request(mode: AppMode) -> Result<()> {
+        let dispatch = Dispatch::<AppState>::global();
+        dispatch.apply(StoreAction::SetMode(mode));
         Ok(())
     }
 }

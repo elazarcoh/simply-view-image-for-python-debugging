@@ -35,12 +35,12 @@ except:
 `;
 
 function execInModuleCode(
-    moduleName: string,
-    content: string,
-    tryExpression: string,
-    errorCapturingVariableName: string,
+  moduleName: string,
+  content: string,
+  tryExpression: string,
+  errorCapturingVariableName: string,
 ): string {
-    const code: string = `
+  const code: string = `
 exec('''
 ${errorCapturingVariableName} = "OK"
 try:
@@ -53,179 +53,186 @@ ${indent(content, 8)}
 ''', ${moduleName}.__dict__
 )
 `;
-    return code;
+  return code;
 }
 
 export function stringifyPython<R>(
-    evalCodePython: EvalCodePython<R>
+  evalCodePython: EvalCodePython<R>,
 ): EvalCodePython<R> {
-    return {
-        pythonCode: `${STRINGIFY}(${evalCodePython.pythonCode})`,
-    };
+  return {
+    pythonCode: `${STRINGIFY}(${evalCodePython.pythonCode})`,
+  };
 }
 
 export function convertBoolToPython(bool: boolean): string {
-    return bool ? "True" : "False";
+  return bool ? "True" : "False";
 }
 
 export function atModule(name: string): string {
-    return `${PYTHON_MODULE_NAME}.${name}`;
+  return `${PYTHON_MODULE_NAME}.${name}`;
 }
 
 function concatExpressionsToPythonList(expressions: string[]): string {
-    return `[${expressions.join(", ")}]`;
+  return `[${expressions.join(", ")}]`;
 }
 
 function errorCapturingVariableName(id: string): string {
-    return `_error_${id}`;
+  return `_error_${id}`;
 }
 
 function combineSetupCodes(setupCodes: SetupCode[]): string {
-    const setupCode = setupCodes
-        .map(({ setupCode, testSetupCode, id }) =>
-            execInModuleCode(PYTHON_MODULE_NAME, setupCode(), testSetupCode, errorCapturingVariableName(id))
-        )
-        .join("\n\n");
+  const setupCode = setupCodes
+    .map(({ setupCode, testSetupCode, id }) =>
+      execInModuleCode(
+        PYTHON_MODULE_NAME,
+        setupCode(),
+        testSetupCode,
+        errorCapturingVariableName(id),
+      ),
+    )
+    .join("\n\n");
 
-    const code = `
+  const code = `
 ${CREATE_MODULE_IF_NOT_EXISTS}
 
 ${setupCode}
 `;
 
-    return code;
+  return code;
 }
 
 export function verifyModuleExistsCode(): EvalCodePython<Result<boolean>> {
-    return {
-        pythonCode: `"Value({})".format('${PYTHON_MODULE_NAME}' in globals() or '${PYTHON_MODULE_NAME}' in locals())`,
-    };
+  return {
+    pythonCode: `"Value({})".format('${PYTHON_MODULE_NAME}' in globals() or '${PYTHON_MODULE_NAME}' in locals())`,
+  };
 }
 
 export function moduleSetupCode(): EvalCodePython<null> {
-    return { pythonCode: CREATE_MODULE_IF_NOT_EXISTS };
+  return { pythonCode: CREATE_MODULE_IF_NOT_EXISTS };
 }
 
 export function viewablesSetupCode(): EvalCodePython<null> {
-    const viewables = Container.get(AllViewables).allViewables;
-    const pythonCode = combineSetupCodes(
-        viewables.map((v) => v.setupPythonCode)
-    );
-    return { pythonCode };
+  const viewables = Container.get(AllViewables).allViewables;
+  const pythonCode = combineSetupCodes(viewables.map((v) => v.setupPythonCode));
+  return { pythonCode };
 }
 
 /**
  * wrap expression in a safe way so that it can be evaluated into a value
  */
 function convertExpressionIntoValueWrappedExpression<R>(
-    expression: string
+  expression: string,
 ): EvalCodePython<Result<R>> {
-    // verify it's a single-line expression
-    if (expression.includes("\n")) {
-        throw new Error("Expression must be a single line");
-    }
-    const asLambda = `lambda: ${expression}`;
-    const pythonCode = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
-    return { pythonCode };
+  // verify it's a single-line expression
+  if (expression.includes("\n")) {
+    throw new Error("Expression must be a single line");
+  }
+  const asLambda = `lambda: ${expression}`;
+  const pythonCode = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
+  return { pythonCode };
 }
 
 export function constructValueWrappedExpressionFromEvalCode<
-    R,
-    P extends Array<unknown>
+  R,
+  P extends Array<unknown>,
 >(
-    evalCode: EvalCode<R, P>,
-    expression: string,
-    ...args: P
+  evalCode: EvalCode<R, P>,
+  expression: string,
+  ...args: P
 ): EvalCodePython<Result<R>> {
-    const expressionToEval = evalCode.evalCode(expression, ...args);
-    return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
+  const expressionToEval = evalCode.evalCode(expression, ...args);
+  return convertExpressionIntoValueWrappedExpression<R>(expressionToEval);
 }
 
 export function constructRunSameExpressionWithMultipleEvaluatorsCode<
-    EvalCodes extends EvalCode<unknown>[]
+  EvalCodes extends EvalCode<unknown>[],
 >(
-    expression: string,
-    evals: EvalCodes
+  expression: string,
+  evals: EvalCodes,
 ): EvalCodePython<{
-    [K in keyof EvalCodes]: EvalCodes[K] extends EvalCode<infer R>
-        ? Result<R>
-        : never;
+  [K in keyof EvalCodes]: EvalCodes[K] extends EvalCode<infer R>
+    ? Result<R>
+    : never;
 }> {
-    const lazyEvalExpression = `lambda: ${expression}`;
-    const lambdas = evals.map(({ evalCode }) => `lambda x: ${evalCode("x")}`);
-    const asList = concatExpressionsToPythonList(lambdas);
-    return {
-        pythonCode: `${SAME_VALUE_MULTIPLE_CALLABLES}(${lazyEvalExpression}, ${asList})`,
-    };
+  const lazyEvalExpression = `lambda: ${expression}`;
+  const lambdas = evals.map(({ evalCode }) => `lambda x: ${evalCode("x")}`);
+  const asList = concatExpressionsToPythonList(lambdas);
+  return {
+    pythonCode: `${SAME_VALUE_MULTIPLE_CALLABLES}(${lazyEvalExpression}, ${asList})`,
+  };
 }
 
 export function combineMultiEvalCodePython<
-    EvalCodesPython extends EvalCodePython<unknown>[]
+  EvalCodesPython extends EvalCodePython<unknown>[],
 >(
-    multiEvalCodePython: EvalCodesPython
+  multiEvalCodePython: EvalCodesPython,
 ): EvalCodePython<{
-    [K in keyof EvalCodesPython]: EvalCodesPython[K] extends EvalCodePython<
-        infer R
-    >
-        ? R
-        : never;
+  [K in keyof EvalCodesPython]: EvalCodesPython[K] extends EvalCodePython<
+    infer R
+  >
+    ? R
+    : never;
 }> {
-    const code = concatExpressionsToPythonList(
-        multiEvalCodePython.map(({ pythonCode }) => pythonCode)
-    );
-    return {
-        pythonCode: code,
-    };
+  const code = concatExpressionsToPythonList(
+    multiEvalCodePython.map(({ pythonCode }) => pythonCode),
+  );
+  return {
+    pythonCode: code,
+  };
 }
 
 export function constructObjectShapeCode(
-    expression: string
+  expression: string,
 ): EvalCodePython<Result<PythonObjectShape>> {
-    return convertExpressionIntoValueWrappedExpression(
-        `${OBJECT_SHAPE_IF_IT_HAS_ONE}(${expression})`
-    );
+  return convertExpressionIntoValueWrappedExpression(
+    `${OBJECT_SHAPE_IF_IT_HAS_ONE}(${expression})`,
+  );
 }
 
 export type OpenSendAndCloseTensorOptions = {
-    max_size_bytes?: number;
-    start: number;
-    stop: number;
+  max_size_bytes?: number;
+  start: number;
+  stop: number;
 };
 export type OpenSendAndCloseOptions = OpenSendAndCloseTensorOptions;
 
 export function constructOpenSendAndCloseCode(
-    port: number,
-    request_id: number,
-    expression: string,
-    options?: OpenSendAndCloseOptions,
+  port: number,
+  request_id: number,
+  expression: string,
+  options?: OpenSendAndCloseOptions,
 ): EvalCodePython<Result<PythonObjectShape>> {
-    function makeOptionsString(options: OpenSendAndCloseOptions): string {
-        return `dict(${Object.entries(options)
-            .map(([key, value]) => `${key}=${value}`)
-            .join(", ")})`;
-    }
-    const optionsStr = options ? makeOptionsString(options) : "{}";
+  function makeOptionsString(options: OpenSendAndCloseOptions): string {
+    return `dict(${Object.entries(options)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(", ")})`;
+  }
+  const optionsStr = options ? makeOptionsString(options) : "{}";
+  return convertExpressionIntoValueWrappedExpression(
+    `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${optionsStr})`,
+  );
+}
+
+export function constructGetMainModuleErrorCode(): EvalCodePython<
+  Result<string>
+> {
+  return {
+    pythonCode: `'Value("' + ${SETUP_RESULT_VARIABLE_NAME} + '")'`,
+  };
+}
+
+export function constructGetViewablesErrorsCode(): EvalCodePython<
+  Result<[string, string]>[]
+> {
+  const viewables = Container.get(AllViewables).allViewables;
+  const idToError = viewables.map((v) => {
+    const id = v.setupPythonCode.id;
+    const name = errorCapturingVariableName(id);
+    const nameInModule = atModule(name);
     return convertExpressionIntoValueWrappedExpression(
-        `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${optionsStr})`
+      `["${id}", ${EVAL_OR_RETURN_EXCEPTION_FUNCTION}(lambda: ${nameInModule})]`,
     );
-}
+  });
 
-export function constructGetMainModuleErrorCode(): EvalCodePython<Result<string>> {
-    return {
-        pythonCode: `'Value("' + ${SETUP_RESULT_VARIABLE_NAME} + '")'`,
-    };
-}
-
-export function constructGetViewablesErrorsCode(): EvalCodePython<Result<[string, string]>[]> {
-    const viewables = Container.get(AllViewables).allViewables; 
-    const idToError = viewables.map((v) => {
-        const id = v.setupPythonCode.id;
-        const name = errorCapturingVariableName(id) ;
-        const nameInModule = atModule(name);
-        return convertExpressionIntoValueWrappedExpression(
-            `["${id}", ${EVAL_OR_RETURN_EXCEPTION_FUNCTION}(lambda: ${nameInModule})]`
-        );
-    });
-
-    return combineMultiEvalCodePython(idToError);
+  return combineMultiEvalCodePython(idToError);
 }

@@ -6,6 +6,7 @@ mod messages;
 mod parse_messages;
 pub(crate) mod vscode_listener;
 pub(crate) mod vscode_requests;
+pub(crate) mod state;
 
 use wasm_bindgen::prelude::*;
 
@@ -24,4 +25,16 @@ extern "C" {
      */
     #[wasm_bindgen(method, js_name = "postMessage")]
     pub(crate) fn post_message(this: &WebviewApi, message: JsValue);
+
+    /**
+     * Get the initial state that was passed from the extension.
+     */
+    #[wasm_bindgen(method, js_name = "getState")]
+    pub(crate) fn get_state(this: &WebviewApi) -> JsValue;
+
+    /**
+     * Update the state that was passed from the extension.
+     */
+    #[wasm_bindgen(method, js_name = "setState")]
+    pub(crate) fn set_state(this: &WebviewApi, state: JsValue);
 }

@@ -2,7 +2,7 @@
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
   "description": "simply view the image of the image variables when debugging python",
-  "version": "4.0.8",
+  "version": "4.0.9",
   "publisher": "elazarcoh",
   "icon": "icon.png",
   "preview": false,
@@ -64,10 +64,7 @@
         "command": "svifpd.watch-view-image",
         "title": "View Image",
         "enablement": "inDebugMode",
-        "icon": {
-          "light": "resources/light/image.svg",
-          "dark": "resources/dark/image.svg"
-        }
+        "icon": "$(svifpd-image)"
       },
       {
         "command": "svifpd.watch-view-plot",
@@ -79,10 +76,7 @@
         "command": "svifpd.watch-view-tensor",
         "title": "View Tensor",
         "enablement": "inDebugMode",
-        "icon": {
-          "light": "resources/light/tensor.svg",
-          "dark": "resources/dark/tensor.svg"
-        }
+        "icon": "$(svifpd-tensor)"
       },
       {
         "command": "svifpd.watch-track-enable",
@@ -153,6 +147,11 @@
         "title": "Update Diagnostics",
         "enablement": "inDebugMode",
         "icon": "$(circuit-board)"
+      },
+      {
+        "command": "svifpd.open-file-image",
+        "title": "Extended Preview",
+        "icon": "$(svifpd-inspect-image)"
       }
     ],
     "menus": {
@@ -289,6 +288,13 @@
           "when": "view == pythonDebugImageWatch && viewItem == svifpd:diagnosticsRoot",
           "group": "inline@20"
         }
+      ],
+      "editor/title": [
+        {
+          "command": "svifpd.open-file-image",
+          "when": "resourceScheme == file && resourceExtname =~ /png|jpg|jpeg|bmp|tiff/ && activeCustomEditorId != svifpd.previewEditor",
+          "group": "navigation"
+        }
       ]
     },
     "views": {
@@ -416,6 +422,53 @@
           "description": "Invert mouse wheel zoom direction in the image viewer."
         }
       }
+    },
+    "customEditors": [
+      {
+        "viewType": "svifpd.previewEditor",
+        "displayName": "Image View",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.png"
+          },
+          {
+            "filenamePattern": "*.jpg"
+          },
+          {
+            "filenamePattern": "*.jpeg"
+          },
+          {
+            "filenamePattern": "*.bmp"
+          },
+          {
+            "filenamePattern": "*.tiff"
+          }
+        ]
+      }
+    ],
+    "icons": {
+      "svifpd-tensor": {
+        "description": "Tensor",
+        "default": {
+          "fontPath": "dist/svifpd-icons.woff2",
+          "fontCharacter": "\\ea6c"
+        }
+      },
+      "svifpd-image": {
+        "description": "Image",
+        "default": {
+          "fontPath": "dist/svifpd-icons.woff2",
+          "fontCharacter": "\\ea6d"
+        }
+      },
+      "svifpd-inspect-image": {
+        "description": "Inspect Image",
+        "default": {
+          "fontPath": "dist/svifpd-icons.woff2",
+          "fontCharacter": "\\ea6e"
+        }
+      }
     }
   },
   "scripts": {
@@ -431,32 +484,32 @@
     "start-webview": "cd src/webview-ui && yarn start"
   },
   "devDependencies": {
-    "@eslint/js": "^9.10.0",
-    "@types/lodash": "^4.17.7",
+    "@eslint/js": "^9.20.0",
+    "@types/lodash": "^4.17.15",
     "@types/node": "^18.11.15",
     "@types/parsimmon": "^1.10.9",
     "@types/vscode": "^1.60.0",
-    "@typescript-eslint/eslint-plugin": "^8.6.0",
-    "@typescript-eslint/parser": "^8.6.0",
-    "@vscode/vsce": "^3.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "@vscode/vsce": "^3.2.2",
     "@wasm-tool/wasm-pack-plugin": "patch:@wasm-tool/wasm-pack-plugin@npm%3A1.7.0#~/.yarn/patches/@wasm-tool-wasm-pack-plugin-npm-1.7.0-05c10ff10e.patch",
     "copy-webpack-plugin": "^12.0.2",
-    "eslint": "^9.10.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
     "eslint-webpack-plugin": "^4.2.0",
-    "globals": "^15.9.0",
+    "globals": "^15.14.0",
     "html-webpack-plugin": "^5.6.0",
     "lethargy-ts": "^0.1.0",
     "lodash-cli": "^4.17.5",
     "mini-css-extract-plugin": "^2.9.1",
-    "prettier": "^3.3.3",
+    "prettier": "3.5.0",
     "prettier-eslint": "^16.3.0",
     "rimraf": "^6.0.1",
     "text-encoding": "^0.7.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",
-    "typescript-eslint": "^8.6.0",
+    "typescript-eslint": "^8.24.0",
     "wasm-pack": "^0.13.0",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
@@ -465,6 +518,8 @@
   "dependencies": {
     "@vscode/codicons": "^0.0.36",
     "@vscode/webview-ui-toolkit": "^1.4.0",
+    "exifreader": "^4.26.1",
+    "jimp": "^1.6.0",
     "lodash": "^4.17.21",
     "parsimmon": "^1.18.1",
     "reflect-metadata": "^0.2.2",

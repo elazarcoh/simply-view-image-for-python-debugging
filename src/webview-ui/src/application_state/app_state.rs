@@ -6,9 +6,11 @@ use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
+    AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
 };
 use crate::configurations;
+use crate::vscode::state::HostExtensionStateUpdate;
+use crate::vscode::vscode_requests::VSCodeRequests;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -38,7 +40,7 @@ pub(crate) enum ElementsStoreKey {
     ColorBar,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, PartialEq)]
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
@@ -55,7 +57,28 @@ pub(crate) struct AppState {
 
     pub elements_refs_store: Mrc<HashMap<ElementsStoreKey, NodeRef>>,
 
+    pub app_mode: AppMode,
+
     pub configuration: configurations::Configuration,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            gl: None,
+            images: Default::default(),
+            image_views: Default::default(),
+            image_cache: Default::default(),
+            drawing_options: Default::default(),
+            global_drawing_options: Default::default(),
+            color_map_registry: Default::default(),
+            color_map_textures_cache: Default::default(),
+            view_cameras: Default::default(),
+            elements_refs_store: Default::default(),
+            app_mode: AppMode::ImageList,
+            configuration: configurations::Configuration::default(),
+        }
+    }
 }
 
 impl Store for AppState {
@@ -100,20 +123,8 @@ impl AppState {
     }
 }
 
-impl PartialEq for AppState {
-    fn eq(&self, other: &Self) -> bool {
-        self.images == other.images
-            && self.image_views == other.image_views
-            && self.image_cache == other.image_cache
-            && self.view_cameras == other.view_cameras
-            && self.configuration == other.configuration
-            && self.gl == other.gl
-            && self.drawing_options == other.drawing_options
-            && self.global_drawing_options == other.global_drawing_options
-    }
-}
-
 pub(crate) enum UpdateDrawingOptions {
+    Full(DrawingOptions),
     Reset,
     Coloring(Coloring),
     Invert(bool),
@@ -151,6 +162,7 @@ pub(crate) enum StoreAction {
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
     UpdateData(ImageObject),
+    SetMode(AppMode),
 }
 
 fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
@@ -228,6 +240,14 @@ impl Reducer<AppState> for StoreAction {
 
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
+                let drawing_options = state.drawing_options.borrow().get_or_default(&image_id);
+                VSCodeRequests::update_state(
+                    HostExtensionStateUpdate::default()
+                        .current_image_id(Some(image_id.to_string()))
+                        .current_image_expression(Some(image_id.to_string()))
+                        .current_image_drawing_options(Some(drawing_options.clone()))
+                        .clone(),
+                );
                 state.set_image_to_view(image_id, view_id);
             }
 
@@ -248,6 +268,8 @@ impl Reducer<AppState> for StoreAction {
                     .get_or_default(&image_id)
                     .clone();
                 let new_drawing_option = match update {
+                    UpdateDrawingOptions::Full(drawing_options) => drawing_options,
+
                     UpdateDrawingOptions::Reset => DrawingOptions {
                         // keep the batch slice index
                         batch_item: current_drawing_options.batch_item,
@@ -284,6 +306,11 @@ impl Reducer<AppState> for StoreAction {
                         ..current_drawing_options
                     },
                 };
+                VSCodeRequests::update_state(
+                    HostExtensionStateUpdate::default()
+                        .current_image_drawing_options(Some(new_drawing_option.clone()))
+                        .clone(),
+                );
                 state
                     .drawing_options
                     .borrow_mut()
@@ -317,6 +344,10 @@ impl Reducer<AppState> for StoreAction {
             },
             StoreAction::UpdateData(image_object) => {
                 handle_received_image(state, image_object).unwrap();
+            }
+            StoreAction::SetMode(app_mode) => {
+                state.app_mode = app_mode;
+                log::info!("App mode set to: {:?}", app_mode);
             }
         };
 

@@ -1,4 +1,3 @@
-
 type VariableSelection = { variable: string };
 type ExpressionSelection = { expression: string };
 

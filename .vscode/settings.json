@@ -14,7 +14,7 @@
     "cSpell.enabled": true,
     "prettier.enable": true,
     "[typescript]": {
-        "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     // "typescript.tsserver.experimental.enableProjectDiagnostics": true,
     "python.analysis.exclude": [

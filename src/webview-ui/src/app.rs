@@ -1,6 +1,9 @@
 use crate::application_state::app_state::AppState;
 use crate::application_state::app_state::ElementsStoreKey;
 use crate::application_state::app_state::GlobalDrawingOptions;
+use crate::application_state::app_state::ImageObject;
+use crate::application_state::app_state::StoreAction;
+use crate::application_state::app_state::UpdateDrawingOptions;
 use crate::application_state::images::ImageAvailability;
 use crate::coloring::Coloring;
 use crate::coloring::DrawingOptions;
@@ -8,7 +11,9 @@ use crate::colormap;
 use crate::common::camera;
 use crate::common::CurrentlyViewing;
 use crate::common::Image;
+use crate::common::ImagePlaceholder;
 use crate::common::Size;
+use crate::common::ValueVariableKind;
 use crate::common::ViewId;
 use crate::common::ViewableObjectId;
 use crate::components::main::Main;
@@ -27,6 +32,7 @@ use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
 use anyhow::{anyhow, Result};
+use itertools::izip;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
@@ -235,11 +241,46 @@ fn view_context() -> impl ViewContext {
 #[function_component]
 pub(crate) fn App() -> Html {
     VSCodeRequests::init(vscode::acquire_vscode_api());
-
-    let canvas_ref = use_node_ref();
+    let previous_state = VSCodeRequests::get_state();
 
     // TODO: move from here
     let view_id = ViewId::Primary;
+
+    use_effect_with(previous_state, move |previous_state| {
+        let dispatch = Dispatch::<AppState>::global();
+        let maybe_previous_image = previous_state.as_ref().and_then(|state| {
+            izip!(
+                state.current_image_id.as_ref(),
+                state.current_image_expression.as_ref(),
+                state.current_image_drawing_options.as_ref()
+            )
+            .next()
+        });
+        if let Some((id, expression, drawing_options)) = maybe_previous_image {
+            log::debug!(
+                "Loading previous image: {:?}",
+                (id, expression, drawing_options)
+            );
+            let view_object_id = ViewableObjectId::new(id);
+            dispatch.apply(StoreAction::UpdateData(ImageObject::Placeholder(
+                ImagePlaceholder {
+                    image_id: view_object_id.clone(),
+                    expression: expression.clone(),
+                    additional_info: Default::default(),
+                    is_batched: false,
+                    value_variable_kind: ValueVariableKind::Expression,
+                },
+            )));
+            dispatch.apply(StoreAction::UpdateDrawingOptions(
+                view_object_id.clone(),
+                UpdateDrawingOptions::Full(drawing_options.clone()),
+            ));
+            dispatch.apply(StoreAction::SetImageToView(view_object_id, view_id));
+        }
+        move || {}
+    });
+
+    let canvas_ref = use_node_ref();
 
     let view_context_rc = Rc::new(view_context()) as Rc<dyn ViewContext>;
 

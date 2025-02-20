@@ -11,7 +11,7 @@ use crate::common::ViewableObjectId;
 use crate::vscode::WebviewApi;
 
 use super::messages::MessageId;
-use super::state::HostExtensionState;
+use super::state::{update_host_extension_state, HostExtensionState, HostExtensionStateUpdate};
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize)]
 struct WebviewReady {}
@@ -112,6 +112,11 @@ impl VSCodeRequests {
 
         ext_state.0.insert(webview_id, state.clone());
         Self::_set_state(&ext_state);
+    }
+    
+    pub(crate) fn update_state(update: HostExtensionStateUpdate) {
+        let state = Self::get_state().unwrap_or_default();
+        Self::set_state(&update_host_extension_state(state, update));
     }
 
     pub(crate) fn get_state() -> Option<HostExtensionState> {

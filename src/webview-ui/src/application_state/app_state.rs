@@ -9,7 +9,7 @@ use crate::common::{
     AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
 };
 use crate::configurations;
-use crate::vscode::state::HostExtensionState;
+use crate::vscode::state::HostExtensionStateUpdate;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
@@ -241,13 +241,13 @@ impl Reducer<AppState> for StoreAction {
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
                 let drawing_options = state.drawing_options.borrow().get_or_default(&image_id);
-                VSCodeRequests::set_state(&HostExtensionState {
-                    current_image: Some(crate::vscode::state::CurrentImage {
-                        id: image_id.to_string(),
-                        expression: image_id.to_string(),
-                        drawing_options,
-                    }),
-                });
+                VSCodeRequests::update_state(
+                    HostExtensionStateUpdate::default()
+                        .current_image_id(Some(image_id.to_string()))
+                        .current_image_expression(Some(image_id.to_string()))
+                        .current_image_drawing_options(Some(drawing_options.clone()))
+                        .clone(),
+                );
                 state.set_image_to_view(image_id, view_id);
             }
 
@@ -306,6 +306,11 @@ impl Reducer<AppState> for StoreAction {
                         ..current_drawing_options
                     },
                 };
+                VSCodeRequests::update_state(
+                    HostExtensionStateUpdate::default()
+                        .current_image_drawing_options(Some(new_drawing_option.clone()))
+                        .clone(),
+                );
                 state
                     .drawing_options
                     .borrow_mut()

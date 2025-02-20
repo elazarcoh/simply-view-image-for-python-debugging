@@ -33,7 +33,7 @@ use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
 use anyhow::{anyhow, Result};
 use gloo_utils::window;
-use itertools::Update;
+use itertools::izip;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylist::yew::use_style;
@@ -249,27 +249,36 @@ pub(crate) fn App() -> Html {
 
     use_effect_with(previous_state, move |previous_state| {
         let dispatch = Dispatch::<AppState>::global();
-        previous_state
-            .as_ref()
-            .and_then(|state| state.current_image.as_ref())
-            .inspect(|image| {
-                log::debug!("Loading previous image: {:?}", image);
-                let view_object_id = ViewableObjectId::new(&image.id);
-                dispatch.apply(StoreAction::UpdateData(ImageObject::Placeholder(
-                    ImagePlaceholder {
-                        image_id: view_object_id.clone(),
-                        expression: image.expression.clone(),
-                        additional_info: Default::default(),
-                        is_batched: false,
-                        value_variable_kind: ValueVariableKind::Expression,
-                    },
-                )));
-                dispatch.apply(StoreAction::UpdateDrawingOptions(
-                    view_object_id.clone(),
-                    UpdateDrawingOptions::Full(image.drawing_options.clone()),
-                ));
-                dispatch.apply(StoreAction::SetImageToView(view_object_id, view_id));
-            });
+        let maybe_previous_image = previous_state.as_ref().and_then(|state| {
+            izip!(
+                state.current_image_id.as_ref(),
+                state.current_image_expression.as_ref(),
+                state.current_image_drawing_options.as_ref()
+            )
+            .next()
+        });
+        if let Some((id, expression, drawing_options)) = maybe_previous_image {
+            log::debug!(
+                "Loading previous image: {:?}",
+                (id, expression, drawing_options)
+            );
+            let view_object_id = ViewableObjectId::new(id);
+            dispatch.apply(StoreAction::UpdateData(ImageObject::Placeholder(
+                ImagePlaceholder {
+                    image_id: view_object_id.clone(),
+                    expression: expression.clone(),
+                    additional_info: Default::default(),
+                    is_batched: false,
+                    value_variable_kind: ValueVariableKind::Expression,
+                },
+            )));
+            dispatch.apply(StoreAction::UpdateDrawingOptions(
+                view_object_id.clone(),
+                UpdateDrawingOptions::Full(drawing_options.clone()),
+            ));
+            dispatch.apply(StoreAction::SetImageToView(view_object_id, view_id));
+        }
+        move || {}
     });
 
     let canvas_ref = use_node_ref();

@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { DebugSession } from "vscode";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logDebug, logTrace } from "../Logging";
 import {
@@ -17,6 +16,15 @@ import Container from "typedi";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "../globals";
 import { DebugSessionData } from "../debugger-utils/DebugSessionData";
+import {
+  DebugSession,
+  isDebugSession,
+  isJupyterSession,
+  JupyterSession,
+  Session,
+} from "../session/Session";
+import { jupyterSessionData } from "../session/jupyter/JupyterSessionRegistry";
+import { JupyterSessionData } from "../session/jupyter/JupyterSessionData";
 
 export function setSetupIsNotOkay(): void {
   logTrace("Manual set 'setup is not okay'");
@@ -26,7 +34,7 @@ export function setSetupIsNotOkay(): void {
   }
 }
 
-async function checkSetupOkay(session: DebugSession) {
+async function checkSetupOkay(session: Session) {
   const code = verifyModuleExistsCode();
   const res = await evaluateInPython(code, session, { context: "repl" }, false);
   return joinResult(res);
@@ -34,7 +42,7 @@ async function checkSetupOkay(session: DebugSession) {
 
 async function handleSetupError(
   debugSessionData: DebugSessionData,
-  debugSession: DebugSession,
+  session: Session,
 ) {
   const KEY = "ignoreSetupError";
   if ((debugSessionData.customState[KEY] ?? false) === true) {
@@ -54,9 +62,10 @@ async function handleSetupError(
     options.ignore_for_session,
     options.retry,
   );
+
+  const watchTreeProvider = Container.get(WatchTreeProvider);
   switch (selection) {
     case options.show:
-      const watchTreeProvider = Container.get(WatchTreeProvider);
       watchTreeProvider.showDiagnosticsTemporarily = true;
       await debugSessionData.diagnostics.update();
       watchTreeProvider.refresh();
@@ -65,7 +74,7 @@ async function handleSetupError(
       );
       break;
     case options.retry:
-      await runSetup(debugSession, true);
+      await runSetup(session, true);
       break;
     case options.ignore_for_session:
       debugSessionData.customState[KEY] = true;
@@ -73,11 +82,22 @@ async function handleSetupError(
   }
 }
 
-async function _runSetup(
-  session: DebugSession,
-  force?: boolean,
-): Promise<boolean> {
-  const debugSessionData = activeDebugSessionData(session);
+function sessionData(session: DebugSession): DebugSessionData;
+function sessionData(session: JupyterSession): JupyterSessionData;
+function sessionData(session: Session): DebugSessionData | JupyterSessionData {
+  if (isDebugSession(session)) {
+    return activeDebugSessionData(session.session);
+  } else if (isJupyterSession(session)) {
+    return jupyterSessionData(session.uri);
+  } else {
+    throw new Error("Unknown session type");
+  }
+}
+
+async function _runSetup(session: Session, force?: boolean): Promise<boolean> {
+  // @ts-expect-error  // TODO: Fix this
+  const debugSessionData = sessionData(session);
+
   const maxTries = 5;
 
   const isSetupOkay = async () => {
@@ -132,7 +152,7 @@ async function _runSetup(
     async (progress, cancelToken) => {
       for (
         let i = numTriesWithoutProgress;
-        debugSessionData.isDebuggerAttached &&
+        debugSessionData.isValid &&
         !cancelToken.isCancellationRequested &&
         i < maxTries;
         i++
@@ -150,7 +170,13 @@ async function _runSetup(
   );
 
   if (!debugSessionData.setupOkay) {
-    handleSetupError(debugSessionData, session);
+    if (isDebugSession(session)) {
+      handleSetupError(debugSessionData, session);
+    } else {
+      vscode.window.showErrorMessage(
+        "Failed to setup the python side of the extension.",
+      );
+    }
   }
 
   return debugSessionData.setupOkay;
@@ -159,7 +185,7 @@ async function _runSetup(
 export const runSetup = _.debounce(_runSetup, 1000, { leading: true });
 
 export async function getSetupStatus(
-  session: DebugSession,
+  session: Session,
 ): Promise<{ mainModuleStatus: string; [key: string]: string }> {
   const mainModuleCode = constructGetMainModuleErrorCode();
   const mainModuleStatus = joinResult(

@@ -15,6 +15,7 @@ import {
 import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
 import { Err, Ok, Result, errorMessage, isOkay } from "../utils/Result";
+import { debugSession } from "../session/Session";
 
 // ExpressionsList is global to all debug sessions
 @Service()
@@ -76,7 +77,7 @@ export class CurrentPythonObjectsList {
     const variables = this._variablesList.map((v) => v[0]);
     const variablesViewables = await findExpressionsViewables(
       variables,
-      this.debugSession,
+      debugSession(this.debugSession),
     ).then((r) =>
       r.err
         ? Array<typeof r>(variables.length).fill(r)
@@ -86,7 +87,7 @@ export class CurrentPythonObjectsList {
     // expressions are evaluated separately, to avoid case of syntax error in one expression
     const expressionsViewables = await Promise.allSettled(
       globalExpressionsList.map((exp) =>
-        findExpressionViewables(exp, this.debugSession),
+        findExpressionViewables(exp, debugSession(this.debugSession)),
       ),
     ).then((r) =>
       r.map((v) => (v.status === "fulfilled" ? v.value : Err(v.reason))),
@@ -122,7 +123,7 @@ export class CurrentPythonObjectsList {
       .filter(([, c]) => c.ok)
       .map(([i]) => i);
     const code = combineMultiEvalCodePython(codes);
-    const res = await evaluateInPython(code, this.debugSession);
+    const res = await evaluateInPython(code, debugSession(this.debugSession));
 
     if (res.err) {
       logError(

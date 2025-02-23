@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { getSetupStatus } from "../python-communication/Setup";
 import { PYTHON_MODULE_NAME } from "../python-communication/BuildPythonCode";
+import { debugSession } from "../session/Session";
 
 export class ExtensionDiagnostics {
   public readonly _diagnosticsItems: DiagnosticsTreeItem[] = [];
@@ -12,7 +13,7 @@ export class ExtensionDiagnostics {
     this._diagnosticsItems.length = 0;
 
     const { mainModuleStatus, ...restModules } = await getSetupStatus(
-      this.debugSession,
+      debugSession(this.debugSession),
     );
     this._diagnosticsItems.push(
       new DiagnosticsTreeItem(PYTHON_MODULE_NAME, mainModuleStatus),

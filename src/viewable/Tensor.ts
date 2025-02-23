@@ -1,5 +1,6 @@
 import NUMPY_TENSOR_CODE from "../python/numpy_tensor.py?raw";
 import TORCH_TENSOR_CODE from "../python/torch_tensor.py?raw";
+import TENSORFLOW_TENSOR_CODE from "../python/tf_tensor.py?raw";
 import { Viewable } from "./Viewable";
 import { atModule as m } from "../python-communication/BuildPythonCode";
 import { ArrayDataType } from "../common/datatype";
@@ -57,6 +58,32 @@ export const TorchTensor: Viewable<TorchTensorInfo> = {
   serializeObjectPythonCode: {
     evalCode: (expression: string, savePath: string) =>
       `${m("torch_tensor_save")}('${savePath}', ${expression})`,
+  },
+  suffix: ".png",
+  supportsImageViewer: (() =>
+    getConfiguration("tensorsInViewer") ?? false) as Initializer<boolean>,
+};
+
+export type TensorflowTensorInfo = NumpyTensorInfo;
+
+export const TensorflowTensor: Viewable<TensorflowTensorInfo> = {
+  group: "tensor",
+  type: "tensorflow_tensor",
+  title: "Tensor (tensorflow)",
+  setupPythonCode: {
+    setupCode: () => TENSORFLOW_TENSOR_CODE,
+    testSetupCode: "is_tf_tensor, tf_tensor_info, tf_tensor_save", // require all three functions to be defined
+    id: "tensorflow_tensor",
+  },
+  testTypePythonCode: {
+    evalCode: (expression: string) => `${m("is_tf_tensor")}(${expression})`,
+  },
+  infoPythonCode: {
+    evalCode: (expression: string) => `${m("tf_tensor_info")}(${expression})`,
+  },
+  serializeObjectPythonCode: {
+    evalCode: (expression: string, savePath: string) =>
+      `${m("tf_tensor_save")}('${savePath}', ${expression})`,
   },
   suffix: ".png",
   supportsImageViewer: (() =>

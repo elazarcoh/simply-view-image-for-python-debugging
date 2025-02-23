@@ -355,6 +355,8 @@ def element_size(arr):
         return arr.dtype.itemsize
     elif _Internal.is_torch(arr):
         return arr.element_size()
+    elif _Internal.is_tensorflow(arr):
+        return arr.dtype.size
     else:
         raise ValueError(f"Unsupported array type {type(arr)}")
 
@@ -364,6 +366,9 @@ def numel(arr):
         return arr.size
     elif _Internal.is_torch(arr):
         return arr.numel()
+    elif _Internal.is_tensorflow(arr):
+        import tensorflow as tf
+        return arr.shape.num_elements()
     else:
         raise ValueError(f"Unsupported array type {type(arr)}")
 
@@ -392,6 +397,9 @@ def create_tensor_message(
     sliced_tensor = tensor[start:stop]
     if _Internal.is_torch(sliced_tensor):
         sliced_tensor = sliced_tensor.cpu().numpy()
+    elif _Internal.is_tensorflow(sliced_tensor):
+        import tensorflow as tf
+        sliced_tensor = sliced_tensor.numpy()
 
     return create_numpy_message(
         sliced_tensor,
@@ -507,6 +515,14 @@ class _Internal:
         except ImportError:
             return False
 
+    @staticmethod
+    def is_tensorflow(obj):
+        try:
+            import tensorflow
+
+            return tensorflow.is_tensor(obj)
+        except ImportError:
+            return False
 
 def open_send_and_close(port, request_id, obj, options=None):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -521,6 +537,8 @@ def open_send_and_close(port, request_id, obj, options=None):
             elif _Internal.is_pillow_image(obj):
                 message = create_pillow_message(obj)
             elif _Internal.is_torch(obj):
+                message = create_tensor_message(obj, options)
+            elif _Internal.is_tensorflow(obj):
                 message = create_tensor_message(obj, options)
             else:
                 raise ValueError(f"Cant send object of type {type(obj)}")

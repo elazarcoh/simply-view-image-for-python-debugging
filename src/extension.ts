@@ -12,7 +12,7 @@ import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
-import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
+import { NumpyTensor, TorchTensor, TensorflowTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
@@ -76,6 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
       allViewables.addViewable(PyplotAxes),
       allViewables.addViewable(NumpyTensor),
       allViewables.addViewable(TorchTensor),
+      allViewables.addViewable(TensorflowTensor),
     ].filter(hasValue),
   );
 

@@ -13,14 +13,14 @@ import Container from "typedi";
 import { WebviewCommunication } from "./WebviewClient";
 import { WebviewRequests, WebviewResponses } from "./createMessages";
 import { errorMessage } from "../../utils/Result";
-import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../../session/debugger/DebugSessionsHolder";
 import {
   addExpression,
   editExpression,
 } from "../../image-watch-tree/PythonObjectsList";
 import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
 import { disposeAll } from "../../utils/VSCodeUtils";
-import { debugSession } from "../../session/Session";
+import { debugSession, debugSessionOrNull } from "../../session/Session";
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -39,9 +39,10 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   handleImagesRequest(id: MessageId) {
+    const session = debugSessionOrNull(vscode.debug.activeDebugSession);
     this.webviewCommunication.sendResponse(
       id,
-      WebviewResponses.imagesObjects(),
+      WebviewResponses.imagesObjects(session),
     );
   }
 
@@ -130,7 +131,9 @@ export class WebviewMessageHandler implements vscode.Disposable {
     this.webviewCommunication.sendRequest(WebviewRequests.configuration());
     this.webviewCommunication.sendResponse(
       id,
-      WebviewResponses.imagesObjects(),
+      WebviewResponses.imagesObjects(
+        debugSessionOrNull(vscode.debug.activeDebugSession),
+      ),
     );
   }
 
@@ -141,7 +144,9 @@ export class WebviewMessageHandler implements vscode.Disposable {
       Container.get(WatchTreeProvider).refresh();
       this.webviewCommunication.sendResponse(
         id,
-        WebviewResponses.imagesObjects(),
+        WebviewResponses.imagesObjects(
+          debugSessionOrNull(vscode.debug.activeDebugSession),
+        ),
       );
     }
   }
@@ -153,7 +158,9 @@ export class WebviewMessageHandler implements vscode.Disposable {
       Container.get(WatchTreeProvider).refresh();
       this.webviewCommunication.sendResponse(
         id,
-        WebviewResponses.imagesObjects(),
+        WebviewResponses.imagesObjects(
+          debugSessionOrNull(vscode.debug.activeDebugSession),
+        ),
       );
     }
   }

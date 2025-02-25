@@ -1,6 +1,7 @@
 import { getConfiguration } from "../../config";
-import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
+import { Session } from "../../session/Session";
+import { getSessionData } from "../../session/SessionData";
 import { hasValue, valueOrEval } from "../../utils/Utils";
 import {
   AppMode,
@@ -36,9 +37,13 @@ function expressingWithInfoIntoImagePlaceholder(
   };
 }
 
-function imageObjects(): ImagePlaceholderMessage[] {
+function imageObjects(session: Session | null): ImagePlaceholderMessage[] {
+  if (session === null) {
+    return [];
+  }
+
   const currentPythonObjectsList =
-    activeDebugSessionData()?.currentPythonObjectsList;
+    getSessionData(session)?.currentPythonObjectsList;
   const validVariables: ImagePlaceholderMessage[] =
     currentPythonObjectsList?.variablesList
       .map(([exp, info]) =>
@@ -58,10 +63,10 @@ function imageObjects(): ImagePlaceholderMessage[] {
 }
 
 export class WebviewRequests {
-  static replaceImages(): ExtensionRequest & {
+  static replaceImages(session: Session | null): ExtensionRequest & {
     type: "ReplaceData";
   } {
-    const replacementImages = imageObjects();
+    const replacementImages = imageObjects(session);
     return {
       type: "ReplaceData",
       replacement_images: replacementImages,
@@ -99,10 +104,10 @@ export class WebviewRequests {
 }
 
 export class WebviewResponses {
-  static imagesObjects(): ExtensionResponse & {
+  static imagesObjects(session: Session | null): ExtensionResponse & {
     type: "ReplaceData";
   } {
-    const replacementImages = imageObjects();
+    const replacementImages = imageObjects(session);
     return {
       type: "ReplaceData",
       replacement_images: replacementImages,

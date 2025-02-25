@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { TypedCommand } from "./commands";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { arrayUniqueByKey } from "./utils/Utils";
 import { currentUserSelection, selectionString } from "./utils/VSCodeUtils";

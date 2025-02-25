@@ -2,7 +2,7 @@ import "reflect-metadata";
 import * as vscode from "vscode";
 import { initLog, logDebug, logError, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
-import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
+import { createDebugAdapterTracker } from "./session/debugger/DebugAdapterTracker";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
 import { CodeActionProvider } from "./CodeActionProvider";
@@ -11,7 +11,7 @@ import { registerExtensionCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
@@ -23,6 +23,7 @@ import { WebviewRequests } from "./webview/communication/createMessages";
 import { ExtensionPersistentState } from "./ExtensionPersistentState";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
 import { ImagePreviewCustomEditor } from "./ImagePreviewCustomEditor";
+import { onNotebookOpen } from "./jupyter-intergration";
 
 function onConfigChange(): void {
   initLog();
@@ -125,6 +126,12 @@ export function activate(context: vscode.ExtensionContext) {
       ImagePreviewCustomEditor.viewType,
       imagePreviewEditor,
     ),
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenNotebookDocument((document) => {
+      onNotebookOpen(document);
+    }),
   );
 
   context.subscriptions.push(...registerExtensionCommands(context));

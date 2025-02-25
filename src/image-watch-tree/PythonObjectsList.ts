@@ -1,7 +1,7 @@
 import Container, { Service } from "typedi";
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
-import { DebugVariablesTracker } from "../debugger-utils/DebugVariablesTracker";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
+import { DebugVariablesTracker } from "../session/debugger/DebugVariablesTracker";
 import { logDebug, logError } from "../Logging";
 import {
   combineMultiEvalCodePython,
@@ -43,14 +43,80 @@ function removeSurroundingQuotesFromInfoObject(
   );
 }
 
-export class CurrentPythonObjectsList {
-  private readonly _variablesList: ExpressingWithInfo[] = [];
-  private _expressionsInfo: InfoOrError[] = [];
+export class CurrentPythonObjectsListData {
+  protected readonly _variablesList: ExpressingWithInfo[] = [];
+  protected _expressionsInfo: InfoOrError[] = [];
 
+  public clear(): void {
+    this._variablesList.length = 0;
+    this._expressionsInfo.length = 0;
+  }
+
+  public get variablesList(): ReadonlyArray<ExpressingWithInfo> {
+    return this._variablesList;
+  }
+
+  public get expressionsInfo(): ReadonlyArray<InfoOrError> | undefined {
+    return this._expressionsInfo.length === 0
+      ? undefined // return undefined, so in case the debugger is stopping it won't use the empty array here
+      : this._expressionsInfo;
+  }
+
+  public find(expression: string):
+    | {
+        type: "variable" | "expression";
+        InfoOrError: InfoOrError;
+      }
+    | undefined {
+    const variable = this._variablesList.find((v) => v[0] === expression);
+    if (variable !== undefined) {
+      return {
+        type: "variable",
+        InfoOrError: variable[1],
+      };
+    } else {
+      const index = globalExpressionsList.findIndex((e) => e === expression);
+      if (index >= 0) {
+        return {
+          type: "expression",
+          InfoOrError: this._expressionsInfo[index],
+        };
+      } else {
+        return undefined;
+      }
+    }
+  }
+
+  public expressionsList({
+    skipInvalid,
+  }: {
+    skipInvalid: boolean;
+  }): ReadonlyArray<ExpressingWithInfo> {
+    const expressionsInfoOrNotReady =
+      this.expressionsInfo ??
+      (Array(globalExpressionsList.length).fill(
+        Err("Not ready") as InfoOrError,
+      ) as InfoOrError[]);
+
+    let expressions = zip(globalExpressionsList, expressionsInfoOrNotReady).map(
+      ([exp, info]) => [exp, info] as ExpressingWithInfo,
+    );
+
+    if (skipInvalid) {
+      expressions = expressions.filter(([, info]) => !info.err);
+    }
+
+    return expressions;
+  }
+}
+
+export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
   constructor(
     private readonly debugVariablesTracker: DebugVariablesTracker,
     private readonly debugSession: vscode.DebugSession,
-  ) {}
+  ) {
+    super();
+  }
 
   private async retrieveVariables(): Promise<string[]> {
     const { locals, globals } =
@@ -235,71 +301,9 @@ export class CurrentPythonObjectsList {
     this._expressionsInfo = Object.values(information.expressions);
   }
 
-  public clear(): void {
-    this._variablesList.length = 0;
-    this._expressionsInfo.length = 0;
-  }
-
-  public get variablesList(): ReadonlyArray<ExpressingWithInfo> {
-    return this._variablesList;
-  }
-
-  public get expressionsInfo(): ReadonlyArray<InfoOrError> | undefined {
-    return this._expressionsInfo.length === 0
-      ? undefined // return undefined, so in case the debugger is stopping it won't use the empty array here
-      : this._expressionsInfo;
-  }
-
-  public find(expression: string):
-    | {
-        type: "variable" | "expression";
-        InfoOrError: InfoOrError;
-      }
-    | undefined {
-    const variable = this._variablesList.find((v) => v[0] === expression);
-    if (variable !== undefined) {
-      return {
-        type: "variable",
-        InfoOrError: variable[1],
-      };
-    } else {
-      const index = globalExpressionsList.findIndex((e) => e === expression);
-      if (index >= 0) {
-        return {
-          type: "expression",
-          InfoOrError: this._expressionsInfo[index],
-        };
-      } else {
-        return undefined;
-      }
-    }
-  }
-
   public addExpression(expression: string): Promise<void> {
     Container.get(ExpressionsList).expressions.push(expression);
     return this.update();
-  }
-
-  public expressionsList({
-    skipInvalid,
-  }: {
-    skipInvalid: boolean;
-  }): ReadonlyArray<ExpressingWithInfo> {
-    const expressionsInfoOrNotReady =
-      this.expressionsInfo ??
-      (Array(globalExpressionsList.length).fill(
-        Err("Not ready") as InfoOrError,
-      ) as InfoOrError[]);
-
-    let expressions = zip(globalExpressionsList, expressionsInfoOrNotReady).map(
-      ([exp, info]) => [exp, info] as ExpressingWithInfo,
-    );
-
-    if (skipInvalid) {
-      expressions = expressions.filter(([, info]) => !info.err);
-    }
-
-    return expressions;
   }
 }
 

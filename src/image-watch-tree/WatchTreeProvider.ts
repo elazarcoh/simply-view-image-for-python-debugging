@@ -10,7 +10,7 @@ import {
   PythonObjectInfoLineTreeItem,
   PythonObjectTreeItem,
 } from "./WatchTreeItem";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
 import { isOf, zip } from "../utils/Utils";
 import { Err, errorMessage } from "../utils/Result";

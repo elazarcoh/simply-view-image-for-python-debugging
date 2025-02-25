@@ -1,6 +1,6 @@
 import { DebugProtocol } from "vscode-debugprotocol";
-import { logDebug } from "../Logging";
-import { PYTHON_MODULE_NAME } from "../python-communication/BuildPythonCode";
+import { logDebug } from "../../Logging";
+import { PYTHON_MODULE_NAME } from "../../python-communication/BuildPythonCode";
 
 type TrackedVariable = {
   name: string;

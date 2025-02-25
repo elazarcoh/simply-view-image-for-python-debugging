@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
-import { CurrentPythonObjectsList } from "../image-watch-tree/PythonObjectsList";
-import { TrackedPythonObjects } from "../image-watch-tree/TrackedPythonObjects";
-import { SavePathHelper } from "../SerializationHelper";
+import { CurrentPythonObjectsList } from "../../image-watch-tree/PythonObjectsList";
+import { TrackedPythonObjects } from "../../image-watch-tree/TrackedPythonObjects";
+import { SavePathHelper } from "../../SerializationHelper";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
-import { ExtensionDiagnostics } from "../image-watch-tree/DiagnosticsItem";
-import { SessionData } from "../session/Session";
+import { ExtensionDiagnostics } from "../../image-watch-tree/DiagnosticsItem";
+import { SessionData } from "../SessionData";
 
 export class DebugSessionData implements SessionData {
   public readonly savePathHelper: SavePathHelper;
@@ -31,4 +31,10 @@ export class DebugSessionData implements SessionData {
   get isValid(): boolean {
     return this.isDebuggerAttached;
   }
+}
+
+export function isDebugSessionData(
+  data: SessionData,
+): data is DebugSessionData {
+  return data instanceof DebugSessionData;
 }

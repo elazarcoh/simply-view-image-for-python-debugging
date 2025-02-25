@@ -19,7 +19,7 @@ import {
   DataOrdering as WebviewDataOrdering,
   ImageMessage,
 } from "../webview/webview";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
 import { ArrayDataType, DimensionOrder } from "../common/datatype";
 import { isDebugSession, Session } from "../session/Session";

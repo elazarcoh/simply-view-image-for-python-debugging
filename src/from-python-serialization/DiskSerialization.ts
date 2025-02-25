@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { Viewable } from "../viewable/Viewable";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { logDebug, logError } from "../Logging";
 import { isExpressionSelection } from "../utils/VSCodeUtils";
 import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";

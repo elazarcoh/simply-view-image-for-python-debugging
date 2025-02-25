@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { logDebug, logTrace } from "../Logging";
 import {
   constructGetMainModuleErrorCode,
@@ -15,7 +15,7 @@ import { sleep } from "../utils/Utils";
 import Container from "typedi";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "../globals";
-import { DebugSessionData } from "../debugger-utils/DebugSessionData";
+import { DebugSessionData } from "../session/debugger/DebugSessionData";
 import {
   DebugSession,
   isDebugSession,

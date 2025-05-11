@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.0.10] - Release
+
+### Added
+
+- Support for torch tensor that has `requires_grad=True`.
+
 ## [4.0.9] - Pre-release
 
 ### Added 

@@ -391,7 +391,7 @@ def create_tensor_message(
 
     sliced_tensor = tensor[start:stop]
     if _Internal.is_torch(sliced_tensor):
-        sliced_tensor = sliced_tensor.cpu().numpy()
+        sliced_tensor = _Internal.torch_to_numpy(sliced_tensor)
 
     return create_numpy_message(
         sliced_tensor,
@@ -506,6 +506,15 @@ class _Internal:
             return isinstance(obj, torch.Tensor)
         except ImportError:
             return False
+    
+    @staticmethod
+    def torch_to_numpy(tensor):
+        tensor = tensor.detach().cpu()
+        if hasattr(tensor, "resolve_conj"):
+            tensor = tensor.resolve_conj()
+        if hasattr(tensor, "resolve_neg"):
+            tensor = tensor.resolve_neg()
+        return tensor.numpy()
 
 
 def open_send_and_close(port, request_id, obj, options=None):

@@ -292,7 +292,7 @@
       "editor/title": [
         {
           "command": "svifpd.open-file-image",
-          "when": "resourceScheme == file && resourceExtname =~ /png|jpg|jpeg|bmp|tiff/ && activeCustomEditorId != svifpd.previewEditor",
+          "when": "resourceScheme == file && resourceExtname =~ /.png|.jpg|.jpeg|.bmp|.tiff/ && activeCustomEditorId != svifpd.previewEditor",
           "group": "navigation"
         }
       ]

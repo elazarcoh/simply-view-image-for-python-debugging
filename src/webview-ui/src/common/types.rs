@@ -3,18 +3,23 @@ use std::{collections::HashMap, convert::TryFrom, fmt::Display};
 use super::pixel_value::PixelValue;
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct ViewableObjectId(String);
+pub(crate) struct SessionId(String);
+
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct ViewableObjectId(SessionId, String);
 
 #[cfg(debug_assertions)]
 impl ViewableObjectId {
-    pub(crate) fn new(id: &str) -> Self {
-        Self(id.to_owned())
+    pub(crate) fn new(session: SessionId, id: &str) -> Self {
+        Self(session, id.to_owned())
     }
 }
 
 impl Display for ViewableObjectId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+        let id = &self.1;
+        let session_id = &self.0 .0;
+        f.write_fmt(format_args!("{}@{}", id, session_id))
     }
 }
 

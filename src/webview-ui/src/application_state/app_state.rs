@@ -1,5 +1,6 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
+use super::sessions::Sessions;
 use super::views::ImageViews;
 use super::vscode_data_fetcher::ImagesFetcher;
 use crate::coloring::{Clip, Coloring, DrawingOptions};
@@ -44,6 +45,7 @@ pub(crate) enum ElementsStoreKey {
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
+    pub sessions: Mrc<Sessions>,
     pub images: Mrc<Images>,
     pub image_views: Mrc<ImageViews>,
     pub image_cache: Mrc<ImageCache>,
@@ -66,6 +68,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             gl: None,
+            sessions: Default::default(),
             images: Default::default(),
             image_views: Default::default(),
             image_cache: Default::default(),

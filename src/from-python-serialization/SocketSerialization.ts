@@ -173,7 +173,7 @@ export async function serializeImageUsingSocketServer(
     }
 
     const imageMessage: ImageMessage = {
-      image_id: expression,
+      image_id: ["session", expression],
       value_variable_kind: isExpressionSelection(obj)
         ? "expression"
         : "variable",

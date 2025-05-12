@@ -524,7 +524,7 @@
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",
     "typescript-eslint": "^8.24.0",
-    "wasm-pack": "^0.13.0",
+    "wasm-pack": "^0.13.1",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
     "webpack-shell-plugin-next": "^2.3.2"
@@ -533,7 +533,6 @@
     "@jupyterlab/services": "^7.3.5",
     "@vscode/codicons": "^0.0.36",
     "@vscode/jupyter-extension": "^1.1.1",
-    "@vscode/webview-ui-toolkit": "^1.4.0",
     "exifreader": "^4.26.1",
     "jimp": "^1.6.0",
     "lodash": "^4.17.21",

@@ -957,46 +957,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@microsoft/fast-element@npm:^1.12.0, @microsoft/fast-element@npm:^1.13.0":
-  version: 1.13.0
-  resolution: "@microsoft/fast-element@npm:1.13.0"
-  checksum: 10c0/c995ea19563a11a090f69f6f41971f620ef4bed7dd35acfdf6c73a19c386ccf70a2fb9b28eb91934f2492d14c6e466a60aa7c9918131fba0ad7976823ee0e546
-  languageName: node
-  linkType: hard
-
-"@microsoft/fast-foundation@npm:^2.49.4, @microsoft/fast-foundation@npm:^2.49.6":
-  version: 2.49.6
-  resolution: "@microsoft/fast-foundation@npm:2.49.6"
-  dependencies:
-    "@microsoft/fast-element": "npm:^1.13.0"
-    "@microsoft/fast-web-utilities": "npm:^5.4.1"
-    tabbable: "npm:^5.2.0"
-    tslib: "npm:^1.13.0"
-  checksum: 10c0/37e60c6f11af800b36fc545d2ed8f6e72d7e849b14d141a3764b4de2bbbb677b7b495a622f38356fa694dc4b0e46358c7fdcac247216e5eceecf17ae2f76c314
-  languageName: node
-  linkType: hard
-
-"@microsoft/fast-react-wrapper@npm:^0.3.22":
-  version: 0.3.24
-  resolution: "@microsoft/fast-react-wrapper@npm:0.3.24"
-  dependencies:
-    "@microsoft/fast-element": "npm:^1.13.0"
-    "@microsoft/fast-foundation": "npm:^2.49.6"
-  peerDependencies:
-    react: ">=16.9.0"
-  checksum: 10c0/8ede8ca2221a92b3bf14bb8c723ad4941526ac2ee8a2d811851ed9e3677725ca4137367fc28421edbbbd341e913f387b3d930c2dbef81a74da39c628750a0132
-  languageName: node
-  linkType: hard
-
-"@microsoft/fast-web-utilities@npm:^5.4.1":
-  version: 5.4.1
-  resolution: "@microsoft/fast-web-utilities@npm:5.4.1"
-  dependencies:
-    exenv-es6: "npm:^1.1.1"
-  checksum: 10c0/12efc658b190b7977f8272f8f5fe1d3388cdc8b919053a50043b15fd8f858d4544dcbc6df7dca3e71f87c7f045b596f9799413f52f9c57e10db5932a5714c5bc
-  languageName: node
-  linkType: hard
-
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -1572,20 +1532,6 @@ __metadata:
   bin:
     vsce: vsce
   checksum: 10c0/83dfa3701503757bdf26d2d5c941e779baf7376d073250b08e9fe68178260cd7ec68eea0ce4f4679a07ba42dbdb4c2e0d699ac266c7aa9187a10aed075e8c528
-  languageName: node
-  linkType: hard
-
-"@vscode/webview-ui-toolkit@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "@vscode/webview-ui-toolkit@npm:1.4.0"
-  dependencies:
-    "@microsoft/fast-element": "npm:^1.12.0"
-    "@microsoft/fast-foundation": "npm:^2.49.4"
-    "@microsoft/fast-react-wrapper": "npm:^0.3.22"
-    tslib: "npm:^2.6.2"
-  peerDependencies:
-    react: ">=16.9.0"
-  checksum: 10c0/f36590e9c3989106ef682c058e219ad13ef81e5ece28359d7cf290f2d897a66f5adae786a62d7bec4d4ff68488d3d77689e2c269864cb4fb3fa330fca1c37db6
   languageName: node
   linkType: hard
 
@@ -3342,13 +3288,6 @@ __metadata:
   version: 3.3.0
   resolution: "events@npm:3.3.0"
   checksum: 10c0/d6b6f2adbccbcda74ddbab52ed07db727ef52e31a61ed26db9feb7dc62af7fc8e060defa65e5f8af9449b86b52cc1a1f6a79f2eafcf4e62add2b7a1fa4a432f6
-  languageName: node
-  linkType: hard
-
-"exenv-es6@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "exenv-es6@npm:1.1.1"
-  checksum: 10c0/66e70b0ceffba2c720fcd4342002c4d3f6908deea7012ca612c97ad115b7cbb2d39030626947883aafd5f05488d32362485934444906db08502bb6c8ada6e130
   languageName: node
   linkType: hard
 
@@ -6332,7 +6271,6 @@ __metadata:
     "@vscode/codicons": "npm:^0.0.36"
     "@vscode/jupyter-extension": "npm:^1.1.1"
     "@vscode/vsce": "npm:^3.2.2"
-    "@vscode/webview-ui-toolkit": "npm:^1.4.0"
     "@wasm-tool/wasm-pack-plugin": "patch:@wasm-tool/wasm-pack-plugin@npm%3A1.7.0#~/.yarn/patches/@wasm-tool-wasm-pack-plugin-npm-1.7.0-05c10ff10e.patch"
     copy-webpack-plugin: "npm:^12.0.2"
     eslint: "npm:^9.20.1"
@@ -6360,7 +6298,7 @@ __metadata:
     typescript-eslint: "npm:^8.24.0"
     vscode-debugprotocol: "npm:^1.51.0"
     vscode-extensions-json-generator: "npm:^0.2.2"
-    wasm-pack: "npm:^0.13.0"
+    wasm-pack: "npm:^0.13.1"
     webpack: "npm:^5.97.1"
     webpack-cli: "npm:^5.1.4"
     webpack-shell-plugin-next: "npm:^2.3.2"
@@ -6605,13 +6543,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tabbable@npm:^5.2.0":
-  version: 5.3.3
-  resolution: "tabbable@npm:5.3.3"
-  checksum: 10c0/c6cb54be76ecff7d0132fed77ff11cedf76a2ce320f55e350f70d8f68998227e72bc3f8b1ee5e7b02dbe4b4c2ef7b6fa43c3aea7cfa82ef06e7d23746df97a35
-  languageName: node
-  linkType: hard
-
 "tapable@npm:^2.0.0, tapable@npm:^2.1.1, tapable@npm:^2.2.0, tapable@npm:^2.2.1":
   version: 2.2.1
   resolution: "tapable@npm:2.2.1"
@@ -6797,13 +6728,6 @@ __metadata:
   version: 3.3.0
   resolution: "ts-results@npm:3.3.0"
   checksum: 10c0/507659005733dd102895e868fe1de6f4c39998bcf188863bdc2d18dc5e8ced57be2e83fe9ee53adbabc414fd53e26e8654c7fa0273d2668decc1731d274dbf74
-  languageName: node
-  linkType: hard
-
-"tslib@npm:^1.13.0":
-  version: 1.14.1
-  resolution: "tslib@npm:1.14.1"
-  checksum: 10c0/69ae09c49eea644bc5ebe1bca4fa4cc2c82b7b3e02f43b84bd891504edf66dbc6b2ec0eef31a957042de2269139e4acff911e6d186a258fb14069cd7f6febce2
   languageName: node
   linkType: hard
 
@@ -7131,14 +7055,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wasm-pack@npm:^0.13.0":
-  version: 0.13.0
-  resolution: "wasm-pack@npm:0.13.0"
+"wasm-pack@npm:^0.13.1":
+  version: 0.13.1
+  resolution: "wasm-pack@npm:0.13.1"
   dependencies:
     binary-install: "npm:^1.0.1"
   bin:
     wasm-pack: run.js
-  checksum: 10c0/71ed64c9b0082d51098ec71041ce68a9323d7a0027e3a9c0b694c5931f83ce2a58f1df7255c68239ca4ab702e2daf5c550a7886f8af048f0cb76945a510268b6
+  checksum: 10c0/46fc5309f46377d6dd09890cd642640ddb40d654bfdae5c9be66b50bf5ea27b0953916dd14d718b13a3b3dbad1351d4007ef040ef3778053625130ccef6f7cd6
   languageName: node
   linkType: hard
 

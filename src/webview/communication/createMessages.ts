@@ -29,7 +29,7 @@ function expressingWithInfoIntoImagePlaceholder(
   const info = infoOrError.safeUnwrap()[1];
 
   return {
-    image_id: exp,
+    image_id: ["session", exp],
     expression: exp,
     value_variable_kind: valueVariableKind,
     is_batched: viewables[0].group === "tensor", // currently, support tensor only if it's the only option

@@ -161,7 +161,6 @@ pub(crate) fn Main(props: &MainProps) -> Html {
 
         .status-bar {
             grid-area: footer;
-            width: 100%;
         }
 
         .view-container {

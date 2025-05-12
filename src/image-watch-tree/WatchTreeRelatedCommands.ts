@@ -5,6 +5,7 @@ import { PythonObjectTreeItem } from "./WatchTreeItem";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 import { VariableWatchTreeItem } from "./WatchVariable";
 import { viewObject } from "../ViewPythonObject";
+import { debugSession } from "../session/Session";
 
 function pythonObjectTreeItemSavePath(
   pythonObjectTreeItem: PythonObjectTreeItem,
@@ -93,7 +94,7 @@ async function viewWatchTreeItem(
   return viewObject(
     { expression: item.expression },
     viewableToUse,
-    session,
+    debugSession(session),
     savePath,
   );
 }

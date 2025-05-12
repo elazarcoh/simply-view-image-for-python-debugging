@@ -778,6 +778,185 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jupyter/ydoc@npm:^3.0.0":
+  version: 3.0.3
+  resolution: "@jupyter/ydoc@npm:3.0.3"
+  dependencies:
+    "@jupyterlab/nbformat": "npm:^3.0.0 || ^4.0.0-alpha.21 || ^4.0.0"
+    "@lumino/coreutils": "npm:^1.11.0 || ^2.0.0"
+    "@lumino/disposable": "npm:^1.10.0 || ^2.0.0"
+    "@lumino/signaling": "npm:^1.10.0 || ^2.0.0"
+    y-protocols: "npm:^1.0.5"
+    yjs: "npm:^13.5.40"
+  checksum: 10c0/a33cc8453c0333c7e6e962d8c70601f408d4057f47c9d7684e42e2c8106848dab48f68a8006f5973e309ad17c39fada10a58e047c10f55453b7dc734c6429c5c
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/coreutils@npm:^6.3.5":
+  version: 6.3.5
+  resolution: "@jupyterlab/coreutils@npm:6.3.5"
+  dependencies:
+    "@lumino/coreutils": "npm:^2.2.0"
+    "@lumino/disposable": "npm:^2.1.3"
+    "@lumino/signaling": "npm:^2.1.3"
+    minimist: "npm:~1.2.0"
+    path-browserify: "npm:^1.0.0"
+    url-parse: "npm:~1.5.4"
+  checksum: 10c0/3164394ebc5d772c0b33120365757204fd319e090877cfd05ef712a3d4c9b15fa8a3f873ae7d6050311a08cd8c62ee9debf5d3b53b082ac73122073f1dc3579f
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/nbformat@npm:^3.0.0 || ^4.0.0-alpha.21 || ^4.0.0, @jupyterlab/nbformat@npm:^4.3.5":
+  version: 4.3.5
+  resolution: "@jupyterlab/nbformat@npm:4.3.5"
+  dependencies:
+    "@lumino/coreutils": "npm:^2.2.0"
+  checksum: 10c0/84e68250f079973bcca8b84175bec209366e24fea08368dc29e678a8bfc403dcac65ec7047df7d34d455274bc71b989432a59444c34625368453168dae6eee76
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/services@npm:^7.3.5":
+  version: 7.3.5
+  resolution: "@jupyterlab/services@npm:7.3.5"
+  dependencies:
+    "@jupyter/ydoc": "npm:^3.0.0"
+    "@jupyterlab/coreutils": "npm:^6.3.5"
+    "@jupyterlab/nbformat": "npm:^4.3.5"
+    "@jupyterlab/settingregistry": "npm:^4.3.5"
+    "@jupyterlab/statedb": "npm:^4.3.5"
+    "@lumino/coreutils": "npm:^2.2.0"
+    "@lumino/disposable": "npm:^2.1.3"
+    "@lumino/polling": "npm:^2.1.3"
+    "@lumino/properties": "npm:^2.0.2"
+    "@lumino/signaling": "npm:^2.1.3"
+    ws: "npm:^8.11.0"
+  checksum: 10c0/1f997e3aa2b8333d0c8e558057b9ffdf220a712d70e709193c22d9bce0ec1657a77de6d46f28d934e99e268f9d8db291c5de1ec65e99be1be1cbcfc68b974536
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/settingregistry@npm:^4.3.5":
+  version: 4.3.5
+  resolution: "@jupyterlab/settingregistry@npm:4.3.5"
+  dependencies:
+    "@jupyterlab/nbformat": "npm:^4.3.5"
+    "@jupyterlab/statedb": "npm:^4.3.5"
+    "@lumino/commands": "npm:^2.3.1"
+    "@lumino/coreutils": "npm:^2.2.0"
+    "@lumino/disposable": "npm:^2.1.3"
+    "@lumino/signaling": "npm:^2.1.3"
+    "@rjsf/utils": "npm:^5.13.4"
+    ajv: "npm:^8.12.0"
+    json5: "npm:^2.2.3"
+  peerDependencies:
+    react: ">=16"
+  checksum: 10c0/c8448a029a7bd1b896618f93cc39f9f321bf9ccf9ef1acbd83c62cdd58c3f9bcbf391c7aa38b47617b52ee7192c9a862e568add81e847f15e907bb5d688b254f
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/statedb@npm:^4.3.5":
+  version: 4.3.5
+  resolution: "@jupyterlab/statedb@npm:4.3.5"
+  dependencies:
+    "@lumino/commands": "npm:^2.3.1"
+    "@lumino/coreutils": "npm:^2.2.0"
+    "@lumino/disposable": "npm:^2.1.3"
+    "@lumino/properties": "npm:^2.0.2"
+    "@lumino/signaling": "npm:^2.1.3"
+  checksum: 10c0/e1e3c3c1ab191dff23ce16453581519947f604ba1bb7b6249525dc8c830aad170f68e0feef09cb0371ce1c2a8446e97ce1baa6d3d0adbd5e10d69b79501ce89c
+  languageName: node
+  linkType: hard
+
+"@lumino/algorithm@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@lumino/algorithm@npm:2.0.2"
+  checksum: 10c0/85f912fbf36a7c973efb737bfcade0a1ef66f438bed8bed7c9647fe7dceca1794a3549e0b4f07d0f1f3c38fca6c0c8394a3269d918c22a779677a0937a1a088b
+  languageName: node
+  linkType: hard
+
+"@lumino/commands@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "@lumino/commands@npm:2.3.1"
+  dependencies:
+    "@lumino/algorithm": "npm:^2.0.2"
+    "@lumino/coreutils": "npm:^2.2.0"
+    "@lumino/disposable": "npm:^2.1.3"
+    "@lumino/domutils": "npm:^2.0.2"
+    "@lumino/keyboard": "npm:^2.0.2"
+    "@lumino/signaling": "npm:^2.1.3"
+    "@lumino/virtualdom": "npm:^2.0.2"
+  checksum: 10c0/940076c5aaa0b3f6d976c1b59c187d9a18c2fe78b092cbcc964d8b72656df74871d6f455761dbcaf9434d455adb2e305a8730a07f362e74880751c8225b9505d
+  languageName: node
+  linkType: hard
+
+"@lumino/coreutils@npm:^1.11.0 || ^2.0.0, @lumino/coreutils@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@lumino/coreutils@npm:2.2.0"
+  dependencies:
+    "@lumino/algorithm": "npm:^2.0.2"
+  checksum: 10c0/e94d0a349cb1a377442daf303b4309016e75ce4ef284edace35c586b6b9cbe7e75529e786020518496fe2e4038e7d1952f0336dfdfe141428894dd126542b46f
+  languageName: node
+  linkType: hard
+
+"@lumino/disposable@npm:^1.10.0 || ^2.0.0, @lumino/disposable@npm:^2.1.3":
+  version: 2.1.3
+  resolution: "@lumino/disposable@npm:2.1.3"
+  dependencies:
+    "@lumino/signaling": "npm:^2.1.3"
+  checksum: 10c0/f20c6e0c53769c5f05bbafc40e455288027b40fe498f50ca4b3622e963583918e3cba99d2f3ea95238cbbd33358c73526d9ef9fd51edee2d8257caae68e45b30
+  languageName: node
+  linkType: hard
+
+"@lumino/domutils@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@lumino/domutils@npm:2.0.2"
+  checksum: 10c0/8176afd071c71dcd1d5938cb9cff62480096f013a5fc9852b15388e48d20137b778c5d65d036d432e6d2393f4694f8eee264725846f3efd203c1b802771d82a0
+  languageName: node
+  linkType: hard
+
+"@lumino/keyboard@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@lumino/keyboard@npm:2.0.2"
+  checksum: 10c0/becdbc31f2d7b6b3a25d3d7668f2da1388e703105b803e494bab60590e143f7772a444b5d04b989dc7b805ae518bb96a7ed8b7aacfccf59d836c0f2d48e1f6a5
+  languageName: node
+  linkType: hard
+
+"@lumino/polling@npm:^2.1.3":
+  version: 2.1.3
+  resolution: "@lumino/polling@npm:2.1.3"
+  dependencies:
+    "@lumino/coreutils": "npm:^2.2.0"
+    "@lumino/disposable": "npm:^2.1.3"
+    "@lumino/signaling": "npm:^2.1.3"
+  checksum: 10c0/833753d3b504d470b45f965bbf3d3e72e6b502df965930062b53ec17a67759681a0f71a3f46aecf6759eeb3bf874376d14374d8df01b07ed52920c5ef63644bf
+  languageName: node
+  linkType: hard
+
+"@lumino/properties@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@lumino/properties@npm:2.0.2"
+  checksum: 10c0/1fea6684424dcb0bd66ae185df3155dccc6a4aba3445a2aa94c9f66ae9f085df464de369cf98039a0260d770b083294147814eef928edf7f25f875b589b463d7
+  languageName: node
+  linkType: hard
+
+"@lumino/signaling@npm:^1.10.0 || ^2.0.0, @lumino/signaling@npm:^2.1.3":
+  version: 2.1.3
+  resolution: "@lumino/signaling@npm:2.1.3"
+  dependencies:
+    "@lumino/algorithm": "npm:^2.0.2"
+    "@lumino/coreutils": "npm:^2.2.0"
+  checksum: 10c0/f795d30971a24c8975bd565691f15c1d39af45ff75a9a452e49c5e414be549ddc0ad8c3689d034009cf36a8d709bc8f8024bc601d1ba6697fb3b45057920d03e
+  languageName: node
+  linkType: hard
+
+"@lumino/virtualdom@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@lumino/virtualdom@npm:2.0.2"
+  dependencies:
+    "@lumino/algorithm": "npm:^2.0.2"
+  checksum: 10c0/7424ca3816d32cae799ac2452c84237aed1ffb20c2a68fe1142de16e5ac728c5ef1157375c1b0ba7d271786b12974dd89159ed6e8ff49236f80d13aa655020c4
+  languageName: node
+  linkType: hard
+
 "@microsoft/fast-element@npm:^1.12.0, @microsoft/fast-element@npm:^1.13.0":
   version: 1.13.0
   resolution: "@microsoft/fast-element@npm:1.13.0"
@@ -878,6 +1057,21 @@ __metadata:
   version: 0.1.1
   resolution: "@pkgr/core@npm:0.1.1"
   checksum: 10c0/3f7536bc7f57320ab2cf96f8973664bef624710c403357429fbf680a5c3b4843c1dbd389bb43daa6b1f6f1f007bb082f5abcb76bb2b5dc9f421647743b71d3d8
+  languageName: node
+  linkType: hard
+
+"@rjsf/utils@npm:^5.13.4":
+  version: 5.24.3
+  resolution: "@rjsf/utils@npm:5.24.3"
+  dependencies:
+    json-schema-merge-allof: "npm:^0.8.1"
+    jsonpointer: "npm:^5.0.1"
+    lodash: "npm:^4.17.21"
+    lodash-es: "npm:^4.17.21"
+    react-is: "npm:^18.2.0"
+  peerDependencies:
+    react: ^16.14.0 || >=17
+  checksum: 10c0/1aae5a778c1a5b55081c4a8fe490819ee74957502c7545059382aa5a09efcce1c3a7b3522168182b9075fc3827998d3cb07c950e2bd815389a9bd4f2c40ae8bb
   languageName: node
   linkType: hard
 
@@ -1234,6 +1428,13 @@ __metadata:
   version: 0.0.36
   resolution: "@vscode/codicons@npm:0.0.36"
   checksum: 10c0/6bf944e87adc375cbad1bc939c05855d9430b53ad0132a00d539c3395c5877ac0a21865ae87c14bf903a667eb8dd1f846557015835c3d8c65c4972fafa5faaaa
+  languageName: node
+  linkType: hard
+
+"@vscode/jupyter-extension@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "@vscode/jupyter-extension@npm:1.1.1"
+  checksum: 10c0/0e61f11403f4147d9023e9dc37d720e4c93fd6325c44f85ca4fed3adc9a20593092b93981f6ca790a65f092c0105399b50a9af2326258c9a85880adc8cfd0647
   languageName: node
   linkType: hard
 
@@ -1725,7 +1926,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:^8.0.0, ajv@npm:^8.6.3, ajv@npm:^8.9.0":
+"ajv@npm:^8.0.0, ajv@npm:^8.12.0, ajv@npm:^8.6.3, ajv@npm:^8.9.0":
   version: 8.17.1
   resolution: "ajv@npm:8.17.1"
   dependencies:
@@ -2355,6 +2556,29 @@ __metadata:
   version: 1.8.2
   resolution: "common-tags@npm:1.8.2"
   checksum: 10c0/23efe47ff0a1a7c91489271b3a1e1d2a171c12ec7f9b35b29b2fce51270124aff0ec890087e2bc2182c1cb746e232ab7561aaafe05f1e7452aea733d2bfe3f63
+  languageName: node
+  linkType: hard
+
+"compute-gcd@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "compute-gcd@npm:1.2.1"
+  dependencies:
+    validate.io-array: "npm:^1.0.3"
+    validate.io-function: "npm:^1.0.2"
+    validate.io-integer-array: "npm:^1.0.0"
+  checksum: 10c0/e72f3485d6ecc0b258f30b3408d9bb8175530ceec91b6b925d094bbc03b4a52e129004009edecd825b9f5b6bd62882485c5c50831673ad29975b6ffcdf1714f4
+  languageName: node
+  linkType: hard
+
+"compute-lcm@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "compute-lcm@npm:1.1.2"
+  dependencies:
+    compute-gcd: "npm:^1.2.1"
+    validate.io-array: "npm:^1.0.3"
+    validate.io-function: "npm:^1.0.2"
+    validate.io-integer-array: "npm:^1.0.0"
+  checksum: 10c0/3cb5dd4ae367aaf8926e0ac616303e5dac0bde7f6d737e8ff3c1081f99203315898a6112726556a61503ba9ddc25ea570b1dd6d1fe1f50dd86d35b450cef45f8
   languageName: node
   linkType: hard
 
@@ -4163,6 +4387,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"isomorphic.js@npm:^0.2.4":
+  version: 0.2.5
+  resolution: "isomorphic.js@npm:0.2.5"
+  checksum: 10c0/7cd268c8e58146a8160c8cd16596291fd1fbf3e8799a325f269accda9dc1238806e371ccef0b66fe2ad957209230c55997248d8b6d02cf2d7c575ffeb759c789
+  languageName: node
+  linkType: hard
+
 "jackspeak@npm:^3.1.2":
   version: 3.4.3
   resolution: "jackspeak@npm:3.4.3"
@@ -4307,6 +4538,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"json-schema-compare@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "json-schema-compare@npm:0.2.2"
+  dependencies:
+    lodash: "npm:^4.17.4"
+  checksum: 10c0/75a5b0f18040d414bb59f3567cf8a3de50419a6cedd5b86eca64f531a8b0bccdeb3f56786c900fd6565c4bab33b5e8a0e922ab0fc836df7de0aab166c3c64a33
+  languageName: node
+  linkType: hard
+
+"json-schema-merge-allof@npm:^0.8.1":
+  version: 0.8.1
+  resolution: "json-schema-merge-allof@npm:0.8.1"
+  dependencies:
+    compute-lcm: "npm:^1.1.2"
+    json-schema-compare: "npm:^0.2.2"
+    lodash: "npm:^4.17.20"
+  checksum: 10c0/b8fcc222286d9bfe7873c6fa47369b28cc3986f17eb151d619af41257c4657ad4af6ef9b66c467e837ba8472f0ef2b904bb9901e0cff56bebb11fd457b68acd7
+  languageName: node
+  linkType: hard
+
 "json-schema-traverse@npm:^0.4.1":
   version: 0.4.1
   resolution: "json-schema-traverse@npm:0.4.1"
@@ -4354,7 +4605,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsonpointer@npm:^5.0.0":
+"jsonpointer@npm:^5.0.0, jsonpointer@npm:^5.0.1":
   version: 5.0.1
   resolution: "jsonpointer@npm:5.0.1"
   checksum: 10c0/89929e58b400fcb96928c0504fcf4fc3f919d81e9543ceb055df125538470ee25290bb4984251e172e6ef8fcc55761eb998c118da763a82051ad89d4cb073fe7
@@ -4488,6 +4739,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lib0@npm:^0.2.85, lib0@npm:^0.2.99":
+  version: 0.2.99
+  resolution: "lib0@npm:0.2.99"
+  dependencies:
+    isomorphic.js: "npm:^0.2.4"
+  bin:
+    0ecdsa-generate-keypair: bin/0ecdsa-generate-keypair.js
+    0gentesthtml: bin/gentesthtml.js
+    0serve: bin/0serve.js
+  checksum: 10c0/24f914e5ab025a3e647396a22dcdb748754a9ce9eb1b98ac9a51e4a25d589c4382c82dda8330252c77f2755288097ccb3654e34eb03b1ae957422f8ebeae04d2
+  languageName: node
+  linkType: hard
+
 "linkify-it@npm:^5.0.0":
   version: 5.0.0
   resolution: "linkify-it@npm:5.0.0"
@@ -4534,6 +4798,13 @@ __metadata:
   bin:
     lodash: bin/lodash
   checksum: 10c0/00e5fb75114ec63b1b00d96ab8e34eabc4c9a39c51ecd3e12d1a15eb0f4e2c795bcfa986e4ceef2fb726a6c67bb0f4cf1579c399be9bec4c85ff6f750179b61d
+  languageName: node
+  linkType: hard
+
+"lodash-es@npm:^4.17.21":
+  version: 4.17.21
+  resolution: "lodash-es@npm:4.17.21"
+  checksum: 10c0/fb407355f7e6cd523a9383e76e6b455321f0f153a6c9625e21a8827d10c54c2a2341bd2ae8d034358b60e07325e1330c14c224ff582d04612a46a4f0479ff2f2
   languageName: node
   linkType: hard
 
@@ -4600,7 +4871,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.20, lodash@npm:^4.17.21":
+"lodash@npm:^4.17.20, lodash@npm:^4.17.21, lodash@npm:^4.17.4":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
@@ -4819,7 +5090,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimist@npm:^1.2.0, minimist@npm:^1.2.3":
+"minimist@npm:^1.2.0, minimist@npm:^1.2.3, minimist@npm:~1.2.0":
   version: 1.2.8
   resolution: "minimist@npm:1.2.8"
   checksum: 10c0/19d3fcdca050087b84c2029841a093691a91259a47def2f18222f41e7645a0b7c44ef4b40e88a1e58a40c84d2ef0ee6047c55594d298146d0eb3f6b737c20ce6
@@ -5290,6 +5561,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"path-browserify@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "path-browserify@npm:1.0.1"
+  checksum: 10c0/8b8c3fd5c66bd340272180590ae4ff139769e9ab79522e2eb82e3d571a89b8117c04147f65ad066dccfb42fcad902e5b7d794b3d35e0fd840491a8ddbedf8c66
+  languageName: node
+  linkType: hard
+
 "path-exists@npm:^4.0.0":
   version: 4.0.0
   resolution: "path-exists@npm:4.0.0"
@@ -5590,6 +5868,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"querystringify@npm:^2.1.1":
+  version: 2.2.0
+  resolution: "querystringify@npm:2.2.0"
+  checksum: 10c0/3258bc3dbdf322ff2663619afe5947c7926a6ef5fb78ad7d384602974c467fadfc8272af44f5eb8cddd0d011aae8fabf3a929a8eee4b86edcc0a21e6bd10f9aa
+  languageName: node
+  linkType: hard
+
 "queue-microtask@npm:^1.2.2":
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
@@ -5620,7 +5905,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-is@npm:^18.0.0":
+"react-is@npm:^18.0.0, react-is@npm:^18.2.0":
   version: 18.3.1
   resolution: "react-is@npm:18.3.1"
   checksum: 10c0/f2f1e60010c683479e74c63f96b09fb41603527cd131a9959e2aee1e5a8b0caf270b365e5ca77d4a6b18aae659b60a86150bb3979073528877029b35aecd2072
@@ -5736,6 +6021,13 @@ __metadata:
   version: 0.8.7
   resolution: "require-relative@npm:0.8.7"
   checksum: 10c0/b2d36d20cb849c26fb8134064048162e029ebbf373c915e6d31b2d5caa9e9b599c7b3e70700c019c28c9347369e85ecbcf139956788ece2774d8cb355d24c36f
+  languageName: node
+  linkType: hard
+
+"requires-port@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "requires-port@npm:1.0.0"
+  checksum: 10c0/b2bfdd09db16c082c4326e573a82c0771daaf7b53b9ce8ad60ea46aa6e30aaf475fe9b164800b89f93b748d2c234d8abff945d2551ba47bf5698e04cd7713267
   languageName: node
   linkType: hard
 
@@ -6030,6 +6322,7 @@ __metadata:
   resolution: "simply-view-image-for-python-debugging@workspace:."
   dependencies:
     "@eslint/js": "npm:^9.20.0"
+    "@jupyterlab/services": "npm:^7.3.5"
     "@types/lodash": "npm:^4.17.15"
     "@types/node": "npm:^18.11.15"
     "@types/parsimmon": "npm:^1.10.9"
@@ -6037,6 +6330,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^8.24.0"
     "@typescript-eslint/parser": "npm:^8.24.0"
     "@vscode/codicons": "npm:^0.0.36"
+    "@vscode/jupyter-extension": "npm:^1.1.1"
     "@vscode/vsce": "npm:^3.2.2"
     "@vscode/webview-ui-toolkit": "npm:^1.4.0"
     "@wasm-tool/wasm-pack-plugin": "patch:@wasm-tool/wasm-pack-plugin@npm%3A1.7.0#~/.yarn/patches/@wasm-tool-wasm-pack-plugin-npm-1.7.0-05c10ff10e.patch"
@@ -6715,6 +7009,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"url-parse@npm:~1.5.4":
+  version: 1.5.10
+  resolution: "url-parse@npm:1.5.10"
+  dependencies:
+    querystringify: "npm:^2.1.1"
+    requires-port: "npm:^1.0.0"
+  checksum: 10c0/bd5aa9389f896974beb851c112f63b466505a04b4807cea2e5a3b7092f6fbb75316f0491ea84e44f66fed55f1b440df5195d7e3a8203f64fcefa19d182f5be87
+  languageName: node
+  linkType: hard
+
 "utif2@npm:^4.1.0":
   version: 4.1.0
   resolution: "utif2@npm:4.1.0"
@@ -6744,6 +7048,46 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 10c0/bcbb807a917d374a49f475fae2e87fdca7da5e5530820ef53f65ba1d12131bd81a92ecf259cc7ce317cbe0f289e7d79fdfebcef9bfa3087c8c8a2fa304c9be54
+  languageName: node
+  linkType: hard
+
+"validate.io-array@npm:^1.0.3":
+  version: 1.0.6
+  resolution: "validate.io-array@npm:1.0.6"
+  checksum: 10c0/ece1e93d24fe1c92f5ec5983e186f7890021c9144c2ad0e45d76695267861e9ad0362474a038a240caf3ab30f7b7595738c7f6efe9f6f0f9ae94290d23c39ef6
+  languageName: node
+  linkType: hard
+
+"validate.io-function@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "validate.io-function@npm:1.0.2"
+  checksum: 10c0/210b4bbf8c71c7863df122beae76387406eb960a6540b003568dcde2bbb4baac17a2c8f0eda014f0c5d2440396e87141e62028cc8758ddc61589e3425bd26c27
+  languageName: node
+  linkType: hard
+
+"validate.io-integer-array@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "validate.io-integer-array@npm:1.0.0"
+  dependencies:
+    validate.io-array: "npm:^1.0.3"
+    validate.io-integer: "npm:^1.0.4"
+  checksum: 10c0/10231e41b862d17749d9dda996165d36c949409980545133a66f94d30c057cecc6bb75356f1cafa18ae84051bff7c560ec50be5bd20266cd4dd21615c063397a
+  languageName: node
+  linkType: hard
+
+"validate.io-integer@npm:^1.0.4":
+  version: 1.0.5
+  resolution: "validate.io-integer@npm:1.0.5"
+  dependencies:
+    validate.io-number: "npm:^1.0.3"
+  checksum: 10c0/c1e85c0fa3edbbca55e7ac423ca037864960711f673f118072965557de4ba503d686676f73746bfca1a3d418ee92e00fea21e74788cec4a557832fc3fde27333
+  languageName: node
+  linkType: hard
+
+"validate.io-number@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "validate.io-number@npm:1.0.3"
+  checksum: 10c0/fdc016a4eeb255529001dd4210a717f84d2fe4a9cddbb9e3df5c402d046eef74e1b42cae390a4943ad3328c58096794b5013888a2315eed0ac5cf6c5e8340ef3
   languageName: node
   linkType: hard
 
@@ -7036,6 +7380,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ws@npm:^8.11.0":
+  version: 8.18.1
+  resolution: "ws@npm:8.18.1"
+  peerDependencies:
+    bufferutil: ^4.0.1
+    utf-8-validate: ">=5.0.2"
+  peerDependenciesMeta:
+    bufferutil:
+      optional: true
+    utf-8-validate:
+      optional: true
+  checksum: 10c0/e498965d6938c63058c4310ffb6967f07d4fa06789d3364829028af380d299fe05762961742971c764973dce3d1f6a2633fe8b2d9410c9b52e534b4b882a99fa
+  languageName: node
+  linkType: hard
+
 "xml-parse-from-string@npm:^1.0.0":
   version: 1.0.1
   resolution: "xml-parse-from-string@npm:1.0.1"
@@ -7057,6 +7416,17 @@ __metadata:
   version: 11.0.1
   resolution: "xmlbuilder@npm:11.0.1"
   checksum: 10c0/74b979f89a0a129926bc786b913459bdbcefa809afaa551c5ab83f89b1915bdaea14c11c759284bb9b931e3b53004dbc2181e21d3ca9553eeb0b2a7b4e40c35b
+  languageName: node
+  linkType: hard
+
+"y-protocols@npm:^1.0.5":
+  version: 1.0.6
+  resolution: "y-protocols@npm:1.0.6"
+  dependencies:
+    lib0: "npm:^0.2.85"
+  peerDependencies:
+    yjs: ^13.0.0
+  checksum: 10c0/fae7d63d4609e75eac8114320aa3581311993cd0c1b7ac03d13dc30c9a95d7b1680e4500786bb417c1fb3d11a69e1bed3e50d08e15febde9b8abf70f133eb917
   languageName: node
   linkType: hard
 
@@ -7095,6 +7465,15 @@ __metadata:
   dependencies:
     buffer-crc32: "npm:~0.2.3"
   checksum: 10c0/61a14fcf47246f1a667509809e1034d9548ef7a57cec94bc0395fa0ba74beaa6a412783b99ae59ee33e26e611929b909734f0aa5d1b32f811b206917f85fe87a
+  languageName: node
+  linkType: hard
+
+"yjs@npm:^13.5.40":
+  version: 13.6.23
+  resolution: "yjs@npm:13.6.23"
+  dependencies:
+    lib0: "npm:^0.2.99"
+  checksum: 10c0/85a6b29d647b11451644f99649175c028c48f7c3b7bab986bbf344662d8b6e31a06aad898ed7c16979824b0ef130806a3a44e93542266d5e25c0e2a1d2af279b
   languageName: node
   linkType: hard
 

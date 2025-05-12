@@ -4,8 +4,9 @@ import { TrackedPythonObjects } from "../image-watch-tree/TrackedPythonObjects";
 import { SavePathHelper } from "../SerializationHelper";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
 import { ExtensionDiagnostics } from "../image-watch-tree/DiagnosticsItem";
+import { SessionData } from "../session/Session";
 
-export class DebugSessionData {
+export class DebugSessionData implements SessionData {
   public readonly savePathHelper: SavePathHelper;
   public readonly debugVariablesTracker: DebugVariablesTracker =
     new DebugVariablesTracker();
@@ -25,5 +26,9 @@ export class DebugSessionData {
       session,
     );
     this.diagnostics = new ExtensionDiagnostics(session);
+  }
+
+  get isValid(): boolean {
+    return this.isDebuggerAttached;
   }
 }

@@ -4,6 +4,7 @@ import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { arrayUniqueByKey } from "./utils/Utils";
 import { currentUserSelection, selectionString } from "./utils/VSCodeUtils";
+import { debugSession } from "./session/Session";
 
 export class CodeActionProvider implements vscode.CodeActionProvider {
   // Since calling the findExpressionViewables might be expensive,
@@ -14,11 +15,11 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
     document: vscode.TextDocument,
     range: vscode.Range,
   ): Promise<TypedCommand<"svifpd._internal_view-object">[] | undefined> {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession === undefined) {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
       return undefined;
     }
-    const debugSessionData = activeDebugSessionData(debugSession);
+    const debugSessionData = activeDebugSessionData(session);
     if (
       debugSessionData.isStopped === false ||
       debugSessionData.setupOkay === false
@@ -39,7 +40,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
     });
     const objectViewables = await findExpressionViewables(
       selectionString(userSelection),
-      debugSession,
+      debugSession(session),
     );
     if (objectViewables.err) {
       return undefined;
@@ -49,7 +50,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
       (viewable) => ({
         title: `View ${viewable.title}`,
         command: "svifpd._internal_view-object",
-        arguments: [userSelection, viewable, debugSession],
+        arguments: [userSelection, viewable, debugSession(session)],
       }),
     );
   }

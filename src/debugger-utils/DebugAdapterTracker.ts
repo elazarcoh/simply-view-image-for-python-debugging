@@ -11,6 +11,7 @@ import { runSetup } from "../python-communication/Setup";
 import { WebviewClient } from "../webview/communication/WebviewClient";
 import { WebviewRequests } from "../webview/communication/createMessages";
 import _ from "lodash";
+import { debugSession } from "../session/Session";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -64,9 +65,13 @@ export const createDebugAdapterTracker = (
     { leading: true },
   );
 
-  const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 1000, {
-    leading: true,
-  });
+  const runSetupIfNotRunning = _.debounce(
+    _.partial(runSetup, debugSession(session)),
+    1000,
+    {
+      leading: true,
+    },
+  );
 
   return {
     onWillStartSession: () => {

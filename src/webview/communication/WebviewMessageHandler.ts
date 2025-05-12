@@ -20,6 +20,7 @@ import {
 } from "../../image-watch-tree/PythonObjectsList";
 import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
 import { disposeAll } from "../../utils/VSCodeUtils";
+import { debugSession } from "../../session/Session";
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -45,19 +46,19 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   async handleImageDataRequest(id: MessageId, args: RequestImageData) {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession === undefined) {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
       return undefined;
     }
 
     const currentPythonObjectsList =
-      activeDebugSessionData(debugSession)?.currentPythonObjectsList;
+      activeDebugSessionData(session)?.currentPythonObjectsList;
     const objectItemKind =
       currentPythonObjectsList.find(args.expression)?.type ?? "expression";
 
     const objectViewables = await findExpressionViewables(
       args.expression,
-      debugSession,
+      debugSession(session),
     );
 
     if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
@@ -69,7 +70,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
         ? { variable: args.expression }
         : { expression: args.expression },
       objectViewables.safeUnwrap()[0],
-      debugSession,
+      debugSession(session),
     );
     if (response.err) {
       logError("Error retrieving image using socket", errorMessage(response));
@@ -83,19 +84,19 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   async handleBatchItemDataRequest(id: string, args: RequestBatchItemData) {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession === undefined) {
+    const session = vscode.debug.activeDebugSession;
+    if (session === undefined) {
       return undefined;
     }
 
     const currentPythonObjectsList =
-      activeDebugSessionData(debugSession)?.currentPythonObjectsList;
+      activeDebugSessionData(session)?.currentPythonObjectsList;
     const objectItemKind =
       currentPythonObjectsList.find(args.expression)?.type ?? "expression";
 
     const objectViewables = await findExpressionViewables(
       args.expression,
-      debugSession,
+      debugSession(session),
     );
 
     if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
@@ -110,7 +111,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
         ? { variable: args.expression }
         : { expression: args.expression },
       objectViewables.safeUnwrap()[0],
-      debugSession,
+      debugSession(session),
       { start, stop },
     );
     if (response.err) {

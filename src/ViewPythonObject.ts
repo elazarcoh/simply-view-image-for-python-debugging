@@ -16,11 +16,12 @@ import { WebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
 import { logWarn } from "./Logging";
 import { valueOrEval } from "./utils/Utils";
+import { debugSession, Session } from "./session/Session";
 
 export async function viewObject(
   obj: PythonObjectRepresentation,
   viewable: Viewable,
-  session: vscode.DebugSession,
+  session: Session,
   path?: string,
   openInPreview?: boolean,
   forceDiskSerialization?: boolean,
@@ -63,14 +64,10 @@ export async function viewObject(
 }
 
 export async function viewObjectUnderCursor(): Promise<unknown> {
-  const debugSession = vscode.debug.activeDebugSession;
+  const session = vscode.debug.activeDebugSession;
   const document = vscode.window.activeTextEditor?.document;
   const range = vscode.window.activeTextEditor?.selection;
-  if (
-    debugSession === undefined ||
-    document === undefined ||
-    range === undefined
-  ) {
+  if (session === undefined || document === undefined || range === undefined) {
     return undefined;
   }
 
@@ -81,7 +78,7 @@ export async function viewObjectUnderCursor(): Promise<unknown> {
 
   const objectViewables = await findExpressionViewables(
     selectionString(userSelection),
-    debugSession,
+    debugSession(session),
   );
   if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
     return undefined;
@@ -90,19 +87,15 @@ export async function viewObjectUnderCursor(): Promise<unknown> {
   return viewObject(
     userSelection,
     objectViewables.safeUnwrap()[0],
-    debugSession,
+    debugSession(session),
   );
 }
 
 export async function trackObjectUnderCursor(): Promise<unknown> {
-  const debugSession = vscode.debug.activeDebugSession;
+  const session = vscode.debug.activeDebugSession;
   const document = vscode.window.activeTextEditor?.document;
   const range = vscode.window.activeTextEditor?.selection;
-  if (
-    debugSession === undefined ||
-    document === undefined ||
-    range === undefined
-  ) {
+  if (session === undefined || document === undefined || range === undefined) {
     return undefined;
   }
 
@@ -113,14 +106,14 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
   const userSelectionAsString = selectionString(userSelection);
 
   // find if it is an existing expression in the list
-  const debugSessionData = activeDebugSessionData(debugSession);
+  const debugSessionData = activeDebugSessionData(session);
   const objectInList = debugSessionData.currentPythonObjectsList.find(
     userSelectionAsString,
   );
 
   const objectViewables = await findExpressionViewables(
     userSelectionAsString,
-    debugSession,
+    debugSession(session),
   );
 
   // add as expression if not found
@@ -158,7 +151,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
   return viewObject(
     userSelection,
     objectViewables.safeUnwrap()[0],
-    debugSession,
+    debugSession(session),
     savePath,
     false,
   );

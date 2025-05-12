@@ -11,6 +11,7 @@ import { allFulfilled } from "../utils/Utils";
 import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
 import { logError } from "../Logging";
 import { errorMessage } from "../utils/Result";
+import { debugSession } from "../session/Session";
 
 type TrackedObject = {
   expression: PythonExpression;
@@ -110,7 +111,10 @@ export async function saveAllTrackedObjects(
     return;
   }
 
-  const saveResult = await evaluateInPython(saveObjectsCode, session);
+  const saveResult = await evaluateInPython(
+    saveObjectsCode,
+    debugSession(session),
+  );
   if (saveResult.err) {
     logError(`Failed to save tracked objects: ${errorMessage(saveResult)}`);
     return;

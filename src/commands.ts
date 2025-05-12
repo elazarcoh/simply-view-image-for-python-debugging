@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import {
   updateDebugFrameId,
   viewVariableFromVSCodeDebugViewAsImage,
-} from "./debugger-utils/DebugRelatedCommands";
+} from "./session/debugger/DebugRelatedCommands";
 import {
   addExpressionTreeItem,
   editExpressionTreeItem,
@@ -23,7 +23,7 @@ import {
 import Container from "typedi";
 import { WebviewClient } from "./webview/communication/WebviewClient";
 import { runSetup } from "./python-communication/Setup";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { openFileImage } from "./ImagePreviewCustomEditor";
 import {
   JUPYTER_VIEW_COMMAND,

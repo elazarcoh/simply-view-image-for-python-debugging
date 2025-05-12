@@ -1,6 +1,6 @@
 import Container from "typedi";
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { Viewable } from "../viewable/Viewable";
 import {
   addExpression,
@@ -12,6 +12,7 @@ import { PythonObjectTreeItem } from "./WatchTreeItem";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 import { WebviewClient } from "../webview/communication/WebviewClient";
 import { WebviewRequests } from "../webview/communication/createMessages";
+import { debugSessionOrNull } from "../session/Session";
 
 // singleton object that used to add expression when user click on it
 class _AddExpressionWatchTreeItem extends vscode.TreeItem {
@@ -56,7 +57,11 @@ export async function addExpressionTreeItem(): Promise<void> {
   if (added) {
     await activeDebugSessionData()?.currentPythonObjectsList.update();
     Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    Container.get(WebviewClient).sendRequest(
+      WebviewRequests.replaceImages(
+        debugSessionOrNull(vscode.debug.activeDebugSession),
+      ),
+    );
   }
 }
 
@@ -71,7 +76,11 @@ export async function removeExpressionTreeItem(
     }
     await activeDebugSessionData()?.currentPythonObjectsList.update();
     Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    Container.get(WebviewClient).sendRequest(
+      WebviewRequests.replaceImages(
+        debugSessionOrNull(vscode.debug.activeDebugSession),
+      ),
+    );
   }
 }
 
@@ -83,7 +92,11 @@ export async function editExpressionTreeItem(
   if (changed) {
     await activeDebugSessionData()?.currentPythonObjectsList.update();
     Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    Container.get(WebviewClient).sendRequest(
+      WebviewRequests.replaceImages(
+        debugSessionOrNull(vscode.debug.activeDebugSession),
+      ),
+    );
   }
 }
 
@@ -103,6 +116,10 @@ export async function removeAllExpressionsTree(): Promise<void> {
     }
     await activeDebugSessionData()?.currentPythonObjectsList.update();
     Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    Container.get(WebviewClient).sendRequest(
+      WebviewRequests.replaceImages(
+        debugSessionOrNull(vscode.debug.activeDebugSession),
+      ),
+    );
   }
 }

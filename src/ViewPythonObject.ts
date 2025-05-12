@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import {
   currentUserSelection,
   selectionString,

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { stringifyPython } from "./BuildPythonCode";
 import { parsePythonResult } from "./PythonValueParser";
 import { Err, Ok, Result } from "../utils/Result";

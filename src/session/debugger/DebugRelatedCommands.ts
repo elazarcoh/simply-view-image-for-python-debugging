@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { findExpressionViewables } from "../PythonObjectInfo";
-import { viewObject } from "../ViewPythonObject";
-import { debugSession } from "../session/Session";
+import { findExpressionViewables } from "../../PythonObjectInfo";
+import { viewObject } from "../../ViewPythonObject";
+import { debugSession } from "../../session/Session";
 
 // update currently selected frame, using a hacky way (because the vscode API is lacking).
 export async function updateDebugFrameId(): Promise<void> {

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import Container from "typedi";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { PythonObjectTreeItem } from "./WatchTreeItem";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 import { VariableWatchTreeItem } from "./WatchVariable";

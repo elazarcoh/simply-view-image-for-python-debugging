@@ -1,23 +1,23 @@
 import * as vscode from "vscode";
 import Container from "typedi";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { logDebug, logTrace } from "../Logging";
+import { logDebug, logTrace } from "../../Logging";
 import { activeDebugSessionData } from "./DebugSessionsHolder";
-import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
-import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";
-import { getConfiguration } from "../config";
+import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
+import { saveAllTrackedObjects } from "../../image-watch-tree/TrackedPythonObjects";
+import { getConfiguration } from "../../config";
 import { patchDebugVariableContext } from "./DebugRelatedCommands";
-import { runSetup } from "../python-communication/Setup";
-import { WebviewClient } from "../webview/communication/WebviewClient";
-import { WebviewRequests } from "../webview/communication/createMessages";
+import { runSetup } from "../../python-communication/Setup";
+import { WebviewClient } from "../../webview/communication/WebviewClient";
+import { WebviewRequests } from "../../webview/communication/createMessages";
 import _ from "lodash";
-import { debugSession } from "../session/Session";
+import { debugSession } from "../../session/Session";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
 // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
 export const createDebugAdapterTracker = (
-  session: vscode.DebugSession,
+  vscodeDebugSession: vscode.DebugSession,
 ): vscode.DebugAdapterTracker => {
   type Request<T> = T & { type: "request" };
   type Response<T> = T & { type: "response" };
@@ -34,7 +34,8 @@ export const createDebugAdapterTracker = (
     | WithCommand<Response<DebugProtocol.VariablesResponse>, "variables">
     | WithCommand<Response<DebugProtocol.ScopesResponse>, "scopes">;
 
-  const debugSessionData = activeDebugSessionData(session);
+  const session = debugSession(vscodeDebugSession);
+  const debugSessionData = activeDebugSessionData(vscodeDebugSession);
   const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
   const watchTreeProvider = Container.get(WatchTreeProvider);
@@ -46,12 +47,15 @@ export const createDebugAdapterTracker = (
   };
 
   const saveTracked = () => {
-    return saveAllTrackedObjects(trackedPythonObjects.allTracked, session);
+    return saveAllTrackedObjects(
+      trackedPythonObjects.allTracked,
+      vscodeDebugSession,
+    );
   };
 
   const updateWebview = async () => {
     const webviewClient = Container.get(WebviewClient);
-    webviewClient.sendRequest(WebviewRequests.replaceImages());
+    webviewClient.sendRequest(WebviewRequests.replaceImages(session));
   };
 
   const onScopeChange = _.debounce(
@@ -66,7 +70,7 @@ export const createDebugAdapterTracker = (
   );
 
   const runSetupIfNotRunning = _.debounce(
-    _.partial(runSetup, debugSession(session)),
+    _.partial(runSetup, debugSession(vscodeDebugSession)),
     1000,
     {
       leading: true,

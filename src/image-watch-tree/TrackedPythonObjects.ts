@@ -8,7 +8,7 @@ import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { Viewable } from "../viewable/Viewable";
 import { openImageToTheSide } from "../utils/VSCodeUtils";
 import { allFulfilled } from "../utils/Utils";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { logError } from "../Logging";
 import { errorMessage } from "../utils/Result";
 import { debugSession } from "../session/Session";

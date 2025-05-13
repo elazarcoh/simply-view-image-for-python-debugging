@@ -121,6 +121,8 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
 
     let node_ref = use_node_ref();
 
+    let active_session =
+        use_selector(|state: &AppState| state.sessions.borrow().active_session.clone());
     let images_data = use_selector(|state: &AppState| state.images.clone());
     let selected_entry = use_selector(|state: &AppState| {
         state
@@ -133,15 +135,20 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
     let entries = images_data
         .borrow()
         .iter()
+        .filter(|(id, _)| {
+            if let Some(active_session) = active_session.as_ref() {
+                id.session_id() == active_session
+            } else {
+                false
+            }
+        })
         .map(|(id, info)| {
             let onclick = {
                 let dispatch = Dispatch::<AppState>::global();
 
                 dispatch.apply_callback({
                     let id = id.clone();
-                    move |_| {
-                        StoreAction::SetImageToView(id.clone(), ViewId::Primary)
-                    }
+                    move |_| StoreAction::SetImageToView(id.clone(), ViewId::Primary)
                 })
             };
 
@@ -167,10 +174,8 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
                 />
             }
         })
-        .interleave(
-            std::iter::once(html! { <hr class={css!("margin: 0; border-color: var(--vscode-menu-border);")} /> })
-                .cycle()
-                .take(num_entries),
+        .intersperse(
+            html! { <hr class={css!("margin: 0; border-color: var(--vscode-menu-border);")} /> },
         )
         .collect::<Vec<_>>();
 

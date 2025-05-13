@@ -7,7 +7,8 @@ use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
+    AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, SessionId, ViewId,
+    ViewableObjectId,
 };
 use crate::configurations;
 use crate::vscode::state::HostExtensionStateUpdate;
@@ -159,6 +160,7 @@ impl ImageObject {
 }
 
 pub(crate) enum StoreAction {
+    SetActiveSession(SessionId),
     SetImageToView(ViewableObjectId, ViewId),
     AddImageWithData(ViewableObjectId, ImageData),
     UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
@@ -168,8 +170,18 @@ pub(crate) enum StoreAction {
     SetMode(AppMode),
 }
 
+fn add_session(sessions: &Mrc<Sessions>, session_id: SessionId) -> Result<()> {
+    let mut sessions = sessions.borrow_mut();
+    if !sessions.sessions.contains(&session_id) {
+        sessions.sessions.push(session_id);
+    }
+    Ok(())
+}
+
 fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     let image_id = image.image_id().clone();
+
+    add_session(&state.sessions, image_id.session_id().clone())?;
 
     if let ImageObject::Placeholder(image_placeholder) = &image {
         state.images.borrow_mut().insert(
@@ -253,7 +265,6 @@ impl Reducer<AppState> for StoreAction {
                 );
                 state.set_image_to_view(image_id, view_id);
             }
-
             StoreAction::AddImageWithData(image_id, image_data) => {
                 log::debug!("AddImageWithData: {:?}", image_id);
                 let image_object = ImageObject::WithData(image_data);
@@ -263,7 +274,6 @@ impl Reducer<AppState> for StoreAction {
                     })
                     .ok();
             }
-
             StoreAction::UpdateDrawingOptions(image_id, update) => {
                 let current_drawing_options = state
                     .drawing_options
@@ -319,7 +329,6 @@ impl Reducer<AppState> for StoreAction {
                     .borrow_mut()
                     .set(image_id, new_drawing_option);
             }
-
             StoreAction::ReplaceData(replacement_images) => {
                 log::debug!("ReplaceData");
                 state.image_cache.borrow_mut().clear();
@@ -333,7 +342,6 @@ impl Reducer<AppState> for StoreAction {
                     }
                 }
             }
-
             StoreAction::UpdateGlobalDrawingOptions(opts) => match opts {
                 UpdateGlobalDrawingOptions::GlobalHeatmapColormap(name) => {
                     state.global_drawing_options.heatmap_colormap_name = name;
@@ -351,6 +359,9 @@ impl Reducer<AppState> for StoreAction {
             StoreAction::SetMode(app_mode) => {
                 state.app_mode = app_mode;
                 log::info!("App mode set to: {:?}", app_mode);
+            }
+            StoreAction::SetActiveSession(session_id) => {
+                state.sessions.borrow_mut().active_session = Some(session_id);
             }
         };
 

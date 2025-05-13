@@ -1,8 +1,13 @@
 use glam::UVec2;
 use stylist::yew::use_style;
+use wasm_bindgen::JsCast;
 use yew::prelude::*;
+use yewdux::{use_selector, Dispatch};
 
-use crate::common::pixel_value::PixelValue;
+use crate::{
+    application_state::app_state::{AppState, StoreAction},
+    common::{pixel_value::PixelValue, SessionId},
+};
 
 #[derive(PartialEq, Properties)]
 pub struct SessionSelectProps {}
@@ -11,6 +16,43 @@ pub struct SessionSelectProps {}
 pub fn SessionSelect(props: &SessionSelectProps) -> Html {
     let SessionSelectProps {} = props;
 
+    let sessions = use_selector(|state: &AppState| state.sessions.clone());
+    let active_session = sessions.borrow().active_session.clone();
+
+    let onchange = Callback::from({
+        move |e: Event| {
+            let value = e
+                .target()
+                .unwrap()
+                .dyn_ref::<web_sys::HtmlSelectElement>()
+                .unwrap()
+                .value();
+            if !value.is_empty() {
+                let dispatch = Dispatch::<AppState>::global();
+                dispatch.apply(StoreAction::SetActiveSession(SessionId::new(&value)));
+            }
+        }
+    });
+
+    let options = sessions
+        .borrow()
+        .sessions
+        .iter()
+        .map(|session| {
+            let id = session.0.clone();
+            let selected = if let Some(active_session) = active_session.as_ref() {
+                active_session.0 == id
+            } else {
+                false
+            };
+            html! {
+                <option value={id.clone()} selected={selected}>
+                    {id}
+                </option>
+            }
+        })
+        .collect::<Vec<_>>();
+
     let style = use_style!(
         r#"
         display: flex;
@@ -18,6 +60,7 @@ pub fn SessionSelect(props: &SessionSelectProps) -> Html {
         justify-content: flex-start;
         flex-direction: row;
         gap: 10px;
+        max-width: 200px;
 
         label {
             user-select: none;
@@ -33,31 +76,9 @@ pub fn SessionSelect(props: &SessionSelectProps) -> Html {
         "#
     );
 
-    let onchange = Callback::from({
-        move |_e: Event| {
-            // let value = e
-            //     .target()
-            //     .unwrap()
-            //     .dyn_ref::<web_sys::HtmlSelectElement>()
-            //     .unwrap()
-            //     .value();
-            // if !value.is_empty() {
-            //     let dispatch = Dispatch::<AppState>::global();
-            //     dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
-            //         UpdateGlobalDrawingOptions::GlobalHeatmapColormap(value),
-            //     ));
-            // }
-        }
-    });
-
-    let options = vec![
-        html! {
-            <option value="session1" selected={true}>{"Session 1"}</option>
-        },
-        html! {
-            <option value="session2">{"Session 2"}</option>
-        },
-    ];
+    if options.is_empty() {
+        return html! {};
+    }
 
     html! {
         <div class={style}>

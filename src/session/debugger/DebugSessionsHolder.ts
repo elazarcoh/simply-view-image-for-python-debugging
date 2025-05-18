@@ -28,7 +28,7 @@ export function activeDebugSessionData(): DebugSessionData | undefined;
 export function activeDebugSessionData(
   session?: vscode.DebugSession | undefined,
 ): DebugSessionData | undefined {
-  session ?? (session = vscode.debug.activeDebugSession);
+  session ??= vscode.debug.activeDebugSession;
   return session
     ? Container.get(DebugSessionsHolder).debugSessionData(session)
     : undefined;

@@ -63,7 +63,7 @@ function runThroughDebugger(
   const debugVariablesTracker =
     activeDebugSessionData(session).debugVariablesTracker;
 
-  frameId = frameId ?? debugVariablesTracker.currentFrameId();
+  frameId = frameId ?? debugVariablesTracker.frameId;
 
   return session.customRequest("evaluate", {
     expression,
@@ -138,9 +138,9 @@ export function execInPython(
 ): Promise<Result<null>> {
   const code = {
     pythonCode: `
-exec(\"\"\"
+exec("""
 ${evalCodePython.pythonCode}
-\"\"\"
+"""
 )
 `,
   };

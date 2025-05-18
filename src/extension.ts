@@ -115,6 +115,20 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
+    vscode.debug.onDidChangeActiveStackItem((stackItem) => {
+      if (stackItem !== undefined) {
+        const debugSessionData = activeDebugSessionData(stackItem.session);
+        if ("frameId" in stackItem) {
+          debugSessionData.debugVariablesTracker.setFrameId(stackItem.frameId);
+        }
+        debugSessionData.currentPythonObjectsList
+          .update()
+          .then(() => watchTreeProvider.refresh());
+      }
+    }),
+  );
+
+  context.subscriptions.push(
     vscode.debug.onDidTerminateDebugSession((session) => {
       return activeDebugSessionData(session).savePathHelper.deleteSaveDir();
     }),

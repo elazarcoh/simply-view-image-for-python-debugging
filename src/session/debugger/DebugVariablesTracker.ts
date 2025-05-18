@@ -46,8 +46,12 @@ function filterVariables(
 }
 
 export class DebugVariablesTracker {
-  readonly localVariables: TrackedVariable[] = [];
-  readonly globalVariables: TrackedVariable[] = [];
+  readonly localVariables: {
+    [frameId: number]: TrackedVariable[];
+  } = {};
+  readonly globalVariables: {
+    [frameId: number]: TrackedVariable[];
+  } = {};
 
   readonly scopesRequests: Map<
     number,
@@ -70,14 +74,13 @@ export class DebugVariablesTracker {
       scope: "local" | "global";
     }
   > = new Map();
-  _currentFrameId: number | undefined;
-
-  currentFrameId(): number | undefined {
-    return this._currentFrameId;
-  }
+  private _currentFrameId: number | undefined;
 
   setFrameId(frameId: number | undefined): void {
     this._currentFrameId = frameId;
+  }
+  get frameId(): number | undefined {
+    return this._currentFrameId;
   }
 
   onScopesRequest(request: DebugProtocol.ScopesRequest): void {
@@ -94,7 +97,7 @@ export class DebugVariablesTracker {
         `Captured scopes response ${response.request_seq} for frameId ${request.frameId}`,
       );
       const frameId = request.frameId;
-      this._currentFrameId = frameId;
+      this.setFrameId(frameId);
       this.scopesRequests.delete(response.request_seq);
       const [global, local] = response.body.scopes;
       logDebug(`Local scope reference ${local.variablesReference}`);
@@ -133,14 +136,18 @@ export class DebugVariablesTracker {
       );
       const frameId = request.frameId;
       this.variablesRequests.delete(response.request_seq);
-      if (request.scope === "local") {
-        this.localVariables.length = 0;
+
+      const localVariables = (this.localVariables[frameId] ??= []);
+      const globalVariables = (this.globalVariables[frameId] ??= []);
+
+      if (request.scope === "global") {
+        globalVariables.length = 0;
       } else {
-        this.globalVariables.length = 0;
+        localVariables.length = 0;
       }
       const variablesForScope =
-        request.scope === "local" ? this.localVariables : this.globalVariables;
-      this._currentFrameId = frameId;
+        request.scope === "local" ? localVariables : globalVariables;
+      this.setFrameId(frameId);
       for (const variable of filterVariables(response.body.variables)) {
         const evaluateName = variable.evaluateName ?? variable.name;
         logDebug(
@@ -160,10 +167,31 @@ export class DebugVariablesTracker {
     //
   }
 
+  private localVariablesForFrame(
+    frameId: number | undefined,
+  ): TrackedVariable[] | undefined {
+    if (frameId === undefined) {
+      return undefined;
+    }
+    return this.localVariables[frameId];
+  }
+  private globalVariablesForFrame(
+    frameId: number | undefined,
+  ): TrackedVariable[] | undefined {
+    if (frameId === undefined) {
+      return undefined;
+    }
+    return this.globalVariables[frameId];
+  }
+
   getVariable(name: string): TrackedVariable | undefined {
     return (
-      this.localVariables.find((v) => v.evaluateName === name) ??
-      this.globalVariables.find((v) => v.evaluateName === name)
+      this.localVariablesForFrame(this._currentFrameId)?.find(
+        (v) => v.evaluateName === name,
+      ) ??
+      this.globalVariablesForFrame(this._currentFrameId)?.find(
+        (v) => v.evaluateName === name,
+      )
     );
   }
 
@@ -172,12 +200,14 @@ export class DebugVariablesTracker {
     globals: TrackedVariable[];
   }> {
     return {
-      locals: this.localVariables.filter(
-        (v) => v.frameId === this._currentFrameId,
-      ),
-      globals: this.globalVariables.filter(
-        (v) => v.frameId === this._currentFrameId,
-      ),
+      locals:
+        this.localVariablesForFrame(this.frameId)?.filter(
+          (v) => v.frameId === this._currentFrameId,
+        ) ?? [],
+      globals:
+        this.globalVariablesForFrame(this.frameId)?.filter(
+          (v) => v.frameId === this._currentFrameId,
+        ) ?? [],
     };
   }
 }

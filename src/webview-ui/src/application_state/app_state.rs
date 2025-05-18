@@ -7,7 +7,7 @@ use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, SessionId, ViewId,
+    constants, AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, SessionId, ViewId,
     ViewableObjectId,
 };
 use crate::configurations;
@@ -362,6 +362,10 @@ impl Reducer<AppState> for StoreAction {
             }
             StoreAction::SetActiveSession(session_id) => {
                 state.sessions.borrow_mut().active_session = Some(session_id);
+                // reset the currently viewing image
+                constants::all_views().iter().for_each(|view_id| {
+                    state.image_views.borrow_mut().reset_view(*view_id);
+                });
             }
         };
 

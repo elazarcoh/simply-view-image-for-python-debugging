@@ -131,7 +131,6 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             .get_currently_viewing(ViewId::Primary)
     });
 
-    let num_entries = images_data.borrow().len();
     let entries = images_data
         .borrow()
         .iter()

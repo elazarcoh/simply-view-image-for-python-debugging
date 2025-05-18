@@ -263,6 +263,7 @@ impl Reducer<AppState> for StoreAction {
                         .current_image_drawing_options(Some(drawing_options.clone()))
                         .clone(),
                 );
+                state.sessions.borrow_mut().active_session = Some(image_id.session_id().clone());
                 state.set_image_to_view(image_id, view_id);
             }
             StoreAction::AddImageWithData(image_id, image_data) => {
@@ -334,12 +335,19 @@ impl Reducer<AppState> for StoreAction {
                 state.image_cache.borrow_mut().clear();
                 state.images.borrow_mut().clear();
 
+                let mut session = None;
                 let mut errors = Vec::new();
                 for image in replacement_images.into_iter() {
+                    let session_id = image.image_id().session_id().clone();
                     let res = handle_received_image(state, image);
                     if let Err(e) = res {
                         errors.push(e);
+                    } else if session.is_none() {
+                        session = Some(session_id);
                     }
+                }
+                if let Some(session) = session {
+                    state.sessions.borrow_mut().active_session = Some(session);
                 }
             }
             StoreAction::UpdateGlobalDrawingOptions(opts) => match opts {

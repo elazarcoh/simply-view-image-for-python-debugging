@@ -168,6 +168,7 @@ pub(crate) enum StoreAction {
     ReplaceData(Vec<ImageObject>),
     UpdateData(ImageObject),
     SetMode(AppMode),
+    SetSessionNames(HashMap<SessionId, String>),
 }
 
 fn add_session(sessions: &Mrc<Sessions>, session_id: SessionId) -> Result<()> {
@@ -374,6 +375,13 @@ impl Reducer<AppState> for StoreAction {
                 constants::all_views().iter().for_each(|view_id| {
                     state.image_views.borrow_mut().reset_view(*view_id);
                 });
+            }
+            StoreAction::SetSessionNames(session_names) => {
+                state
+                    .sessions
+                    .borrow_mut()
+                    .session_name
+                    .extend(session_names);
             }
         };
 

@@ -1,6 +1,6 @@
 import { getConfiguration } from "../../config";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
-import { Session } from "../../session/Session";
+import { isDebugSession, Session } from "../../session/Session";
 import { getSessionData } from "../../session/SessionData";
 import { hasValue, valueOrEval } from "../../utils/Utils";
 import {
@@ -9,6 +9,7 @@ import {
   ExtensionResponse,
   ImageMessage,
   ImagePlaceholderMessage,
+  SessionId,
   ValueVariableKind,
 } from "../webview";
 
@@ -16,6 +17,7 @@ function expressingWithInfoIntoImagePlaceholder(
   exp: string,
   infoOrError: InfoOrError,
   valueVariableKind: ValueVariableKind,
+  sessionId: string,
 ): ImagePlaceholderMessage | undefined {
   if (infoOrError.err) {
     return undefined;
@@ -29,7 +31,7 @@ function expressingWithInfoIntoImagePlaceholder(
   const info = infoOrError.safeUnwrap()[1];
 
   return {
-    image_id: ["session", exp],
+    image_id: [sessionId, exp],
     expression: exp,
     value_variable_kind: valueVariableKind,
     is_batched: viewables[0].group === "tensor", // currently, support tensor only if it's the only option
@@ -42,19 +44,33 @@ function imageObjects(session: Session | null): ImagePlaceholderMessage[] {
     return [];
   }
 
+  const sessionId = isDebugSession(session)
+    ? session.session.id
+    : session.uri.toString();
+
   const currentPythonObjectsList =
     getSessionData(session)?.currentPythonObjectsList;
   const validVariables: ImagePlaceholderMessage[] =
     currentPythonObjectsList?.variablesList
       .map(([exp, info]) =>
-        expressingWithInfoIntoImagePlaceholder(exp, info, "variable"),
+        expressingWithInfoIntoImagePlaceholder(
+          exp,
+          info,
+          "variable",
+          sessionId,
+        ),
       )
       .filter(hasValue) ?? [];
   const validExpressions: ImagePlaceholderMessage[] =
     currentPythonObjectsList
       ?.expressionsList({ skipInvalid: true })
       ?.map(([exp, info]) =>
-        expressingWithInfoIntoImagePlaceholder(exp, info, "expression"),
+        expressingWithInfoIntoImagePlaceholder(
+          exp,
+          info,
+          "expression",
+          sessionId,
+        ),
       )
       .filter(hasValue) ?? [];
 
@@ -63,6 +79,17 @@ function imageObjects(session: Session | null): ImagePlaceholderMessage[] {
 }
 
 export class WebviewRequests {
+  static setSessionNames(names: {
+    [k: SessionId]: string;
+  }): ExtensionRequest & {
+    type: "SetSessionNames";
+  } {
+    return {
+      type: "SetSessionNames",
+      session_names: names,
+    };
+  }
+
   static replaceImages(session: Session | null): ExtensionRequest & {
     type: "ReplaceData";
   } {

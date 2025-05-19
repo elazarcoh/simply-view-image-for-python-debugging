@@ -7,6 +7,7 @@ import { ExtensionDiagnostics } from "../../image-watch-tree/DiagnosticsItem";
 import { SessionData } from "../SessionData";
 
 export class DebugSessionData implements SessionData {
+  public readonly session: vscode.DebugSession;
   public readonly savePathHelper: SavePathHelper;
   public readonly debugVariablesTracker: DebugVariablesTracker =
     new DebugVariablesTracker();
@@ -20,6 +21,7 @@ export class DebugSessionData implements SessionData {
   public customState: Record<string, unknown | undefined> = {};
 
   constructor(session: vscode.DebugSession) {
+    this.session = session;
     this.savePathHelper = new SavePathHelper(session.id);
     this.currentPythonObjectsList = new CurrentPythonObjectsList(
       this.debugVariablesTracker,

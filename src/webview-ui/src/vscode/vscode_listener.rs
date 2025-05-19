@@ -1,9 +1,10 @@
 use crate::application_state::app_state::{AppState, ImageObject, StoreAction};
-use crate::common::{AppMode, ImageData, ViewId};
+use crate::common::{AppMode, ImageData, SessionId, ViewId};
 use crate::vscode::messages::*;
 use anyhow::Result;
 use gloo::events::EventListener;
 use itertools::Itertools;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
@@ -55,6 +56,9 @@ impl VSCodeListener {
                     Self::handle_configuration_request(configurations)
                 }
                 ExtensionRequest::SetMode { mode } => Self::handle_set_mode_request(mode),
+                ExtensionRequest::SetSessionNames(SessionNames { session_names }) => {
+                    Self::handle_set_session_names(session_names)
+                }
             },
         }
         .map_err(|e| log::error!("Error handling message: {:?}", e))
@@ -111,6 +115,12 @@ impl VSCodeListener {
     fn handle_set_mode_request(mode: AppMode) -> Result<()> {
         let dispatch = Dispatch::<AppState>::global();
         dispatch.apply(StoreAction::SetMode(mode));
+        Ok(())
+    }
+
+    fn handle_set_session_names(session_names: HashMap<SessionId, String>) -> Result<()> {
+        let dispatch = Dispatch::<AppState>::global();
+        dispatch.apply(StoreAction::SetSessionNames(session_names));
         Ok(())
     }
 }

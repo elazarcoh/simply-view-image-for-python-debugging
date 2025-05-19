@@ -172,8 +172,12 @@ export async function serializeImageUsingSocketServer(
       return Err(msg);
     }
 
+    const sessionId = isDebugSession(session)
+      ? session.session.id
+      : session.uri.toString();
+
     const imageMessage: ImageMessage = {
-      image_id: ["session", expression],
+      image_id: [sessionId, expression],
       value_variable_kind: isExpressionSelection(obj)
         ? "expression"
         : "variable",

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::common::{
-    AppMode, Channels, DataOrdering, Datatype, ValueVariableKind, ViewableObjectId,
+    AppMode, Channels, DataOrdering, Datatype, SessionId, ValueVariableKind, ViewableObjectId,
 };
 
 #[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -60,6 +60,11 @@ pub(crate) struct Configuration {
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
+pub(crate) struct SessionNames {
+    pub session_names: HashMap<SessionId, String>,
+}
+
+#[derive(tsify::Tsify, serde::Deserialize, Debug)]
 #[serde(tag = "type")]
 pub(crate) enum ExtensionResponse {
     ImageData(ImageMessage),
@@ -77,6 +82,7 @@ pub(crate) enum ExtensionRequest {
         options: ShowImageOptions,
     },
     ReplaceData(ReplaceData),
+    SetSessionNames(SessionNames),
     Configuration(Configuration),
     SetMode {
         mode: AppMode,

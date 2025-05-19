@@ -16,6 +16,7 @@ import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
 import { Viewable } from "../viewable/Viewable";
 import { Err, Ok, Result, errorMessage, isOkay } from "../utils/Result";
 import { debugSession } from "../session/Session";
+import _ from "lodash";
 
 // ExpressionsList is global to all debug sessions
 @Service()
@@ -132,7 +133,13 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     return allUniqueVariables.map((v) => v.evaluateName);
   }
 
-  private async retrieveInformation(): Promise<{
+  private async retrieveInformation({
+    variables,
+    expressions,
+  }: {
+    variables: string[];
+    expressions: string[];
+  }): Promise<{
     variables: {
       [index: number]: InfoOrError;
     };
@@ -140,7 +147,6 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
       [index: number]: InfoOrError;
     };
   }> {
-    const variables = this._variablesList.map((v) => v[0]);
     const variablesViewables = await findExpressionsViewables(
       variables,
       debugSession(this.debugSession),
@@ -152,7 +158,7 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
 
     // expressions are evaluated separately, to avoid case of syntax error in one expression
     const expressionsViewables = await Promise.allSettled(
-      globalExpressionsList.map((exp) =>
+      expressions.map((exp) =>
         findExpressionViewables(exp, debugSession(this.debugSession)),
       ),
     ).then((r) =>
@@ -172,7 +178,7 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
       evs.map((vs) => vs.map((v) => v.infoPythonCode)),
     );
 
-    const allExpressions = [...variables, ...globalExpressionsList];
+    const allExpressions = [...variables, ...expressions];
 
     const codeOrErrors = zip(allExpressions, informationEvalCode).map(
       ([exp, infoEvalCodes]) =>
@@ -201,55 +207,57 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
         variables: [],
         expressions: [],
       };
-    } else {
-      const validExpressionsInformation = Object.fromEntries(
-        zip(validIndices, res.safeUnwrap().map(combineValidInfoErrorIfNone)),
-      );
-      const allExpressionsInformation = codesWithIndices.map(([i]) =>
-        codeOrErrors[i].ok ? validExpressionsInformation[i] : codeOrErrors[i],
-      );
-
-      const sanitize = ([maybeViewables, info]: [
-        Result<Viewable[]>,
-        Result<PythonObjectInformation>,
-      ]): InfoOrError => {
-        if (maybeViewables.err) {
-          return maybeViewables;
-        } else if (info.err) {
-          return info;
-        } else {
-          const viewables = maybeViewables.safeUnwrap();
-          if (notEmptyArray(viewables)) {
-            return Ok([
-              viewables,
-              removeSurroundingQuotesFromInfoObject(info.safeUnwrap()),
-            ]);
-          } else {
-            return Err("Not viewable");
-          }
-        }
-      };
-
-      const allExpressionsViewablesAndInformation = zip(
-        allViewables,
-        allExpressionsInformation,
-      ).map(sanitize);
-
-      const variablesInformation = allExpressionsViewablesAndInformation.slice(
-        0,
-        this._variablesList.length,
-      );
-      const expressionsInformation =
-        allExpressionsViewablesAndInformation.slice(this._variablesList.length);
-
-      return {
-        variables: variablesInformation,
-        expressions: expressionsInformation,
-      };
     }
+
+    const validExpressionsInformation = Object.fromEntries(
+      zip(validIndices, res.safeUnwrap().map(combineValidInfoErrorIfNone)),
+    );
+    const allExpressionsInformation = codesWithIndices.map(([i]) =>
+      codeOrErrors[i].ok ? validExpressionsInformation[i] : codeOrErrors[i],
+    );
+
+    const sanitize = ([maybeViewables, info]: [
+      Result<Viewable[]>,
+      Result<PythonObjectInformation>,
+    ]): InfoOrError => {
+      if (maybeViewables.err) {
+        return maybeViewables;
+      } else if (info.err) {
+        return info;
+      } else {
+        const viewables = maybeViewables.safeUnwrap();
+        if (notEmptyArray(viewables)) {
+          return Ok([
+            viewables,
+            removeSurroundingQuotesFromInfoObject(info.safeUnwrap()),
+          ]);
+        } else {
+          return Err("Not viewable");
+        }
+      }
+    };
+
+    const allExpressionsViewablesAndInformation = zip(
+      allViewables,
+      allExpressionsInformation,
+    ).map(sanitize);
+
+    const variablesInformation = allExpressionsViewablesAndInformation.slice(
+      0,
+      variables.length,
+    );
+    const expressionsInformation = allExpressionsViewablesAndInformation.slice(
+      variables.length,
+    );
+
+    return {
+      variables: variablesInformation,
+      expressions: expressionsInformation,
+    };
   }
 
-  public async update(): Promise<void> {
+  private async _update(): Promise<void> {
+    this._variablesList.length = 0;
     const debugSessionData = activeDebugSessionData(this.debugSession);
     if (
       debugSessionData.isStopped === false ||
@@ -257,17 +265,22 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     ) {
       return;
     }
-    this._variablesList.length = 0;
-    const variables = await this.retrieveVariables();
-    logDebug(`Got ${variables.length} variables: ${variables}`);
-    this._variablesList.push(
-      ...variables.map((v) => [v, Err("Not ready")] as ExpressingWithInfo),
-    );
 
-    const information = await this.retrieveInformation();
-    const validVariables: { [index: number]: [string, InfoOrError] } = {};
-    for (let i = 0; i < this._variablesList.length; i++) {
-      const variable = this._variablesList[i];
+    const variableNames = await this.retrieveVariables();
+    logDebug(`Got ${variableNames.length} variables: ${variableNames}`);
+    // this._variablesList.push(
+    //   ...variables.map((v) => [v, Err("Not ready")] as ExpressingWithInfo),
+    // );
+
+    const information = await this.retrieveInformation({
+      variables: variableNames,
+      expressions: globalExpressionsList.slice(),
+    });
+    const validVariables: [string, InfoOrError][] = variableNames.map(
+      (v) => [v, Err("Not ready")] as ExpressingWithInfo,
+    );
+    for (let i = 0; i < validVariables.length; i++) {
+      const variable = validVariables[i];
       const name = variable[0];
       const info = information.variables[i];
       if (!info.err) {
@@ -301,9 +314,13 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     this._expressionsInfo = Object.values(information.expressions);
   }
 
+  public update = _.throttle(this._update.bind(this), 2000, {
+    leading: true,
+  });
+
   public addExpression(expression: string): Promise<void> {
     Container.get(ExpressionsList).expressions.push(expression);
-    return this.update();
+    return this._update();
   }
 }
 

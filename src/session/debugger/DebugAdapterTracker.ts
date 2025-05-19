@@ -1,17 +1,16 @@
-import * as vscode from "vscode";
-import Container from "typedi";
-import { DebugProtocol } from "vscode-debugprotocol";
-import { logDebug, logTrace } from "../../Logging";
-import { activeDebugSessionData } from "./DebugSessionsHolder";
-import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
-import { saveAllTrackedObjects } from "../../image-watch-tree/TrackedPythonObjects";
-import { getConfiguration } from "../../config";
-import { patchDebugVariableContext } from "./DebugRelatedCommands";
-import { runSetup } from "../../python-communication/Setup";
-import { WebviewClient } from "../../webview/communication/WebviewClient";
-import { WebviewRequests } from "../../webview/communication/createMessages";
 import _ from "lodash";
+import Container from "typedi";
+import * as vscode from "vscode";
+import { DebugProtocol } from "vscode-debugprotocol";
+import { getConfiguration } from "../../config";
+import { refreshAllDataViews } from "../../globalActions";
+import { saveAllTrackedObjects } from "../../image-watch-tree/TrackedPythonObjects";
+import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
+import { logDebug, logTrace } from "../../Logging";
+import { runSetup } from "../../python-communication/Setup";
 import { debugSession } from "../../session/Session";
+import { patchDebugVariableContext } from "./DebugRelatedCommands";
+import { activeDebugSessionData } from "./DebugSessionsHolder";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -39,8 +38,6 @@ export const createDebugAdapterTracker = (
   const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
   const watchTreeProvider = Container.get(WatchTreeProvider);
-  const currentPythonObjectsList = debugSessionData.currentPythonObjectsList;
-  const trackedPythonObjects = debugSessionData.trackedPythonObjects;
 
   const updateWatchTree = async () => {
     watchTreeProvider.refresh();
@@ -48,22 +45,16 @@ export const createDebugAdapterTracker = (
 
   const saveTracked = () => {
     return saveAllTrackedObjects(
-      trackedPythonObjects.allTracked,
+      debugSessionData.trackedPythonObjects.allTracked,
       vscodeDebugSession,
     );
-  };
-
-  const updateWebview = async () => {
-    const webviewClient = Container.get(WebviewClient);
-    webviewClient.sendRequest(WebviewRequests.replaceImages(session));
   };
 
   const onScopeChange = _.debounce(
     async () => {
       logDebug("Scope changed. Update current python objects list");
-      await currentPythonObjectsList.update();
-      await updateWatchTree();
-      await Promise.all([updateWebview(), saveTracked()]);
+      await refreshAllDataViews(session);
+      await saveTracked();
     },
     500,
     { leading: true },
@@ -88,8 +79,8 @@ export const createDebugAdapterTracker = (
       logTrace("onWillStopSession");
       debugSessionData.isDebuggerAttached = false;
       debugSessionData.isStopped = false;
-      currentPythonObjectsList.clear();
-      trackedPythonObjects.clear();
+      debugSessionData.currentPythonObjectsList.clear();
+      debugSessionData.trackedPythonObjects.clear();
       watchTreeProvider.refresh();
     },
 
@@ -156,8 +147,8 @@ export const createDebugAdapterTracker = (
       logTrace("onExit");
       debugSessionData.isStopped = false;
       debugSessionData.isDebuggerAttached = false;
-      currentPythonObjectsList.clear();
-      trackedPythonObjects.clear();
+      debugSessionData.currentPythonObjectsList.clear();
+      debugSessionData.trackedPythonObjects.clear();
       watchTreeProvider.refresh();
     },
   };

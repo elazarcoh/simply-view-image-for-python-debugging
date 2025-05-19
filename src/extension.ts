@@ -24,6 +24,7 @@ import { ExtensionPersistentState } from "./ExtensionPersistentState";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
 import { ImagePreviewCustomEditor } from "./ImagePreviewCustomEditor";
 import { onNotebookOpen } from "./jupyter-intergration";
+import { refreshAllDataViews } from "./globalActions";
 
 function onConfigChange(): void {
   initLog();
@@ -102,14 +103,10 @@ export function activate(context: vscode.ExtensionContext) {
     ),
   );
 
-  const watchTreeProvider = Container.get(WatchTreeProvider);
   context.subscriptions.push(
     vscode.debug.onDidChangeActiveDebugSession((session) => {
       if (session !== undefined) {
-        const debugSessionData = activeDebugSessionData(session);
-        return debugSessionData.currentPythonObjectsList
-          .update()
-          .then(() => watchTreeProvider.refresh());
+        return refreshAllDataViews({ session, type: "debug" });
       }
     }),
   );
@@ -121,9 +118,10 @@ export function activate(context: vscode.ExtensionContext) {
         if ("frameId" in stackItem) {
           debugSessionData.debugVariablesTracker.setFrameId(stackItem.frameId);
         }
-        debugSessionData.currentPythonObjectsList
-          .update()
-          .then(() => watchTreeProvider.refresh());
+        return refreshAllDataViews({
+          session: stackItem.session,
+          type: "debug",
+        });
       }
     }),
   );

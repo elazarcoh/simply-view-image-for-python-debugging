@@ -146,10 +146,12 @@ async function _runSetup(session: Session, force?: boolean): Promise<boolean> {
       ) {
         const message = `tries left: ${maxTries - i}`;
         progress.report({ message });
-        logDebug("Running setup... tries left:", maxTries - i);
-        const isOk = await run();
-        if (isOk) {
-          return true;
+        if (debugSessionData.canExecute) {
+          logDebug("Running setup... tries left:", maxTries - i);
+          const isOk = await run();
+          if (isOk) {
+            return true;
+          }
         }
         await sleep(500 * 2 ** (i + 1));
       }

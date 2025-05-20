@@ -1,12 +1,12 @@
-import * as vscode from "vscode";
-import { SavePathHelper } from "../../SerializationHelper";
-import _ from "lodash";
-import { SessionData } from "../SessionData";
-import { CurrentPythonObjectsListData } from "../../image-watch-tree/PythonObjectsList";
-import { JupyterHandler } from "./jupyterHandler";
 import { Kernel } from "@vscode/jupyter-extension";
-import { WebviewClientFactory } from "../../webview/communication/WebviewClient";
+import _ from "lodash";
 import Container from "typedi";
+import * as vscode from "vscode";
+import { CurrentPythonObjectsListData } from "../../image-watch-tree/PythonObjectsList";
+import { SavePathHelper } from "../../SerializationHelper";
+import { WebviewClientFactory } from "../../webview/communication/WebviewClient";
+import { SessionData } from "../SessionData";
+import { JupyterHandler } from "./jupyterHandler";
 
 export class JupyterSessionData implements SessionData {
   public readonly savePathHelper: SavePathHelper;

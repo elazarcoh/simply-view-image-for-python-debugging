@@ -53,7 +53,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
       (viewable) => ({
         title: `View ${viewable.title}`,
         command: "svifpd._internal_view-object",
-        arguments: [userSelection, viewable, session.val],
+        arguments: [{ obj: userSelection, viewable, session: session.val }],
       }),
     );
   }

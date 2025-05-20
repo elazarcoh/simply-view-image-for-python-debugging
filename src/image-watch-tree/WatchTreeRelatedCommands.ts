@@ -91,12 +91,12 @@ async function viewWatchTreeItem(
 
   const savePath = pythonObjectTreeItemSavePath(item, session);
 
-  return viewObject(
-    { expression: item.expression },
-    viewableToUse,
-    debugSession(session),
-    savePath,
-  );
+  return viewObject({
+    obj: { expression: item.expression },
+    viewable: viewableToUse,
+    session: debugSession(session),
+    path: savePath,
+  });
 }
 
 export function makeViewWatchTreeItemCommand(

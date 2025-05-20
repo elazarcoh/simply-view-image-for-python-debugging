@@ -127,7 +127,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   async handleWebviewReady(id: MessageId) {
-    this.webviewCommunication.setReady();
+    this.webviewCommunication.setReady(true);
     this.webviewCommunication.sendRequest(WebviewRequests.configuration());
     this.webviewCommunication.sendResponse(
       id,

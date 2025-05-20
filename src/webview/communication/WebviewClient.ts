@@ -1,14 +1,14 @@
-import * as vscode from "vscode";
 import { Inject, Service } from "typedi";
+import * as vscode from "vscode";
+import { logTrace } from "../../Logging";
+import { disposeAll } from "../../utils/VSCodeUtils";
+import { ImageViewPanel } from "../panels/ImageViewPanel";
 import {
   ExtensionRequest,
   ExtensionResponse,
   FromExtensionMessageWithId,
   MessageId,
 } from "../webview";
-import { ImageViewPanel } from "../panels/ImageViewPanel";
-import { logTrace } from "../../Logging";
-import { disposeAll } from "../../utils/VSCodeUtils";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
 
 export class WebviewCommunication {
@@ -16,8 +16,8 @@ export class WebviewCommunication {
 
   constructor(public readonly webview: vscode.Webview) {}
 
-  setReady() {
-    this._isReady = true;
+  setReady(ready: boolean) {
+    this._isReady = ready;
   }
 
   get isReady() {
@@ -93,6 +93,13 @@ class WebviewClient implements vscode.Disposable {
           ],
         },
       );
+      this._disposables.push(
+        this._currentPanel.onDidChangeViewState((e) => {
+          if (!e.webviewPanel.visible) {
+            this._webviewMessageHandler?.webviewCommunication.setReady(false);
+          }
+        }),
+      );
       this._disposables.push(this._currentPanel);
       const webviewCommunication = new WebviewCommunication(
         this._currentPanel.webview,
@@ -106,9 +113,13 @@ class WebviewClient implements vscode.Disposable {
         null,
         this._disposables,
       );
+
+      ImageViewPanel.render(this.context, this._currentPanel);
     }
 
-    ImageViewPanel.render(this.context, this._currentPanel);
+    if (!this._currentPanel.visible) {
+      this._currentPanel.reveal(this._currentPanel.viewColumn);
+    }
 
     // wait for the webview to be ready
     await this._webviewMessageHandler?.webviewCommunication.waitForReady();

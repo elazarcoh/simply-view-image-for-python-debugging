@@ -6,6 +6,7 @@ import { AllViewables } from "./AllViewables";
 import Container from "typedi";
 import { Jupyter } from "@vscode/jupyter-extension";
 import _ from "lodash";
+import { getSessionData } from "./session/SessionData";
 
 const COMMAND = "svifpd.view-jupyter-debug-variable";
 
@@ -37,6 +38,7 @@ export async function viewVariableFromJupyterDebugView(
     return;
   }
   const session = jupyterSession(uri, kernel);
+  const sessionData = getSessionData(session);
   const setupOk = await runSetup(session, false);
   if (!setupOk) {
     return;
@@ -47,7 +49,12 @@ export async function viewVariableFromJupyterDebugView(
   if (!viewable) {
     return;
   }
-  viewObject({ variable: variable.name }, viewable, session);
+  return viewObject({
+    obj: { variable: variable.name },
+    viewable,
+    session,
+    webviewClient: sessionData?.webviewClient,
+  });
 }
 
 export const JUPYTER_VIEW_COMMAND = COMMAND;

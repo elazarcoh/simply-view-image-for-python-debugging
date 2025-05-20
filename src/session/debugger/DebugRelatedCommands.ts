@@ -68,9 +68,9 @@ export async function viewVariableFromVSCodeDebugViewAsImage({
     return undefined;
   }
 
-  return viewObject(
-    { variable: variable.evaluateName },
-    objectViewables.safeUnwrap()[0],
-    debugSession(session),
-  );
+  return viewObject({
+    obj: { variable: variable.evaluateName },
+    viewable: objectViewables.safeUnwrap()[0],
+    session: debugSession(session),
+  });
 }

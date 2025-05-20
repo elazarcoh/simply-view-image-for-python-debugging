@@ -15,16 +15,12 @@ import { sleep } from "../utils/Utils";
 import Container from "typedi";
 import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "../globals";
-import { DebugSessionData } from "../session/debugger/DebugSessionData";
 import {
-  DebugSession,
-  isDebugSession,
-  isJupyterSession,
-  JupyterSession,
-  Session,
-} from "../session/Session";
-import { jupyterSessionData } from "../session/jupyter/JupyterSessionRegistry";
-import { JupyterSessionData } from "../session/jupyter/JupyterSessionData";
+  DebugSessionData,
+  isDebugSessionData,
+} from "../session/debugger/DebugSessionData";
+import { Session } from "../session/Session";
+import { getSessionData } from "../session/SessionData";
 
 export function setSetupIsNotOkay(): void {
   logTrace("Manual set 'setup is not okay'");
@@ -82,21 +78,12 @@ async function handleSetupError(
   }
 }
 
-function sessionData(session: DebugSession): DebugSessionData;
-function sessionData(session: JupyterSession): JupyterSessionData;
-function sessionData(session: Session): DebugSessionData | JupyterSessionData {
-  if (isDebugSession(session)) {
-    return activeDebugSessionData(session.session);
-  } else if (isJupyterSession(session)) {
-    return jupyterSessionData(session.uri);
-  } else {
-    throw new Error("Unknown session type");
-  }
-}
-
 async function _runSetup(session: Session, force?: boolean): Promise<boolean> {
-  // @ts-expect-error  // TODO: Fix this
-  const debugSessionData = sessionData(session);
+  const debugSessionData = getSessionData(session);
+  if (!debugSessionData) {
+    logDebug("No debug session data");
+    return false;
+  }
 
   const maxTries = 5;
 
@@ -170,7 +157,7 @@ async function _runSetup(session: Session, force?: boolean): Promise<boolean> {
   );
 
   if (!debugSessionData.setupOkay) {
-    if (isDebugSession(session)) {
+    if (isDebugSessionData(debugSessionData)) {
       handleSetupError(debugSessionData, session);
     } else {
       vscode.window.showErrorMessage(

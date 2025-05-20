@@ -6,7 +6,7 @@ import { isExpressionSelection } from "../utils/VSCodeUtils";
 import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../python-communication/RunPythonCode";
 import { errorMessage, joinResult } from "../utils/Result";
-import { debugSession, isDebugSession, Session } from "../session/Session";
+import { isDebugSession, Session } from "../session/Session";
 import { SavePathHelper } from "../SerializationHelper";
 import { jupyterSessionData } from "../session/jupyter/JupyterSessionRegistry";
 
@@ -22,6 +22,10 @@ export async function serializePythonObjectToDisk(
     savePathHelper = debugSessionData.savePathHelper;
   } else {
     const data = jupyterSessionData(session.uri);
+    if (!data) {
+      logError("Jupyter session data not found");
+      return;
+    }
     savePathHelper = data.savePathHelper;
   }
   path = path ?? savePathHelper.savePathFor(obj);

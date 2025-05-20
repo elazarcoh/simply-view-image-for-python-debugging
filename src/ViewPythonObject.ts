@@ -12,7 +12,7 @@ import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
 import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
 import { getConfiguration } from "./config";
 import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
-import { WebviewClient } from "./webview/communication/WebviewClient";
+import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
 import { logWarn } from "./Logging";
 import { valueOrEval } from "./utils/Utils";
@@ -40,7 +40,7 @@ export async function viewObject(
       logWarn(response.val);
       return viewObject(obj, viewable, session, path, openInPreview, true);
     } else {
-      const webviewClient = Container.get(WebviewClient);
+      const webviewClient = Container.get(GlobalWebviewClient);
       await webviewClient.reveal();
       webviewClient.sendRequest(
         WebviewRequests.showImage(response.safeUnwrap()),

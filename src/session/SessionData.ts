@@ -19,9 +19,11 @@ export interface SessionData {
 }
 
 export function getSessionData(session: DebugSession): DebugSessionData;
-export function getSessionData(session: JupyterSession): JupyterSessionData;
-export function getSessionData(session: Session): SessionData;
-export function getSessionData(session: Session): SessionData {
+export function getSessionData(
+  session: JupyterSession,
+): JupyterSessionData | undefined;
+export function getSessionData(session: Session): SessionData | undefined;
+export function getSessionData(session: Session): SessionData | undefined {
   if (isJupyterSession(session)) {
     return jupyterSessionData(session.uri);
   } else if (isDebugSession(session)) {

@@ -18,22 +18,26 @@ import { hasValue } from "./utils/Utils";
 import { setupPluginManager } from "./plugins";
 import { HoverProvider } from "./HoverProvider";
 import { SocketServer } from "./python-communication/socket-based/Server";
-import { WebviewClient } from "./webview/communication/WebviewClient";
+import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
 import { ExtensionPersistentState } from "./ExtensionPersistentState";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
 import { ImagePreviewCustomEditor } from "./ImagePreviewCustomEditor";
-import { onNotebookOpen } from "./jupyter-intergration";
 import { refreshAllDataViews } from "./globalActions";
+import { onNotebookOpen } from "./session/jupyter/JupyterSessionRegistry";
 
 function onConfigChange(): void {
   initLog();
-  Container.get(WebviewClient).sendRequest(WebviewRequests.configuration());
+  Container.get(GlobalWebviewClient).sendRequest(
+    WebviewRequests.configuration(),
+  );
 }
 
 // ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext) {
-  Container.set(WebviewClient, new WebviewClient(context));
+  Container.set("vscode.ExtensionContext", context);
+
+  // Container.set(WebviewClient, new WebviewClient());
   Container.set(
     ExtensionPersistentState,
     new ExtensionPersistentState(context.globalState, context.workspaceState),
@@ -142,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenNotebookDocument((document) => {
-      onNotebookOpen(document);
+      return onNotebookOpen(document);
     }),
   );
 

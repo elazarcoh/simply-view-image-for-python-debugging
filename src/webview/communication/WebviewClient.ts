@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Service } from "typedi";
+import { Inject, Service } from "typedi";
 import {
   ExtensionRequest,
   ExtensionResponse,
@@ -45,7 +45,7 @@ export class WebviewCommunication {
   }
 
   sendRequest(message: ExtensionRequest) {
-    const id = WebviewClient.randomMessageId();
+    const id = GlobalWebviewClient.randomMessageId();
     const messageWithId: FromExtensionMessageWithId = {
       id,
       message: { kind: "Request", ...message },
@@ -62,14 +62,19 @@ export class WebviewCommunication {
   }
 }
 
-@Service()
-export class WebviewClient implements vscode.Disposable {
+class WebviewClient implements vscode.Disposable {
+  private readonly context: vscode.ExtensionContext;
+
   private _currentPanel: vscode.WebviewPanel | undefined;
   private _webviewMessageHandler: WebviewMessageHandler | undefined;
 
   private _disposables: vscode.Disposable[] = [];
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(
+    @Inject("vscode.ExtensionContext") context: vscode.ExtensionContext,
+  ) {
+    this.context = context;
+  }
 
   static randomMessageId(): MessageId {
     return Math.random().toString(36).substring(2, 15);
@@ -125,5 +130,27 @@ export class WebviewClient implements vscode.Disposable {
 
   sendResponse(id: MessageId, message: ExtensionResponse) {
     this._webviewMessageHandler?.webviewCommunication.sendResponse(id, message);
+  }
+}
+
+@Service()
+export class WebviewClientFactory {
+  constructor(
+    @Inject("vscode.ExtensionContext")
+    private readonly context: vscode.ExtensionContext,
+  ) {}
+
+  createWebviewClient(): WebviewClient {
+    return new WebviewClient(this.context);
+  }
+}
+
+@Service()
+export class GlobalWebviewClient extends WebviewClient {
+  constructor(
+    @Inject("vscode.ExtensionContext")
+    context: vscode.ExtensionContext,
+  ) {
+    super(context);
   }
 }

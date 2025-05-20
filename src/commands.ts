@@ -21,7 +21,7 @@ import {
   viewObjectUnderCursor,
 } from "./ViewPythonObject";
 import Container from "typedi";
-import { WebviewClient } from "./webview/communication/WebviewClient";
+import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
 import { runSetup } from "./python-communication/Setup";
 import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { openFileImage } from "./ImagePreviewCustomEditor";
@@ -41,7 +41,7 @@ async function openExtensionSettings(): Promise<void> {
   });
 }
 async function openImageWebview(): Promise<void> {
-  Container.get(WebviewClient).reveal();
+  Container.get(GlobalWebviewClient).reveal();
 }
 async function rerunSetup(): Promise<void> {
   const session = vscode.debug.activeDebugSession;

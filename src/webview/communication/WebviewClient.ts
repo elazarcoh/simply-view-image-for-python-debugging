@@ -133,6 +133,8 @@ class WebviewClient implements vscode.Disposable {
   }
 }
 
+export type { WebviewClient };
+
 @Service()
 export class WebviewClientFactory {
   constructor(
@@ -140,7 +142,7 @@ export class WebviewClientFactory {
     private readonly context: vscode.ExtensionContext,
   ) {}
 
-  createWebviewClient(): WebviewClient {
+  public create(): WebviewClient {
     return new WebviewClient(this.context);
   }
 }

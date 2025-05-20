@@ -25,6 +25,8 @@ import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
 import { ImagePreviewCustomEditor } from "./ImagePreviewCustomEditor";
 import { refreshAllDataViews } from "./globalActions";
 import { onNotebookOpen } from "./session/jupyter/JupyterSessionRegistry";
+import { Some } from "./utils/Option";
+import { debugSession } from "./session/Session";
 
 function onConfigChange(): void {
   initLog();
@@ -110,7 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.debug.onDidChangeActiveDebugSession((session) => {
       if (session !== undefined) {
-        return refreshAllDataViews({ session, type: "debug" });
+        return refreshAllDataViews(Some(debugSession(session)));
       }
     }),
   );
@@ -122,10 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
         if ("frameId" in stackItem) {
           debugSessionData.debugVariablesTracker.setFrameId(stackItem.frameId);
         }
-        return refreshAllDataViews({
-          session: stackItem.session,
-          type: "debug",
-        });
+        return refreshAllDataViews(Some(debugSession(stackItem.session)));
       }
     }),
   );

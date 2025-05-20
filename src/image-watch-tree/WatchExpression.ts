@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { refreshAllDataViews } from "../globalActions";
-import { debugSessionOrNull } from "../session/Session";
+import { maybeDebugSession } from "../session/Session";
 import { getSessionData } from "../session/SessionData";
 import { Viewable } from "../viewable/Viewable";
 import {
@@ -52,7 +52,7 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
 export async function addExpressionTreeItem(): Promise<void> {
   const added = await addExpression();
   if (added) {
-    const session = debugSessionOrNull(vscode.debug.activeDebugSession);
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
     await refreshAllDataViews(session);
   }
 }
@@ -63,9 +63,9 @@ export async function removeExpressionTreeItem(
   const expression = item.expression;
   const removed = await removeExpression(expression);
   if (removed) {
-    const session = debugSessionOrNull(vscode.debug.activeDebugSession);
-    if (session && item.trackingId) {
-      getSessionData(session).trackedPythonObjects.untrack(item.trackingId);
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
+    if (session.some && item.trackingId) {
+      getSessionData(session.val).trackedPythonObjects.untrack(item.trackingId);
     }
     await refreshAllDataViews(session);
   }
@@ -77,7 +77,7 @@ export async function editExpressionTreeItem(
   const expression = item.expression;
   const changed = await editExpression(expression);
   if (changed) {
-    const session = debugSessionOrNull(vscode.debug.activeDebugSession);
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
     await refreshAllDataViews(session);
   }
 }
@@ -85,9 +85,12 @@ export async function editExpressionTreeItem(
 export async function removeAllExpressionsTree(): Promise<void> {
   const removed = removeAllExpressions();
   if (removed.length > 0) {
-    const session = debugSessionOrNull(vscode.debug.activeDebugSession);
-    if (session) {
-      const trackedPythonObjects = getSessionData(session).trackedPythonObjects;
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
+    if (session.some) {
+      const trackedPythonObjects = getSessionData(
+        session.val,
+      ).trackedPythonObjects;
+
       if (trackedPythonObjects !== undefined) {
         removed.forEach((expression) => {
           const trackingId = trackedPythonObjects.trackingIdIfTracked({

@@ -14,6 +14,7 @@ import {
 export interface SessionData {
   isValid: boolean;
   setupOkay: boolean;
+  canExecute: boolean;
 
   currentPythonObjectsList: CurrentPythonObjectsListData;
 }

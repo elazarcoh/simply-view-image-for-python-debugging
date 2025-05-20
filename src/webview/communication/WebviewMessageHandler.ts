@@ -20,7 +20,7 @@ import {
 } from "../../image-watch-tree/PythonObjectsList";
 import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
 import { disposeAll } from "../../utils/VSCodeUtils";
-import { debugSession, debugSessionOrNull } from "../../session/Session";
+import { debugSession, maybeDebugSession } from "../../session/Session";
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -39,7 +39,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   handleImagesRequest(id: MessageId) {
-    const session = debugSessionOrNull(vscode.debug.activeDebugSession);
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
     this.webviewCommunication.sendResponse(
       id,
       WebviewResponses.imagesObjects(session),
@@ -132,7 +132,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
     this.webviewCommunication.sendResponse(
       id,
       WebviewResponses.imagesObjects(
-        debugSessionOrNull(vscode.debug.activeDebugSession),
+        maybeDebugSession(vscode.debug.activeDebugSession),
       ),
     );
   }
@@ -145,7 +145,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       this.webviewCommunication.sendResponse(
         id,
         WebviewResponses.imagesObjects(
-          debugSessionOrNull(vscode.debug.activeDebugSession),
+          maybeDebugSession(vscode.debug.activeDebugSession),
         ),
       );
     }
@@ -159,7 +159,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       this.webviewCommunication.sendResponse(
         id,
         WebviewResponses.imagesObjects(
-          debugSessionOrNull(vscode.debug.activeDebugSession),
+          maybeDebugSession(vscode.debug.activeDebugSession),
         ),
       );
     }

@@ -1,5 +1,6 @@
 import { Kernel } from "@vscode/jupyter-extension";
 import * as vscode from "vscode";
+import { Option, Optional } from "../utils/Option";
 
 export type DebugSession = {
   type: "debug";
@@ -22,13 +23,10 @@ export function debugSession(session: vscode.DebugSession): DebugSession {
   return { type: "debug", session };
 }
 
-export function debugSessionOrNull(
-  maybeSession: vscode.DebugSession | null | undefined,
-): DebugSession | null {
-  if (maybeSession === null || maybeSession === undefined) {
-    return null;
-  }
-  return debugSession(maybeSession);
+export function maybeDebugSession(
+  maybeSession: Optional<vscode.DebugSession>,
+): Option<DebugSession> {
+  return Option.wrap(maybeSession).map(debugSession);
 }
 
 export function isDebugSession(

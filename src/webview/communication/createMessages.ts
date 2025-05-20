@@ -1,3 +1,4 @@
+import { Option } from "ts-results";
 import { getConfiguration } from "../../config";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
 import { isDebugSession, Session } from "../../session/Session";
@@ -39,17 +40,18 @@ function expressingWithInfoIntoImagePlaceholder(
   };
 }
 
-function imageObjects(session: Session | null): ImagePlaceholderMessage[] {
-  if (session === null) {
+function imageObjects(session: Option<Session>): ImagePlaceholderMessage[] {
+  if (session.none) {
     return [];
   }
 
-  const sessionId = isDebugSession(session)
-    ? session.session.id
-    : session.uri.toString();
+  const sessionId = isDebugSession(session.val)
+    ? session.val.session.id
+    : session.val.uri.toString();
 
-  const currentPythonObjectsList =
-    getSessionData(session)?.currentPythonObjectsList;
+  const currentPythonObjectsList = getSessionData(
+    session.val,
+  )?.currentPythonObjectsList;
   const validVariables: ImagePlaceholderMessage[] =
     currentPythonObjectsList?.variablesList
       .map(([exp, info]) =>
@@ -90,7 +92,7 @@ export class WebviewRequests {
     };
   }
 
-  static replaceImages(session: Session | null): ExtensionRequest & {
+  static replaceImages(session: Option<Session>): ExtensionRequest & {
     type: "ReplaceData";
   } {
     const replacementImages = imageObjects(session);
@@ -131,7 +133,7 @@ export class WebviewRequests {
 }
 
 export class WebviewResponses {
-  static imagesObjects(session: Session | null): ExtensionResponse & {
+  static imagesObjects(session: Option<Session>): ExtensionResponse & {
     type: "ReplaceData";
   } {
     const replacementImages = imageObjects(session);

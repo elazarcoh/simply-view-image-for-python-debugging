@@ -33,6 +33,9 @@ export class DebugSessionData implements SessionData {
   get isValid(): boolean {
     return this.isDebuggerAttached;
   }
+  get canExecute(): boolean {
+    return this.isDebuggerAttached && this.isValid && this.isStopped;
+  }
 }
 
 export function isDebugSessionData(

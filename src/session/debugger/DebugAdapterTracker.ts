@@ -11,6 +11,7 @@ import { runSetup } from "../../python-communication/Setup";
 import { debugSession } from "../../session/Session";
 import { patchDebugVariableContext } from "./DebugRelatedCommands";
 import { activeDebugSessionData } from "./DebugSessionsHolder";
+import { Option } from "ts-results";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
@@ -53,7 +54,7 @@ export const createDebugAdapterTracker = (
   const onScopeChange = _.debounce(
     async () => {
       logDebug("Scope changed. Update current python objects list");
-      await refreshAllDataViews(session);
+      await refreshAllDataViews(Option.wrap(session));
       await saveTracked();
     },
     500,

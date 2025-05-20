@@ -4,16 +4,17 @@ import { DebugSession } from "./session/Session";
 import { getSessionData } from "./session/SessionData";
 import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
+import { Option } from "ts-results";
 
 /** Utility function to refresh views, e.g. TreeView and WebView.
  *  If there's no session, it will basically clear the views.
  */
-export async function refreshAllDataViews(session: DebugSession | null) {
+export async function refreshAllDataViews(session: Option<DebugSession>) {
   const watchTreeProvider = Container.get(WatchTreeProvider);
   const webviewClient = Container.get(GlobalWebviewClient);
 
-  if (session !== null) {
-    const debugSessionData = getSessionData(session);
+  if (session.some) {
+    const debugSessionData = getSessionData(session.val);
     await debugSessionData.currentPythonObjectsList.update();
   }
 

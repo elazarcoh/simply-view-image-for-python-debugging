@@ -8,6 +8,7 @@ import { runSetup } from "../../python-communication/Setup";
 import { convertExpressionIntoValueWrappedExpression } from "../../python-communication/BuildPythonCode";
 import { evaluateInPython } from "../../python-communication/RunPythonCode";
 import { logError } from "../../Logging";
+import { Option } from "ts-results";
 
 function waitForKernel(api: Jupyter, uri: vscode.Uri): Promise<Kernel> {
   return new Promise<Kernel>((resolve) => {
@@ -76,6 +77,15 @@ class JupyterSessionRegistry {
     this._sessions.forEach((session) => session.dispose());
     this._sessions.clear();
   }
+
+  public findSessionByDocumentUri(uri: vscode.Uri): Option<JupyterSession> {
+    const sessionData = Array.from(this._sessions.values()).find(
+      (sessionData) => sessionData.documentUri?.toString() === uri.toString(),
+    );
+    return Option.wrap(sessionData).map(({ notebookUri, kernel }) =>
+      jupyterSession(notebookUri, kernel),
+    );
+  }
 }
 
 export async function onNotebookOpen(notebook: vscode.NotebookDocument) {
@@ -126,6 +136,7 @@ export async function onNotebookOpen(notebook: vscode.NotebookDocument) {
 
   sessionData.jupyterHandler.onIdle(() => {
     sessionData.isValid = true;
+    sessionData.isIdle = true;
   });
 
   const documentUri = await getSessionDocumentUri(session);
@@ -139,3 +150,7 @@ export function jupyterSessionData(
 ): JupyterSessionData | undefined {
   return Container.get(JupyterSessionRegistry).debugSessionData(uri);
 }
+
+const jupyterSessionRegistry = Container.get(JupyterSessionRegistry);
+export const findJupyterSessionByDocumentUri =
+  jupyterSessionRegistry.findSessionByDocumentUri.bind(jupyterSessionRegistry);

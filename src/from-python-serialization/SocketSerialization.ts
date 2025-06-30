@@ -22,7 +22,7 @@ import {
 import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
 import { ArrayDataType, DimensionOrder } from "../common/datatype";
-import { isDebugSession, Session } from "../session/Session";
+import { isDebugSession, Session, sessionToId } from "../session/Session";
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
   [key in ArrayDataType]: WebviewDatatype | undefined;
@@ -172,9 +172,7 @@ export async function serializeImageUsingSocketServer(
       return Err(msg);
     }
 
-    const sessionId = isDebugSession(session)
-      ? session.session.id
-      : session.uri.toString();
+    const sessionId = sessionToId(session);
 
     const imageMessage: ImageMessage = {
       image_id: [sessionId, expression],

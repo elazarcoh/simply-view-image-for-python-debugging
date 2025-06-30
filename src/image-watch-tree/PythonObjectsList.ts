@@ -53,6 +53,12 @@ export class CurrentPythonObjectsListData {
     this._expressionsInfo.length = 0;
   }
 
+  public manuallyAddVariable(variable: string, infoOrError: InfoOrError): void {
+    if (this._variablesList.find((v) => v[0] === variable) === undefined) {
+      this._variablesList.push([variable, infoOrError]);
+    }
+  }
+
   public get variablesList(): ReadonlyArray<ExpressingWithInfo> {
     return this._variablesList;
   }

@@ -103,7 +103,7 @@ export async function onNotebookOpen(notebook: vscode.NotebookDocument) {
   const session = jupyterSession(uri, kernel);
   const sessionData = Container.get(JupyterSessionRegistry).addSessionData(
     uri,
-    new JupyterSessionData(uri, kernel),
+    new JupyterSessionData(session, uri, kernel),
   );
   if (!sessionData) {
     logError("Failed to add session data to registry");

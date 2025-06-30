@@ -1,7 +1,7 @@
 import { Option } from "ts-results";
 import { getConfiguration } from "../../config";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
-import { isDebugSession, Session } from "../../session/Session";
+import { isDebugSession, Session, sessionToId } from "../../session/Session";
 import { getSessionData } from "../../session/SessionData";
 import { hasValue, valueOrEval } from "../../utils/Utils";
 import {
@@ -45,9 +45,7 @@ function imageObjects(session: Option<Session>): ImagePlaceholderMessage[] {
     return [];
   }
 
-  const sessionId = isDebugSession(session.val)
-    ? session.val.session.id
-    : session.val.uri.toString();
+  const sessionId = sessionToId(session.val);
 
   const currentPythonObjectsList = getSessionData(
     session.val,
@@ -98,6 +96,7 @@ export class WebviewRequests {
     const replacementImages = imageObjects(session);
     return {
       type: "ReplaceData",
+      session_id: session.map(sessionToId).unwrapOr(null),
       replacement_images: replacementImages,
     };
   }
@@ -139,6 +138,7 @@ export class WebviewResponses {
     const replacementImages = imageObjects(session);
     return {
       type: "ReplaceData",
+      session_id: session.map(sessionToId).unwrapOr(null),
       replacement_images: replacementImages,
     };
   }

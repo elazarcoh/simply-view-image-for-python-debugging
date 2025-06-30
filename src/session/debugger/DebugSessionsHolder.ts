@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import Container, { Service } from "typedi";
 import { DebugSessionData } from "./DebugSessionData";
+import { Option } from "../../utils/Option";
 
 @Service()
 class DebugSessionsHolder {
@@ -15,6 +16,10 @@ class DebugSessionsHolder {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.debugSessions.get(id)!;
+  }
+
+  public getById(id: string): DebugSessionData | undefined {
+    return this.debugSessions.get(id);
   }
 }
 
@@ -39,4 +44,8 @@ export function validDebugSessions(): DebugSessionData[] {
   return Array.from(debugSessions.values()).filter(
     (session) => session.isValid,
   );
+}
+
+export function getSessionDataById(id: string): Option<DebugSessionData> {
+  return Option.wrap(Container.get(DebugSessionsHolder).getById(id));
 }

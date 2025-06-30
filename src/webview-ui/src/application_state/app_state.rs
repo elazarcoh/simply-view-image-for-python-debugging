@@ -260,7 +260,6 @@ impl Reducer<AppState> for StoreAction {
                 VSCodeRequests::update_state(
                     HostExtensionStateUpdate::default()
                         .current_image_id(Some(image_id.clone()))
-                        .current_image_expression(Some(image_id.to_string()))
                         .current_image_drawing_options(Some(drawing_options.clone()))
                         .clone(),
                 );

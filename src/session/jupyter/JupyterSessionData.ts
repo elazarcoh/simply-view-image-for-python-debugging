@@ -4,9 +4,13 @@ import Container from "typedi";
 import * as vscode from "vscode";
 import { CurrentPythonObjectsListData } from "../../image-watch-tree/PythonObjectsList";
 import { SavePathHelper } from "../../SerializationHelper";
-import { WebviewClientFactory } from "../../webview/communication/WebviewClient";
+import {
+  WebviewClient,
+  WebviewClientFactory,
+} from "../../webview/communication/WebviewClient";
 import { SessionData } from "../SessionData";
 import { JupyterHandler } from "./jupyterHandler";
+import { JupyterSession } from "../Session";
 
 export class JupyterSessionData implements SessionData {
   public readonly savePathHelper: SavePathHelper;
@@ -16,15 +20,17 @@ export class JupyterSessionData implements SessionData {
   public readonly currentPythonObjectsList: CurrentPythonObjectsListData;
   public readonly jupyterHandler: JupyterHandler;
   public documentUri: vscode.Uri | undefined = undefined;
-  public readonly webviewClient = Container.get(WebviewClientFactory).create();
+  public readonly webviewClient: WebviewClient;
 
   constructor(
+    public readonly session: JupyterSession,
     public readonly notebookUri: vscode.Uri,
     public readonly kernel: Kernel,
   ) {
     this.savePathHelper = new SavePathHelper(_.uniqueId("jupyter-session-"));
     this.currentPythonObjectsList = new CurrentPythonObjectsListData();
     this.jupyterHandler = new JupyterHandler(this.kernel);
+    this.webviewClient = Container.get(WebviewClientFactory).create(session);
   }
 
   dispose(): void {

@@ -10,6 +10,8 @@ import {
   MessageId,
 } from "../webview";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
+import { Session } from "../../session/Session";
+import { None, Option } from "ts-results";
 
 export class WebviewCommunication {
   private _isReady = false;
@@ -72,6 +74,7 @@ class WebviewClient implements vscode.Disposable {
 
   constructor(
     @Inject("vscode.ExtensionContext") context: vscode.ExtensionContext,
+    public readonly session: Option<Session>,
   ) {
     this.context = context;
   }
@@ -106,6 +109,7 @@ class WebviewClient implements vscode.Disposable {
       );
       this._webviewMessageHandler = new WebviewMessageHandler(
         webviewCommunication,
+        this.session,
       );
 
       this._currentPanel.onDidDispose(
@@ -153,8 +157,8 @@ export class WebviewClientFactory {
     private readonly context: vscode.ExtensionContext,
   ) {}
 
-  public create(): WebviewClient {
-    return new WebviewClient(this.context);
+  public create(session: Session | undefined): WebviewClient {
+    return new WebviewClient(this.context, Option.wrap(session));
   }
 }
 
@@ -164,6 +168,9 @@ export class GlobalWebviewClient extends WebviewClient {
     @Inject("vscode.ExtensionContext")
     context: vscode.ExtensionContext,
   ) {
-    super(context);
+    super(
+      context,
+      None, // Global webview client does not have a specific session
+    );
   }
 }

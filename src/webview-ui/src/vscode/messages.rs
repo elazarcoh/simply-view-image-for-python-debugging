@@ -51,6 +51,7 @@ pub(crate) struct ImagePlaceholders(pub Vec<ImagePlaceholderMessage>);
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub(crate) struct ReplaceData {
+    pub session_id: Option<SessionId>,
     pub replacement_images: ImagePlaceholders,
 }
 

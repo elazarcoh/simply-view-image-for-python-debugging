@@ -11,7 +11,7 @@ impl SessionId {
     }
 }
 
-#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(tsify::Tsify, serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct ViewableObjectId(SessionId, String);
 
 impl ViewableObjectId {
@@ -24,7 +24,7 @@ impl ViewableObjectId {
     }
 }
 
-impl Display for ViewableObjectId {
+impl std::fmt::Debug for ViewableObjectId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let id = &self.1;
         let session_id = &self.0 .0;

@@ -1,12 +1,13 @@
-import * as vscode from "vscode";
-import { jupyterSession } from "./session/Session";
-import { runSetup } from "./python-communication/Setup";
-import { viewObject } from "./ViewPythonObject";
-import { AllViewables } from "./AllViewables";
-import Container from "typedi";
 import { Jupyter } from "@vscode/jupyter-extension";
 import _ from "lodash";
+import { Ok } from "ts-results";
+import Container from "typedi";
+import * as vscode from "vscode";
+import { AllViewables } from "./AllViewables";
+import { runSetup } from "./python-communication/Setup";
+import { jupyterSession } from "./session/Session";
 import { getSessionData } from "./session/SessionData";
+import { viewObject } from "./ViewPythonObject";
 
 const COMMAND = "svifpd.view-jupyter-debug-variable";
 
@@ -40,7 +41,7 @@ export async function viewVariableFromJupyterDebugView(
   const session = jupyterSession(uri, kernel);
   const sessionData = getSessionData(session);
   const setupOk = await runSetup(session, false);
-  if (!setupOk) {
+  if (!setupOk || !sessionData) {
     return;
   }
   const viewable = Container.get(AllViewables).allViewables.find(
@@ -49,6 +50,11 @@ export async function viewVariableFromJupyterDebugView(
   if (!viewable) {
     return;
   }
+  sessionData.currentPythonObjectsList.manuallyAddVariable(
+    variable.name,
+    Ok([[viewable], {}]),
+  );
+
   return viewObject({
     obj: { variable: variable.name },
     viewable,

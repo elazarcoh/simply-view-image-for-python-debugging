@@ -39,7 +39,7 @@ impl VSCodeListener {
             FromExtensionMessage::Response(message) => match message {
                 ExtensionResponse::ImageData(msg) => Self::handle_image_data_response(msg),
                 ExtensionResponse::ReplaceData(replacement_data) => {
-                    Self::handle_replace_data_request(replacement_data.replacement_images);
+                    Self::handle_replace_data_request(replacement_data);
                     Ok(())
                 }
             },
@@ -49,7 +49,7 @@ impl VSCodeListener {
                     options,
                 } => Self::handle_show_image_request(image_data, options),
                 ExtensionRequest::ReplaceData(replacement_data) => {
-                    Self::handle_replace_data_request(replacement_data.replacement_images);
+                    Self::handle_replace_data_request(replacement_data);
                     Ok(())
                 }
                 ExtensionRequest::Configuration(configurations) => {
@@ -87,7 +87,11 @@ impl VSCodeListener {
         Ok(())
     }
 
-    fn handle_replace_data_request(replacement_images: ImagePlaceholders) {
+    fn handle_replace_data_request(replace_data: ReplaceData) {
+        let ReplaceData {
+            session_id,
+            replacement_images,
+        } = replace_data;
         let dispatch = Dispatch::<AppState>::global();
         let (images, errors): (Vec<_>, Vec<_>) = replacement_images
             .0
@@ -100,6 +104,9 @@ impl VSCodeListener {
         }
 
         dispatch.apply(StoreAction::ReplaceData(images));
+        if let Some(session_id) = session_id {
+            dispatch.apply(StoreAction::SetActiveSession(session_id));
+        }
     }
 
     fn handle_configuration_request(configurations: Configuration) -> Result<()> {

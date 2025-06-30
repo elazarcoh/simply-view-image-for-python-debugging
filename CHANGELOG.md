@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.0.11] - Pre-release
+
+### Added
+
+- Support for Interactive Python cells
+
+This required major refactoring, so I keep it as a pre-release for now.
+
 ## [4.0.10] - Release
 
 ### Added

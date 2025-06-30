@@ -33,7 +33,7 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
   }
 
   private async handleWebviewReady(_id: MessageId) {
-    this.webviewCommunication.setReady();
+    this.webviewCommunication.setReady(true);
     this.webviewCommunication.sendRequest(WebviewRequests.configuration());
     this.webviewCommunication.sendRequest(
       WebviewRequests.setMode("single-image"),

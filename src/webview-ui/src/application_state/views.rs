@@ -61,6 +61,11 @@ impl ImageViews {
         view.0 = Some(CurrentlyViewing::BatchItem(batch_id));
     }
 
+    pub(crate) fn reset_view(&mut self, view_id: ViewId) {
+        let view = self.0.get_mut(&view_id).unwrap();
+        view.0 = None;
+    }
+
     pub(crate) fn send_event_to_view(&self, view_id: ViewId, event: &str) {
         log::debug!(
             "ImageViews::send_event_to_view: view_id={:?}, event={}",

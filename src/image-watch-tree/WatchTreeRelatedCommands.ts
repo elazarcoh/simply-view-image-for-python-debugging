@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 import Container from "typedi";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { PythonObjectTreeItem } from "./WatchTreeItem";
 import { WatchTreeProvider } from "./WatchTreeProvider";
 import { VariableWatchTreeItem } from "./WatchVariable";
 import { viewObject } from "../ViewPythonObject";
+import { debugSession } from "../session/Session";
 
 function pythonObjectTreeItemSavePath(
   pythonObjectTreeItem: PythonObjectTreeItem,
@@ -90,12 +91,12 @@ async function viewWatchTreeItem(
 
   const savePath = pythonObjectTreeItemSavePath(item, session);
 
-  return viewObject(
-    { expression: item.expression },
-    viewableToUse,
-    session,
-    savePath,
-  );
+  return viewObject({
+    obj: { expression: item.expression },
+    viewable: viewableToUse,
+    session: debugSession(session),
+    path: savePath,
+  });
 }
 
 export function makeViewWatchTreeItemCommand(

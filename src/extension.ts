@@ -2,7 +2,7 @@ import "reflect-metadata";
 import * as vscode from "vscode";
 import { initLog, logDebug, logError, logTrace } from "./Logging";
 import { NumpyImage, PillowImage } from "./viewable/Image";
-import { createDebugAdapterTracker } from "./debugger-utils/DebugAdapterTracker";
+import { createDebugAdapterTracker } from "./session/debugger/DebugAdapterTracker";
 import Container from "typedi";
 import { AllViewables } from "./AllViewables";
 import { CodeActionProvider } from "./CodeActionProvider";
@@ -11,27 +11,35 @@ import { registerExtensionCommands } from "./commands";
 import { setSaveLocation } from "./SerializationHelper";
 import { PlotlyFigure, PyplotAxes, PyplotFigure } from "./viewable/Plot";
 import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { NumpyTensor, TorchTensor } from "./viewable/Tensor";
 import { hasValue } from "./utils/Utils";
 // import { api } from "./api";
 import { setupPluginManager } from "./plugins";
 import { HoverProvider } from "./HoverProvider";
 import { SocketServer } from "./python-communication/socket-based/Server";
-import { WebviewClient } from "./webview/communication/WebviewClient";
+import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
 import { ExtensionPersistentState } from "./ExtensionPersistentState";
 import { EXTENSION_IMAGE_WATCH_TREE_VIEW_ID } from "./globals";
 import { ImagePreviewCustomEditor } from "./ImagePreviewCustomEditor";
+import { refreshAllDataViews } from "./globalActions";
+import { onNotebookOpen } from "./session/jupyter/JupyterSessionRegistry";
+import { Some } from "./utils/Option";
+import { debugSession } from "./session/Session";
 
 function onConfigChange(): void {
   initLog();
-  Container.get(WebviewClient).sendRequest(WebviewRequests.configuration());
+  Container.get(GlobalWebviewClient).sendRequest(
+    WebviewRequests.configuration(),
+  );
 }
 
 // ts-unused-exports:disable-next-line
 export function activate(context: vscode.ExtensionContext) {
-  Container.set(WebviewClient, new WebviewClient(context));
+  Container.set("vscode.ExtensionContext", context);
+
+  // Container.set(WebviewClient, new WebviewClient());
   Container.set(
     ExtensionPersistentState,
     new ExtensionPersistentState(context.globalState, context.workspaceState),
@@ -101,14 +109,22 @@ export function activate(context: vscode.ExtensionContext) {
     ),
   );
 
-  const watchTreeProvider = Container.get(WatchTreeProvider);
   context.subscriptions.push(
     vscode.debug.onDidChangeActiveDebugSession((session) => {
       if (session !== undefined) {
-        const debugSessionData = activeDebugSessionData(session);
-        return debugSessionData.currentPythonObjectsList
-          .update()
-          .then(() => watchTreeProvider.refresh());
+        return refreshAllDataViews(Some(debugSession(session)));
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.debug.onDidChangeActiveStackItem((stackItem) => {
+      if (stackItem !== undefined) {
+        const debugSessionData = activeDebugSessionData(stackItem.session);
+        if ("frameId" in stackItem) {
+          debugSessionData.debugVariablesTracker.setFrameId(stackItem.frameId);
+        }
+        return refreshAllDataViews(Some(debugSession(stackItem.session)));
       }
     }),
   );
@@ -125,6 +141,12 @@ export function activate(context: vscode.ExtensionContext) {
       ImagePreviewCustomEditor.viewType,
       imagePreviewEditor,
     ),
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenNotebookDocument((document) => {
+      return onNotebookOpen(document);
+    }),
   );
 
   context.subscriptions.push(...registerExtensionCommands(context));

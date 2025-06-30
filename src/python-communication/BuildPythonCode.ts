@@ -120,7 +120,7 @@ export function viewablesSetupCode(): EvalCodePython<null> {
 /**
  * wrap expression in a safe way so that it can be evaluated into a value
  */
-function convertExpressionIntoValueWrappedExpression<R>(
+export function convertExpressionIntoValueWrappedExpression<R>(
   expression: string,
 ): EvalCodePython<Result<R>> {
   // verify it's a single-line expression

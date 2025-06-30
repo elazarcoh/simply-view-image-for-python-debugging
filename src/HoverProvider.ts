@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { constructObjectShapeCode } from "./python-communication/BuildPythonCode";
 import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { joinResult } from "./utils/Result";
+import { debugSession } from "./session/Session";
 
 function shapeToString(shape: PythonObjectShape): string {
   if (Array.isArray(shape)) {
@@ -24,10 +25,10 @@ export class HoverProvider implements vscode.HoverProvider {
     position: vscode.Position,
     // token: vscode.CancellationToken
   ): Promise<vscode.Hover | undefined> {
-    const debugSession = vscode.debug.activeDebugSession;
+    const session = vscode.debug.activeDebugSession;
     if (
-      debugSession === undefined ||
-      activeDebugSessionData(debugSession).isStopped === false
+      session === undefined ||
+      activeDebugSessionData(session).isStopped === false
     ) {
       return undefined;
     }
@@ -39,7 +40,9 @@ export class HoverProvider implements vscode.HoverProvider {
     }
 
     const code = constructObjectShapeCode(selectedVariable);
-    const shape = joinResult(await evaluateInPython(code, debugSession));
+    const shape = joinResult(
+      await evaluateInPython(code, debugSession(session)),
+    );
     if (shape.err) {
       // We don't want to show an error message, just don't show a hover
       return undefined;

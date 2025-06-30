@@ -1,9 +1,12 @@
 import * as vscode from "vscode";
 import { TypedCommand } from "./commands";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
 import { findExpressionViewables } from "./PythonObjectInfo";
 import { arrayUniqueByKey } from "./utils/Utils";
 import { currentUserSelection, selectionString } from "./utils/VSCodeUtils";
+import { maybeDebugSession } from "./session/Session";
+import { Option } from "ts-results";
+import { findJupyterSessionByDocumentUri } from "./session/jupyter/JupyterSessionRegistry";
+import { getSessionData } from "./session/SessionData";
 
 export class CodeActionProvider implements vscode.CodeActionProvider {
   // Since calling the findExpressionViewables might be expensive,
@@ -14,15 +17,16 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
     document: vscode.TextDocument,
     range: vscode.Range,
   ): Promise<TypedCommand<"svifpd._internal_view-object">[] | undefined> {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession === undefined) {
+    const session = Option.or(
+      maybeDebugSession(vscode.debug.activeDebugSession),
+      findJupyterSessionByDocumentUri(document.uri),
+    );
+
+    if (session.none) {
       return undefined;
     }
-    const debugSessionData = activeDebugSessionData(debugSession);
-    if (
-      debugSessionData.isStopped === false ||
-      debugSessionData.setupOkay === false
-    ) {
+    const sessionData = getSessionData(session.val);
+    if (!sessionData?.canExecute) {
       return undefined;
     }
 
@@ -39,7 +43,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
     });
     const objectViewables = await findExpressionViewables(
       selectionString(userSelection),
-      debugSession,
+      session.val,
     );
     if (objectViewables.err) {
       return undefined;
@@ -49,7 +53,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
       (viewable) => ({
         title: `View ${viewable.title}`,
         command: "svifpd._internal_view-object",
-        arguments: [userSelection, viewable, debugSession],
+        arguments: [{ obj: userSelection, viewable, session: session.val }],
       }),
     );
   }

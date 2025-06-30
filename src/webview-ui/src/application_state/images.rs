@@ -119,6 +119,7 @@ impl Images {
         self.pinned.clear();
     }
 
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.data.len()
     }

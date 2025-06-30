@@ -1,22 +1,23 @@
-import * as vscode from "vscode";
-import Container from "typedi";
-import { DebugProtocol } from "vscode-debugprotocol";
-import { logDebug, logTrace } from "../Logging";
-import { activeDebugSessionData } from "./DebugSessionsHolder";
-import { WatchTreeProvider } from "../image-watch-tree/WatchTreeProvider";
-import { saveAllTrackedObjects } from "../image-watch-tree/TrackedPythonObjects";
-import { getConfiguration } from "../config";
-import { patchDebugVariableContext } from "./DebugRelatedCommands";
-import { runSetup } from "../python-communication/Setup";
-import { WebviewClient } from "../webview/communication/WebviewClient";
-import { WebviewRequests } from "../webview/communication/createMessages";
 import _ from "lodash";
+import Container from "typedi";
+import * as vscode from "vscode";
+import { DebugProtocol } from "vscode-debugprotocol";
+import { getConfiguration } from "../../config";
+import { refreshAllDataViews } from "../../globalActions";
+import { saveAllTrackedObjects } from "../../image-watch-tree/TrackedPythonObjects";
+import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
+import { logDebug, logTrace } from "../../Logging";
+import { runSetup } from "../../python-communication/Setup";
+import { debugSession } from "../../session/Session";
+import { patchDebugVariableContext } from "./DebugRelatedCommands";
+import { activeDebugSessionData } from "./DebugSessionsHolder";
+import { Option } from "ts-results";
 
 // register watcher for the debugging session. used to identify the running-frame,
 // so multi-thread will work
 // inspired from https://github.com/microsoft/vscode/issues/30810#issuecomment-590099482
 export const createDebugAdapterTracker = (
-  session: vscode.DebugSession,
+  vscodeDebugSession: vscode.DebugSession,
 ): vscode.DebugAdapterTracker => {
   type Request<T> = T & { type: "request" };
   type Response<T> = T & { type: "response" };
@@ -33,40 +34,40 @@ export const createDebugAdapterTracker = (
     | WithCommand<Response<DebugProtocol.VariablesResponse>, "variables">
     | WithCommand<Response<DebugProtocol.ScopesResponse>, "scopes">;
 
-  const debugSessionData = activeDebugSessionData(session);
+  const session = debugSession(vscodeDebugSession);
+  const debugSessionData = activeDebugSessionData(vscodeDebugSession);
   const debugVariablesTracker = debugSessionData.debugVariablesTracker;
 
   const watchTreeProvider = Container.get(WatchTreeProvider);
-  const currentPythonObjectsList = debugSessionData.currentPythonObjectsList;
-  const trackedPythonObjects = debugSessionData.trackedPythonObjects;
 
   const updateWatchTree = async () => {
     watchTreeProvider.refresh();
   };
 
   const saveTracked = () => {
-    return saveAllTrackedObjects(trackedPythonObjects.allTracked, session);
-  };
-
-  const updateWebview = async () => {
-    const webviewClient = Container.get(WebviewClient);
-    webviewClient.sendRequest(WebviewRequests.replaceImages());
+    return saveAllTrackedObjects(
+      debugSessionData.trackedPythonObjects.allTracked,
+      vscodeDebugSession,
+    );
   };
 
   const onScopeChange = _.debounce(
     async () => {
       logDebug("Scope changed. Update current python objects list");
-      await currentPythonObjectsList.update();
-      await updateWatchTree();
-      await Promise.all([updateWebview(), saveTracked()]);
+      await refreshAllDataViews(Option.wrap(session));
+      await saveTracked();
     },
     500,
     { leading: true },
   );
 
-  const runSetupIfNotRunning = _.debounce(_.partial(runSetup, session), 1000, {
-    leading: true,
-  });
+  const runSetupIfNotRunning = _.debounce(
+    _.partial(runSetup, debugSession(vscodeDebugSession)),
+    1000,
+    {
+      leading: true,
+    },
+  );
 
   return {
     onWillStartSession: () => {
@@ -79,8 +80,8 @@ export const createDebugAdapterTracker = (
       logTrace("onWillStopSession");
       debugSessionData.isDebuggerAttached = false;
       debugSessionData.isStopped = false;
-      currentPythonObjectsList.clear();
-      trackedPythonObjects.clear();
+      debugSessionData.currentPythonObjectsList.clear();
+      debugSessionData.trackedPythonObjects.clear();
       watchTreeProvider.refresh();
     },
 
@@ -147,8 +148,8 @@ export const createDebugAdapterTracker = (
       logTrace("onExit");
       debugSessionData.isStopped = false;
       debugSessionData.isDebuggerAttached = false;
-      currentPythonObjectsList.clear();
-      trackedPythonObjects.clear();
+      debugSessionData.currentPythonObjectsList.clear();
+      debugSessionData.trackedPythonObjects.clear();
       watchTreeProvider.refresh();
     },
   };

@@ -1,6 +1,8 @@
+import { Option } from "ts-results";
 import { getConfiguration } from "../../config";
-import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
+import { isDebugSession, Session, sessionToId } from "../../session/Session";
+import { getSessionData } from "../../session/SessionData";
 import { hasValue, valueOrEval } from "../../utils/Utils";
 import {
   AppMode,
@@ -8,6 +10,7 @@ import {
   ExtensionResponse,
   ImageMessage,
   ImagePlaceholderMessage,
+  SessionId,
   ValueVariableKind,
 } from "../webview";
 
@@ -15,6 +18,7 @@ function expressingWithInfoIntoImagePlaceholder(
   exp: string,
   infoOrError: InfoOrError,
   valueVariableKind: ValueVariableKind,
+  sessionId: string,
 ): ImagePlaceholderMessage | undefined {
   if (infoOrError.err) {
     return undefined;
@@ -28,7 +32,7 @@ function expressingWithInfoIntoImagePlaceholder(
   const info = infoOrError.safeUnwrap()[1];
 
   return {
-    image_id: exp,
+    image_id: [sessionId, exp],
     expression: exp,
     value_variable_kind: valueVariableKind,
     is_batched: viewables[0].group === "tensor", // currently, support tensor only if it's the only option
@@ -36,20 +40,37 @@ function expressingWithInfoIntoImagePlaceholder(
   };
 }
 
-function imageObjects(): ImagePlaceholderMessage[] {
-  const currentPythonObjectsList =
-    activeDebugSessionData()?.currentPythonObjectsList;
+function imageObjects(session: Option<Session>): ImagePlaceholderMessage[] {
+  if (session.none) {
+    return [];
+  }
+
+  const sessionId = sessionToId(session.val);
+
+  const currentPythonObjectsList = getSessionData(
+    session.val,
+  )?.currentPythonObjectsList;
   const validVariables: ImagePlaceholderMessage[] =
     currentPythonObjectsList?.variablesList
       .map(([exp, info]) =>
-        expressingWithInfoIntoImagePlaceholder(exp, info, "variable"),
+        expressingWithInfoIntoImagePlaceholder(
+          exp,
+          info,
+          "variable",
+          sessionId,
+        ),
       )
       .filter(hasValue) ?? [];
   const validExpressions: ImagePlaceholderMessage[] =
     currentPythonObjectsList
       ?.expressionsList({ skipInvalid: true })
       ?.map(([exp, info]) =>
-        expressingWithInfoIntoImagePlaceholder(exp, info, "expression"),
+        expressingWithInfoIntoImagePlaceholder(
+          exp,
+          info,
+          "expression",
+          sessionId,
+        ),
       )
       .filter(hasValue) ?? [];
 
@@ -58,12 +79,24 @@ function imageObjects(): ImagePlaceholderMessage[] {
 }
 
 export class WebviewRequests {
-  static replaceImages(): ExtensionRequest & {
+  static setSessionNames(names: {
+    [k: SessionId]: string;
+  }): ExtensionRequest & {
+    type: "SetSessionNames";
+  } {
+    return {
+      type: "SetSessionNames",
+      session_names: names,
+    };
+  }
+
+  static replaceImages(session: Option<Session>): ExtensionRequest & {
     type: "ReplaceData";
   } {
-    const replacementImages = imageObjects();
+    const replacementImages = imageObjects(session);
     return {
       type: "ReplaceData",
+      session_id: session.map(sessionToId).unwrapOr(null),
       replacement_images: replacementImages,
     };
   }
@@ -99,12 +132,13 @@ export class WebviewRequests {
 }
 
 export class WebviewResponses {
-  static imagesObjects(): ExtensionResponse & {
+  static imagesObjects(session: Option<Session>): ExtensionResponse & {
     type: "ReplaceData";
   } {
-    const replacementImages = imageObjects();
+    const replacementImages = imageObjects(session);
     return {
       type: "ReplaceData",
+      session_id: session.map(sessionToId).unwrapOr(null),
       replacement_images: replacementImages,
     };
   }

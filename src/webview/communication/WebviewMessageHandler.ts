@@ -1,4 +1,19 @@
+import Container from "typedi";
 import * as vscode from "vscode";
+import { logError, logTrace } from "../../Logging";
+import { findExpressionViewables } from "../../PythonObjectInfo";
+import { serializeImageUsingSocketServer } from "../../from-python-serialization/SocketSerialization";
+import {
+  addExpression,
+  editExpression,
+} from "../../image-watch-tree/PythonObjectsList";
+import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
+import { maybeDebugSession, Session } from "../../session/Session";
+import { getSessionData } from "../../session/SessionData";
+import { activeDebugSessionData } from "../../session/debugger/DebugSessionsHolder";
+import { Option } from "../../utils/Option";
+import { errorMessage } from "../../utils/Result";
+import { disposeAll } from "../../utils/VSCodeUtils";
 import {
   EditExpression,
   FromWebviewMessageWithId,
@@ -6,25 +21,16 @@ import {
   RequestBatchItemData,
   RequestImageData,
 } from "../webview";
-import { findExpressionViewables } from "../../PythonObjectInfo";
-import { logError, logTrace } from "../../Logging";
-import { serializeImageUsingSocketServer } from "../../from-python-serialization/SocketSerialization";
-import Container from "typedi";
 import { WebviewCommunication } from "./WebviewClient";
 import { WebviewRequests, WebviewResponses } from "./createMessages";
-import { errorMessage } from "../../utils/Result";
-import { activeDebugSessionData } from "../../debugger-utils/DebugSessionsHolder";
-import {
-  addExpression,
-  editExpression,
-} from "../../image-watch-tree/PythonObjectsList";
-import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
-import { disposeAll } from "../../utils/VSCodeUtils";
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
 
-  constructor(readonly webviewCommunication: WebviewCommunication) {
+  constructor(
+    readonly webviewCommunication: WebviewCommunication,
+    readonly session: Option<Session>,
+  ) {
     // Set an event listener to listen for messages passed from the webview context
     this.webviewCommunication.webview.onDidReceiveMessage(
       this.onWebviewMessage,
@@ -37,27 +43,37 @@ export class WebviewMessageHandler implements vscode.Disposable {
     disposeAll(this._disposables);
   }
 
+  get thisSession(): Option<Session> {
+    return Option.or(
+      this.session,
+      maybeDebugSession(vscode.debug.activeDebugSession),
+    );
+  }
+
   handleImagesRequest(id: MessageId) {
     this.webviewCommunication.sendResponse(
       id,
-      WebviewResponses.imagesObjects(),
+      WebviewResponses.imagesObjects(this.thisSession),
     );
   }
 
   async handleImageDataRequest(id: MessageId, args: RequestImageData) {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession === undefined) {
-      return undefined;
+    const maybeSession = this.thisSession;
+    if (maybeSession.none) {
+      return;
     }
-
-    const currentPythonObjectsList =
-      activeDebugSessionData(debugSession)?.currentPythonObjectsList;
+    const session = maybeSession.val;
+    const sessionData = getSessionData(session);
+    if (sessionData === undefined) {
+      return;
+    }
+    const currentPythonObjectsList = sessionData.currentPythonObjectsList;
     const objectItemKind =
       currentPythonObjectsList.find(args.expression)?.type ?? "expression";
 
     const objectViewables = await findExpressionViewables(
       args.expression,
-      debugSession,
+      session,
     );
 
     if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
@@ -69,7 +85,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
         ? { variable: args.expression }
         : { expression: args.expression },
       objectViewables.safeUnwrap()[0],
-      debugSession,
+      session,
     );
     if (response.err) {
       logError("Error retrieving image using socket", errorMessage(response));
@@ -83,19 +99,23 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   async handleBatchItemDataRequest(id: string, args: RequestBatchItemData) {
-    const debugSession = vscode.debug.activeDebugSession;
-    if (debugSession === undefined) {
-      return undefined;
+    const maybeSession = this.thisSession;
+    if (maybeSession.none) {
+      return;
+    }
+    const session = maybeSession.val;
+    const sessionData = getSessionData(session);
+    if (sessionData === undefined) {
+      return;
     }
 
-    const currentPythonObjectsList =
-      activeDebugSessionData(debugSession)?.currentPythonObjectsList;
+    const currentPythonObjectsList = sessionData.currentPythonObjectsList;
     const objectItemKind =
       currentPythonObjectsList.find(args.expression)?.type ?? "expression";
 
     const objectViewables = await findExpressionViewables(
       args.expression,
-      debugSession,
+      session,
     );
 
     if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
@@ -110,7 +130,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
         ? { variable: args.expression }
         : { expression: args.expression },
       objectViewables.safeUnwrap()[0],
-      debugSession,
+      session,
       { start, stop },
     );
     if (response.err) {
@@ -125,11 +145,11 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   async handleWebviewReady(id: MessageId) {
-    this.webviewCommunication.setReady();
+    this.webviewCommunication.setReady(true);
     this.webviewCommunication.sendRequest(WebviewRequests.configuration());
     this.webviewCommunication.sendResponse(
       id,
-      WebviewResponses.imagesObjects(),
+      WebviewResponses.imagesObjects(this.thisSession),
     );
   }
 
@@ -140,7 +160,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       Container.get(WatchTreeProvider).refresh();
       this.webviewCommunication.sendResponse(
         id,
-        WebviewResponses.imagesObjects(),
+        WebviewResponses.imagesObjects(this.thisSession),
       );
     }
   }
@@ -152,7 +172,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       Container.get(WatchTreeProvider).refresh();
       this.webviewCommunication.sendResponse(
         id,
-        WebviewResponses.imagesObjects(),
+        WebviewResponses.imagesObjects(this.thisSession),
       );
     }
   }

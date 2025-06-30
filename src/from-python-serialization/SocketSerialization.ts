@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import { Viewable } from "../viewable/Viewable";
 import { logDebug, logWarn } from "../Logging";
 import { isExpressionSelection, selectionString } from "../utils/VSCodeUtils";
@@ -20,9 +19,10 @@ import {
   DataOrdering as WebviewDataOrdering,
   ImageMessage,
 } from "../webview/webview";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
 import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
 import { ArrayDataType, DimensionOrder } from "../common/datatype";
+import { isDebugSession, Session, sessionToId } from "../session/Session";
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
   [key in ArrayDataType]: WebviewDatatype | undefined;
@@ -67,7 +67,7 @@ function makeOptions(
 export async function serializePythonObjectUsingSocketServer(
   obj: PythonObjectRepresentation,
   viewable: Viewable,
-  session: vscode.DebugSession,
+  session: Session,
   options?: SerializePythonObjectUsingSocketServerOptions,
 ): Promise<Result<{ header: MessageChunkHeader; data: Buffer }>> {
   const socketServer = Container.get(SocketServer);
@@ -106,7 +106,7 @@ export async function serializePythonObjectUsingSocketServer(
 export async function serializeImageUsingSocketServer(
   obj: PythonObjectRepresentation,
   viewable: Viewable,
-  session: vscode.DebugSession,
+  session: Session,
   options?: SerializePythonObjectUsingSocketServerOptions,
 ): Promise<Result<ImageMessage>> {
   const response = await serializePythonObjectUsingSocketServer(
@@ -150,15 +150,19 @@ export async function serializeImageUsingSocketServer(
     const arrayData = new Uint8Array(arrayBuffer);
     arrayData.set(arrayInfo.data);
 
-    const debugSessionData = activeDebugSessionData(session);
-    const infoOrError =
-      debugSessionData.currentPythonObjectsList?.find(expression)?.InfoOrError;
+    let additionalInfo = {};
+    if (isDebugSession(session)) {
+      const debugSessionData = activeDebugSessionData(session.session);
+      const infoOrError =
+        debugSessionData.currentPythonObjectsList?.find(
+          expression,
+        )?.InfoOrError;
 
-    let additionalInfo;
-    if (infoOrError === undefined || infoOrError.err) {
-      additionalInfo = {};
-    } else {
-      additionalInfo = infoOrError.safeUnwrap()[1];
+      if (infoOrError === undefined || infoOrError.err) {
+        additionalInfo = {};
+      } else {
+        additionalInfo = infoOrError.safeUnwrap()[1];
+      }
     }
 
     const dataOrdering =
@@ -168,8 +172,10 @@ export async function serializeImageUsingSocketServer(
       return Err(msg);
     }
 
+    const sessionId = sessionToId(session);
+
     const imageMessage: ImageMessage = {
-      image_id: expression,
+      image_id: [sessionId, expression],
       value_variable_kind: isExpressionSelection(obj)
         ? "expression"
         : "variable",

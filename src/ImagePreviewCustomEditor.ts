@@ -184,7 +184,7 @@ async function createMessage(uri: vscode.Uri): Promise<ImageMessage> {
   );
 
   const imageMessage: ImageMessage = {
-    image_id: uri.toString(),
+    image_id: ["customEditorSession", uri.toString()],
     value_variable_kind: "variable",
     expression: "image",
     width: width,

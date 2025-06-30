@@ -1,23 +1,25 @@
+import { Inject, Service } from "typedi";
 import * as vscode from "vscode";
-import { Service } from "typedi";
+import { logTrace } from "../../Logging";
+import { disposeAll } from "../../utils/VSCodeUtils";
+import { ImageViewPanel } from "../panels/ImageViewPanel";
 import {
   ExtensionRequest,
   ExtensionResponse,
   FromExtensionMessageWithId,
   MessageId,
 } from "../webview";
-import { ImageViewPanel } from "../panels/ImageViewPanel";
-import { logTrace } from "../../Logging";
-import { disposeAll } from "../../utils/VSCodeUtils";
 import { WebviewMessageHandler } from "./WebviewMessageHandler";
+import { Session } from "../../session/Session";
+import { None, Option } from "ts-results";
 
 export class WebviewCommunication {
   private _isReady = false;
 
   constructor(public readonly webview: vscode.Webview) {}
 
-  setReady() {
-    this._isReady = true;
+  setReady(ready: boolean) {
+    this._isReady = ready;
   }
 
   get isReady() {
@@ -45,7 +47,7 @@ export class WebviewCommunication {
   }
 
   sendRequest(message: ExtensionRequest) {
-    const id = WebviewClient.randomMessageId();
+    const id = GlobalWebviewClient.randomMessageId();
     const messageWithId: FromExtensionMessageWithId = {
       id,
       message: { kind: "Request", ...message },
@@ -62,14 +64,20 @@ export class WebviewCommunication {
   }
 }
 
-@Service()
-export class WebviewClient implements vscode.Disposable {
+class WebviewClient implements vscode.Disposable {
+  private readonly context: vscode.ExtensionContext;
+
   private _currentPanel: vscode.WebviewPanel | undefined;
   private _webviewMessageHandler: WebviewMessageHandler | undefined;
 
   private _disposables: vscode.Disposable[] = [];
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(
+    @Inject("vscode.ExtensionContext") context: vscode.ExtensionContext,
+    public readonly session: Option<Session>,
+  ) {
+    this.context = context;
+  }
 
   static randomMessageId(): MessageId {
     return Math.random().toString(36).substring(2, 15);
@@ -88,12 +96,20 @@ export class WebviewClient implements vscode.Disposable {
           ],
         },
       );
+      this._disposables.push(
+        this._currentPanel.onDidChangeViewState((e) => {
+          if (!e.webviewPanel.visible) {
+            this._webviewMessageHandler?.webviewCommunication.setReady(false);
+          }
+        }),
+      );
       this._disposables.push(this._currentPanel);
       const webviewCommunication = new WebviewCommunication(
         this._currentPanel.webview,
       );
       this._webviewMessageHandler = new WebviewMessageHandler(
         webviewCommunication,
+        this.session,
       );
 
       this._currentPanel.onDidDispose(
@@ -101,9 +117,13 @@ export class WebviewClient implements vscode.Disposable {
         null,
         this._disposables,
       );
+
+      ImageViewPanel.render(this.context, this._currentPanel);
     }
 
-    ImageViewPanel.render(this.context, this._currentPanel);
+    if (!this._currentPanel.visible) {
+      this._currentPanel.reveal(this._currentPanel.viewColumn);
+    }
 
     // wait for the webview to be ready
     await this._webviewMessageHandler?.webviewCommunication.waitForReady();
@@ -125,5 +145,32 @@ export class WebviewClient implements vscode.Disposable {
 
   sendResponse(id: MessageId, message: ExtensionResponse) {
     this._webviewMessageHandler?.webviewCommunication.sendResponse(id, message);
+  }
+}
+
+export type { WebviewClient };
+
+@Service()
+export class WebviewClientFactory {
+  constructor(
+    @Inject("vscode.ExtensionContext")
+    private readonly context: vscode.ExtensionContext,
+  ) {}
+
+  public create(session: Session | undefined): WebviewClient {
+    return new WebviewClient(this.context, Option.wrap(session));
+  }
+}
+
+@Service()
+export class GlobalWebviewClient extends WebviewClient {
+  constructor(
+    @Inject("vscode.ExtensionContext")
+    context: vscode.ExtensionContext,
+  ) {
+    super(
+      context,
+      None, // Global webview client does not have a specific session
+    );
   }
 }

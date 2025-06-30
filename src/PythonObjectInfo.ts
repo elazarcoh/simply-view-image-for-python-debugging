@@ -1,5 +1,4 @@
 import Container from "typedi";
-import * as vscode from "vscode";
 import { AllViewables } from "./AllViewables";
 import { logError } from "./Logging";
 import {
@@ -9,6 +8,7 @@ import {
 import { evaluateInPython } from "./python-communication/RunPythonCode";
 import { Viewable } from "./viewable/Viewable";
 import { Err, Ok, Result, errorMessage } from "./utils/Result";
+import { Session } from "./session/Session";
 
 function listOfValidViewables(
   viewables: ReadonlyArray<Viewable>,
@@ -22,7 +22,7 @@ function listOfValidViewables(
 
 export async function findExpressionViewables(
   expression: string,
-  session: vscode.DebugSession,
+  session: Session,
 ): Promise<Result<Viewable[]>> {
   const viewables = Container.get(AllViewables).allViewables;
   const code = constructRunSameExpressionWithMultipleEvaluatorsCode(
@@ -50,7 +50,7 @@ export async function findExpressionViewables(
 
 export async function findExpressionsViewables(
   expressions: string[],
-  session: vscode.DebugSession,
+  session: Session,
 ): Promise<Result<Viewable[][]>> {
   const viewables = Container.get(AllViewables).allViewables;
   const codes = expressions.map((expression) =>

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::application_state::app_state::StoreAction;
-use crate::common::{Channels, Datatype, ValueVariableKind};
+use crate::common::{Channels, Datatype, SessionId, ValueVariableKind};
 use crate::common::{DataOrdering, ViewableObjectId};
 use crate::vscode::messages::ImageMessage;
 use std::collections::HashMap;
@@ -8843,12 +8843,16 @@ fn segmentation_gray_data_u8() -> (&'static [u8], u32, u32) {
     (DATA, 250, 250)
 }
 
+static SESSION_ID_1: &str = "_internal_session_id_1";
+static SESSION_ID_2: &str = "_internal_session_id_2";
+
 #[allow(clippy::too_many_arguments)]
 fn image_data_with(
     bytes: &[u8],
     datatype: Datatype,
     channels: Channels,
     name: &str,
+    session_id: &str,
     width: u32,
     height: u32,
     data_ordering: DataOrdering,
@@ -8857,7 +8861,7 @@ fn image_data_with(
     let batch_size = batch_info.map(|(batch_size, _)| batch_size);
     let batch_items_range = batch_info.map(|(_, range)| range);
     ImageMessage {
-        image_id: ViewableObjectId::new(name),
+        image_id: ViewableObjectId::new(&SessionId::new(session_id), name),
         value_variable_kind: ValueVariableKind::Variable,
         expression: name.to_string(),
         width,
@@ -8897,6 +8901,7 @@ fn image_texture_rgba_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::Four,
         "image_rgba_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -8921,6 +8926,7 @@ fn image_texture_rgba_u16() -> ImageMessage {
         Datatype::Uint16,
         Channels::Four,
         "image_rgba_u16",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -8945,6 +8951,7 @@ fn image_texture_rgba_u32() -> ImageMessage {
         Datatype::Uint32,
         Channels::Four,
         "image_rgba_u32",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -8963,6 +8970,7 @@ fn image_texture_rgb_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::Three,
         "image_rgb_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -8993,6 +9001,7 @@ fn image_texture_rg_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::Two,
         "image_rg_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9017,6 +9026,7 @@ fn image_texture_gray_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::One,
         "image_gray_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9041,6 +9051,7 @@ fn image_texture_rgba_i8() -> ImageMessage {
         Datatype::Int8,
         Channels::Four,
         "image_rgba_i8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9065,6 +9076,7 @@ fn image_texture_rgba_i16() -> ImageMessage {
         Datatype::Int16,
         Channels::Four,
         "image_rgba_i16",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9089,6 +9101,7 @@ fn image_texture_rgba_i32() -> ImageMessage {
         Datatype::Int32,
         Channels::Four,
         "image_rgba_i32",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9113,6 +9126,7 @@ fn image_texture_rgba_f32() -> ImageMessage {
         Datatype::Float32,
         Channels::Four,
         "image_rgba_f32",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9136,6 +9150,7 @@ fn image_texture_rgb_f32() -> ImageMessage {
         Datatype::Float32,
         Channels::Three,
         "image_rgb_f32",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9159,6 +9174,7 @@ fn image_texture_gray_f32() -> ImageMessage {
         Datatype::Float32,
         Channels::One,
         "image_gray_f32",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9183,6 +9199,7 @@ fn image_texture_gray_f32_not_normalized(min_value: f32, max_value: f32) -> Imag
         Datatype::Float32,
         Channels::One,
         format!("image_gray_f32_not_normalized_{}_{}", min_value, max_value).as_str(),
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9207,6 +9224,7 @@ fn image_texture_gray_u8_not_normalized(min_value: u8, max_value: u8) -> ImageMe
         Datatype::Uint8,
         Channels::One,
         format!("image_gray_u8_not_normalized_{}_{}", min_value, max_value).as_str(),
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9239,6 +9257,7 @@ fn image_texture_with_transparency() -> ImageMessage {
         Datatype::Uint8,
         Channels::Four,
         "image_with_transparency",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9263,6 +9282,7 @@ fn image_fully_transparent_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::Four,
         "transparent_image",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9287,6 +9307,7 @@ fn image_texture_bool_rgba() -> ImageMessage {
         Datatype::Bool,
         Channels::Four,
         "image_bool_rgba",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9305,6 +9326,7 @@ fn image_texture_bool_gray() -> ImageMessage {
         Datatype::Bool,
         Channels::One,
         "image_bool_gray",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9319,6 +9341,7 @@ fn heatmap_texture_u16() -> ImageMessage {
         Datatype::Uint16,
         Channels::One,
         "heatmap_u16",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9333,6 +9356,7 @@ fn segmentation_texture_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::One,
         "segmentation_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9366,6 +9390,7 @@ fn matrix_4x4_with_scientific_nan_inf() -> ImageMessage {
         Datatype::Float32,
         Channels::One,
         "matrix_4x4_with_scientific_nan_inf",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::HWC,
@@ -9395,6 +9420,7 @@ fn rectangle_image_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::Four,
         "rectangle_image",
+        SESSION_ID_1,
         target_w as u32,
         target_h as u32,
         DataOrdering::HWC,
@@ -9430,6 +9456,7 @@ fn channels_first_image_f32() -> ImageMessage {
         Datatype::Float32,
         Channels::Four,
         "channels_first_image_rgba_f32",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::CHW,
@@ -9462,6 +9489,7 @@ fn channels_first_image_rgb_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::Three,
         "channels_first_image_rgb_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::CHW,
@@ -9497,6 +9525,7 @@ fn channels_first_image_rgba_int16() -> ImageMessage {
         Datatype::Int16,
         Channels::Four,
         "channels_first_imaga_rgba_int16",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::CHW,
@@ -9521,6 +9550,7 @@ fn channels_first_image_gray_u8() -> ImageMessage {
         Datatype::Uint8,
         Channels::One,
         "channels_first_image_gray_u8",
+        SESSION_ID_1,
         w,
         h,
         DataOrdering::CHW,
@@ -9558,6 +9588,7 @@ fn batch_gray_u8(batch_size: u32, start: u32, end: u32) -> ImageMessage {
         Datatype::Uint8,
         Channels::One,
         "batch_gray_u8",
+        SESSION_ID_2,
         w,
         h,
         DataOrdering::HWC,
@@ -9588,12 +9619,10 @@ pub(crate) fn set_debug_images() {
         segmentation_texture_u8(),
         image_fully_transparent_u8(),
         rectangle_image_u8(),
-
         // Int
         image_texture_rgba_i8(),
         image_texture_rgba_i16(),
         image_texture_rgba_i32(),
-
         // Float
         image_texture_rgba_f32(),
         image_texture_rgb_f32(),
@@ -9603,13 +9632,11 @@ pub(crate) fn set_debug_images() {
         image_texture_with_transparency(),
         image_texture_bool_gray(),
         matrix_4x4_with_scientific_nan_inf(),
-
         // Planar
         channels_first_image_f32(),
         channels_first_image_rgb_u8(),
         channels_first_image_rgba_int16(),
         channels_first_image_gray_u8(),
-
         // Batch
         batch_gray_u8(25, 0, 3),
     ];
@@ -9625,6 +9652,7 @@ pub(crate) fn set_debug_images() {
     }
 
     dispatch.apply(StoreAction::ReplaceData(images));
+    dispatch.apply(StoreAction::SetActiveSession(SessionId::new(SESSION_ID_1)));
 }
 
 #[cfg(debug_assertions)]

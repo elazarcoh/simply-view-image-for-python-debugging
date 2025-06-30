@@ -1,6 +1,7 @@
-import Container from "typedi";
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "../debugger-utils/DebugSessionsHolder";
+import { refreshAllDataViews } from "../globalActions";
+import { maybeDebugSession } from "../session/Session";
+import { getSessionData } from "../session/SessionData";
 import { Viewable } from "../viewable/Viewable";
 import {
   addExpression,
@@ -9,9 +10,6 @@ import {
   removeExpression,
 } from "./PythonObjectsList";
 import { PythonObjectTreeItem } from "./WatchTreeItem";
-import { WatchTreeProvider } from "./WatchTreeProvider";
-import { WebviewClient } from "../webview/communication/WebviewClient";
-import { WebviewRequests } from "../webview/communication/createMessages";
 
 // singleton object that used to add expression when user click on it
 class _AddExpressionWatchTreeItem extends vscode.TreeItem {
@@ -54,9 +52,8 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
 export async function addExpressionTreeItem(): Promise<void> {
   const added = await addExpression();
   if (added) {
-    await activeDebugSessionData()?.currentPythonObjectsList.update();
-    Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
+    await refreshAllDataViews(session);
   }
 }
 
@@ -66,12 +63,11 @@ export async function removeExpressionTreeItem(
   const expression = item.expression;
   const removed = await removeExpression(expression);
   if (removed) {
-    if (item.trackingId) {
-      activeDebugSessionData()?.trackedPythonObjects.untrack(item.trackingId);
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
+    if (session.some && item.trackingId) {
+      getSessionData(session.val).trackedPythonObjects.untrack(item.trackingId);
     }
-    await activeDebugSessionData()?.currentPythonObjectsList.update();
-    Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    await refreshAllDataViews(session);
   }
 }
 
@@ -81,28 +77,31 @@ export async function editExpressionTreeItem(
   const expression = item.expression;
   const changed = await editExpression(expression);
   if (changed) {
-    await activeDebugSessionData()?.currentPythonObjectsList.update();
-    Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
+    await refreshAllDataViews(session);
   }
 }
 
 export async function removeAllExpressionsTree(): Promise<void> {
   const removed = removeAllExpressions();
   if (removed.length > 0) {
-    const trackedPythonObjects = activeDebugSessionData()?.trackedPythonObjects;
-    if (trackedPythonObjects !== undefined) {
-      removed.forEach((expression) => {
-        const trackingId = trackedPythonObjects.trackingIdIfTracked({
-          expression,
+    const session = maybeDebugSession(vscode.debug.activeDebugSession);
+    if (session.some) {
+      const trackedPythonObjects = getSessionData(
+        session.val,
+      ).trackedPythonObjects;
+
+      if (trackedPythonObjects !== undefined) {
+        removed.forEach((expression) => {
+          const trackingId = trackedPythonObjects.trackingIdIfTracked({
+            expression,
+          });
+          if (trackingId !== undefined) {
+            trackedPythonObjects.untrack(trackingId);
+          }
         });
-        if (trackingId !== undefined) {
-          trackedPythonObjects.untrack(trackingId);
-        }
-      });
+      }
     }
-    await activeDebugSessionData()?.currentPythonObjectsList.update();
-    Container.get(WatchTreeProvider).refresh();
-    Container.get(WebviewClient).sendRequest(WebviewRequests.replaceImages());
+    await refreshAllDataViews(session);
   }
 }

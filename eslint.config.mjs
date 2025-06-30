@@ -24,6 +24,7 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
+      "@typescript-eslint/no-non-null-assertion": "error",
     },
   },
   eslintPluginPrettierRecommended,

@@ -51,16 +51,16 @@ impl ImagesFetcher {
             match cv {
                 crate::common::CurrentlyViewing::Image(image_id) => {
                     log::debug!(
-                        "ImagesFetcher::on_change: CurrentlyViewing::Image {}",
+                        "ImagesFetcher::on_change: CurrentlyViewing::Image {:?}",
                         image_id
                     );
 
                     let current = state.image_cache.borrow().get(&image_id);
 
                     if current == ImageAvailability::NotAvailable {
-                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                        log::debug!("ImagesFetcher::on_change: image {:?} not in cache", image_id);
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
-                            log::debug!("ImagesFetcher::on_change: fetching image {}", image_id);
+                            log::debug!("ImagesFetcher::on_change: fetching image {:?}", image_id);
                             VSCodeRequests::request_image_data(
                                 image_id.clone(),
                                 image_info.minimal().expression.clone(),
@@ -80,12 +80,15 @@ impl ImagesFetcher {
                         .unwrap_or(0);
 
                     if let ImageAvailability::NotAvailable = current {
-                        log::debug!("ImagesFetcher::on_change: image {} not in cache", image_id);
+                        log::debug!(
+                            "ImagesFetcher::on_change: image {:?} not in cache",
+                            image_id
+                        );
                         if let Some(image) = state.images.borrow().get(&image_id) {
                             state.image_cache.borrow_mut().set_pending(&image_id);
                             let expression = image.minimal().expression.clone();
                             log::debug!(
-                                "ImagesFetcher::on_change: fetching item {} for image {}",
+                                "ImagesFetcher::on_change: fetching item {:?} for image {:?}",
                                 current_index,
                                 image_id
                             );
@@ -132,7 +135,7 @@ impl ImagesFetcher {
                                 let currently_holding =
                                     image.borrow().textures.keys().copied().collect_vec();
                                 log::debug!(
-                                    "ImagesFetcher::on_change: {}[{}] not in cache (has {:?})",
+                                    "ImagesFetcher::on_change: {:?}[{}] not in cache (has {:?})",
                                     image_id,
                                     item,
                                     currently_holding

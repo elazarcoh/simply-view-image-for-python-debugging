@@ -1,12 +1,14 @@
 use super::colormaps::{ColorMapRegistry, ColorMapTexturesCache};
 use super::images::{ImageCache, Images, ImagesDrawingOptions};
+use super::sessions::Sessions;
 use super::views::ImageViews;
 use super::vscode_data_fetcher::ImagesFetcher;
 use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
 use crate::common::{
-    AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, ViewId, ViewableObjectId,
+    constants, AppMode, CurrentlyViewing, Image, ImageData, ImagePlaceholder, SessionId, ViewId,
+    ViewableObjectId,
 };
 use crate::configurations;
 use crate::vscode::state::HostExtensionStateUpdate;
@@ -44,6 +46,7 @@ pub(crate) enum ElementsStoreKey {
 pub(crate) struct AppState {
     pub gl: Option<WebGl2RenderingContext>,
 
+    pub sessions: Mrc<Sessions>,
     pub images: Mrc<Images>,
     pub image_views: Mrc<ImageViews>,
     pub image_cache: Mrc<ImageCache>,
@@ -66,6 +69,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             gl: None,
+            sessions: Default::default(),
             images: Default::default(),
             image_views: Default::default(),
             image_cache: Default::default(),
@@ -156,6 +160,7 @@ impl ImageObject {
 }
 
 pub(crate) enum StoreAction {
+    SetActiveSession(SessionId),
     SetImageToView(ViewableObjectId, ViewId),
     AddImageWithData(ViewableObjectId, ImageData),
     UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
@@ -163,10 +168,21 @@ pub(crate) enum StoreAction {
     ReplaceData(Vec<ImageObject>),
     UpdateData(ImageObject),
     SetMode(AppMode),
+    SetSessionNames(HashMap<SessionId, String>),
+}
+
+fn add_session(sessions: &Mrc<Sessions>, session_id: SessionId) -> Result<()> {
+    let mut sessions = sessions.borrow_mut();
+    if !sessions.sessions.contains(&session_id) {
+        sessions.sessions.push(session_id);
+    }
+    Ok(())
 }
 
 fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
     let image_id = image.image_id().clone();
+
+    add_session(&state.sessions, image_id.session_id().clone())?;
 
     if let ImageObject::Placeholder(image_placeholder) = &image {
         state.images.borrow_mut().insert(
@@ -244,13 +260,12 @@ impl Reducer<AppState> for StoreAction {
                 VSCodeRequests::update_state(
                     HostExtensionStateUpdate::default()
                         .current_image_id(Some(image_id.clone()))
-                        .current_image_expression(Some(image_id.to_string()))
                         .current_image_drawing_options(Some(drawing_options.clone()))
                         .clone(),
                 );
+                state.sessions.borrow_mut().active_session = Some(image_id.session_id().clone());
                 state.set_image_to_view(image_id, view_id);
             }
-
             StoreAction::AddImageWithData(image_id, image_data) => {
                 log::debug!("AddImageWithData: {:?}", image_id);
                 let image_object = ImageObject::WithData(image_data);
@@ -260,7 +275,6 @@ impl Reducer<AppState> for StoreAction {
                     })
                     .ok();
             }
-
             StoreAction::UpdateDrawingOptions(image_id, update) => {
                 let current_drawing_options = state
                     .drawing_options
@@ -316,21 +330,26 @@ impl Reducer<AppState> for StoreAction {
                     .borrow_mut()
                     .set(image_id, new_drawing_option);
             }
-
             StoreAction::ReplaceData(replacement_images) => {
                 log::debug!("ReplaceData");
                 state.image_cache.borrow_mut().clear();
                 state.images.borrow_mut().clear();
 
+                let mut session = None;
                 let mut errors = Vec::new();
                 for image in replacement_images.into_iter() {
+                    let session_id = image.image_id().session_id().clone();
                     let res = handle_received_image(state, image);
                     if let Err(e) = res {
                         errors.push(e);
+                    } else if session.is_none() {
+                        session = Some(session_id);
                     }
                 }
+                if let Some(session) = session {
+                    state.sessions.borrow_mut().active_session = Some(session);
+                }
             }
-
             StoreAction::UpdateGlobalDrawingOptions(opts) => match opts {
                 UpdateGlobalDrawingOptions::GlobalHeatmapColormap(name) => {
                     state.global_drawing_options.heatmap_colormap_name = name;
@@ -348,6 +367,20 @@ impl Reducer<AppState> for StoreAction {
             StoreAction::SetMode(app_mode) => {
                 state.app_mode = app_mode;
                 log::info!("App mode set to: {:?}", app_mode);
+            }
+            StoreAction::SetActiveSession(session_id) => {
+                state.sessions.borrow_mut().active_session = Some(session_id);
+                // reset the currently viewing image
+                constants::all_views().iter().for_each(|view_id| {
+                    state.image_views.borrow_mut().reset_view(*view_id);
+                });
+            }
+            StoreAction::SetSessionNames(session_names) => {
+                state
+                    .sessions
+                    .borrow_mut()
+                    .session_name
+                    .extend(session_names);
             }
         };
 

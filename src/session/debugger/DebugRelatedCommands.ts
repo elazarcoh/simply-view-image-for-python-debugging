@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { findExpressionViewables } from "../PythonObjectInfo";
-import { viewObject } from "../ViewPythonObject";
+import { findExpressionViewables } from "../../PythonObjectInfo";
+import { viewObject } from "../../ViewPythonObject";
+import { debugSession } from "../../session/Session";
 
 // update currently selected frame, using a hacky way (because the vscode API is lacking).
 export async function updateDebugFrameId(): Promise<void> {
@@ -53,23 +54,23 @@ export async function viewVariableFromVSCodeDebugViewAsImage({
 }: {
   variable: DebugProtocol.Variable;
 }): Promise<void> {
-  const debugSession = vscode.debug.activeDebugSession;
-  if (debugSession === undefined || variable.evaluateName === undefined) {
+  const session = vscode.debug.activeDebugSession;
+  if (session === undefined || variable.evaluateName === undefined) {
     return undefined;
   }
 
   const objectViewables = await findExpressionViewables(
     variable.evaluateName,
-    debugSession,
+    debugSession(session),
   );
 
   if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
     return undefined;
   }
 
-  return viewObject(
-    { variable: variable.evaluateName },
-    objectViewables.safeUnwrap()[0],
-    debugSession,
-  );
+  return viewObject({
+    obj: { variable: variable.evaluateName },
+    viewable: objectViewables.safeUnwrap()[0],
+    session: debugSession(session),
+  });
 }

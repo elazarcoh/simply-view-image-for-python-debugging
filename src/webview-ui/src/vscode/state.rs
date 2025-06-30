@@ -1,6 +1,5 @@
 use crate::{coloring::DrawingOptions, common::ViewableObjectId};
 
-
 #[derive(Builder, Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 #[builder(setter(into), name = "HostExtensionStateUpdate")]
 pub(crate) struct HostExtensionState {

@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
-import { CurrentPythonObjectsList } from "../image-watch-tree/PythonObjectsList";
-import { TrackedPythonObjects } from "../image-watch-tree/TrackedPythonObjects";
-import { SavePathHelper } from "../SerializationHelper";
+import { CurrentPythonObjectsList } from "../../image-watch-tree/PythonObjectsList";
+import { TrackedPythonObjects } from "../../image-watch-tree/TrackedPythonObjects";
+import { SavePathHelper } from "../../SerializationHelper";
 import { DebugVariablesTracker } from "./DebugVariablesTracker";
-import { ExtensionDiagnostics } from "../image-watch-tree/DiagnosticsItem";
+import { ExtensionDiagnostics } from "../../image-watch-tree/DiagnosticsItem";
+import { SessionData } from "../SessionData";
 
-export class DebugSessionData {
+export class DebugSessionData implements SessionData {
+  public readonly session: vscode.DebugSession;
   public readonly savePathHelper: SavePathHelper;
   public readonly debugVariablesTracker: DebugVariablesTracker =
     new DebugVariablesTracker();
@@ -19,6 +21,7 @@ export class DebugSessionData {
   public customState: Record<string, unknown | undefined> = {};
 
   constructor(session: vscode.DebugSession) {
+    this.session = session;
     this.savePathHelper = new SavePathHelper(session.id);
     this.currentPythonObjectsList = new CurrentPythonObjectsList(
       this.debugVariablesTracker,
@@ -26,4 +29,17 @@ export class DebugSessionData {
     );
     this.diagnostics = new ExtensionDiagnostics(session);
   }
+
+  get isValid(): boolean {
+    return this.isDebuggerAttached;
+  }
+  get canExecute(): boolean {
+    return this.isDebuggerAttached && this.isValid && this.isStopped;
+  }
+}
+
+export function isDebugSessionData(
+  data: SessionData,
+): data is DebugSessionData {
+  return data instanceof DebugSessionData;
 }

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import {
   updateDebugFrameId,
   viewVariableFromVSCodeDebugViewAsImage,
-} from "./debugger-utils/DebugRelatedCommands";
+} from "./session/debugger/DebugRelatedCommands";
 import {
   addExpressionTreeItem,
   editExpressionTreeItem,
@@ -21,10 +21,16 @@ import {
   viewObjectUnderCursor,
 } from "./ViewPythonObject";
 import Container from "typedi";
-import { WebviewClient } from "./webview/communication/WebviewClient";
+import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
 import { runSetup } from "./python-communication/Setup";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
 import { openFileImage } from "./ImagePreviewCustomEditor";
+import {
+  JUPYTER_VIEW_COMMAND,
+  viewVariableFromJupyterDebugView,
+} from "./jupyter-intergration";
+import { logTrace } from "./Logging";
+import { debugSession } from "./session/Session";
 
 // *********************
 // Some general commands
@@ -35,12 +41,12 @@ async function openExtensionSettings(): Promise<void> {
   });
 }
 async function openImageWebview(): Promise<void> {
-  Container.get(WebviewClient).reveal();
+  Container.get(GlobalWebviewClient).reveal();
 }
 async function rerunSetup(): Promise<void> {
-  const debugSession = vscode.debug.activeDebugSession;
-  if (debugSession) {
-    await runSetup(debugSession, true);
+  const session = vscode.debug.activeDebugSession;
+  if (session) {
+    await runSetup(debugSession(session), true);
   }
 }
 async function updateDiagnostics(): Promise<void> {
@@ -76,6 +82,7 @@ const Commands = {
   "svifpd.disable-plugin": disablePluginCommand,
   "svifpd.update-diagnostics": updateDiagnostics,
   "svifpd.open-file-image": openFileImage,
+  [JUPYTER_VIEW_COMMAND]: viewVariableFromJupyterDebugView,
 };
 type Commands = typeof Commands;
 type AvailableCommands = keyof Commands;
@@ -101,6 +108,7 @@ function registerCommand<C extends AvailableCommands>(
   command: C,
   action: Commands[C],
 ): vscode.Disposable {
+  logTrace(`Registering command: ${command}`);
   return vscode.commands.registerCommand(command, action);
 }
 
@@ -128,5 +136,6 @@ export function registerExtensionCommands(
     _registerCommandByName("svifpd.disable-plugin"),
     _registerCommandByName("svifpd.update-diagnostics"),
     _registerCommandByName("svifpd.open-file-image"),
+    _registerCommandByName(JUPYTER_VIEW_COMMAND),
   ];
 }

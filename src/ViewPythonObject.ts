@@ -1,30 +1,45 @@
+import Container from "typedi";
 import * as vscode from "vscode";
-import { activeDebugSessionData } from "./debugger-utils/DebugSessionsHolder";
+import { logWarn } from "./Logging";
+import { findExpressionViewables } from "./PythonObjectInfo";
+import { getConfiguration } from "./config";
+import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
+import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
+import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
+import { debugSession, maybeDebugSession, Session } from "./session/Session";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
+import { findJupyterSessionByDocumentUri } from "./session/jupyter/JupyterSessionRegistry";
+import { Option } from "./utils/Option";
+import { valueOrEval } from "./utils/Utils";
 import {
   currentUserSelection,
-  selectionString,
   openImageToTheSide,
+  selectionString,
 } from "./utils/VSCodeUtils";
 import { Viewable } from "./viewable/Viewable";
-import { findExpressionViewables } from "./PythonObjectInfo";
-import Container from "typedi";
-import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
-import { getConfiguration } from "./config";
-import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
-import { WebviewClient } from "./webview/communication/WebviewClient";
+import {
+  GlobalWebviewClient,
+  WebviewClient,
+} from "./webview/communication/WebviewClient";
 import { WebviewRequests } from "./webview/communication/createMessages";
-import { logWarn } from "./Logging";
-import { valueOrEval } from "./utils/Utils";
 
-export async function viewObject(
-  obj: PythonObjectRepresentation,
-  viewable: Viewable,
-  session: vscode.DebugSession,
-  path?: string,
-  openInPreview?: boolean,
-  forceDiskSerialization?: boolean,
-): Promise<void> {
+export async function viewObject({
+  obj,
+  viewable,
+  session,
+  path,
+  openInPreview,
+  forceDiskSerialization,
+  webviewClient,
+}: {
+  obj: PythonObjectRepresentation;
+  viewable: Viewable;
+  session: Session;
+  path?: string;
+  openInPreview?: boolean;
+  forceDiskSerialization?: boolean;
+  webviewClient?: WebviewClient;
+}): Promise<void> {
   if (
     !(forceDiskSerialization ?? false) &&
     valueOrEval(viewable.supportsImageViewer) &&
@@ -37,9 +52,16 @@ export async function viewObject(
     );
     if (response.err) {
       logWarn(response.val);
-      return viewObject(obj, viewable, session, path, openInPreview, true);
+      return viewObject({
+        obj,
+        viewable,
+        session,
+        path,
+        openInPreview,
+        forceDiskSerialization: true,
+      });
     } else {
-      const webviewClient = Container.get(WebviewClient);
+      webviewClient ??= Container.get(GlobalWebviewClient);
       await webviewClient.reveal();
       webviewClient.sendRequest(
         WebviewRequests.showImage(response.safeUnwrap()),
@@ -63,46 +85,41 @@ export async function viewObject(
 }
 
 export async function viewObjectUnderCursor(): Promise<unknown> {
-  const debugSession = vscode.debug.activeDebugSession;
-  const document = vscode.window.activeTextEditor?.document;
+  const document = Option.wrap(vscode.window.activeTextEditor?.document);
+  const session = Option.or(
+    maybeDebugSession(vscode.debug.activeDebugSession),
+    document.andThen(({ uri }) => findJupyterSessionByDocumentUri(uri)),
+  );
   const range = vscode.window.activeTextEditor?.selection;
-  if (
-    debugSession === undefined ||
-    document === undefined ||
-    range === undefined
-  ) {
+  if (session.none || document.none || range === undefined) {
     return undefined;
   }
 
-  const userSelection = currentUserSelection(document, range);
+  const userSelection = currentUserSelection(document.val, range);
   if (userSelection === undefined) {
     return;
   }
 
   const objectViewables = await findExpressionViewables(
     selectionString(userSelection),
-    debugSession,
+    session.val,
   );
   if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
     return undefined;
   }
 
-  return viewObject(
-    userSelection,
-    objectViewables.safeUnwrap()[0],
-    debugSession,
-  );
+  return viewObject({
+    obj: userSelection,
+    viewable: objectViewables.safeUnwrap()[0],
+    session: session.val,
+  });
 }
 
 export async function trackObjectUnderCursor(): Promise<unknown> {
-  const debugSession = vscode.debug.activeDebugSession;
+  const session = vscode.debug.activeDebugSession;
   const document = vscode.window.activeTextEditor?.document;
   const range = vscode.window.activeTextEditor?.selection;
-  if (
-    debugSession === undefined ||
-    document === undefined ||
-    range === undefined
-  ) {
+  if (session === undefined || document === undefined || range === undefined) {
     return undefined;
   }
 
@@ -113,14 +130,14 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
   const userSelectionAsString = selectionString(userSelection);
 
   // find if it is an existing expression in the list
-  const debugSessionData = activeDebugSessionData(debugSession);
+  const debugSessionData = activeDebugSessionData(session);
   const objectInList = debugSessionData.currentPythonObjectsList.find(
     userSelectionAsString,
   );
 
   const objectViewables = await findExpressionViewables(
     userSelectionAsString,
-    debugSession,
+    debugSession(session),
   );
 
   // add as expression if not found
@@ -155,11 +172,11 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
     return undefined;
   }
 
-  return viewObject(
-    userSelection,
-    objectViewables.safeUnwrap()[0],
-    debugSession,
-    savePath,
-    false,
-  );
+  return viewObject({
+    obj: userSelection,
+    viewable: objectViewables.safeUnwrap()[0],
+    session: debugSession(session),
+    path: savePath,
+    openInPreview: false,
+  });
 }

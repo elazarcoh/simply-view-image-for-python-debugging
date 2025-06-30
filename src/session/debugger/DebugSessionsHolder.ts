@@ -1,20 +1,25 @@
 import * as vscode from "vscode";
 import Container, { Service } from "typedi";
 import { DebugSessionData } from "./DebugSessionData";
+import { Option } from "../../utils/Option";
 
 @Service()
 class DebugSessionsHolder {
-  private _debugSessions: Map<vscode.DebugSession["id"], DebugSessionData> =
+  public debugSessions: Map<vscode.DebugSession["id"], DebugSessionData> =
     new Map();
 
   public debugSessionData(session: vscode.DebugSession): DebugSessionData {
     const id = session.id;
-    if (!this._debugSessions.has(id)) {
+    if (!this.debugSessions.has(id)) {
       const debugSessionData = new DebugSessionData(session);
-      this._debugSessions.set(id, debugSessionData);
+      this.debugSessions.set(id, debugSessionData);
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this._debugSessions.get(id)!;
+    return this.debugSessions.get(id)!;
+  }
+
+  public getById(id: string): DebugSessionData | undefined {
+    return this.debugSessions.get(id);
   }
 }
 
@@ -28,8 +33,19 @@ export function activeDebugSessionData(): DebugSessionData | undefined;
 export function activeDebugSessionData(
   session?: vscode.DebugSession | undefined,
 ): DebugSessionData | undefined {
-  session ?? (session = vscode.debug.activeDebugSession);
+  session ??= vscode.debug.activeDebugSession;
   return session
     ? Container.get(DebugSessionsHolder).debugSessionData(session)
     : undefined;
+}
+
+export function validDebugSessions(): DebugSessionData[] {
+  const debugSessions = Container.get(DebugSessionsHolder).debugSessions;
+  return Array.from(debugSessions.values()).filter(
+    (session) => session.isValid,
+  );
+}
+
+export function getSessionDataById(id: string): Option<DebugSessionData> {
+  return Option.wrap(Container.get(DebugSessionsHolder).getById(id));
 }

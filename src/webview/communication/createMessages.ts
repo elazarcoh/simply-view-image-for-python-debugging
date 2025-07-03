@@ -104,11 +104,18 @@ export class WebviewRequests {
   static configuration(): ExtensionRequest & {
     type: "Configuration";
   } {
+    let autoUpdateImages: boolean | "true" | "false" | "pinned" | undefined =
+      getConfiguration("autoUpdateImages");
+    if (typeof autoUpdateImages === "boolean") {
+      // Convert boolean to string for compatibility with the webview
+      autoUpdateImages = autoUpdateImages ? "true" : "false";
+    }
+
     return {
       type: "Configuration",
       invert_scroll_direction:
         getConfiguration("viewerUi.invertMouseWheelZoom") ?? null,
-      auto_update_images: getConfiguration("autoUpdateImages") ?? "true",
+      auto_update_images: autoUpdateImages ?? "true",
     };
   }
 

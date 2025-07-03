@@ -99,7 +99,7 @@ impl ImageCache {
 pub(crate) struct Images {
     data: HashMap<ViewableObjectId, Image>,
     order: Vec<ViewableObjectId>,
-    pinned: Vec<ViewableObjectId>,
+    pub(crate) pinned: Vec<ViewableObjectId>,
 }
 
 impl Images {

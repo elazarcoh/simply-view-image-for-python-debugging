@@ -369,11 +369,13 @@ impl Reducer<AppState> for StoreAction {
                 log::info!("App mode set to: {:?}", app_mode);
             }
             StoreAction::SetActiveSession(session_id) => {
-                state.sessions.borrow_mut().active_session = Some(session_id);
-                // reset the currently viewing image
-                constants::all_views().iter().for_each(|view_id| {
-                    state.image_views.borrow_mut().reset_view(*view_id);
-                });
+                if state.sessions.borrow().active_session.as_ref() != Some(&session_id) {
+                    state.sessions.borrow_mut().active_session = Some(session_id);
+                    // reset the currently viewing image
+                    constants::all_views().iter().for_each(|view_id| {
+                        state.image_views.borrow_mut().reset_view(*view_id);
+                    });
+                }
             }
             StoreAction::SetSessionNames(session_names) => {
                 state

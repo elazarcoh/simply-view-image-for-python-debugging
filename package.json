@@ -342,6 +342,19 @@
           "default": false,
           "description": "Whether to allow plugins to register their own viewables."
         },
+        "svifpd.autoUpdateImages": {
+          "type": [
+            "boolean",
+            "string"
+          ],
+          "enum": [
+            true,
+            false,
+            "pinned"
+          ],
+          "default": true,
+          "description": "Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed. When set to 'pinned', only pinned images will auto-update."
+        },
         "svifpd.customSavePath": {
           "type": "string",
           "default": "undefined",

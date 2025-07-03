@@ -107,6 +107,10 @@ impl Images {
         self.data.get(image_id)
     }
 
+    pub fn pinned(&self) -> &[ViewableObjectId] {
+        &self.pinned
+    }
+
     pub fn insert(&mut self, image_id: ViewableObjectId, image_info: Image) {
         if self.data.insert(image_id.clone(), image_info).is_none() {
             self.order.push(image_id);

@@ -16,10 +16,10 @@ use crate::{
     colormap,
     common::{Channels, ViewId, ViewableObjectId},
     components::{
-        colorbar::Colorbar, legend::Legend, spinner::Spinner, button::Button,
+        button::Button, colorbar::Colorbar, legend::Legend, spinner::Spinner,
         viewable_info_container::ViewableInfoContainer,
     },
-    math_utils, configurations::AutoUpdateImages,
+    math_utils,
 };
 
 fn get_segmentation_colormap(
@@ -243,8 +243,7 @@ pub struct NoDataViewProps {
 #[function_component]
 pub fn NoDataView(props: &NoDataViewProps) -> Html {
     let NoDataViewProps { view_id } = props;
-    
-    let auto_update_mode = use_selector(|state: &AppState| state.configuration.auto_update_images.clone());
+
     let current_image_id = {
         let view_id = *view_id;
         use_selector(move |state: &AppState| -> Option<ViewableObjectId> {
@@ -256,7 +255,7 @@ pub fn NoDataView(props: &NoDataViewProps) -> Html {
     let force_fetch_onclick = {
         let current_image_id = current_image_id.clone();
         Callback::from(move |_| {
-            if let Some(_image_id) = &current_image_id {
+            if let Some(ref _image_id) = current_image_id.as_ref() {
                 let dispatch = Dispatch::<AppState>::global();
                 let state = dispatch.get();
                 if let Err(e) = ImagesFetcher::force_fetch_missing_images(state) {
@@ -266,18 +265,7 @@ pub fn NoDataView(props: &NoDataViewProps) -> Html {
         })
     };
 
-    let should_show_force_button = match auto_update_mode {
-        AutoUpdateImages::False => true,
-        AutoUpdateImages::Pinned => {
-            // Show button if current image is not pinned
-            current_image_id.as_ref().map_or(false, |image_id| {
-                let dispatch = Dispatch::<AppState>::global();
-                let state = dispatch.get();
-                !state.images.borrow().is_pinned(image_id)
-            })
-        }
-        AutoUpdateImages::True => false, // No need for force button if auto-update is on
-    };
+    let should_show_force_button = true;
 
     let style = use_style!(
         r#"
@@ -338,8 +326,7 @@ pub fn ColorbarContainer(props: &ColorbarContainerProps) -> Html {
             }
         }
     }
-    html! {
-    }
+    html! {}
 }
 
 #[derive(PartialEq, Properties)]

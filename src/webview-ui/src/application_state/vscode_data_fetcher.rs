@@ -8,7 +8,7 @@ use anyhow::Result;
 
 use crate::{
     application_state::images::ImageAvailability, bindings::lodash, common::constants,
-    vscode::vscode_requests::VSCodeRequests, configurations::AutoUpdateImages,
+    configurations::AutoUpdateImages, vscode::vscode_requests::VSCodeRequests,
 };
 
 use super::app_state::AppState;
@@ -33,14 +33,6 @@ impl Default for ImagesFetcher {
 }
 
 impl ImagesFetcher {
-    fn should_fetch_image(&self, state: &AppState, image_id: &crate::common::ViewableObjectId) -> bool {
-        match &state.configuration.auto_update_images {
-            AutoUpdateImages::True => true,
-            AutoUpdateImages::False => false,
-            AutoUpdateImages::Pinned => state.images.borrow().is_pinned(image_id),
-        }
-    }
-
     fn fetch_missing_images_current_state() -> Result<()> {
         let state = Dispatch::<AppState>::global().get();
         Self::fetch_missing_images(state)
@@ -66,7 +58,10 @@ impl ImagesFetcher {
                     let current = state.image_cache.borrow().get(&image_id);
 
                     if current == ImageAvailability::NotAvailable {
-                        log::debug!("ImagesFetcher::on_change: image {:?} not in cache", image_id);
+                        log::debug!(
+                            "ImagesFetcher::on_change: image {:?} not in cache",
+                            image_id
+                        );
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
                             log::debug!("ImagesFetcher::on_change: fetching image {:?}", image_id);
                             VSCodeRequests::request_image_data(
@@ -187,9 +182,11 @@ impl Listener for ImagesFetcher {
                     .borrow()
                     .visible_views()
                     .iter()
-                    .filter_map(|view_id| state.image_views.borrow().get_currently_viewing(*view_id))
+                    .filter_map(|view_id| {
+                        state.image_views.borrow().get_currently_viewing(*view_id)
+                    })
                     .collect::<Vec<_>>();
-                
+
                 currently_viewing_objects.iter().any(|cv| {
                     let image_id = cv.id();
                     state.images.borrow().is_pinned(image_id)

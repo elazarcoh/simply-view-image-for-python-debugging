@@ -1,7 +1,7 @@
 import { Option } from "ts-results";
 import { getConfiguration } from "../../config";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
-import { isDebugSession, Session, sessionToId } from "../../session/Session";
+import { Session, sessionToId } from "../../session/Session";
 import { getSessionData } from "../../session/SessionData";
 import { hasValue, valueOrEval } from "../../utils/Utils";
 import {

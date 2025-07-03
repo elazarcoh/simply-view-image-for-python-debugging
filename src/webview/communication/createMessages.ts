@@ -108,7 +108,7 @@ export class WebviewRequests {
       type: "Configuration",
       invert_scroll_direction:
         getConfiguration("viewerUi.invertMouseWheelZoom") ?? null,
-      auto_update_images: getConfiguration("autoUpdateImages") ?? true,
+      auto_update_images: getConfiguration("autoUpdateImages") ?? "true",
     };
   }
 

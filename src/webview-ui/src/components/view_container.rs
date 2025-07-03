@@ -10,15 +10,16 @@ use crate::{
     application_state::{
         app_state::{AppState, StoreAction, UpdateDrawingOptions},
         images::ImageAvailability,
+        vscode_data_fetcher::ImagesFetcher,
     },
     coloring::{self, Coloring, DrawingOptions},
     colormap,
     common::{Channels, ViewId, ViewableObjectId},
     components::{
-        colorbar::Colorbar, legend::Legend, spinner::Spinner,
+        colorbar::Colorbar, legend::Legend, spinner::Spinner, button::Button,
         viewable_info_container::ViewableInfoContainer,
     },
-    math_utils,
+    math_utils, configurations::AutoUpdateImages,
 };
 
 fn get_segmentation_colormap(
@@ -233,6 +234,72 @@ fn make_info_items(
 
     Some(info_items)
 }
+
+#[derive(PartialEq, Properties)]
+pub struct NoDataViewProps {
+    pub view_id: ViewId,
+}
+
+#[function_component]
+pub fn NoDataView(props: &NoDataViewProps) -> Html {
+    let NoDataViewProps { view_id } = props;
+    
+    let auto_update_mode = use_selector(|state: &AppState| state.configuration.auto_update_images.clone());
+    let current_image_id = {
+        let view_id = *view_id;
+        use_selector(move |state: &AppState| -> Option<ViewableObjectId> {
+            let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
+            Some(binding.id().clone())
+        })
+    };
+
+    let force_fetch_onclick = {
+        let current_image_id = current_image_id.clone();
+        Callback::from(move |_| {
+            if let Some(_image_id) = &current_image_id {
+                let dispatch = Dispatch::<AppState>::global();
+                let state = dispatch.get();
+                if let Err(e) = ImagesFetcher::force_fetch_missing_images(state) {
+                    log::error!("Force fetch failed: {:?}", e);
+                }
+            }
+        })
+    };
+
+    let should_show_force_button = match auto_update_mode {
+        AutoUpdateImages::False => true,
+        AutoUpdateImages::Pinned => {
+            // Show button if current image is not pinned
+            current_image_id.as_ref().map_or(false, |image_id| {
+                let dispatch = Dispatch::<AppState>::global();
+                let state = dispatch.get();
+                !state.images.borrow().is_pinned(image_id)
+            })
+        }
+        AutoUpdateImages::True => false, // No need for force button if auto-update is on
+    };
+
+    let style = use_style!(
+        r#"
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        "#,
+    );
+
+    html! {
+        <div class={style}>
+            <div>{"No Data"}</div>
+            if should_show_force_button {
+                <Button onclick={force_fetch_onclick}>
+                    {"Fetch Image"}
+                </Button>
+            }
+        </div>
+    }
+}
+
 #[derive(PartialEq, Properties)]
 pub struct ColorbarContainerProps {
     pub view_id: ViewId,
@@ -310,7 +377,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
         if let Some(availability) = current_image.as_ref().as_ref().map(|(_, a, _)| a) {
             match availability {
                 ImageAvailability::NotAvailable => Some(html! {
-                    <div>{"No Data"}</div>
+                    <NoDataView view_id={*view_id} />
                 }),
                 ImageAvailability::Pending(_) => Some(html! {
                     <Spinner />

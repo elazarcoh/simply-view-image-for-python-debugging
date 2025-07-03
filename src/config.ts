@@ -118,10 +118,11 @@ export interface Config {
   showDiagnosticInfoInTreeView: boolean;
 
   /**
-   * @default true
-   * @description Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed.
+   * @default "true"
+   * @description Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed. When set to 'pinned', only tracked/pinned images will auto-update.
+   * @enum ["true", "false", "pinned"]
    */
-  autoUpdateImages: boolean;
+  autoUpdateImages: "true" | "false" | "pinned";
 }
 
 export const EXTENSION_CONFIG_SECTION = "svifpd";

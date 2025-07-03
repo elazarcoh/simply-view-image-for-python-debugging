@@ -8,7 +8,7 @@ use anyhow::Result;
 
 use crate::{
     application_state::images::ImageAvailability, bindings::lodash, common::constants,
-    vscode::vscode_requests::VSCodeRequests,
+    vscode::vscode_requests::VSCodeRequests, configurations::AutoUpdateImages,
 };
 
 use super::app_state::AppState;
@@ -33,6 +33,14 @@ impl Default for ImagesFetcher {
 }
 
 impl ImagesFetcher {
+    fn should_fetch_image(&self, state: &AppState, image_id: &crate::common::ViewableObjectId) -> bool {
+        match &state.configuration.auto_update_images {
+            AutoUpdateImages::True => true,
+            AutoUpdateImages::False => false,
+            AutoUpdateImages::Pinned => state.images.borrow().is_pinned(image_id),
+        }
+    }
+
     fn fetch_missing_images_current_state() -> Result<()> {
         let state = Dispatch::<AppState>::global().get();
         Self::fetch_missing_images(state)
@@ -157,14 +165,39 @@ impl ImagesFetcher {
 
         Ok(())
     }
+
+    pub(crate) fn force_fetch_missing_images(state: Rc<AppState>) -> Result<()> {
+        // Force fetch regardless of autoUpdate configuration
+        Self::fetch_missing_images(state)
+    }
 }
 
 impl Listener for ImagesFetcher {
     type Store = AppState;
 
     fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
-        // Check if auto-update is enabled before fetching images
-        if state.configuration.auto_update_images {
+        // Check if auto-update is enabled and should fetch for current images
+        let should_auto_fetch = match &state.configuration.auto_update_images {
+            AutoUpdateImages::True => true,
+            AutoUpdateImages::False => false,
+            AutoUpdateImages::Pinned => {
+                // For pinned mode, we need to check if any of the currently viewing images are pinned
+                let currently_viewing_objects = state
+                    .image_views
+                    .borrow()
+                    .visible_views()
+                    .iter()
+                    .filter_map(|view_id| state.image_views.borrow().get_currently_viewing(*view_id))
+                    .collect::<Vec<_>>();
+                
+                currently_viewing_objects.iter().any(|cv| {
+                    let image_id = cv.id();
+                    state.images.borrow().is_pinned(image_id)
+                })
+            }
+        };
+
+        if should_auto_fetch {
             self.debounced_fetch_missing_images
                 .call1(&JsValue::NULL, &JsValue::UNDEFINED)
                 .expect("debounced_fetch_missing_images call failed");

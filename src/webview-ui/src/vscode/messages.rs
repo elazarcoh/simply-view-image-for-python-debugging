@@ -58,6 +58,7 @@ pub(crate) struct ReplaceData {
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]
 pub(crate) struct Configuration {
     pub invert_scroll_direction: Option<bool>,
+    pub auto_update_images: Option<bool>,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug)]

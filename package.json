@@ -434,6 +434,11 @@
           "type": "boolean",
           "default": false,
           "description": "Invert mouse wheel zoom direction in the image viewer."
+        },
+        "svifpd.autoUpdateImages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed."
         }
       }
     },

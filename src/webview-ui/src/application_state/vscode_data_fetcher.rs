@@ -162,9 +162,12 @@ impl ImagesFetcher {
 impl Listener for ImagesFetcher {
     type Store = AppState;
 
-    fn on_change(&mut self, _cx: &yewdux::Context, _state: Rc<Self::Store>) {
-        self.debounced_fetch_missing_images
-            .call1(&JsValue::NULL, &JsValue::UNDEFINED)
-            .expect("debounced_fetch_missing_images call failed");
+    fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
+        // Check if auto-update is enabled before fetching images
+        if state.configuration.auto_update_images {
+            self.debounced_fetch_missing_images
+                .call1(&JsValue::NULL, &JsValue::UNDEFINED)
+                .expect("debounced_fetch_missing_images call failed");
+        }
     }
 }

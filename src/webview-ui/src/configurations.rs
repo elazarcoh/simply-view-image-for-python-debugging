@@ -16,6 +16,7 @@ impl Default for RenderingConfiguration {
 pub(crate) struct Configuration {
     pub rendering: RenderingConfiguration,
     pub invert_scroll_direction: bool,
+    pub auto_update_images: bool,
 }
 
 #[allow(clippy::derivable_impls)] // we want to manually implement Default, because I want to have it explicit here
@@ -24,6 +25,7 @@ impl Default for Configuration {
         Self {
             rendering: Default::default(),
             invert_scroll_direction: false,
+            auto_update_images: true,
         }
     }
 }

@@ -333,7 +333,7 @@ impl Reducer<AppState> for StoreAction {
             StoreAction::ReplaceData(replacement_images) => {
                 log::debug!("ReplaceData");
                 state.image_cache.borrow_mut().clear();
-                let previously_pinned = state.images.borrow().pinned.clone();
+                let previously_pinned = state.images.borrow().pinned().to_vec();
                 state.images.borrow_mut().clear();
 
                 let mut session = None;

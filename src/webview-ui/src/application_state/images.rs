@@ -99,12 +99,16 @@ impl ImageCache {
 pub(crate) struct Images {
     data: HashMap<ViewableObjectId, Image>,
     order: Vec<ViewableObjectId>,
-    pub(crate) pinned: Vec<ViewableObjectId>,
+    pinned: Vec<ViewableObjectId>,
 }
 
 impl Images {
     pub fn get(&self, image_id: &ViewableObjectId) -> Option<&Image> {
         self.data.get(image_id)
+    }
+
+    pub fn pinned(&self) -> &[ViewableObjectId] {
+        &self.pinned
     }
 
     pub fn insert(&mut self, image_id: ViewableObjectId, image_info: Image) {

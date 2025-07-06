@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 use wasm_bindgen::{prelude::Closure, JsValue};
-use yewdux::{Dispatch, Listener};
+use yewdux::{dispatch, Dispatch, Listener};
 
 use anyhow::Result;
 
@@ -22,7 +22,7 @@ impl Default for ImagesFetcher {
         Self {
             debounced_fetch_missing_images: lodash::debounce_closure(
                 Closure::wrap(Box::new(move |_: JsValue| {
-                    let _ = Self::fetch_missing_images_current_state()
+                    let _ = Self::fetch_missing_images()
                         .map_err(|e| log::error!("ImagesFetcher: {}", e));
                 })),
                 constants::TIMES.data_fetcher_debounce,
@@ -33,12 +33,10 @@ impl Default for ImagesFetcher {
 }
 
 impl ImagesFetcher {
-    fn fetch_missing_images_current_state() -> Result<()> {
-        let state = Dispatch::<AppState>::global().get();
-        Self::fetch_missing_images(state)
-    }
+    fn fetch_missing_images() -> Result<()> {
+        let dispatch = Dispatch::<AppState>::global();
+        let state = dispatch.get();
 
-    fn fetch_missing_images(state: Rc<AppState>) -> Result<()> {
         let currently_viewing_objects = state
             .image_views
             .borrow()
@@ -68,7 +66,9 @@ impl ImagesFetcher {
                                 image_id.clone(),
                                 image_info.minimal().expression.clone(),
                             );
-                            state.image_cache.borrow_mut().set_pending(&image_id);
+                            dispatch.reduce_mut(|s| {
+                                s.image_cache.borrow_mut().set_pending(&image_id);
+                            });
                         }
                     }
                 }
@@ -88,7 +88,9 @@ impl ImagesFetcher {
                             image_id
                         );
                         if let Some(image) = state.images.borrow().get(&image_id) {
-                            state.image_cache.borrow_mut().set_pending(&image_id);
+                            dispatch.reduce_mut(|s| {
+                                s.image_cache.borrow_mut().set_pending(&image_id);
+                            });
                             let expression = image.minimal().expression.clone();
                             log::debug!(
                                 "ImagesFetcher::on_change: fetching item {:?} for image {:?}",
@@ -120,13 +122,19 @@ impl ImagesFetcher {
                                     item
                                 );
                                 // changed back to batch item that is already in cache
-                                let _ = state
-                                    .image_cache
-                                    .borrow_mut()
-                                    .try_set_available(&image_id)
-                                    .map_err(|e| log::error!("ImagesFetcher::on_change: {}", e));
+                                dispatch.reduce_mut(|s| {
+                                    s.image_cache
+                                        .borrow_mut()
+                                        .try_set_available(&image_id)
+                                        .unwrap_or_else(|e| {
+                                            log::error!("ImagesFetcher::on_change: {}", e)
+                                        });
+                                });
                             } else {
-                                state.image_cache.borrow_mut().set_pending(&image_id);
+                                // state.image_cache.borrow_mut().set_pending(&image_id);
+                                dispatch.reduce_mut(|s| {
+                                    s.image_cache.borrow_mut().set_pending(&image_id);
+                                });
                                 let expression = state
                                     .images
                                     .borrow()
@@ -161,9 +169,9 @@ impl ImagesFetcher {
         Ok(())
     }
 
-    pub(crate) fn force_fetch_missing_images(state: Rc<AppState>) -> Result<()> {
+    pub(crate) fn force_fetch_missing_images() -> Result<()> {
         // Force fetch regardless of autoUpdate configuration
-        Self::fetch_missing_images(state)
+        Self::fetch_missing_images()
     }
 }
 

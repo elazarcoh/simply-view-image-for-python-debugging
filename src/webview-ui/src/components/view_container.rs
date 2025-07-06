@@ -256,9 +256,7 @@ pub fn NoDataView(props: &NoDataViewProps) -> Html {
         let current_image_id = current_image_id.clone();
         Callback::from(move |_| {
             if let Some(ref _image_id) = current_image_id.as_ref() {
-                let dispatch = Dispatch::<AppState>::global();
-                let state = dispatch.get();
-                if let Err(e) = ImagesFetcher::force_fetch_missing_images(state) {
+                if let Err(e) = ImagesFetcher::force_fetch_missing_images() {
                     log::error!("Force fetch failed: {:?}", e);
                 }
             }

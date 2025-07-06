@@ -115,6 +115,9 @@ impl VSCodeListener {
             if let Some(invert_scroll_direction) = configurations.invert_scroll_direction {
                 state.configuration.invert_scroll_direction = invert_scroll_direction;
             }
+            if let Some(auto_update_images_str) = configurations.auto_update_images {
+                state.configuration.auto_update_images = (&auto_update_images_str[..]).into();
+            }
         });
         Ok(())
     }

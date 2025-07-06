@@ -116,6 +116,13 @@ export interface Config {
    * @description Show supported types diagnostic information in the tree view (mainly for debugging).
    */
   showDiagnosticInfoInTreeView: boolean;
+
+  /**
+   * @default true
+   * @description Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed. When set to 'pinned', only pinned images will auto-update.
+   * @enum [ true, false, "pinned" ]
+   */
+  autoUpdateImages: true | false | "pinned";
 }
 
 export const EXTENSION_CONFIG_SECTION = "svifpd";

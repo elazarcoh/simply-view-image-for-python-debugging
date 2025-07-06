@@ -1,7 +1,7 @@
 import { Option } from "ts-results";
 import { getConfiguration } from "../../config";
 import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
-import { isDebugSession, Session, sessionToId } from "../../session/Session";
+import { Session, sessionToId } from "../../session/Session";
 import { getSessionData } from "../../session/SessionData";
 import { hasValue, valueOrEval } from "../../utils/Utils";
 import {
@@ -104,10 +104,18 @@ export class WebviewRequests {
   static configuration(): ExtensionRequest & {
     type: "Configuration";
   } {
+    let autoUpdateImages: boolean | "true" | "false" | "pinned" | undefined =
+      getConfiguration("autoUpdateImages");
+    if (typeof autoUpdateImages === "boolean") {
+      // Convert boolean to string for compatibility with the webview
+      autoUpdateImages = autoUpdateImages ? "true" : "false";
+    }
+
     return {
       type: "Configuration",
       invert_scroll_direction:
         getConfiguration("viewerUi.invertMouseWheelZoom") ?? null,
+      auto_update_images: autoUpdateImages ?? "true",
     };
   }
 

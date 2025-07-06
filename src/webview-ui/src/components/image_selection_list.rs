@@ -131,6 +131,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             .get_currently_viewing(ViewId::Primary)
     });
 
+    #[allow(unstable_name_collisions)] // `intersperse` is currently used from the `itertools` crate, and we get a warning about it.
     let entries = images_data
         .borrow()
         .iter()

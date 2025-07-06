@@ -2,13 +2,13 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 use wasm_bindgen::{prelude::Closure, JsValue};
-use yewdux::{Dispatch, Listener};
+use yewdux::{dispatch, Dispatch, Listener};
 
 use anyhow::Result;
 
 use crate::{
     application_state::images::ImageAvailability, bindings::lodash, common::constants,
-    vscode::vscode_requests::VSCodeRequests,
+    configurations::AutoUpdateImages, vscode::vscode_requests::VSCodeRequests,
 };
 
 use super::app_state::AppState;
@@ -22,7 +22,7 @@ impl Default for ImagesFetcher {
         Self {
             debounced_fetch_missing_images: lodash::debounce_closure(
                 Closure::wrap(Box::new(move |_: JsValue| {
-                    let _ = Self::fetch_missing_images_current_state()
+                    let _ = Self::fetch_missing_images()
                         .map_err(|e| log::error!("ImagesFetcher: {}", e));
                 })),
                 constants::TIMES.data_fetcher_debounce,
@@ -33,12 +33,10 @@ impl Default for ImagesFetcher {
 }
 
 impl ImagesFetcher {
-    fn fetch_missing_images_current_state() -> Result<()> {
-        let state = Dispatch::<AppState>::global().get();
-        Self::fetch_missing_images(state)
-    }
+    fn fetch_missing_images() -> Result<()> {
+        let dispatch = Dispatch::<AppState>::global();
+        let state = dispatch.get();
 
-    fn fetch_missing_images(state: Rc<AppState>) -> Result<()> {
         let currently_viewing_objects = state
             .image_views
             .borrow()
@@ -58,14 +56,19 @@ impl ImagesFetcher {
                     let current = state.image_cache.borrow().get(&image_id);
 
                     if current == ImageAvailability::NotAvailable {
-                        log::debug!("ImagesFetcher::on_change: image {:?} not in cache", image_id);
+                        log::debug!(
+                            "ImagesFetcher::on_change: image {:?} not in cache",
+                            image_id
+                        );
                         if let Some(image_info) = state.images.borrow().get(&image_id) {
                             log::debug!("ImagesFetcher::on_change: fetching image {:?}", image_id);
                             VSCodeRequests::request_image_data(
                                 image_id.clone(),
                                 image_info.minimal().expression.clone(),
                             );
-                            state.image_cache.borrow_mut().set_pending(&image_id);
+                            dispatch.reduce_mut(|s| {
+                                s.image_cache.borrow_mut().set_pending(&image_id);
+                            });
                         }
                     }
                 }
@@ -85,7 +88,9 @@ impl ImagesFetcher {
                             image_id
                         );
                         if let Some(image) = state.images.borrow().get(&image_id) {
-                            state.image_cache.borrow_mut().set_pending(&image_id);
+                            dispatch.reduce_mut(|s| {
+                                s.image_cache.borrow_mut().set_pending(&image_id);
+                            });
                             let expression = image.minimal().expression.clone();
                             log::debug!(
                                 "ImagesFetcher::on_change: fetching item {:?} for image {:?}",
@@ -117,13 +122,19 @@ impl ImagesFetcher {
                                     item
                                 );
                                 // changed back to batch item that is already in cache
-                                let _ = state
-                                    .image_cache
-                                    .borrow_mut()
-                                    .try_set_available(&image_id)
-                                    .map_err(|e| log::error!("ImagesFetcher::on_change: {}", e));
+                                dispatch.reduce_mut(|s| {
+                                    s.image_cache
+                                        .borrow_mut()
+                                        .try_set_available(&image_id)
+                                        .unwrap_or_else(|e| {
+                                            log::error!("ImagesFetcher::on_change: {}", e)
+                                        });
+                                });
                             } else {
-                                state.image_cache.borrow_mut().set_pending(&image_id);
+                                // state.image_cache.borrow_mut().set_pending(&image_id);
+                                dispatch.reduce_mut(|s| {
+                                    s.image_cache.borrow_mut().set_pending(&image_id);
+                                });
                                 let expression = state
                                     .images
                                     .borrow()
@@ -157,14 +168,42 @@ impl ImagesFetcher {
 
         Ok(())
     }
+
+    pub(crate) fn force_fetch_missing_images() -> Result<()> {
+        // Force fetch regardless of autoUpdate configuration
+        Self::fetch_missing_images()
+    }
 }
 
 impl Listener for ImagesFetcher {
     type Store = AppState;
 
-    fn on_change(&mut self, _cx: &yewdux::Context, _state: Rc<Self::Store>) {
-        self.debounced_fetch_missing_images
-            .call1(&JsValue::NULL, &JsValue::UNDEFINED)
-            .expect("debounced_fetch_missing_images call failed");
+    fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
+        // Check if auto-update is enabled and should fetch for current images
+        let should_auto_fetch = match &state.configuration.auto_update_images {
+            AutoUpdateImages::True => true,
+            AutoUpdateImages::False => false,
+            AutoUpdateImages::Pinned => {
+                // For pinned mode, we need to check if any of the currently viewing images are pinned
+                state
+                    .image_views
+                    .borrow()
+                    .visible_views()
+                    .iter()
+                    .filter_map(|view_id| {
+                        state.image_views.borrow().get_currently_viewing(*view_id)
+                    })
+                    .any(|cv| {
+                        let image_id = cv.id();
+                        state.images.borrow().is_pinned(image_id)
+                    })
+            }
+        };
+
+        if should_auto_fetch {
+            self.debounced_fetch_missing_images
+                .call1(&JsValue::NULL, &JsValue::UNDEFINED)
+                .expect("debounced_fetch_missing_images call failed");
+        }
     }
 }

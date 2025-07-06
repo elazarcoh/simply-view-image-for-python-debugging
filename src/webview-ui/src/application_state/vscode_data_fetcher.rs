@@ -185,7 +185,7 @@ impl Listener for ImagesFetcher {
             AutoUpdateImages::False => false,
             AutoUpdateImages::Pinned => {
                 // For pinned mode, we need to check if any of the currently viewing images are pinned
-                let currently_viewing_objects = state
+                state
                     .image_views
                     .borrow()
                     .visible_views()
@@ -193,12 +193,10 @@ impl Listener for ImagesFetcher {
                     .filter_map(|view_id| {
                         state.image_views.borrow().get_currently_viewing(*view_id)
                     })
-                    .collect::<Vec<_>>();
-
-                currently_viewing_objects.iter().any(|cv| {
-                    let image_id = cv.id();
-                    state.images.borrow().is_pinned(image_id)
-                })
+                    .any(|cv| {
+                        let image_id = cv.id();
+                        state.images.borrow().is_pinned(image_id)
+                    })
             }
         };
 

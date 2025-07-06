@@ -263,8 +263,6 @@ pub fn NoDataView(props: &NoDataViewProps) -> Html {
         })
     };
 
-    let should_show_force_button = true;
-
     let style = use_style!(
         r#"
         display: flex;
@@ -277,11 +275,9 @@ pub fn NoDataView(props: &NoDataViewProps) -> Html {
     html! {
         <div class={style}>
             <div>{"No Data"}</div>
-            if should_show_force_button {
-                <Button onclick={force_fetch_onclick}>
-                    {"Fetch Image"}
-                </Button>
-            }
+            <Button onclick={force_fetch_onclick}>
+                {"Fetch Image"}
+            </Button>
         </div>
     }
 }

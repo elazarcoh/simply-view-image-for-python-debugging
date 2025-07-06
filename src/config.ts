@@ -119,7 +119,7 @@ export interface Config {
 
   /**
    * @default true
-   * @description Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed. When set to 'pinned', only tracked/pinned images will auto-update.
+   * @description Automatically update images when variables change during debugging. When disabled, images will only update when manually refreshed. When set to 'pinned', only pinned images will auto-update.
    * @enum [ true, false, "pinned" ]
    */
   autoUpdateImages: true | false | "pinned";

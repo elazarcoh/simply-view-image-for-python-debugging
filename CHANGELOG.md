@@ -1,5 +1,18 @@
 # Change Log
 
+## [] - 
+
+### Added
+
+- Setting to control whether images are automatically fetched:
+  - `svifpd.autoFetchImages`
+    - Default: `true`
+    - Possible values: `true`, `false`, `"pinned"`
+    - If set to `true`, images are fetched automatically at each step.
+    - If set to `false`, images are fetched only when the user clicks the "Fetch Image"
+      button in the image viewer.
+    - If set to `"pinned"`, pinned images are fetched automatically.
+
 ## [4.0.11] - Pre-release
 
 ### Added

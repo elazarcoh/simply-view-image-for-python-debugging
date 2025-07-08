@@ -3,10 +3,7 @@ use yewdux::mrc::Mrc;
 
 use crate::{
     coloring::DrawingOptions,
-    common::{
-        texture_image::TextureImage, Image,
-        ViewableObjectId,
-    },
+    common::{texture_image::TextureImage, Image, SessionId, ViewableObjectId},
 };
 use std::collections::HashMap;
 
@@ -43,7 +40,6 @@ impl ImageAvailability {
 pub(crate) struct ImageCache(HashMap<ViewableObjectId, ImageAvailability>);
 
 impl ImageCache {
-
     pub(crate) fn get(&self, id: &ViewableObjectId) -> ImageAvailability {
         self.0
             .get(id)
@@ -117,10 +113,10 @@ impl Images {
         }
     }
 
-    pub fn clear(&mut self) {
-        self.data.clear();
-        self.order.clear();
-        self.pinned.clear();
+    pub fn clear(&mut self, session_id: &SessionId) {
+        self.data.retain(|id, _| id.session_id() != session_id);
+        self.order.retain(|id| id.session_id() != session_id);
+        self.pinned.retain(|id| id.session_id() != session_id);
     }
 
     #[allow(dead_code)]
@@ -196,8 +192,6 @@ impl ImagesDrawingOptions {
     }
 
     pub(crate) fn mut_ref_or_default(&mut self, image_id: ViewableObjectId) -> &mut DrawingOptions {
-        self.0
-            .entry(image_id)
-            .or_default()
+        self.0.entry(image_id).or_default()
     }
 }

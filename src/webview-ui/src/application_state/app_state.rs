@@ -334,7 +334,9 @@ impl Reducer<AppState> for StoreAction {
                 log::debug!("ReplaceData");
                 state.image_cache.borrow_mut().clear();
                 let previously_pinned = state.images.borrow().pinned().to_vec();
-                state.images.borrow_mut().clear();
+                replacement_images
+                    .first()
+                    .inspect(|img| state.images.borrow_mut().clear(img.image_id().session_id()));
 
                 let mut session = None;
                 let mut errors = Vec::new();

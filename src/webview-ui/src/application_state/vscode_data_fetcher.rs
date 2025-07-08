@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 use wasm_bindgen::{prelude::Closure, JsValue};
-use yewdux::{dispatch, Dispatch, Listener};
+use yewdux::{Dispatch, Listener};
 
 use anyhow::Result;
 

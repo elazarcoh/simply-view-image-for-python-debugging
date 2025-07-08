@@ -1,6 +1,6 @@
 # Change Log
 
-## [] - 
+## [4.0.13] - Pre-release
 
 ### Added
 
@@ -12,6 +12,9 @@
     - If set to `false`, images are fetched only when the user clicks the "Fetch Image"
       button in the image viewer.
     - If set to `"pinned"`, pinned images are fetched automatically.
+
+### Fixed
+- Fixed bug with pinned images not being kept when switching debug sessions.
 
 ## [4.0.11] - Pre-release
 

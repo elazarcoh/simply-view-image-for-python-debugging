@@ -14,7 +14,7 @@ use crate::{
     },
     coloring::{self, Coloring, DrawingOptions},
     colormap,
-    common::{Channels, ViewId, ViewableObjectId},
+    common::{Channels, CurrentlyViewing, ViewId, ViewableObjectId},
     components::{
         button::Button, colorbar::Colorbar, legend::Legend, spinner::Spinner,
         viewable_info_container::ViewableInfoContainer,
@@ -342,35 +342,66 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
     let current_image = {
         let view_id = *view_id;
         use_selector(
-            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
+            move |state: &AppState| -> Option<(
+                ViewableObjectId,
+                ImageAvailability,
+                Option<DrawingOptions>,
+                bool,
+            )> {
                 let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
                 let image_id = binding.id();
                 let availability = state.image_cache.borrow().get(image_id);
                 let drawing_options = state.drawing_options.borrow().get(image_id);
-                Some((image_id.clone(), availability, drawing_options))
+                let is_batch_item = matches!(binding, CurrentlyViewing::BatchItem(_));
+                Some((
+                    image_id.clone(),
+                    availability,
+                    drawing_options,
+                    is_batch_item,
+                ))
             },
         )
     };
     let display_colorbar =
         use_selector(|state: &AppState| state.global_drawing_options.display_colorbar);
 
-    let inner_element =
-        if let Some(availability) = current_image.as_ref().as_ref().map(|(_, a, _)| a) {
-            match availability {
-                ImageAvailability::NotAvailable => Some(html! {
-                    <NoDataView view_id={*view_id} />
-                }),
-                ImageAvailability::Pending(_) => Some(html! {
-                    <Spinner />
-                }),
-                ImageAvailability::Available(_) => None,
-            }
-        } else {
-            None
-        };
+    let availability =
+        current_image
+            .as_ref()
+            .as_ref()
+            .map(|(_, availability, drawing_options, is_batch_item)| {
+                let batch_item = is_batch_item
+                    .then(|| drawing_options.as_ref()?.batch_item)
+                    .flatten();
+
+                match (batch_item, availability) {
+                    (Some(item), ImageAvailability::Available(image)) => {
+                        if image.borrow().textures.contains_key(&item) {
+                            availability.clone()
+                        } else {
+                            ImageAvailability::NotAvailable
+                        }
+                    }
+                    _ => availability.clone(),
+                }
+            });
+
+    let inner_element = if let Some(availability) = availability {
+        match availability {
+            ImageAvailability::NotAvailable => Some(html! {
+                <NoDataView view_id={*view_id} />
+            }),
+            ImageAvailability::Pending(_) => Some(html! {
+                <Spinner />
+            }),
+            ImageAvailability::Available(_) => None,
+        }
+    } else {
+        None
+    };
 
     let info_items =
-        if let Some((image_id, availability, drawing_options)) = current_image.as_ref() {
+        if let Some((image_id, availability, drawing_options, _)) = current_image.as_ref() {
             let drawing_options = drawing_options.clone().unwrap_or_default();
             make_info_items(image_id, availability, &drawing_options)
         } else {

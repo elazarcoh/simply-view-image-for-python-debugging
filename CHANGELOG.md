@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.0.15] - Pre-release
+
+### Added
+- Support for "non-restricted types" in the viewer.
+  - If `svifpd.restrictImageTypes` is set to `false`, the viewer will now also support everything that is convertible to a numpy array (e.g., `tensorflow.Tensor` which is not supported by default).
+
 ## [4.0.13] - Pre-release
 
 ### Added

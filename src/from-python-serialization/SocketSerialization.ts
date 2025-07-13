@@ -1,5 +1,5 @@
 import { Viewable } from "../viewable/Viewable";
-import { logDebug, logWarn } from "../Logging";
+import { logDebug } from "../Logging";
 import { isExpressionSelection, selectionString } from "../utils/VSCodeUtils";
 import {
   constructOpenSendAndCloseCode,
@@ -23,6 +23,7 @@ import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder"
 import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
 import { ArrayDataType, DimensionOrder } from "../common/datatype";
 import { isDebugSession, Session, sessionToId } from "../session/Session";
+import { getConfiguration } from "../config";
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
   [key in ArrayDataType]: WebviewDatatype | undefined;
@@ -53,15 +54,28 @@ export type SerializePythonObjectUsingSocketServerOptions = {
 };
 
 function makeOptions(
-  options: SerializePythonObjectUsingSocketServerOptions,
+  options: SerializePythonObjectUsingSocketServerOptions | undefined,
 ): OpenSendAndCloseOptions | undefined {
-  if (options.start !== undefined && options.stop !== undefined) {
-    return { start: options.start, stop: options.stop };
-  }
-  logWarn(
-    "Invalid options for serializePythonObjectUsingSocketServer: ",
-    options,
+  const restrictImageTypes = getConfiguration(
+    "restrictImageTypes",
+    undefined,
+    true,
   );
+  let outOptions: OpenSendAndCloseOptions = {
+    restrict_image_types: restrictImageTypes,
+  };
+  if (
+    options !== undefined &&
+    options.start !== undefined &&
+    options.stop !== undefined
+  ) {
+    outOptions = {
+      ...outOptions,
+      start: options.start,
+      stop: options.stop,
+    };
+  }
+  return outOptions;
 }
 
 export async function serializePythonObjectUsingSocketServer(
@@ -79,7 +93,7 @@ export async function serializePythonObjectUsingSocketServer(
     socketServer.portNumber,
     requestId,
     objectAsString,
-    options ? makeOptions(options) : undefined,
+    makeOptions(options),
   );
   logDebug("Sending code to python: ", code);
   logDebug("Sending request to python with reqId ", requestId);

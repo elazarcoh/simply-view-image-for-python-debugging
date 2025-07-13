@@ -2,14 +2,20 @@ import numpy as np
 
 
 def numpy_tensor():
-    def is_numpy_tensor(obj):
+    def is_numpy_tensor(obj, restrict_types):
         try:
             import numpy as np
         except ImportError:
             return False
         valid_channels = (1, 3, 4)
+        is_valid = True
         try:
-            is_valid = isinstance(obj, np.ndarray)
+            if restrict_types:
+                try:
+                    is_valid = isinstance(obj, np.ndarray)
+                except TypeError:
+                    return False
+                
             is_valid &= len(obj.shape) in (3, 4)
             if len(obj.shape) == 3:
                 pass

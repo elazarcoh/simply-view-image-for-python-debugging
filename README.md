@@ -58,9 +58,10 @@ Monitor image, plot, or tensor variables and refresh the view at each breakpoint
 
 ## Settings
 
-| Setting                  | Description                                                                                                                                                                                                                                                                                    | Default Value |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `svifpd.autoFetchImages` | Controls whether images are automatically fetched. <ul> <li><code>true</code>: Automatically fetch images at each step.</li> <li><code>false</code>: Fetch images only when the "Fetch Image" button is clicked.</li> <li><code>"pinned"</code>: Automatically fetch pinned images.</li> </ul> | `true`        |
+| Setting                     | Description                                                                                                                                                                                                                                                                                    | Default Value |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `svifpd.autoFetchImages`    | Controls whether images are automatically fetched. <ul> <li><code>true</code>: Automatically fetch images at each step.</li> <li><code>false</code>: Fetch images only when the "Fetch Image" button is clicked.</li> <li><code>"pinned"</code>: Automatically fetch pinned images.</li> </ul> | `true`        |
+| `svifpd.restrictImageTypes` | Restricts the types that are considered images. <ul> <li><code>true</code>: Only numpy is checked.</li> <li><code>false</code>: All types are checked.</li> </ul> This setting is useful for improving performance in some cases.                                                              | `true`        |
 
 ## Q&A
 

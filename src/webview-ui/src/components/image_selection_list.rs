@@ -131,7 +131,10 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             .get_currently_viewing(ViewId::Primary)
     });
 
-    #[allow(unstable_name_collisions)] // `intersperse` is currently used from the `itertools` crate, and we get a warning about it.
+    let mut counter = 0..;
+
+    #[allow(unstable_name_collisions)]
+    // `intersperse` is currently used from the `itertools` crate, and we get a warning about it.
     let entries = images_data
         .borrow()
         .iter()
@@ -165,18 +168,23 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             let is_pinned = images_data.borrow().is_pinned(id);
 
             html! {
-                <ImageItemWrapper
-                    container_ref={node_ref.clone()}
-                    info={info.clone()}
-                    currently_viewing={cv}
-                    is_pinned={is_pinned}
-                    onclick={onclick}
-                />
+                <div key={id.as_unique_string()} >
+                    <ImageItemWrapper
+                        container_ref={node_ref.clone()}
+                        info={info.clone()}
+                        currently_viewing={cv}
+                        is_pinned={is_pinned}
+                        onclick={onclick}
+                    />
+                </div>
             }
         })
-        .intersperse(
-            html! { <hr class={css!("margin: 0; border-color: var(--vscode-menu-border);")} /> },
-        )
+        .intersperse_with(|| {
+            html! { <hr
+            key={format!("divider-{}", counter.next().unwrap())}
+            class={css!("margin: 0; border-color: var(--vscode-menu-border);")} />
+            }
+        })
         .collect::<Vec<_>>();
 
     let style = use_style!(

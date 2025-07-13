@@ -22,6 +22,9 @@ impl ViewableObjectId {
     pub(crate) fn session_id(&self) -> &SessionId {
         &self.0
     }
+    pub(crate) fn as_unique_string(&self) -> String {
+        format!("{}-{}", self.0 .0, self.1)
+    }
 }
 
 impl std::fmt::Debug for ViewableObjectId {

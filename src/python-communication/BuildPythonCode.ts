@@ -189,12 +189,31 @@ export function constructObjectShapeCode(
   );
 }
 
+export type BaseSendAndCloseOptions = {
+  restrict_image_types?: boolean;
+};
 export type OpenSendAndCloseTensorOptions = {
   max_size_bytes?: number;
   start: number;
   stop: number;
-};
-export type OpenSendAndCloseOptions = OpenSendAndCloseTensorOptions;
+} & BaseSendAndCloseOptions;
+export type OpenSendAndCloseOptions =
+  | BaseSendAndCloseOptions
+  | OpenSendAndCloseTensorOptions;
+
+function asPythonValue(value: string | number | boolean | null): string {
+  if (typeof value === "string") {
+    return `'${value}'`;
+  } else if (typeof value === "number") {
+    return value.toString();
+  } else if (typeof value === "boolean") {
+    return value ? "True" : "False";
+  } else if (value === null) {
+    return "None";
+  } else {
+    throw new Error(`Unsupported value type: ${typeof value}`);
+  }
+}
 
 export function constructOpenSendAndCloseCode(
   port: number,
@@ -204,7 +223,8 @@ export function constructOpenSendAndCloseCode(
 ): EvalCodePython<Result<PythonObjectShape>> {
   function makeOptionsString(options: OpenSendAndCloseOptions): string {
     return `dict(${Object.entries(options)
-      .map(([key, value]) => `${key}=${value}`)
+      .filter(([_, value]) => value !== undefined)
+      .map(([key, value]) => `${key}=${asPythonValue(value)}`)
       .join(", ")})`;
   }
   const optionsStr = options ? makeOptionsString(options) : "{}";

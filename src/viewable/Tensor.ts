@@ -1,7 +1,10 @@
 import NUMPY_TENSOR_CODE from "../python/numpy_tensor.py?raw";
 import TORCH_TENSOR_CODE from "../python/torch_tensor.py?raw";
 import { Viewable } from "./Viewable";
-import { atModule as m } from "../python-communication/BuildPythonCode";
+import {
+  convertBoolToPython,
+  atModule as m,
+} from "../python-communication/BuildPythonCode";
 import { ArrayDataType } from "../common/datatype";
 import { getConfiguration } from "../config";
 
@@ -21,7 +24,8 @@ export const NumpyTensor: Viewable<NumpyTensorInfo> = {
     id: "numpy_tensor",
   },
   testTypePythonCode: {
-    evalCode: (expression: string) => `${m("is_numpy_tensor")}(${expression})`,
+    evalCode: (expression: string) =>
+      `${m("is_numpy_tensor")}(${expression}, restrict_types=${convertBoolToPython(getConfiguration("restrictImageTypes") ?? true)})`,
   },
   infoPythonCode: {
     evalCode: (expression: string) =>

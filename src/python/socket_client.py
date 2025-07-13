@@ -497,6 +497,27 @@ class _Internal:
             return isinstance(img, PIL.Image.Image)
         except TypeError:
             return False
+    
+    @staticmethod
+    def is_numpy_convertible(obj):
+        try:
+            VALID_DTYPES = (
+                np.float32,
+                np.float64,
+                np.int8,
+                np.int16,
+                np.int32,
+                np.int64,
+                np.uint8,
+                np.uint16,
+                np.uint32,
+                np.uint64,
+                bool,
+            )
+            obj = np.asarray(obj)
+            return obj.dtype in VALID_DTYPES, obj
+        except Exception:
+            return False, None
 
     @staticmethod
     def is_torch(obj):
@@ -531,6 +552,16 @@ def open_send_and_close(port, request_id, obj, options=None):
                 message = create_pillow_message(obj)
             elif _Internal.is_torch(obj):
                 message = create_tensor_message(obj, options)
+            elif options and options.get('restrict_image_types') is False:
+                is_convertible, np_obj = _Internal.is_numpy_convertible(obj)
+                if is_convertible:
+                    assert isinstance(np_obj, np.ndarray), "Expected a numpy array"
+                    if _Internal.is_numpy_tensor(np_obj):
+                        message = create_tensor_message(np_obj, options)
+                    else:
+                        message = create_numpy_message(np_obj)
+                else:
+                    raise ValueError(f"Cant send object of type {type(obj)}")
             else:
                 raise ValueError(f"Cant send object of type {type(obj)}")
         except Exception as e:

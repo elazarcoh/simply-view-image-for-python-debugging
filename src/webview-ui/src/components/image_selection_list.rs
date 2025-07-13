@@ -103,7 +103,6 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
     html! {
         <div
             ref={node_ref.clone()}
-            aria-selected={if is_selected {"true"} else {"false"}}
             {onclick}
             class={entry_style.clone()}
         >
@@ -166,9 +165,13 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
             };
 
             let is_pinned = images_data.borrow().is_pinned(id);
+            let is_selected = cv.is_some() && cv.as_ref().map(|cv| cv.id()) == Some(id);
 
             html! {
-                <div key={id.as_unique_string()} >
+                <div
+                    key={id.as_unique_string()}
+                    aria-selected={if is_selected {"true"} else {"false"}}
+                >
                     <ImageItemWrapper
                         container_ref={node_ref.clone()}
                         info={info.clone()}

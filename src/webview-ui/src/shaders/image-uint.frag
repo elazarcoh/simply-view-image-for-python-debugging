@@ -76,8 +76,11 @@ void main() {
     if (is_top_edge || is_bottom_edge || is_left_edge || is_right_edge) {
 
     } else {
-      sampled = vec4(0.0, 0.0, 0.0, 1.0);
+      // sampled = vec4(0.0, 0.0, 0.0, 0.0);
+      discard;
     }
+  } else {
+    sampled = vec4(0.2, 0.2, 0.2, 1.0);
   }
 
   if (u_clip_min) {

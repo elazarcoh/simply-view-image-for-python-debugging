@@ -498,3 +498,27 @@ input.vscode-textfield[type='file']::file-selector-button:hover,
   margin: 0;
   height: 100%;
 }
+
+.context-menu {
+  position: fixed;
+  background-color: var(--vscode-menu-background);
+  border: 1px solid var(--vscode-menu-border);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  border-radius: 5px;
+  padding: 8px;
+  list-style: none;
+  margin: 0;
+  z-index: 1000;
+}
+
+.context-menu-item {
+  color: var(--vscode-menu-foreground);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.context-menu-item:hover {
+  background-color: var(--vscode-menu-selectionBackground);
+  color: var(--vscode-menu-selectionForeground);
+  border-radius: 4px;
+}

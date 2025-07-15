@@ -122,6 +122,10 @@ const WebviewConfig = {
             crateDirectory: webviewPath,
             outDir: path.resolve(webviewPath, "pkg"),
             outName: "webview",
+            watchDirectories: [
+                path.resolve(webviewPath, "shaders"),
+                path.resolve(webviewPath, "src"),
+            ],
         }),
         // Have this example work in Edge which doesn't ship `TextEncoder` or
         // `TextDecoder` at this time.

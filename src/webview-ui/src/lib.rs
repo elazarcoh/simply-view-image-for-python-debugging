@@ -14,6 +14,7 @@ mod colormap;
 mod common;
 mod components;
 mod configurations;
+mod hooks;
 mod keyboard_event;
 mod math_utils;
 mod mouse_events;
@@ -22,7 +23,6 @@ mod rendering;
 mod tmp_for_debug;
 mod vscode;
 mod webgl_utils;
-mod hooks;
 
 use app::App;
 use cfg_if::cfg_if;

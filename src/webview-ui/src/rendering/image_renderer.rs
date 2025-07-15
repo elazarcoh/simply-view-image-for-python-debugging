@@ -36,6 +36,12 @@ use crate::rendering::pixel_text_rendering::{
     PixelTextCache, PixelTextRenderer, PixelTextRenderingData,
 };
 
+macro_rules! include_shader {
+    ($shader_name:expr) => {
+        include_str!(concat!(env!("OUT_DIR"), "/shaders/", $shader_name))
+    };
+}
+
 struct Programs {
     normalized_image: ProgramBundle,
     uint_image: ProgramBundle,
@@ -163,6 +169,12 @@ impl ImageRenderer {
         let gl = rendering_context.gl().clone();
 
         gl.enable(WebGl2RenderingContext::SCISSOR_TEST);
+        gl.enable(WebGl2RenderingContext::BLEND);
+        gl.blend_func(
+            WebGl2RenderingContext::SRC_ALPHA,
+            WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,
+        );
+        gl.depth_mask(false);
 
         let programs = ImageRenderer::create_programs(&gl).unwrap();
 
@@ -197,32 +209,32 @@ impl ImageRenderer {
     fn create_programs(gl: &WebGl2RenderingContext) -> Result<Programs> {
         let normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image-normalized.frag"))
+            .fragment_shader(include_shader!("normalized-image.frag"))
             .attribute("vin_position")
             .build()?;
         let uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image-uint.frag"))
+            .fragment_shader(include_shader!("uint-image.frag"))
             .attribute("vin_position")
             .build()?;
         let int_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image-int.frag"))
+            .fragment_shader(include_shader!("int-image.frag"))
             .attribute("vin_position")
             .build()?;
         let planar_normalized_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image-planar-normalized.frag"))
+            .fragment_shader(include_shader!("normalized-planar-image.frag"))
             .attribute("vin_position")
             .build()?;
         let planar_uint_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image-planar-uint.frag"))
+            .fragment_shader(include_shader!("uint-planar-image.frag"))
             .attribute("vin_position")
             .build()?;
         let planar_int_image = webgl_utils::program::GLProgramBuilder::create(gl)
             .vertex_shader(include_str!("../shaders/image.vert"))
-            .fragment_shader(include_str!("../shaders/image-planar-int.frag"))
+            .fragment_shader(include_shader!("int-planar-image.frag"))
             .attribute("vin_position")
             .build()?;
 
@@ -509,11 +521,11 @@ impl ImageRenderer {
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
-        let only_edges = true;
-        uniform_values.insert("u_only_edges", UniformValue::Bool(&only_edges));
+        // let only_edges = true;
+        // uniform_values.insert("u_only_edges", UniformValue::Bool(&only_edges));
 
-        set_uniforms(program, &uniform_values);
-        draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+        // set_uniforms(program, &uniform_values);
+        // draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
         let to_render_text =
             pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_values as _;
@@ -560,11 +572,11 @@ impl ImageRenderer {
                                 &drawing_options,
                             );
 
-                            if only_edges {
-                                pixel_color
-                            } else {
+                            // if only_edges {
+                            //     pixel_color
+                            // } else {
                                 text_color(pixel_color, &DrawingOptions::default())
-                            }
+                            // }
                         }
                         _ => {
                             let rgba = Vec4::from(pixel_value.as_rgba_f32());
@@ -572,11 +584,11 @@ impl ImageRenderer {
                                 * (rgba / coloring_factors.normalization_factor)
                                 + coloring_factors.color_addition;
 
-                            if only_edges {
-                                pixel_color
-                            } else {
+                            // if only_edges {
+                            //     pixel_color
+                            // } else {
                                 text_color(pixel_color, &drawing_options)
-                            }
+                            // }
                         }
                     };
 

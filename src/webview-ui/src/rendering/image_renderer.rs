@@ -11,6 +11,7 @@ use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 use crate::application_state::app_state::GlobalDrawingOptions;
 use crate::application_state::images::ImageAvailability;
+use crate::application_state::views::OverlayItem;
 use crate::coloring;
 use crate::coloring::{calculate_color_matrix, Coloring, DrawingOptions};
 use crate::common::camera;
@@ -171,11 +172,11 @@ impl ImageRenderer {
         let gl = rendering_context.gl().clone();
 
         gl.enable(WebGl2RenderingContext::SCISSOR_TEST);
-        gl.enable(WebGl2RenderingContext::BLEND);
-        gl.blend_func(
-            WebGl2RenderingContext::SRC_ALPHA,
-            WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,
-        );
+
+        gl.enable(GL::BLEND);
+        gl.blend_func(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
+
+        gl.enable(GL::DEPTH_TEST);
         gl.depth_mask(false);
 
         let programs = ImageRenderer::create_programs(&gl).unwrap();
@@ -317,24 +318,6 @@ impl ImageRenderer {
         };
 
         Ok(())
-    }
-
-    fn render_overlays(
-        rendering_context: &dyn RenderingContext,
-        rendering_data: &mut RenderingData,
-        batch_item: Option<u32>,
-        image_view_data: &ImageViewData,
-        view_name: &ViewId,
-    ) {
-        let overlays = &image_view_data.overlays;
-        let overlay = overlays.first();
-        if let Some(overlay) = overlay {
-            // Render the overlay
-            let texture = rendering_context.texture_by_id(overlay);
-            if let ImageAvailability::Available(texture) = texture {
-                // Render the texture
-            }
-        }
     }
 
     fn program_for_texture<'p>(
@@ -601,6 +584,95 @@ impl ImageRenderer {
         }
     }
 
+    fn render_overlay(
+        rendering_context: &dyn RenderingContext,
+        rendering_data: &mut RenderingData,
+        texture: &TextureImage,
+        overlay_item: &OverlayItem,
+        batch_item: Option<u32>,
+        image_view_data: &ImageViewData,
+        view_name: &ViewId,
+    ) {
+        let gl = &rendering_data.gl;
+        let program = ImageRenderer::program_for_texture(texture, &rendering_data.programs);
+
+        let config = rendering_context.rendering_configuration();
+
+        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
+            image_view_data
+                .currently_viewing
+                .as_ref()
+                .map(CurrentlyViewing::id)
+                .unwrap(),
+        );
+
+        let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
+            let color_map_texture = rendering_context
+                .get_color_map_texture(&global_drawing_options.heatmap_colormap_name)
+                .expect("Could not get color map texture");
+
+            Some(color_map_texture.obj.clone())
+        } else if Coloring::Segmentation == drawing_options.coloring {
+            let color_map_texture = rendering_context
+                .get_color_map_texture(&global_drawing_options.segmentation_colormap_name)
+                .expect("Could not get color map texture");
+
+            Some(color_map_texture.obj.clone())
+        } else {
+            None
+        };
+
+        let mut uniform_values = HashMap::new();
+
+        ImageRenderer::prepare_texture_uniforms(
+            rendering_context,
+            rendering_data,
+            texture,
+            colormap_texture.as_ref(),
+            batch_item,
+            image_view_data,
+            &mut uniform_values,
+        );
+
+        // Overlay specific uniforms
+        uniform_values.insert("u_is_overlay", UniformValue::Bool(&true));
+        uniform_values.insert("u_overlay_alpha", UniformValue::Float(&overlay_item.alpha));
+
+        gl.use_program(Some(&program.program));
+        set_uniforms(program, &uniform_values);
+        set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
+        draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+    }
+
+    fn render_overlays(
+        rendering_context: &dyn RenderingContext,
+        rendering_data: &mut RenderingData,
+        batch_item: Option<u32>,
+        image_view_data: &ImageViewData,
+        view_name: &ViewId,
+    ) {
+        if let Some(overlay) = &image_view_data
+            .overlay
+            .as_ref()
+            .and_then(|o| (!o.hidden && o.alpha > 0.0).then_some(o))
+        {
+            let texture = rendering_context.texture_by_id(&overlay.id);
+            // log::debug!("Rendering overlay {:?}", overlay);
+            if let ImageAvailability::Available(texture) = texture {
+                let texture = texture.borrow();
+                ImageRenderer::render_overlay(
+                    rendering_context,
+                    rendering_data,
+                    &texture,
+                    overlay,
+                    batch_item,
+                    image_view_data,
+                    view_name,
+                );
+            }
+        }
+    }
+
     fn render_image(
         rendering_context: &dyn RenderingContext,
         rendering_data: &mut RenderingData,
@@ -653,18 +725,22 @@ impl ImageRenderer {
             &mut uniform_values,
         );
 
+        // Set the overlay specific uniforms
+        uniform_values.insert("u_is_overlay", UniformValue::Bool(&false));
+        uniform_values.insert("u_overlay_alpha", UniformValue::Float(&0.0));
+
         gl.use_program(Some(&program.program));
         set_uniforms(program, &uniform_values);
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
-        // ImageRenderer::render_overlays(
-        //     rendering_context,
-        //     rendering_data,
-        //     batch_item,
-        //     image_view_data,
-        //     view_name,
-        // );
+        ImageRenderer::render_overlays(
+            rendering_context,
+            rendering_data,
+            batch_item,
+            image_view_data,
+            view_name,
+        );
 
         let to_render_text = {
             let html_element_size = Size {

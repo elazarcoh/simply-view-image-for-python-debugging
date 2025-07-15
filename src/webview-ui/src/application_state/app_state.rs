@@ -514,6 +514,19 @@ pub(crate) enum OverlayAction {
         image_id: ViewableObjectId,
         overlay_id: ViewableObjectId,
     },
+    Hide {
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+    },
+    Show {
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+    },
+    SetAlpha {
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+        alpha: f32,
+    },
 }
 
 impl Reducer<AppState> for OverlayAction {
@@ -529,7 +542,49 @@ impl Reducer<AppState> for OverlayAction {
                 state
                     .overlays
                     .borrow_mut()
-                    .add_overlay(view_id, image_id, overlay_id);
+                    .add_overlay_to_image(view_id, image_id, overlay_id);
+            }
+            OverlayAction::Hide {
+                view_id,
+                image_id: overlay_id,
+            } => {
+                if let Some(overlay_item) = state
+                    .overlays
+                    .borrow_mut()
+                    .get_image_overlay_mut(view_id, &overlay_id)
+                {
+                    overlay_item.hidden = true;
+                }
+            }
+            OverlayAction::Show { view_id, image_id } => {
+                if let Some(overlay_item) = state
+                    .overlays
+                    .borrow_mut()
+                    .get_image_overlay_mut(view_id, &image_id)
+                {
+                    overlay_item.hidden = false;
+                }
+            }
+            OverlayAction::SetAlpha {
+                view_id,
+                image_id,
+                alpha,
+            } => {
+                if let Some(overlay_item) = state
+                    .overlays
+                    .borrow_mut()
+                    .get_image_overlay_mut(view_id, &image_id)
+                {
+                    let mut alpha = alpha;
+                    // Clamp alpha to [0.0, 1.0] range, with a threshold to avoid flickering
+                    if alpha < 0.02 {
+                        alpha = 0.0;
+                    }
+                    if alpha > 0.98 {
+                        alpha = 1.0;
+                    }
+                    overlay_item.alpha = alpha;
+                }
             }
         }
 

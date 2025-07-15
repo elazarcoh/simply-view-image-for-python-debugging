@@ -28,6 +28,10 @@ uniform bool u_clip_max;
 uniform float u_min_clip_value;
 uniform float u_max_clip_value;
 
+// overlay related uniforms
+uniform bool u_is_overlay;
+uniform float u_overlay_alpha;
+
 uniform bool u_use_colormap;
 uniform sampler2D u_colormap;
 
@@ -104,11 +108,26 @@ void main() {{
         }}
     }}
 
-    float c = checkboard(gl_FragCoord.xy);
-    color.rgb = mix(vec3(c, c, c), color.rgb, color.a);
+    if (!u_is_overlay) {{
+        float c = checkboard(gl_FragCoord.xy);
+        color.rgb = mix(vec3(c, c, c), color.rgb, color.a);
+    }}
 
     vec2 buffer_position = vout_uv * u_buffer_dimension;
     if (u_enable_borders) {{
+        // in case of overlay, we discard this fragment for pixels that are on the border
+        if (u_is_overlay) {{
+            bool is_border = (
+                buffer_position.x < 1.0 ||
+                buffer_position.x > u_buffer_dimension.x - 1.0 ||
+                buffer_position.y < 1.0 ||
+                buffer_position.y > u_buffer_dimension.y - 1.0
+            );
+            if (is_border) {{
+                discard;
+            }}
+        }}
+
         float alpha =
             max(abs(dFdx(buffer_position.x)), abs(dFdx(buffer_position.y)));
         float x_ = fract(buffer_position.x);
@@ -120,8 +139,12 @@ void main() {{
         color.rgb += vec3(vertical_border + horizontal_border);
     }}
 
-    // alpha is always 1.0 after checkboard is mixed in
-    color.a = 1.0;
+    if (u_is_overlay) {{
+        color.a = u_overlay_alpha;
+    }} else {{
+        // alpha is always 1.0 after checkboard is mixed in
+        color.a = 1.0;
+    }}
     
     fout_color = color;
 }}

@@ -1,12 +1,12 @@
-use std::{
-    collections::{HashMap, HashSet},
-    iter::FromIterator,
-};
+use std::{collections::HashMap, iter::FromIterator};
 
 use web_sys::{CustomEvent, HtmlElement};
 use yew::NodeRef;
 
-use crate::common::{constants::all_views, CurrentlyViewing, ViewId, ViewableObjectId};
+use crate::{
+    coloring::DrawingOptions,
+    common::{constants::all_views, CurrentlyViewing, ViewId, ViewableObjectId},
+};
 
 pub(crate) struct ImageViews(HashMap<ViewId, (Option<CurrentlyViewing>, NodeRef)>);
 
@@ -90,22 +90,45 @@ impl Default for ImageViews {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct OverlayItem {
+    pub(crate) view_id: ViewId,
+    pub(crate) id: ViewableObjectId,
+    pub(crate) hidden: bool,
+    pub(crate) alpha: f32,
+    pub(crate) only_edges: bool,
+    pub(crate) display_options: DrawingOptions,
+}
+
+impl OverlayItem {
+    fn new(view_id: ViewId, id: ViewableObjectId) -> Self {
+        Self {
+            view_id,
+            id,
+            hidden: false,
+            alpha: 0.4,
+            only_edges: false,
+            display_options: DrawingOptions::default(),
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct Overlays {
-    overlays: HashMap<(ViewId, ViewableObjectId), HashSet<ViewableObjectId>>,
+    overlays: HashMap<(ViewId, ViewableObjectId), OverlayItem>,
 }
 
 impl Overlays {
-    pub(crate) fn add_overlay(
+    pub(crate) fn add_overlay_to_image(
         &mut self,
         view_id: ViewId,
         image_id: ViewableObjectId,
         overlay_id: ViewableObjectId,
     ) {
-        self.overlays
-            .entry((view_id, image_id))
-            .or_default()
-            .insert(overlay_id);
+        self.overlays.insert(
+            (view_id, image_id.clone()),
+            OverlayItem::new(view_id, overlay_id),
+        );
     }
 
     pub(crate) fn remove_overlay(
@@ -114,22 +137,27 @@ impl Overlays {
         image_id: &ViewableObjectId,
         overlay_id: &ViewableObjectId,
     ) {
-        if let Some(overlays) = self.overlays.get_mut(&(view_id, image_id.clone())) {
-            overlays.retain(|id| id != overlay_id);
+        if let Some(overlay_item) = self.overlays.get_mut(&(view_id, image_id.clone())) {
+            if overlay_item.id == *overlay_id {
+                self.overlays.remove(&(view_id, image_id.clone()));
+            }
         }
     }
 
-    pub(crate) fn get_overlays(
+    pub(crate) fn get_image_overlay(
         &self,
         view_id: ViewId,
         image_id: &ViewableObjectId,
-    ) -> Vec<ViewableObjectId> {
-        self.overlays
-            .get(&(view_id, image_id.clone()))
-            .cloned()
-            .unwrap_or_default()
-            .into_iter()
-            .collect()
+    ) -> Option<&OverlayItem> {
+        self.overlays.get(&(view_id, image_id.clone()))
+    }
+
+    pub(crate) fn get_image_overlay_mut(
+        &mut self,
+        view_id: ViewId,
+        image_id: &ViewableObjectId,
+    ) -> Option<&mut OverlayItem> {
+        self.overlays.get_mut(&(view_id, image_id.clone()))
     }
 
     pub(crate) fn clear_overlays(&mut self, view_id: ViewId, image_id: &ViewableObjectId) {

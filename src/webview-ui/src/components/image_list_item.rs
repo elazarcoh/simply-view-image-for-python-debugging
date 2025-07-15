@@ -4,8 +4,8 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::{
-    application_state::app_state::{AppState, UiAction},
-    common::{Image, MinimalImageInfo, ValueVariableKind},
+    application_state::app_state::{AppState, OverlayAction, UiAction},
+    common::{Image, MinimalImageInfo, ValueVariableKind, ViewId},
     components::{
         context_menu::{use_context_menu, ContextMenuData, ContextMenuItem},
         display_options::DisplayOption,
@@ -159,44 +159,36 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
     );
 
     let ctx = use_context_menu();
-    let name = "Image ".to_string() + &image_id.as_unique_string();
 
     let on_context = {
+        let image_id = image_id.clone();
         let ctx = ctx.clone();
-        let name = name.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
             ctx.set(Some(ContextMenuData {
                 x: e.client_x(),
                 y: e.client_y(),
-                items: vec![
-                    ContextMenuItem {
-                        label: "Rename".into(),
-                        action: Callback::from({
-                            let name = name.clone();
-                            move |_| {
-                                web_sys::window()
-                                    .unwrap()
-                                    .alert_with_message(&format!("Rename {}", name))
-                                    .ok();
+                items: vec![ContextMenuItem {
+                    label: "Overlay".into(),
+                    action: Callback::from({
+                        let image_id = image_id.clone();
+                        let ctx = ctx.clone();
+                        move |_| {
+                            let view_id = ViewId::Primary;
+                            let state = Dispatch::<AppState>::global().get();
+                            let cv = state.image_views.borrow().get_currently_viewing(view_id);
+                            if let Some(cv) = cv {
+                                Dispatch::<AppState>::global().apply(OverlayAction::Add {
+                                    view_id,
+                                    image_id: cv.id().clone(),
+                                    overlay_id: image_id.clone(),
+                                });
                             }
-                        }),
-                        disabled: false,
-                    },
-                    ContextMenuItem {
-                        label: "Delete".into(),
-                        action: Callback::from({
-                            let name = name.clone();
-                            move |_| {
-                                web_sys::window()
-                                    .unwrap()
-                                    .alert_with_message(&format!("Delete {}", name))
-                                    .ok();
-                            }
-                        }),
-                        disabled: false,
-                    },
-                ],
+                            ctx.set(None);
+                        }
+                    }),
+                    disabled: false,
+                }],
             }));
         })
     };

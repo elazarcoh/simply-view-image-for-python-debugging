@@ -68,26 +68,29 @@ fn rendering_context() -> impl RenderingContext {
 
         fn view_data(&self, view_id: ViewId) -> ImageViewData {
             let dispatch = Dispatch::<AppState>::global();
+            let state = dispatch.get();
+            let currently_viewing = state.image_views.borrow().get_currently_viewing(view_id);
+            let overlays = currently_viewing.as_ref().map_or(Vec::new(), |cv| {
+                state.overlays.borrow().get_overlays(view_id, cv.id())
+            });
+            let camera = state.view_cameras.borrow().get(view_id);
+            let html_element = state
+                .image_views
+                .borrow()
+                .get_node_ref(view_id)
+                .cast::<HtmlElement>()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Unable to cast node ref to HtmlElement for view {:?}",
+                        view_id
+                    )
+                });
+
             ImageViewData {
-                camera: dispatch.get().view_cameras.borrow().get(view_id),
-                html_element: dispatch
-                    .get()
-                    .image_views
-                    .borrow()
-                    .get_node_ref(view_id)
-                    .cast::<HtmlElement>()
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "Unable to cast node ref to HtmlElement for view {:?}",
-                            view_id
-                        )
-                    }),
-                currently_viewing: dispatch
-                    .get()
-                    .image_views
-                    .borrow()
-                    .get_currently_viewing(view_id),
-                overlays: [].to_vec(),
+                camera,
+                html_element,
+                currently_viewing,
+                overlays,
             }
         }
 

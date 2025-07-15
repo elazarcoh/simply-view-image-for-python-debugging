@@ -1,4 +1,7 @@
-use std::{collections::HashMap, iter::FromIterator};
+use std::{
+    collections::{HashMap, HashSet},
+    iter::FromIterator,
+};
 
 use web_sys::{CustomEvent, HtmlElement};
 use yew::NodeRef;
@@ -84,5 +87,52 @@ impl ImageViews {
 impl Default for ImageViews {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct Overlays {
+    overlays: HashMap<(ViewId, ViewableObjectId), HashSet<ViewableObjectId>>,
+}
+
+impl Overlays {
+    pub(crate) fn add_overlay(
+        &mut self,
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+        overlay_id: ViewableObjectId,
+    ) {
+        self.overlays
+            .entry((view_id, image_id))
+            .or_default()
+            .insert(overlay_id);
+    }
+
+    pub(crate) fn remove_overlay(
+        &mut self,
+        view_id: ViewId,
+        image_id: &ViewableObjectId,
+        overlay_id: &ViewableObjectId,
+    ) {
+        if let Some(overlays) = self.overlays.get_mut(&(view_id, image_id.clone())) {
+            overlays.retain(|id| id != overlay_id);
+        }
+    }
+
+    pub(crate) fn get_overlays(
+        &self,
+        view_id: ViewId,
+        image_id: &ViewableObjectId,
+    ) -> Vec<ViewableObjectId> {
+        self.overlays
+            .get(&(view_id, image_id.clone()))
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .collect()
+    }
+
+    pub(crate) fn clear_overlays(&mut self, view_id: ViewId, image_id: &ViewableObjectId) {
+        self.overlays.remove(&(view_id, image_id.clone()));
     }
 }

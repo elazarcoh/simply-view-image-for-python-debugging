@@ -3,6 +3,7 @@ use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::sessions::Sessions;
 use super::views::ImageViews;
 use super::vscode_data_fetcher::ImagesFetcher;
+use crate::application_state::views::Overlays;
 use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
 use crate::common::texture_image::TextureImage;
@@ -52,6 +53,7 @@ pub(crate) struct AppState {
     pub image_cache: Mrc<ImageCache>,
     pub drawing_options: Mrc<ImagesDrawingOptions>,
     pub global_drawing_options: GlobalDrawingOptions,
+    pub overlays: Mrc<Overlays>,
 
     pub color_map_registry: Mrc<ColorMapRegistry>,
     pub color_map_textures_cache: Mrc<ColorMapTexturesCache>,
@@ -75,6 +77,7 @@ impl Default for AppState {
             image_cache: Default::default(),
             drawing_options: Default::default(),
             global_drawing_options: Default::default(),
+            overlays: Default::default(),
             color_map_registry: Default::default(),
             color_map_textures_cache: Default::default(),
             view_cameras: Default::default(),
@@ -498,6 +501,35 @@ impl Reducer<AppState> for UiAction {
             }
             UiAction::Home(view_id) => {
                 state.view_cameras.borrow_mut().reset(view_id);
+            }
+        }
+
+        app_state
+    }
+}
+
+pub(crate) enum OverlayAction {
+    Add {
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+        overlay_id: ViewableObjectId,
+    },
+}
+
+impl Reducer<AppState> for OverlayAction {
+    fn apply(self, mut app_state: Rc<AppState>) -> Rc<AppState> {
+        let state = Rc::make_mut(&mut app_state);
+
+        match self {
+            OverlayAction::Add {
+                view_id,
+                image_id,
+                overlay_id,
+            } => {
+                state
+                    .overlays
+                    .borrow_mut()
+                    .add_overlay(view_id, image_id, overlay_id);
             }
         }
 

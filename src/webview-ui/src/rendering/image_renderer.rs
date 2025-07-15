@@ -9,6 +9,8 @@ use glam::{Mat3, UVec2, Vec2, Vec4};
 
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
+use crate::application_state::app_state::GlobalDrawingOptions;
+use crate::application_state::images::ImageAvailability;
 use crate::coloring;
 use crate::coloring::{calculate_color_matrix, Coloring, DrawingOptions};
 use crate::common::camera;
@@ -285,9 +287,8 @@ impl ImageRenderer {
         if let Some(cv) = &image_view_data.currently_viewing {
             let image_id = cv.id();
             match rendering_context.texture_by_id(image_id) {
-                crate::application_state::images::ImageAvailability::NotAvailable
-                | crate::application_state::images::ImageAvailability::Pending(_) => {}
-                crate::application_state::images::ImageAvailability::Available(texture) => {
+                ImageAvailability::NotAvailable | ImageAvailability::Pending(_) => {}
+                ImageAvailability::Available(texture) => {
                     // for batch, we need to check if the batch item is available
                     let batch_index = if matches!(cv, CurrentlyViewing::BatchItem(_)) {
                         let batch_index = rendering_context
@@ -318,114 +319,55 @@ impl ImageRenderer {
         Ok(())
     }
 
-    fn render_image(
+    fn render_overlays(
         rendering_context: &dyn RenderingContext,
         rendering_data: &mut RenderingData,
-        texture: Mrc<TextureImage>,
         batch_item: Option<u32>,
         image_view_data: &ImageViewData,
         view_name: &ViewId,
     ) {
-        let texture = texture.borrow();
+        let overlays = &image_view_data.overlays;
+        let overlay = overlays.first();
+        if let Some(overlay) = overlay {
+            // Render the overlay
+            let texture = rendering_context.texture_by_id(overlay);
+            if let ImageAvailability::Available(texture) = texture {
+                // Render the texture
+            }
+        }
+    }
 
-        let gl = &rendering_data.gl;
-        let mut _program_name;
+    fn program_for_texture<'p>(
+        texture: &TextureImage,
+        programs: &'p Programs,
+    ) -> &'p ProgramBundle {
         let texture_info = &texture.info;
-
-        let program = match (texture_info.data_ordering, texture_info.channels) {
+        match (texture_info.data_ordering, texture_info.channels) {
             (DataOrdering::HWC, _) | (DataOrdering::CHW, Channels::One) => {
                 match texture_info.datatype {
-                    Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32 => {
-                        _program_name = "uint_image";
-                        &rendering_data.programs.uint_image
-                    }
-                    Datatype::Float32 => {
-                        _program_name = "normalized_image";
-                        &rendering_data.programs.normalized_image
-                    }
-                    Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
-                        _program_name = "int_image";
-                        &rendering_data.programs.int_image
-                    }
-                    Datatype::Bool => {
-                        _program_name = "uint_image";
-                        &rendering_data.programs.uint_image
-                    }
+                    Datatype::Uint8 | Datatype::Uint16 | Datatype::Uint32 => &programs.uint_image,
+                    Datatype::Float32 => &programs.normalized_image,
+                    Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => &programs.int_image,
+                    Datatype::Bool => &programs.uint_image,
                 }
             }
 
             (DataOrdering::CHW, _) => match texture_info.datatype {
                 Datatype::Uint8 | Datatype::Uint32 | Datatype::Uint16 => {
-                    _program_name = "planar_uint_image";
-                    &rendering_data.programs.planar_uint_image
+                    &programs.planar_uint_image
                 }
-                Datatype::Float32 => {
-                    _program_name = "planar_normalized_image";
-                    &rendering_data.programs.planar_normalized_image
-                }
-                Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => {
-                    _program_name = "planar_int_image";
-                    &rendering_data.programs.planar_int_image
-                }
-                Datatype::Bool => {
-                    _program_name = "planar_uint_image";
-                    &rendering_data.programs.planar_uint_image
-                }
+                Datatype::Float32 => &programs.planar_normalized_image,
+                Datatype::Int8 | Datatype::Int16 | Datatype::Int32 => &programs.planar_int_image,
+                Datatype::Bool => &programs.planar_uint_image,
             },
-        };
-        let config = rendering_context.rendering_configuration();
+        }
+    }
 
-        let html_element_size = Size {
-            width: image_view_data.html_element.client_width() as f32,
-            height: image_view_data.html_element.client_height() as f32,
-        };
-        let camera = &image_view_data.camera;
-
-        let image_size = texture.image_size();
-        let aspect_ratio = image_size.width / image_size.height;
-
-        let view_projection =
-            camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera, aspect_ratio);
-
-        let pixels_info =
-            calculate_pixels_information(&image_size, &view_projection, &html_element_size);
-        let enable_borders =
-            pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_border as _;
-        let image_size = texture.image_size();
-        let image_size_vec = Vec2::new(image_size.width, image_size.height);
-
-        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
-            image_view_data
-                .currently_viewing
-                .as_ref()
-                .map(CurrentlyViewing::id)
-                .unwrap(),
-        );
-        let coloring_factors =
-            calculate_color_matrix(texture_info, &texture.computed_info, &drawing_options);
-
-        let mut uniform_values = HashMap::new();
-
-        uniform_values.extend(HashMap::from([
-            ("u_projectionMatrix", UniformValue::Mat3(&view_projection)),
-            ("u_enable_borders", UniformValue::Bool(&enable_borders)),
-            ("u_buffer_dimension", UniformValue::Vec2(&image_size_vec)),
-            (
-                "u_normalization_factor",
-                UniformValue::Float(&coloring_factors.normalization_factor),
-            ),
-            (
-                "u_color_multiplier",
-                UniformValue::Mat4(&coloring_factors.color_multiplier),
-            ),
-            (
-                "u_color_addition",
-                UniformValue::Vec4(&coloring_factors.color_addition),
-            ),
-            ("u_invert", UniformValue::Bool(&drawing_options.invert)),
-        ]));
-
-        let get_textures = |batch_index: u32| match texture.textures[&batch_index] {
+    fn get_texture_uniforms(
+        texture: &'_ TextureImage,
+        batch_index: u32,
+    ) -> HashMap<&'static str, UniformValue<'_>> {
+        match texture.textures[&batch_index] {
             TexturesGroup::HWC(ref texture) => {
                 HashMap::from([("u_texture", UniformValue::Texture(texture))])
             }
@@ -463,11 +405,223 @@ impl ImageRenderer {
                 ("u_texture_b", UniformValue::Texture(blue)),
                 ("u_texture_a", UniformValue::Texture(alpha)),
             ]),
+        }
+    }
+
+    fn prepare_texture_uniforms<'a>(
+        rendering_context: &dyn RenderingContext,
+        rendering_data: &'a RenderingData,
+        texture: &'a TextureImage,
+        colormap_texture: Option<&'a web_sys::WebGlTexture>,
+        batch_item: Option<u32>,
+        image_view_data: &ImageViewData,
+        uniform_values: &mut HashMap<&'static str, UniformValue<'a>>,
+    ) {
+        let texture_info = &texture.info;
+        let config = rendering_context.rendering_configuration();
+
+        let html_element_size = Size {
+            width: image_view_data.html_element.client_width() as f32,
+            height: image_view_data.html_element.client_height() as f32,
         };
+        let camera = &image_view_data.camera;
+
+        let image_size = texture.image_size();
+        let aspect_ratio = image_size.width / image_size.height;
+
+        let view_projection =
+            camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera, aspect_ratio);
+
+        let pixels_info =
+            calculate_pixels_information(&image_size, &view_projection, &html_element_size);
+        let enable_borders =
+            pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_border as _;
+        let image_size = texture.image_size();
+        let image_size_vec = Vec2::new(image_size.width, image_size.height);
+
+        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
+            image_view_data
+                .currently_viewing
+                .as_ref()
+                .map(CurrentlyViewing::id)
+                .unwrap(),
+        );
+        let coloring_factors =
+            calculate_color_matrix(texture_info, &texture.computed_info, &drawing_options);
+
+        uniform_values.extend(HashMap::from([
+            ("u_projectionMatrix", UniformValue::Mat3_(view_projection)),
+            ("u_enable_borders", UniformValue::Bool_(enable_borders)),
+            ("u_buffer_dimension", UniformValue::Vec2_(image_size_vec)),
+            (
+                "u_normalization_factor",
+                UniformValue::Float_(coloring_factors.normalization_factor),
+            ),
+            (
+                "u_color_multiplier",
+                UniformValue::Mat4_(coloring_factors.color_multiplier),
+            ),
+            (
+                "u_color_addition",
+                UniformValue::Vec4_(coloring_factors.color_addition),
+            ),
+            ("u_invert", UniformValue::Bool_(drawing_options.invert)),
+        ]));
 
         let is_batched = batch_item.is_some();
         let batch_index = batch_item.unwrap_or(0);
-        uniform_values.extend(get_textures(batch_index));
+        uniform_values.extend(ImageRenderer::get_texture_uniforms(texture, batch_index));
+
+        if let Some(colormap_texture) = colormap_texture {
+            uniform_values.insert("u_colormap", UniformValue::Texture(colormap_texture));
+            uniform_values.insert("u_use_colormap", UniformValue::Bool(&true));
+        } else {
+            uniform_values.insert("u_use_colormap", UniformValue::Bool(&false));
+            uniform_values.insert(
+                "u_colormap",
+                UniformValue::Texture(&rendering_data.placeholder_texture),
+            );
+        }
+
+        // let texture_size = Vec2::new(texture.image_size().width, texture.image_size().height);
+        // uniform_values.insert("u_texture_size", UniformValue::Vec2(&texture_size));
+
+        if texture_info.channels == Channels::One {
+            if let Some(clip_min) = drawing_options.clip.min {
+                uniform_values.insert("u_clip_min", UniformValue::Bool(&true));
+                uniform_values.insert("u_min_clip_value", UniformValue::Float_(clip_min));
+            } else {
+                uniform_values.insert("u_clip_min", UniformValue::Bool(&false));
+            }
+            if let Some(clip_max) = drawing_options.clip.max {
+                uniform_values.insert("u_clip_max", UniformValue::Bool(&true));
+                uniform_values.insert("u_max_clip_value", UniformValue::Float_(clip_max));
+            } else {
+                uniform_values.insert("u_clip_max", UniformValue::Bool(&false));
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn render_text(
+        rendering_context: &dyn RenderingContext,
+        rendering_data: &mut RenderingData,
+        texture: &TextureImage,
+        drawing_options: &DrawingOptions,
+        global_drawing_options: &GlobalDrawingOptions,
+        batch_item: Option<u32>,
+        image_view_data: &ImageViewData,
+        view_name: &ViewId,
+    ) {
+        let texture_info = &texture.info;
+        let html_element_size = Size {
+            width: image_view_data.html_element.client_width() as f32,
+            height: image_view_data.html_element.client_height() as f32,
+        };
+        let camera = &image_view_data.camera;
+
+        let image_size = texture.image_size();
+        let aspect_ratio = image_size.width / image_size.height;
+
+        let view_projection =
+            camera::calculate_view_projection(&html_element_size, &VIEW_SIZE, camera, aspect_ratio);
+
+        let pixels_info =
+            calculate_pixels_information(&image_size, &view_projection, &html_element_size);
+
+        let coloring_factors =
+            calculate_color_matrix(texture_info, &texture.computed_info, drawing_options);
+
+        let is_batched = batch_item.is_some();
+        let batch_index = batch_item.unwrap_or(0);
+
+        let pixel_text_cache = rendering_data
+            .pixel_text_cache_per_view
+            .get_mut(view_name)
+            .unwrap();
+
+        for x in pixels_info.lower_x_px..pixels_info.upper_x_px {
+            for y in pixels_info.lower_y_px..pixels_info.upper_y_px {
+                let image_pixels_to_view = Mat3::from_scale(Vec2::new(
+                    VIEW_SIZE.width / texture.image_size().width,
+                    VIEW_SIZE.height / texture.image_size().height,
+                ));
+
+                let pixel = UVec2::new(x as _, y as _);
+
+                let batch_index = if is_batched { batch_index } else { 0 };
+
+                let pixel_value = PixelValue::from_image_info(
+                    &texture.info,
+                    &texture.bytes[&batch_index],
+                    &pixel,
+                );
+
+                // The actual pixel color might be different from the pixel value, depending on drawing options
+                let text_color = match drawing_options.coloring {
+                    Coloring::Heatmap | Coloring::Segmentation => {
+                        let name = match drawing_options.coloring {
+                            Coloring::Heatmap => &global_drawing_options.heatmap_colormap_name,
+                            Coloring::Segmentation => {
+                                &global_drawing_options.segmentation_colormap_name
+                            }
+                            _ => unreachable!(),
+                        };
+                        let colormap = rendering_context
+                            .get_color_map(name)
+                            .expect("Could not get color map");
+                        let pixel_color = coloring::calculate_pixel_color_from_colormap(
+                            &pixel_value,
+                            &coloring_factors,
+                            colormap.as_ref(),
+                            drawing_options,
+                        );
+
+                        text_color(pixel_color, &DrawingOptions::default())
+                    }
+                    _ => {
+                        let rgba = Vec4::from(pixel_value.as_rgba_f32());
+                        let pixel_color = coloring_factors.color_multiplier
+                            * (rgba / coloring_factors.normalization_factor)
+                            + coloring_factors.color_addition;
+
+                        text_color(pixel_color, drawing_options)
+                    }
+                };
+
+                rendering_data.text_renderer.render(PixelTextRenderingData {
+                    pixel_text_cache,
+                    pixel_loc: &pixel,
+                    pixel_value: &pixel_value,
+                    image_coords_to_view_coord_mat: &image_pixels_to_view,
+                    view_projection: &view_projection,
+                    text_color: &text_color,
+                });
+            }
+        }
+    }
+
+    fn render_image(
+        rendering_context: &dyn RenderingContext,
+        rendering_data: &mut RenderingData,
+        texture: Mrc<TextureImage>,
+        batch_item: Option<u32>,
+        image_view_data: &ImageViewData,
+        view_name: &ViewId,
+    ) {
+        let texture = texture.borrow();
+
+        let gl = &rendering_data.gl;
+        let program = ImageRenderer::program_for_texture(&texture, &rendering_data.programs);
+        let config = rendering_context.rendering_configuration();
+
+        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
+            image_view_data
+                .currently_viewing
+                .as_ref()
+                .map(CurrentlyViewing::id)
+                .unwrap(),
+        );
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context
@@ -487,121 +641,62 @@ impl ImageRenderer {
             None
         };
 
-        let texture_size = Vec2::new(texture.image_size().width, texture.image_size().height);
-        uniform_values.insert("u_texture_size", UniformValue::Vec2(&texture_size));
+        let mut uniform_values = HashMap::new();
 
-        if texture_info.channels == Channels::One {
-            if let Some(ref clip_min) = drawing_options.clip.min {
-                uniform_values.insert("u_clip_min", UniformValue::Bool(&true));
-                uniform_values.insert("u_min_clip_value", UniformValue::Float(clip_min));
-            } else {
-                uniform_values.insert("u_clip_min", UniformValue::Bool(&false));
-            }
-            if let Some(ref clip_max) = drawing_options.clip.max {
-                uniform_values.insert("u_clip_max", UniformValue::Bool(&true));
-                uniform_values.insert("u_max_clip_value", UniformValue::Float(clip_max));
-            } else {
-                uniform_values.insert("u_clip_max", UniformValue::Bool(&false));
-            }
-        }
-
-        if let Some(ref colormap_texture) = colormap_texture {
-            uniform_values.insert("u_colormap", UniformValue::Texture(colormap_texture));
-            uniform_values.insert("u_use_colormap", UniformValue::Bool(&true));
-        } else {
-            uniform_values.insert("u_use_colormap", UniformValue::Bool(&false));
-            uniform_values.insert(
-                "u_colormap",
-                UniformValue::Texture(&rendering_data.placeholder_texture),
-            );
-        }
+        ImageRenderer::prepare_texture_uniforms(
+            rendering_context,
+            rendering_data,
+            &texture,
+            colormap_texture.as_ref(),
+            batch_item,
+            image_view_data,
+            &mut uniform_values,
+        );
 
         gl.use_program(Some(&program.program));
         set_uniforms(program, &uniform_values);
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
-        // let only_edges = true;
-        // uniform_values.insert("u_only_edges", UniformValue::Bool(&only_edges));
+        // ImageRenderer::render_overlays(
+        //     rendering_context,
+        //     rendering_data,
+        //     batch_item,
+        //     image_view_data,
+        //     view_name,
+        // );
 
-        // set_uniforms(program, &uniform_values);
-        // draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+        let to_render_text = {
+            let html_element_size = Size {
+                width: image_view_data.html_element.client_width() as f32,
+                height: image_view_data.html_element.client_height() as f32,
+            };
+            let camera = &image_view_data.camera;
+            let image_size = texture.image_size();
+            let aspect_ratio = image_size.width / image_size.height;
+            let view_projection = camera::calculate_view_projection(
+                &html_element_size,
+                &VIEW_SIZE,
+                camera,
+                aspect_ratio,
+            );
+            let pixels_info =
+                calculate_pixels_information(&image_size, &view_projection, &html_element_size);
 
-        let to_render_text =
-            pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_values as _;
+            pixels_info.image_pixel_size_device > config.minimum_size_to_render_pixel_values as _
+        };
+
         if to_render_text {
-            let pixel_text_cache = rendering_data
-                .pixel_text_cache_per_view
-                .get_mut(view_name)
-                .unwrap();
-
-            for x in pixels_info.lower_x_px..pixels_info.upper_x_px {
-                for y in pixels_info.lower_y_px..pixels_info.upper_y_px {
-                    let image_pixels_to_view = Mat3::from_scale(Vec2::new(
-                        VIEW_SIZE.width / texture.image_size().width,
-                        VIEW_SIZE.height / texture.image_size().height,
-                    ));
-
-                    let pixel = UVec2::new(x as _, y as _);
-
-                    let batch_index = if is_batched { batch_index } else { 0 };
-
-                    let pixel_value = PixelValue::from_image_info(
-                        &texture.info,
-                        &texture.bytes[&batch_index],
-                        &pixel,
-                    );
-
-                    // The actual pixel color might be different from the pixel value, depending on drawing options
-                    let text_color = match drawing_options.coloring {
-                        Coloring::Heatmap | Coloring::Segmentation => {
-                            let name = match drawing_options.coloring {
-                                Coloring::Heatmap => &global_drawing_options.heatmap_colormap_name,
-                                Coloring::Segmentation => {
-                                    &global_drawing_options.segmentation_colormap_name
-                                }
-                                _ => unreachable!(),
-                            };
-                            let colormap = rendering_context
-                                .get_color_map(name)
-                                .expect("Could not get color map");
-                            let pixel_color = coloring::calculate_pixel_color_from_colormap(
-                                &pixel_value,
-                                &coloring_factors,
-                                colormap.as_ref(),
-                                &drawing_options,
-                            );
-
-                            // if only_edges {
-                            //     pixel_color
-                            // } else {
-                                text_color(pixel_color, &DrawingOptions::default())
-                            // }
-                        }
-                        _ => {
-                            let rgba = Vec4::from(pixel_value.as_rgba_f32());
-                            let pixel_color = coloring_factors.color_multiplier
-                                * (rgba / coloring_factors.normalization_factor)
-                                + coloring_factors.color_addition;
-
-                            // if only_edges {
-                            //     pixel_color
-                            // } else {
-                                text_color(pixel_color, &drawing_options)
-                            // }
-                        }
-                    };
-
-                    rendering_data.text_renderer.render(PixelTextRenderingData {
-                        pixel_text_cache,
-                        pixel_loc: &pixel,
-                        pixel_value: &pixel_value,
-                        image_coords_to_view_coord_mat: &image_pixels_to_view,
-                        view_projection: &view_projection,
-                        text_color: &text_color,
-                    });
-                }
-            }
+            ImageRenderer::render_text(
+                rendering_context,
+                rendering_data,
+                &texture,
+                &drawing_options,
+                &global_drawing_options,
+                batch_item,
+                image_view_data,
+                view_name,
+            );
         }
     }
 }

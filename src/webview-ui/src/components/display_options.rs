@@ -1,6 +1,6 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
-use yewdux::{prelude::use_selector, Dispatch};
+use yewdux::{use_selector_with_deps, Dispatch};
 
 use crate::{
     application_state::{
@@ -105,14 +105,17 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     let drawing_context = *drawing_context;
 
     let image_id = entry.image_id.clone();
-    let drawing_options = use_selector(move |state: &AppState| {
-        state
-            .drawing_options
-            .borrow()
-            .get(&image_id, &drawing_context)
-            .cloned()
-            .unwrap_or_default()
-    });
+    let drawing_options = use_selector_with_deps(
+        move |state: &AppState, (image_id, drawing_context)| {
+            state
+                .drawing_options
+                .borrow()
+                .get(image_id, drawing_context)
+                .cloned()
+                .unwrap_or_default()
+        },
+        (image_id, drawing_context),
+    );
 
     let features = features::list_features(entry);
 

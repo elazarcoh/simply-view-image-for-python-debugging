@@ -137,12 +137,12 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
         overlay.clone(),
     );
 
-    let cv = use_selector(move |state: &AppState| {
-        state
-            .image_views
-            .borrow()
-            .get_currently_viewing(overlay.view_id)
-    });
+    let cv = use_selector_with_deps(
+        move |state: &AppState, view_id: &ViewId| {
+            state.image_views.borrow().get_currently_viewing(*view_id)
+        },
+        overlay.view_id,
+    );
     let cv_image_id = cv.as_ref().as_ref().map(|cv| cv.id().clone());
     if cv_image_id.is_none() {
         log::warn!(
@@ -155,15 +155,27 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     let view_id = overlay.view_id;
 
     let expression = use_selector_with_deps(
-        |state: &AppState, overlay: &OverlayItem| {
+        |state: &AppState, overlay_id| {
             let images = state.images.borrow();
             let info = images
-                .get(&overlay.id)
-                .unwrap_or_else(|| panic!("Image with id {:?} not found", overlay.id))
+                .get(overlay_id)
+                .unwrap_or_else(|| panic!("Image with id {:?} not found", overlay_id))
                 .minimal();
             info.expression.clone()
         },
-        overlay.clone(),
+        overlay.id.clone(),
+    );
+
+    let drawing_options = use_selector_with_deps(
+        |state: &AppState, (image_id, drawing_context)| {
+            state
+                .drawing_options
+                .borrow()
+                .get(image_id, drawing_context)
+                .cloned()
+                .unwrap_or_default()
+        },
+        (overlay.id.clone(), DrawingContext::Overlay),
     );
 
     let dispatch = Dispatch::<AppState>::global();
@@ -206,7 +218,7 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     };
 
     let alpha_state = use_state(|| 1.0);
-    use_effect_with(overlay.alpha, {
+    use_effect_with(drawing_options.global_alpha, {
         let alpha_state = alpha_state.clone();
         move |alpha| {
             alpha_state.set(*alpha);
@@ -215,11 +227,10 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     });
     let alpha_throttle = {
         let alpha_state = alpha_state.clone();
-        let cv_image_id = cv_image_id.clone();
+        let overlay_id = overlay.id.clone();
         move || {
             dispatch.apply(OverlayAction::SetAlpha {
-                view_id: overlay.view_id,
-                image_id: cv_image_id.clone(),
+                image_id: overlay_id.clone(),
                 alpha: *alpha_state,
             });
         }

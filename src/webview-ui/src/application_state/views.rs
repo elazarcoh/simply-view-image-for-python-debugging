@@ -92,7 +92,6 @@ pub(crate) struct OverlayItem {
     pub(crate) view_id: ViewId,
     pub(crate) id: ViewableObjectId,
     pub(crate) hidden: bool,
-    pub(crate) alpha: f32,
 }
 
 impl OverlayItem {
@@ -101,7 +100,6 @@ impl OverlayItem {
             view_id,
             id,
             hidden: false,
-            alpha: 0.8,
         }
     }
 }

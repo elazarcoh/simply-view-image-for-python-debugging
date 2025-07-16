@@ -14,6 +14,7 @@ pub(crate) enum Coloring {
     B,
     SwapRgbBgr,
     Segmentation,
+    Edges,
     Heatmap,
 }
 
@@ -211,7 +212,8 @@ pub(crate) fn calculate_color_matrix(
         | Coloring::Default
         // Heatmap and Segmentation coloring using the default coloring
         | Coloring::Segmentation { .. }
-        | Coloring::Heatmap{..} 
+        | Coloring::Edges { .. }
+        | Coloring::Heatmap{ .. } 
          => {
             match datatype {
                 | Datatype::Uint8

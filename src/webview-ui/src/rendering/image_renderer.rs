@@ -453,6 +453,11 @@ impl ImageRenderer {
         let batch_index = batch_item.unwrap_or(0);
         uniform_values.extend(ImageRenderer::get_texture_uniforms(texture, batch_index));
 
+        uniform_values.insert(
+            "u_edges_only",
+            UniformValue::Bool_(drawing_options.coloring == Coloring::Edges),
+        );
+
         if let Some(colormap_texture) = colormap_texture {
             uniform_values.insert("u_colormap", UniformValue::Texture(colormap_texture));
             uniform_values.insert("u_use_colormap", UniformValue::Bool(&true));
@@ -463,9 +468,6 @@ impl ImageRenderer {
                 UniformValue::Texture(&rendering_data.placeholder_texture),
             );
         }
-
-        // let texture_size = Vec2::new(texture.image_size().width, texture.image_size().height);
-        // uniform_values.insert("u_texture_size", UniformValue::Vec2(&texture_size));
 
         if texture_info.channels == Channels::One {
             if let Some(clip_min) = drawing_options.clip.min {
@@ -611,7 +613,10 @@ impl ImageRenderer {
                 .expect("Could not get color map texture");
 
             Some(color_map_texture.obj.clone())
-        } else if Coloring::Segmentation == drawing_options.coloring {
+        } else if matches!(
+            drawing_options.coloring,
+            Coloring::Segmentation | Coloring::Edges
+        ) {
             let color_map_texture = rendering_context
                 .get_color_map_texture(&global_drawing_options.segmentation_colormap_name)
                 .expect("Could not get color map texture");
@@ -708,7 +713,10 @@ impl ImageRenderer {
 
             let tex = color_map_texture.obj.clone();
             Some(tex)
-        } else if Coloring::Segmentation == drawing_options.coloring {
+        } else if matches!(
+            drawing_options.coloring,
+            Coloring::Segmentation | Coloring::Edges
+        ) {
             let color_map_texture = rendering_context
                 .get_color_map_texture(&global_drawing_options.segmentation_colormap_name)
                 .expect("Could not get color map texture");

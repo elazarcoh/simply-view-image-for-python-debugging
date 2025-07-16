@@ -7,7 +7,7 @@ use yewdux::{Dispatch, Listener};
 use anyhow::Result;
 
 use crate::{
-    application_state::images::ImageAvailability, bindings::lodash, common::constants,
+    application_state::images::{DrawingContext, ImageAvailability}, bindings::lodash, common::constants,
     configurations::AutoUpdateImages, vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -77,9 +77,8 @@ impl ImagesFetcher {
                     let current_index = state
                         .drawing_options
                         .borrow()
-                        .get_or_default(&image_id)
-                        .batch_item
-                        // batch item is not set, so we default to 0 (first time we see the image)
+                        .get(&image_id, &DrawingContext::BaseImage)
+                        .and_then(|d| d.batch_item)
                         .unwrap_or(0);
 
                     if let ImageAvailability::NotAvailable = current {
@@ -111,8 +110,9 @@ impl ImagesFetcher {
                         let current_drawing_options = state
                             .drawing_options
                             .borrow()
-                            .get_or_default(&image_id)
-                            .clone();
+                            .get(&image_id, &DrawingContext::BaseImage)
+                            .cloned()
+                            .unwrap_or_default();
 
                         if let Some(item) = current_drawing_options.batch_item {
                             let has_item = image.borrow().textures.contains_key(&item);

@@ -3,6 +3,7 @@ use super::images::{ImageCache, Images, ImagesDrawingOptions};
 use super::sessions::Sessions;
 use super::views::ImageViews;
 use super::vscode_data_fetcher::ImagesFetcher;
+use crate::application_state::images::DrawingContext;
 use crate::application_state::views::Overlays;
 use crate::coloring::{Clip, Coloring, DrawingOptions};
 use crate::common::camera::ViewsCameras;
@@ -130,6 +131,7 @@ impl AppState {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub(crate) enum UpdateDrawingOptions {
     Full(DrawingOptions),
     Reset,
@@ -166,7 +168,7 @@ pub(crate) enum StoreAction {
     SetActiveSession(SessionId),
     SetImageToView(ViewableObjectId, ViewId),
     AddImageWithData(ViewableObjectId, ImageData),
-    UpdateDrawingOptions(ViewableObjectId, UpdateDrawingOptions),
+    UpdateDrawingOptions(ViewableObjectId, DrawingContext, UpdateDrawingOptions),
     UpdateGlobalDrawingOptions(UpdateGlobalDrawingOptions),
     ReplaceData(Vec<ImageObject>),
     UpdateData(ImageObject),
@@ -229,7 +231,7 @@ fn handle_received_image(state: &AppState, image: ImageObject) -> Result<()> {
         state
             .drawing_options
             .borrow_mut()
-            .mut_ref_or_default(image_id.clone())
+            .get_mut_ref(image_id.clone(), DrawingContext::BaseImage)
             .batch_item
             .get_or_insert(0);
     }
@@ -259,11 +261,15 @@ impl Reducer<AppState> for StoreAction {
 
         match self {
             StoreAction::SetImageToView(image_id, view_id) => {
-                let drawing_options = state.drawing_options.borrow().get_or_default(&image_id);
+                let drawing_options = state
+                    .drawing_options
+                    .borrow()
+                    .get(&image_id, &DrawingContext::BaseImage)
+                    .cloned();
                 VSCodeRequests::update_state(
                     HostExtensionStateUpdate::default()
                         .current_image_id(Some(image_id.clone()))
-                        .current_image_drawing_options(Some(drawing_options.clone()))
+                        .current_image_drawing_options(drawing_options)
                         .clone(),
                 );
                 state.sessions.borrow_mut().active_session = Some(image_id.session_id().clone());
@@ -278,19 +284,28 @@ impl Reducer<AppState> for StoreAction {
                     })
                     .ok();
             }
-            StoreAction::UpdateDrawingOptions(image_id, update) => {
+            StoreAction::UpdateDrawingOptions(image_id, drawing_context, update) => {
                 let current_drawing_options = state
                     .drawing_options
                     .borrow()
-                    .get_or_default(&image_id)
-                    .clone();
+                    .get(&image_id, &drawing_context)
+                    .cloned()
+                    .unwrap_or_default();
                 let new_drawing_option = match update {
                     UpdateDrawingOptions::Full(drawing_options) => drawing_options,
-
                     UpdateDrawingOptions::Reset => DrawingOptions {
                         // keep the batch slice index
                         batch_item: current_drawing_options.batch_item,
                         ..DrawingOptions::default()
+                    },
+                    UpdateDrawingOptions::Coloring(Coloring::Segmentation) => DrawingOptions {
+                        coloring: Coloring::Segmentation,
+                        zeros_as_transparent: if drawing_context == DrawingContext::BaseImage {
+                            current_drawing_options.zeros_as_transparent
+                        } else {
+                            true
+                        },
+                        ..current_drawing_options
                     },
                     UpdateDrawingOptions::Coloring(c) => DrawingOptions {
                         coloring: c,
@@ -328,10 +343,11 @@ impl Reducer<AppState> for StoreAction {
                         .current_image_drawing_options(Some(new_drawing_option.clone()))
                         .clone(),
                 );
-                state
-                    .drawing_options
-                    .borrow_mut()
-                    .set(image_id, new_drawing_option);
+                state.drawing_options.borrow_mut().set(
+                    image_id,
+                    drawing_context,
+                    new_drawing_option,
+                );
             }
             StoreAction::ReplaceData(replacement_images) => {
                 log::debug!("ReplaceData");
@@ -474,7 +490,12 @@ impl Reducer<AppState> for UiAction {
             UiAction::ViewShiftScroll(view_id, cv, amount) => {
                 let id = cv.id();
 
-                let current_drawing_options = state.drawing_options.borrow().get_or_default(id);
+                let current_drawing_options = state
+                    .drawing_options
+                    .borrow()
+                    .get(id, &DrawingContext::BaseImage)
+                    .cloned()
+                    .unwrap_or_default();
                 if let (Some(current_index), Some(Image::Full(info))) = (
                     current_drawing_options.batch_item,
                     state.images.borrow().get(id),
@@ -488,7 +509,7 @@ impl Reducer<AppState> for UiAction {
                         state
                             .drawing_options
                             .borrow_mut()
-                            .mut_ref_or_default(id.clone())
+                            .get_mut_ref(id.clone(), DrawingContext::BaseImage)
                             .batch_item = Some(new_index);
 
                         // send event to view that the batch item has changed

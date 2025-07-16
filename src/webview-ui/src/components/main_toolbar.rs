@@ -6,11 +6,12 @@ use stylist::{
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
 
-use yewdux::{dispatch, prelude::use_selector, use_selector_with_deps, Dispatch};
+use yewdux::{prelude::use_selector, use_selector_with_deps, Dispatch};
 
 use crate::{
     application_state::{
         app_state::{AppState, OverlayAction, StoreAction, UpdateGlobalDrawingOptions},
+        images::DrawingContext,
         views::OverlayItem,
     },
     coloring::Coloring,
@@ -215,16 +216,13 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     let alpha_throttle = {
         let alpha_state = alpha_state.clone();
         let cv_image_id = cv_image_id.clone();
-        yew_hooks::use_throttle(
-            move || {
-                dispatch.apply(OverlayAction::SetAlpha {
-                    view_id: overlay.view_id,
-                    image_id: cv_image_id.clone(),
-                    alpha: *alpha_state,
-                });
-            },
-            10,
-        )
+        move || {
+            dispatch.apply(OverlayAction::SetAlpha {
+                view_id: overlay.view_id,
+                image_id: cv_image_id.clone(),
+                alpha: *alpha_state,
+            });
+        }
     };
     let alpha_slider = html! {
         <input
@@ -246,7 +244,7 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                             .value();
                         if let Ok(value) = value.parse::<f32>() {
                             alpha_state.set(value);
-                            alpha_throttle.run();
+                            alpha_throttle();
                         }
                     }
                 })
@@ -255,7 +253,7 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     };
 
     let display_options = html! {
-        <DisplayOption entry={( *info ).clone()} />
+        <DisplayOption entry={( *info ).clone()} drawing_context={DrawingContext::Overlay} />
     };
 
     let style = use_style!(
@@ -285,6 +283,23 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                 background-color: var(--vscode-sideBar-background);
                 border: 1px solid var(--vscode-panel-border);
                 padding: 5px;
+                min-width: max-content;
+            }
+
+            &[data-hidden="true"] .controls-container {
+                display: none;
+            }
+
+            .slider-container {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                margin: 0.3em 0;
+            }
+
+            .slider-container label {
+                font-size: 0.75rem;
+                line-height: 0.6em;
             }
 
             .slider {
@@ -295,7 +310,10 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     );
 
     html! {
-        <div class={style} >
+        <div
+            class={style}
+            data-hidden={overlay.hidden.to_string()}
+        >
             <div class="top">
                 <span>
                     {show_hide_button}
@@ -308,10 +326,8 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                 <div>
                     { display_options }
                 </div>
-                <div>
-                    <span>
-                        {"Alpha"}
-                    </span>
+                <div class="slider-container">
+                    <label for="alpha-slider">{ "Alpha:" }</label>
                     { alpha_slider }
                 </div>
             </div>
@@ -336,7 +352,13 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         |state: &AppState, cv| {
             cv.as_ref()
                 .as_ref()
-                .map(|cv| state.drawing_options.borrow().get_or_default(cv.id()))
+                .and_then(|cv| {
+                    state
+                        .drawing_options
+                        .borrow()
+                        .get(cv.id(), &DrawingContext::BaseImage)
+                        .cloned()
+                })
                 .unwrap_or_default()
         },
         cv.clone(),
@@ -344,7 +366,7 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     let app_mode = use_selector(|state: &AppState| state.app_mode);
 
-    let cv_image_info = use_selector_with_deps(
+    let cv_image_info_in_single_mode = use_selector_with_deps(
         |state: &AppState, (cv, app_mode)| {
             if **app_mode == AppMode::SingleImage {
                 cv.as_ref()
@@ -440,10 +462,11 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
     html! {
         <div class={style}>
 
-            if let Some(ref cv_image_info) = cv_image_info.as_ref() {
+            if let Some(ref cv_image_info) = cv_image_info_in_single_mode.as_ref() {
                 if let Image::Full(image) = cv_image_info {
                         <DisplayOption
                             entry={image.clone()}
+                            drawing_context={DrawingContext::BaseImage}
                         />
                 }
             }

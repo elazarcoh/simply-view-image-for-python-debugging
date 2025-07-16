@@ -172,26 +172,49 @@ impl Images {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum DrawingContext {
+    BaseImage,
+    Overlay,
+}
+
 #[derive(Default)]
-pub(crate) struct ImagesDrawingOptions(HashMap<ViewableObjectId, DrawingOptions>);
+pub(crate) struct ImagesDrawingOptions(
+    HashMap<ViewableObjectId, HashMap<DrawingContext, DrawingOptions>>,
+);
 
 impl ImagesDrawingOptions {
-    pub(crate) fn set(&mut self, image_id: ViewableObjectId, drawing_options: DrawingOptions) {
-        self.0.insert(image_id, drawing_options);
+    pub(crate) fn set(
+        &mut self,
+        image_id: ViewableObjectId,
+        drawing_context: DrawingContext,
+        drawing_options: DrawingOptions,
+    ) {
+        self.0
+            .entry(image_id)
+            .or_default()
+            .insert(drawing_context, drawing_options);
     }
 
-    pub(crate) fn get_or_default(&self, image_id: &ViewableObjectId) -> DrawingOptions {
+    pub(crate) fn get(
+        &self,
+        image_id: &ViewableObjectId,
+        drawing_context: &DrawingContext,
+    ) -> Option<&DrawingOptions> {
         self.0
             .get(image_id)
-            .cloned()
-            .unwrap_or(DrawingOptions::default())
+            .and_then(|contexts| contexts.get(drawing_context))
     }
 
-    pub(crate) fn get(&self, image_id: &ViewableObjectId) -> Option<DrawingOptions> {
-        self.0.get(image_id).cloned()
-    }
-
-    pub(crate) fn mut_ref_or_default(&mut self, image_id: ViewableObjectId) -> &mut DrawingOptions {
-        self.0.entry(image_id).or_default()
+    pub(crate) fn get_mut_ref(
+        &mut self,
+        image_id: ViewableObjectId,
+        drawing_context: DrawingContext,
+    ) -> &mut DrawingOptions {
+        self.0
+            .entry(image_id)
+            .or_default()
+            .entry(drawing_context)
+            .or_default()
     }
 }

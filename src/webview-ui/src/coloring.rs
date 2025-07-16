@@ -33,6 +33,7 @@ pub(crate) struct DrawingOptions {
     pub ignore_alpha: bool,
     pub batch_item: Option<u32>,
     pub clip: Clip,
+    pub zeros_as_transparent: bool,
 }
 
 impl Default for DrawingOptions {
@@ -44,6 +45,7 @@ impl Default for DrawingOptions {
             ignore_alpha: false,
             batch_item: None,
             clip: Clip::default(),
+            zeros_as_transparent: false,
         }
     }
 }

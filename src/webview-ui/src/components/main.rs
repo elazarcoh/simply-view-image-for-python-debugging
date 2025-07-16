@@ -6,7 +6,7 @@ use yew::prelude::*;
 use yewdux::{prelude::Dispatch, use_selector};
 
 use crate::{
-    application_state::app_state::AppState,
+    application_state::{app_state::AppState, images::DrawingContext},
     common::{pixel_value::PixelValue, AppMode, ViewId},
     components::{
         main_toolbar::MainToolbar, sidebar::Sidebar, status_bar::StatusBar,
@@ -72,7 +72,7 @@ fn StatusBarWrapper(props: &StatusBarWrapperProps) -> Html {
                                         .get()
                                         .drawing_options
                                         .borrow()
-                                        .get(&image.info.image_id)
+                                        .get(&image.info.image_id, &DrawingContext::BaseImage)
                                         .and_then(|d| d.batch_item)
                                         .unwrap_or(0);
 

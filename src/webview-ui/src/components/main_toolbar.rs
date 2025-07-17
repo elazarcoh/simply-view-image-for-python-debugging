@@ -16,7 +16,7 @@ use crate::{
     },
     coloring::Coloring,
     colormap::ColorMapKind,
-    common::{AppMode, CurrentlyViewing, Image, ViewId},
+    common::{AppMode, CurrentlyViewing, Image, Size, SizeU32, ViewId},
     components::{checkbox::Checkbox, display_options::DisplayOption, icon_button::IconButton},
 };
 
@@ -154,7 +154,7 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
     let cv_image_id = cv_image_id.unwrap();
     let view_id = overlay.view_id;
 
-    let expression = use_selector_with_deps(
+    let overlay_expression = use_selector_with_deps(
         |state: &AppState, overlay_id| {
             let images = state.images.borrow();
             let info = images
@@ -162,6 +162,37 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                 .unwrap_or_else(|| panic!("Image with id {:?} not found", overlay_id))
                 .minimal();
             info.expression.clone()
+        },
+        overlay.id.clone(),
+    );
+
+    let same_size = use_selector_with_deps(
+        {
+            let cv_image_id = cv_image_id.clone();
+            move |state: &AppState, overlay_id| {
+                let images = state.images.borrow();
+                let overlay_size = images.get(overlay_id).and_then(|image| {
+                    if let Image::Full(info) = image {
+                        Some(SizeU32 {
+                            width: info.width,
+                            height: info.height,
+                        })
+                    } else {
+                        None
+                    }
+                });
+                let cv_size = images.get(&cv_image_id).and_then(|image| {
+                    if let Image::Full(info) = image {
+                        Some(SizeU32 {
+                            width: info.width,
+                            height: info.height,
+                        })
+                    } else {
+                        None
+                    }
+                });
+                overlay_size == cv_size
+            }
         },
         overlay.id.clone(),
     );
@@ -267,6 +298,15 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
         <DisplayOption entry={( *info ).clone()} drawing_context={DrawingContext::Overlay} />
     };
 
+    let maybe_warning = if !*same_size {
+        html! {
+            <span class={classes!("codicon", "codicon-warning", css!("color: var(--vscode-editorWarning-foreground);"))}
+            title="Overlay image size does not match the currently viewed image size." />
+        }
+    } else {
+        html! {}
+    };
+
     let style = use_style!(
         r#"
             position: relative;
@@ -330,8 +370,9 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                     {show_hide_button}
                 </span>
                 <span class="overlay-expression">
-                    {expression}
+                    {overlay_expression}
                 </span>
+                { maybe_warning }
             </div>
             <div class="controls-container">
                 <div>

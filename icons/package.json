@@ -7,7 +7,7 @@
     "clean": "node ./scripts/reset.js",
     "svgo": "svgo -f ./src/icons/ --config svgo.config.js",
     "sprite": "node ./scripts/svg-sprite.js --outDir dist --outFile svifpd-icons.svg",
-    "export-to-csv": "node ./scripts/export-to-csv.js -f ./dist/svifpd-icons.ttf > ./dist/svifpd-icons.csv",
+    "export-to-csv": "node ./scripts/export-to-csv.js -f ./dist/svifpd-icons.woff2 > ./dist/svifpd-icons.csv",
     "fonts": "fantasticon",
     "build": "npm run clean && npm run svgo && npm run fonts && npm run export-to-csv && npm run sprite",
     "release": "release-it"

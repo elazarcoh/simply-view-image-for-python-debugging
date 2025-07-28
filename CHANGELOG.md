@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.0.17] - Pre-release
+
+### Fixed
+- Fixed bug with numpy tensors not being sent correctly to the viewer.
+- Fixed bug with font loading in the image viewer.
+
 ## [4.0.15] - Pre-release
 
 ### Added

@@ -1,1 +1,5 @@
-ENOENT: no such file or directory, open './dist/svifpd-icons.ttf'
+Error: Unsupported OpenType signature wOF2
+    at parseBuffer (/home/elazar/devel/simply-view-image-for-python-debugging/icons/node_modules/opentype.js/dist/opentype.js:14017:16)
+    at /home/elazar/devel/simply-view-image-for-python-debugging/icons/node_modules/opentype.js/dist/opentype.js:14198:25
+    at /home/elazar/devel/simply-view-image-for-python-debugging/icons/node_modules/opentype.js/dist/opentype.js:13863:10
+    at FSReqCallback.readFileAfterClose [as oncomplete] (node:internal/fs/read/context:68:3)

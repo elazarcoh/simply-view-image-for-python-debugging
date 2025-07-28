@@ -168,6 +168,11 @@ def guess_image_dimensions(image, is_batched=False):
     if len(shape) < 2:
         return None
 
+    if len(shape) == 4 or is_batched:
+        # A batched image
+        image = image[0]
+        shape = shape[1:]
+
     if len(shape) == 2:
         return {
             "width": DimType(shape[1]),
@@ -175,11 +180,6 @@ def guess_image_dimensions(image, is_batched=False):
             "channels": DimType(1),
             "order": DimOrderType(HWC),
         }
-
-    if len(shape) == 4 or is_batched:
-        # A batched image
-        image = image[0]
-        shape = shape[1:]
 
     if len(shape) == 3:
         if shape[2] > 4:
@@ -256,11 +256,11 @@ def create_numpy_message(
     num_dimensions = NumDimsType(len(array.shape))
     array_shape = np.array(array.shape, dtype=DimType)
 
-    dimensions = guess_image_dimensions(array) or {}
+    dimensions = guess_image_dimensions(array, is_batched=is_batched or False) or {}
     w = dimensions.get("width", DimType(0))
     h = dimensions.get("height", DimType(0))
     c = dimensions.get("channels", DimType(0))
-    order = dimensions.get("order", None)
+    order = dimensions.get("order", DimOrderType(HWC))
 
     is_batched = BoolType(is_batched or False)
     batch_size = DimType(batch_size or 1)
@@ -487,7 +487,22 @@ class _Internal:
 
     @staticmethod
     def is_numpy_tensor(obj):
-        return _Internal.is_numpy_array(obj) and (len(obj.shape) == 4)
+        valid_channels = (1, 3, 4)
+        is_valid = _Internal.is_numpy_array(obj)
+        try:
+            is_valid &= len(obj.shape) in (3, 4)
+            if len(obj.shape) == 3:
+                if obj.shape[2] in valid_channels or obj.shape[0] in valid_channels:
+                    # In this case, we assume it not a tensor
+                    return False
+            elif len(obj.shape) == 4:
+                is_valid &= obj.shape[3] in valid_channels or obj.shape[1] in valid_channels
+            return is_valid
+
+        except TypeError:
+            return False
+
+
 
     @staticmethod
     def is_pillow_image(img):

@@ -11,3 +11,5 @@ __pycache__/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+/python_test

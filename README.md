@@ -1,4 +1,9 @@
-# Simply View Image for Python Debugging
+<h1><img src="icon.png" alt="Icon" width="48" style="vertical-align:middle;"> Simply View Image for Python Debugging</h1>
+
+[![Version](https://img.shields.io/visual-studio-marketplace/v/elazarcoh.simply-view-image-for-python-debugging.svg?label=Version)](https://marketplace.visualstudio.com/items?itemName=elazarcoh.simply-view-image-for-python-debugging)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/elazarcoh.simply-view-image-for-python-debugging.svg?label=Installs)](https://marketplace.visualstudio.com/items?itemName=elazarcoh.simply-view-image-for-python-debugging)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/elazarcoh.simply-view-image-for-python-debugging.svg?label=Rating)](https://marketplace.visualstudio.com/items?itemName=elazarcoh.simply-view-image-for-python-debugging)
+
 
 This extension offers a powerful and versatile solution for visualizing images, plots, and tensors during Python debugging. It is designed to enhance your debugging workflow with a rich set of features.
 

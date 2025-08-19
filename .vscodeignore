@@ -11,7 +11,7 @@ vsc-exdtension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
-webpack.config*.js
+webpack.config*
 python_test
 example-plugin
 .yarn/**/*

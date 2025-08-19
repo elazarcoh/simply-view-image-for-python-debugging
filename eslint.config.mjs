@@ -1,31 +1,23 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import antfu from '@antfu/eslint-config';
 
-export default [
-  { files: ["**/*.{js,mjs,cjs,ts}"] },
-  { files: ["**/*.js"], languageOptions: { sourceType: "commonjs" } },
-  { languageOptions: { globals: globals.browser } },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  { ignores: [".node_modules/*"] },
+export default antfu(
   {
-    rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          args: "all",
-          argsIgnorePattern: "^_",
-          caughtErrors: "all",
-          caughtErrorsIgnorePattern: "^_",
-          destructuredArrayIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          ignoreRestSiblings: true,
-        },
-      ],
-      "@typescript-eslint/no-non-null-assertion": "error",
+    formatters: true,
+    stylistic: {
+      indent: 2,
+      quotes: 'single',
+      semi: true,
+
     },
+    gitignore: {
+      files: [
+        '.gitignore',
+        'src/webview-ui/.gitignore',
+      ],
+    },
+    ignores: [
+      'icons',
+      'example-plugin',
+    ],
   },
-  eslintPluginPrettierRecommended,
-];
+);

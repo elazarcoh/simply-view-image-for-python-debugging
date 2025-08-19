@@ -19,7 +19,6 @@
 		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		"jsx": "react-jsx", /* For react webview */
 	},
 	"exclude": [
 		"node_modules",

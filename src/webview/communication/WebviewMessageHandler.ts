@@ -1,28 +1,29 @@
-import Container from "typedi";
-import * as vscode from "vscode";
-import { logError, logTrace } from "../../Logging";
-import { findExpressionViewables } from "../../PythonObjectInfo";
-import { serializeImageUsingSocketServer } from "../../from-python-serialization/SocketSerialization";
-import {
-  addExpression,
-  editExpression,
-} from "../../image-watch-tree/PythonObjectsList";
-import { WatchTreeProvider } from "../../image-watch-tree/WatchTreeProvider";
-import { maybeDebugSession, Session } from "../../session/Session";
-import { getSessionData } from "../../session/SessionData";
-import { activeDebugSessionData } from "../../session/debugger/DebugSessionsHolder";
-import { Option } from "../../utils/Option";
-import { errorMessage } from "../../utils/Result";
-import { disposeAll } from "../../utils/VSCodeUtils";
-import {
+import type { Session } from '../../session/Session';
+import type {
   EditExpression,
   FromWebviewMessageWithId,
   MessageId,
   RequestBatchItemData,
   RequestImageData,
-} from "../webview";
-import { WebviewCommunication } from "./WebviewClient";
-import { WebviewRequests, WebviewResponses } from "./createMessages";
+} from '../webview';
+import type { WebviewCommunication } from './WebviewClient';
+import Container from 'typedi';
+import * as vscode from 'vscode';
+import { serializeImageUsingSocketServer } from '../../from-python-serialization/SocketSerialization';
+import {
+  addExpression,
+  editExpression,
+} from '../../image-watch-tree/PythonObjectsList';
+import { WatchTreeProvider } from '../../image-watch-tree/WatchTreeProvider';
+import { logError, logTrace } from '../../Logging';
+import { findExpressionViewables } from '../../PythonObjectInfo';
+import { activeDebugSessionData } from '../../session/debugger/DebugSessionsHolder';
+import { maybeDebugSession } from '../../session/Session';
+import { getSessionData } from '../../session/SessionData';
+import { Option } from '../../utils/Option';
+import { errorMessage } from '../../utils/Result';
+import { disposeAll } from '../../utils/VSCodeUtils';
+import { WebviewRequests, WebviewResponses } from './createMessages';
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -68,8 +69,8 @@ export class WebviewMessageHandler implements vscode.Disposable {
       return;
     }
     const currentPythonObjectsList = sessionData.currentPythonObjectsList;
-    const objectItemKind =
-      currentPythonObjectsList.find(args.expression)?.type ?? "expression";
+    const objectItemKind
+      = currentPythonObjectsList.find(args.expression)?.type ?? 'expression';
 
     const objectViewables = await findExpressionViewables(
       args.expression,
@@ -81,14 +82,14 @@ export class WebviewMessageHandler implements vscode.Disposable {
     }
 
     const response = await serializeImageUsingSocketServer(
-      objectItemKind === "variable"
+      objectItemKind === 'variable'
         ? { variable: args.expression }
         : { expression: args.expression },
       objectViewables.safeUnwrap()[0],
       session,
     );
     if (response.err) {
-      logError("Error retrieving image using socket", errorMessage(response));
+      logError('Error retrieving image using socket', errorMessage(response));
       return undefined;
     }
 
@@ -110,8 +111,8 @@ export class WebviewMessageHandler implements vscode.Disposable {
     }
 
     const currentPythonObjectsList = sessionData.currentPythonObjectsList;
-    const objectItemKind =
-      currentPythonObjectsList.find(args.expression)?.type ?? "expression";
+    const objectItemKind
+      = currentPythonObjectsList.find(args.expression)?.type ?? 'expression';
 
     const objectViewables = await findExpressionViewables(
       args.expression,
@@ -126,7 +127,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
     const stop = Math.max(args.batch_item + 1, 0);
 
     const response = await serializeImageUsingSocketServer(
-      objectItemKind === "variable"
+      objectItemKind === 'variable'
         ? { variable: args.expression }
         : { expression: args.expression },
       objectViewables.safeUnwrap()[0],
@@ -134,7 +135,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       { start, stop },
     );
     if (response.err) {
-      logError("Error retrieving image using socket", errorMessage(response));
+      logError('Error retrieving image using socket', errorMessage(response));
       return undefined;
     }
 
@@ -178,24 +179,24 @@ export class WebviewMessageHandler implements vscode.Disposable {
   }
 
   async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
-    logTrace("Received message from webview", messageWithId);
+    logTrace('Received message from webview', messageWithId);
 
     const { id, message } = messageWithId;
 
     const type = message.type;
-    logTrace("Received message type", type);
+    logTrace('Received message type', type);
     switch (type) {
-      case "WebviewReady":
+      case 'WebviewReady':
         return this.handleWebviewReady(id);
-      case "RequestImages":
+      case 'RequestImages':
         return this.handleImagesRequest(id);
-      case "RequestBatchItemData":
+      case 'RequestBatchItemData':
         return this.handleBatchItemDataRequest(id, message);
-      case "RequestImageData":
+      case 'RequestImageData':
         return this.handleImageDataRequest(id, message);
-      case "AddExpression":
+      case 'AddExpression':
         return this.handleAddExpression(id);
-      case "EditExpression":
+      case 'EditExpression':
         return this.handleEditExpression(id, message);
 
       default:

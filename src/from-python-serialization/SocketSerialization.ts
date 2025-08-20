@@ -1,41 +1,48 @@
-import { Viewable } from "../viewable/Viewable";
-import { logDebug } from "../Logging";
-import { isExpressionSelection, selectionString } from "../utils/VSCodeUtils";
+import type { Buffer } from 'node:buffer';
+import type {
+  OpenSendAndCloseOptions,
+} from '../python-communication/BuildPythonCode';
+import type {
+  MessageChunkHeader,
+} from '../python-communication/socket-based/protocol';
+import type { Session } from '../session/Session';
+import type { Result } from '../utils/Result';
+import type { Viewable } from '../viewable/Viewable';
+import type {
+  ImageMessage,
+  DataOrdering as WebviewDataOrdering,
+  Datatype as WebviewDatatype,
+} from '../webview/webview';
+import Container from 'typedi';
+import { ArrayDataType, DimensionOrder } from '../common/datatype';
+import { getConfiguration } from '../config';
+import { logDebug } from '../Logging';
 import {
   constructOpenSendAndCloseCode,
-  OpenSendAndCloseOptions,
-} from "../python-communication/BuildPythonCode";
-import { evaluateInPython } from "../python-communication/RunPythonCode";
-import Container from "typedi";
-import { SocketServer } from "../python-communication/socket-based/Server";
-import { RequestsManager } from "../python-communication/socket-based/RequestsManager";
+} from '../python-communication/BuildPythonCode';
+import { evaluateInPython } from '../python-communication/RunPythonCode';
 import {
-  MessageChunkHeader,
   ObjectType,
   parseMessage,
-} from "../python-communication/socket-based/protocol";
-import {
-  Datatype as WebviewDatatype,
-  DataOrdering as WebviewDataOrdering,
-  ImageMessage,
-} from "../webview/webview";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { Err, Ok, Result, errorMessage, joinResult } from "../utils/Result";
-import { ArrayDataType, DimensionOrder } from "../common/datatype";
-import { isDebugSession, Session, sessionToId } from "../session/Session";
-import { getConfiguration } from "../config";
+} from '../python-communication/socket-based/protocol';
+import { RequestsManager } from '../python-communication/socket-based/RequestsManager';
+import { SocketServer } from '../python-communication/socket-based/Server';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { isDebugSession, sessionToId } from '../session/Session';
+import { Err, errorMessage, joinResult, Ok } from '../utils/Result';
+import { isExpressionSelection, selectionString } from '../utils/VSCodeUtils';
 
 const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
   [key in ArrayDataType]: WebviewDatatype | undefined;
 } = {
-  [ArrayDataType.UInt8]: "uint8",
-  [ArrayDataType.UInt16]: "uint16",
-  [ArrayDataType.UInt32]: "uint32",
-  [ArrayDataType.Float32]: "float32",
-  [ArrayDataType.Int8]: "int8",
-  [ArrayDataType.Int16]: "int16",
-  [ArrayDataType.Int32]: "int32",
-  [ArrayDataType.Bool]: "bool",
+  [ArrayDataType.UInt8]: 'uint8',
+  [ArrayDataType.UInt16]: 'uint16',
+  [ArrayDataType.UInt32]: 'uint32',
+  [ArrayDataType.Float32]: 'float32',
+  [ArrayDataType.Int8]: 'int8',
+  [ArrayDataType.Int16]: 'int16',
+  [ArrayDataType.Int32]: 'int32',
+  [ArrayDataType.Bool]: 'bool',
   [ArrayDataType.Float64]: undefined,
   [ArrayDataType.Int64]: undefined,
   [ArrayDataType.UInt64]: undefined,
@@ -44,20 +51,20 @@ const SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE: {
 const SOCKET_PROTOCOL_ORDERING_TO_WEBVIEW_ORDERING: {
   [key in DimensionOrder]: WebviewDataOrdering | undefined;
 } = {
-  [DimensionOrder.HWC]: "hwc",
-  [DimensionOrder.CHW]: "chw",
+  [DimensionOrder.HWC]: 'hwc',
+  [DimensionOrder.CHW]: 'chw',
 };
 
-export type SerializePythonObjectUsingSocketServerOptions = {
+export interface SerializePythonObjectUsingSocketServerOptions {
   start: number;
   stop: number;
-};
+}
 
 function makeOptions(
   options: SerializePythonObjectUsingSocketServerOptions | undefined,
 ): OpenSendAndCloseOptions | undefined {
   const restrictImageTypes = getConfiguration(
-    "restrictImageTypes",
+    'restrictImageTypes',
     undefined,
     true,
   );
@@ -65,9 +72,9 @@ function makeOptions(
     restrict_image_types: restrictImageTypes,
   };
   if (
-    options !== undefined &&
-    options.start !== undefined &&
-    options.stop !== undefined
+    options !== undefined
+    && options.start !== undefined
+    && options.stop !== undefined
   ) {
     outOptions = {
       ...outOptions,
@@ -95,13 +102,13 @@ export async function serializePythonObjectUsingSocketServer(
     objectAsString,
     makeOptions(options),
   );
-  logDebug("Sending code to python: ", code);
-  logDebug("Sending request to python with reqId ", requestId);
+  logDebug('Sending code to python: ', code);
+  logDebug('Sending request to python with reqId ', requestId);
   const promise = new Promise<
     Result<{ header: MessageChunkHeader; data: Buffer }>
   >((resolve) => {
     socketServer.onResponse(requestId, (header, data) => {
-      logDebug("Received response from python with reqId ", requestId);
+      logDebug('Received response from python with reqId ', requestId);
       resolve(Ok({ header, data }));
     });
   });
@@ -110,9 +117,10 @@ export async function serializePythonObjectUsingSocketServer(
   if (result.err) {
     const message = `Error requesting viewable of type ${
       viewable.type
-    }: ${errorMessage(result)}`.replaceAll("\\n", "\n");
+    }: ${errorMessage(result)}`.replaceAll('\\n', '\n');
     return Promise.resolve(Err(message));
-  } else {
+  }
+  else {
     return promise;
   }
 }
@@ -130,8 +138,9 @@ export async function serializeImageUsingSocketServer(
     options,
   );
   if (response.err) {
-    return Err("Error retrieving image using socket");
-  } else {
+    return Err('Error retrieving image using socket');
+  }
+  else {
     const expression = selectionString(obj);
     // parse response
     const { header, data } = response.safeUnwrap();
@@ -152,8 +161,8 @@ export async function serializeImageUsingSocketServer(
     const arrayInfo = object.object;
 
     const arrayDataType = arrayInfo.actualDataType ?? arrayInfo.dataType;
-    const webviewDatatype =
-      SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE[arrayDataType];
+    const webviewDatatype
+      = SOCKET_PROTOCOL_DATATYPE_TO_WEBVIEW_DATATYPE[arrayDataType];
     if (webviewDatatype === undefined) {
       const msg = `Datatype ${arrayDataType} not supported.`;
       return Err(msg);
@@ -167,20 +176,21 @@ export async function serializeImageUsingSocketServer(
     let additionalInfo = {};
     if (isDebugSession(session)) {
       const debugSessionData = activeDebugSessionData(session.session);
-      const infoOrError =
-        debugSessionData.currentPythonObjectsList?.find(
+      const infoOrError
+        = debugSessionData.currentPythonObjectsList?.find(
           expression,
         )?.InfoOrError;
 
       if (infoOrError === undefined || infoOrError.err) {
         additionalInfo = {};
-      } else {
+      }
+      else {
         additionalInfo = infoOrError.safeUnwrap()[1];
       }
     }
 
-    const dataOrdering =
-      SOCKET_PROTOCOL_ORDERING_TO_WEBVIEW_ORDERING[arrayInfo.dimensionOrder];
+    const dataOrdering
+      = SOCKET_PROTOCOL_ORDERING_TO_WEBVIEW_ORDERING[arrayInfo.dimensionOrder];
     if (dataOrdering === undefined) {
       const msg = `Data ordering ${arrayInfo.dimensionOrder} not supported.`;
       return Err(msg);
@@ -191,9 +201,9 @@ export async function serializeImageUsingSocketServer(
     const imageMessage: ImageMessage = {
       image_id: [sessionId, expression],
       value_variable_kind: isExpressionSelection(obj)
-        ? "expression"
-        : "variable",
-      expression: expression,
+        ? 'expression'
+        : 'variable',
+      expression,
       width: arrayInfo.width,
       height: arrayInfo.height,
       channels: arrayInfo.channels as 1 | 2 | 3 | 4,

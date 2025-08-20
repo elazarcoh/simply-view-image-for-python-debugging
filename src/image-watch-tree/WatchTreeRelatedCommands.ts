@@ -1,11 +1,11 @@
-import * as vscode from "vscode";
-import Container from "typedi";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { PythonObjectTreeItem } from "./WatchTreeItem";
-import { WatchTreeProvider } from "./WatchTreeProvider";
-import { VariableWatchTreeItem } from "./WatchVariable";
-import { viewObject } from "../ViewPythonObject";
-import { debugSession } from "../session/Session";
+import type { PythonObjectTreeItem } from './WatchTreeItem';
+import Container from 'typedi';
+import * as vscode from 'vscode';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { debugSession } from '../session/Session';
+import { viewObject } from '../ViewPythonObject';
+import { WatchTreeProvider } from './WatchTreeProvider';
+import { VariableWatchTreeItem } from './WatchVariable';
 
 function pythonObjectTreeItemSavePath(
   pythonObjectTreeItem: PythonObjectTreeItem,
@@ -75,11 +75,11 @@ async function viewWatchTreeItem(
   item: PythonObjectTreeItem,
   session: vscode.DebugSession,
 ): Promise<void> {
-  const viewableToUse =
-    item.lastUsedViewable.group === group
+  const viewableToUse
+    = item.lastUsedViewable.group === group
       ? item.lastUsedViewable
-      : (item.viewables.find((v) => v.group === group) ??
-        item.lastUsedViewable);
+      : (item.viewables.find(v => v.group === group)
+        ?? item.lastUsedViewable);
   item.lastUsedViewable = viewableToUse;
 
   if (item.trackingId) {
@@ -107,9 +107,10 @@ export function makeViewWatchTreeItemCommand(
     if (debugSession !== undefined) {
       if (activeDebugSessionData(debugSession).isStopped) {
         await viewWatchTreeItem(group, item, debugSession);
-      } else {
+      }
+      else {
         vscode.window.showWarningMessage(
-          "Cannot view object while debugging is not paused.",
+          'Cannot view object while debugging is not paused.',
         );
       }
     }

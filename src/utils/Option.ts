@@ -1,11 +1,11 @@
-import _ from "lodash";
-import { Option, None, Some } from "ts-results";
-export { Some, None, Option } from "ts-results";
+import { None, Option, Some } from 'ts-results';
+
+export { None, Option, Some } from 'ts-results';
 
 export type Optional<T> = T | Option<T> | undefined | null;
 
-declare module "ts-results" {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+declare module 'ts-results' {
+  // eslint-disable-next-line ts/no-namespace
   namespace Option {
     export function wrap(value: undefined): None;
     export function wrap(value: null): None;
@@ -38,5 +38,5 @@ Option.or = ((option1: Option<unknown>, option2: unknown) => {
 }) as typeof Option.or;
 
 export function joinResult<T>(option: Option<Option<T>>): Option<T> {
-  return option.andThen((v) => v);
+  return option.andThen(v => v);
 }

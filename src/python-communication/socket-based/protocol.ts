@@ -1,12 +1,14 @@
-import { Err, Ok, Result, errorFromUnknown } from "../../utils/Result";
-import { StatefulBufferReader } from "./BufferReader";
-import { StatefulBufferWriter } from "./BufferWriter";
+import type { Result } from '../../utils/Result';
+import { Buffer } from 'node:buffer';
 import {
   ArrayDataType as ArrayDataTypeString,
   DimensionOrder as DimensionOrderString,
-} from "../../common/datatype";
+} from '../../common/datatype';
+import { Err, errorFromUnknown, Ok } from '../../utils/Result';
+import { StatefulBufferReader } from './BufferReader';
+import { StatefulBufferWriter } from './BufferWriter';
 
-/**
+/*
 Protocol
 --------
 
@@ -21,12 +23,12 @@ Every message should have the following format:
    Chunk length (4 bytes)
    Chunk data (variable length)
 
-*/
+ */
 
 export type RequestId = number;
 export type MessageId = number;
 
-export type MessageChunkHeader = {
+export interface MessageChunkHeader {
   messageLength: number;
   messageID: MessageId;
   sender: Sender;
@@ -35,7 +37,7 @@ export type MessageChunkHeader = {
   chunkCount: number;
   chunkNumber: number;
   chunkLength: number;
-};
+}
 
 const BytesPerKey = {
   messageLength: 4,
@@ -64,7 +66,7 @@ export enum MessageType {
 
 export enum ObjectType {
   NumpyArray = 0x01,
-  Exception = 0xff,
+  Exception = 0xFF,
 }
 enum ByteOrder {
   LittleEndian = 0x01,
@@ -81,8 +83,8 @@ enum ArrayDataType {
   Uint8 = 0x07,
   Uint16 = 0x08,
   Uint32 = 0x09,
-  Uint64 = 0x0a,
-  Bool = 0x0b,
+  Uint64 = 0x0A,
+  Bool = 0x0B,
 }
 enum DimensionOrder {
   HWC = 0x01,
@@ -115,7 +117,7 @@ function datatypeToString(datatype: ArrayDataType): ArrayDataTypeString {
       return ArrayDataTypeString.Bool;
     case ArrayDataType.Undefined:
       throw new Error(
-        "Undefined datatype. This function should not be called with this value.",
+        'Undefined datatype. This function should not be called with this value.',
       );
   }
 }
@@ -163,10 +165,12 @@ export function splitHeaderContentRest(
     return Err(
       `Buffer shorter than chunk length: ${data.length} < ${chunkLength}`,
     );
-  } else if (data.length > chunkLength) {
+  }
+  else if (data.length > chunkLength) {
     const rest = data.subarray(chunkLength);
     return Ok([header, data.subarray(0, chunkLength), rest]);
-  } else {
+  }
+  else {
     return Ok([header, data, Buffer.alloc(0)]);
   }
 }
@@ -196,7 +200,7 @@ export function composeHelloMessage(requestId: RequestId, sender: Sender) {
   return buffer;
 }
 
-type ArrayInfo = {
+interface ArrayInfo {
   dataType: ArrayDataTypeString;
   actualDataType: ArrayDataTypeString | undefined; // Sometimes the actual data type is different, because some data types need to be converted.
   byteOrder: ByteOrder;
@@ -212,7 +216,7 @@ type ArrayInfo = {
   mins: number[];
   maxs: number[];
   data: Buffer;
-};
+}
 function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
   try {
     const reader = new StatefulBufferReader(buffer);
@@ -266,15 +270,16 @@ function parseNumpyArrayMessage(buffer: Buffer): Result<ArrayInfo> {
       maxs,
       data,
     });
-  } catch (e) {
+  }
+  catch (e) {
     return errorFromUnknown(e);
   }
 }
 
-type ExceptionInfo = {
+interface ExceptionInfo {
   type: string;
   message: string;
-};
+}
 function parseExceptionMessage(buffer: Buffer): Result<ExceptionInfo> {
   try {
     const reader = new StatefulBufferReader(buffer);
@@ -284,31 +289,32 @@ function parseExceptionMessage(buffer: Buffer): Result<ExceptionInfo> {
       type,
       message,
     });
-  } catch (e) {
+  }
+  catch (e) {
     return errorFromUnknown(e);
   }
 }
 
-type PythonObject =
-  | { type: ObjectType.NumpyArray; object: ArrayInfo }
-  | { type: ObjectType.Exception; object: ExceptionInfo };
+type PythonObject
+  = | { type: ObjectType.NumpyArray; object: ArrayInfo }
+    | { type: ObjectType.Exception; object: ExceptionInfo };
 
 function parsePythonSendingObjectMessage(buffer: Buffer): Result<PythonObject> {
   const reader = new StatefulBufferReader(buffer);
   const objectType = reader.readUInt8();
   switch (objectType) {
     case ObjectType.NumpyArray:
-      return parseNumpyArrayMessage(reader.currentBuffer).map((v) => ({
+      return parseNumpyArrayMessage(reader.currentBuffer).map(v => ({
         type: objectType,
         object: v,
       }));
     case ObjectType.Exception:
-      return parseExceptionMessage(reader.currentBuffer).map((v) => ({
+      return parseExceptionMessage(reader.currentBuffer).map(v => ({
         type: objectType,
         object: v,
       }));
     default:
-      throw new Error("Unknown object type: " + objectType);
+      throw new Error(`Unknown object type: ${objectType}`);
   }
 }
 

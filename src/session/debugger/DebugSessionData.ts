@@ -1,18 +1,20 @@
-import * as vscode from "vscode";
-import { CurrentPythonObjectsList } from "../../image-watch-tree/PythonObjectsList";
-import { TrackedPythonObjects } from "../../image-watch-tree/TrackedPythonObjects";
-import { SavePathHelper } from "../../SerializationHelper";
-import { DebugVariablesTracker } from "./DebugVariablesTracker";
-import { ExtensionDiagnostics } from "../../image-watch-tree/DiagnosticsItem";
-import { SessionData } from "../SessionData";
+import type * as vscode from 'vscode';
+import type { SessionData } from '../SessionData';
+import { ExtensionDiagnostics } from '../../image-watch-tree/DiagnosticsItem';
+import { CurrentPythonObjectsList } from '../../image-watch-tree/PythonObjectsList';
+import { TrackedPythonObjects } from '../../image-watch-tree/TrackedPythonObjects';
+import { SavePathHelper } from '../../SerializationHelper';
+import { DebugVariablesTracker } from './DebugVariablesTracker';
 
 export class DebugSessionData implements SessionData {
   public readonly session: vscode.DebugSession;
   public readonly savePathHelper: SavePathHelper;
-  public readonly debugVariablesTracker: DebugVariablesTracker =
-    new DebugVariablesTracker();
-  public readonly trackedPythonObjects: TrackedPythonObjects =
-    new TrackedPythonObjects();
+  public readonly debugVariablesTracker: DebugVariablesTracker
+    = new DebugVariablesTracker();
+
+  public readonly trackedPythonObjects: TrackedPythonObjects
+    = new TrackedPythonObjects();
+
   public readonly currentPythonObjectsList: CurrentPythonObjectsList;
   public readonly diagnostics: ExtensionDiagnostics;
   public setupOkay: boolean = false;
@@ -33,6 +35,7 @@ export class DebugSessionData implements SessionData {
   get isValid(): boolean {
     return this.isDebuggerAttached;
   }
+
   get canExecute(): boolean {
     return this.isDebuggerAttached && this.isValid && this.isStopped;
   }

@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer';
+
 export class StatefulBufferReader {
   readonly functions: {
     [key: string]: [number, (offset?: number) => number];
@@ -28,27 +30,34 @@ export class StatefulBufferReader {
   readUInt8() {
     return this.read(this.functions.readUInt8);
   }
+
   readUInt32() {
     return this.read(this.functions.readUInt32);
   }
+
   readFloat32() {
     return this.read(this.functions.readFloat32);
   }
+
   readFloat64() {
     return this.read(this.functions.readFloat64);
   }
+
   readInt8() {
     return this.read(this.functions.readInt8);
   }
+
   readInt32() {
     return this.read(this.functions.readInt32);
   }
+
   readInt16() {
     return this.read(this.functions.readInt16);
   }
+
   readString() {
     const length = this.readUInt32();
-    const result = this.buffer.toString("utf-8", 0, length);
+    const result = this.buffer.toString('utf-8', 0, length);
     const newBuffer = this.buffer.subarray(length);
     this.buffer = newBuffer;
     return result;

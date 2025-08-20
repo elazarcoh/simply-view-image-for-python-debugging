@@ -1,6 +1,5 @@
 <html>
   <head>
-    
     <!--
       in script, we need wasm-unsafe-eval to run the wasm file
       in style, we need unsafe-inline to allow the stylist-rs styles to work
@@ -8,26 +7,25 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src ${webviewCspSource} 'nonce-${nonce}' 'wasm-unsafe-eval'; style-src ${webviewCspSource} 'unsafe-inline'; font-src ${webviewCspSource}; connect-src ${webviewCspSource};"
-    >
+    />
 
-    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
+
     <link href="${baseUri}/codicon.css" rel="stylesheet" />
     <link href="${baseUri}/codicon.ttf" rel="stylesheet" />
-    
+
     <link href="${baseUri}/svifpd-icons.css" rel="stylesheet" />
     <link href="${baseUri}/svifpd-icons.woff2" rel="stylesheet" />
 
     <link href="${baseUri}/webview-ui.css" rel="stylesheet" />
 
-    <script type="module" defer src="${baseUri}/lodash.js" charset="utf-8" nonce=${nonce}></script>
-    <script type="module" defer src="${baseUri}/lethargy_ts.js" charset="utf-8" nonce=${nonce}></script>
+    <script type="module" defer src="${baseUri}/lodash.js" charset="utf-8" nonce="${nonce}"></script>
+    <script type="module" defer src="${baseUri}/lethargy_ts.js" charset="utf-8" nonce="${nonce}"></script>
 
     <script nonce="${nonce}">
       window.webviewId = '${webviewUniqueId}';
     </script>
   </head>
-  <body>
-  </body>
+  <body></body>
 </html>

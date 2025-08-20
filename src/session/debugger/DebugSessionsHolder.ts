@@ -1,12 +1,12 @@
-import * as vscode from "vscode";
-import Container, { Service } from "typedi";
-import { DebugSessionData } from "./DebugSessionData";
-import { Option } from "../../utils/Option";
+import Container, { Service } from 'typedi';
+import * as vscode from 'vscode';
+import { Option } from '../../utils/Option';
+import { DebugSessionData } from './DebugSessionData';
 
 @Service()
 class DebugSessionsHolder {
-  public debugSessions: Map<vscode.DebugSession["id"], DebugSessionData> =
-    new Map();
+  public debugSessions: Map<vscode.DebugSession['id'], DebugSessionData>
+    = new Map();
 
   public debugSessionData(session: vscode.DebugSession): DebugSessionData {
     const id = session.id;
@@ -14,7 +14,7 @@ class DebugSessionsHolder {
       const debugSessionData = new DebugSessionData(session);
       this.debugSessions.set(id, debugSessionData);
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // eslint-disable-next-line ts/no-non-null-assertion
     return this.debugSessions.get(id)!;
   }
 
@@ -42,7 +42,7 @@ export function activeDebugSessionData(
 export function validDebugSessions(): DebugSessionData[] {
   const debugSessions = Container.get(DebugSessionsHolder).debugSessions;
   return Array.from(debugSessions.values()).filter(
-    (session) => session.isValid,
+    session => session.isValid,
   );
 }
 

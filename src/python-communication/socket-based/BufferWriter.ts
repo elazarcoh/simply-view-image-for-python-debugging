@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer';
+
 export class StatefulBufferWriter {
   readonly functions: {
     [key: string]: [number, (value: number) => number];
@@ -30,21 +32,27 @@ export class StatefulBufferWriter {
   writeUInt8(value: number) {
     return this.writer(this.functions.writeUInt8)(value);
   }
+
   writeUInt32(value: number) {
     return this.writer(this.functions.writeUInt32)(value);
   }
+
   writeFloat32(value: number) {
     return this.writer(this.functions.writeFloat32)(value);
   }
+
   writeFloat64(value: number) {
     return this.writer(this.functions.writeFloat64)(value);
   }
+
   writeInt8(value: number) {
     return this.writer(this.functions.writeInt8)(value);
   }
+
   writeInt32(value: number) {
     return this.writer(this.functions.writeInt32)(value);
   }
+
   writeInt16(value: number) {
     return this.writer(this.functions.writeInt16)(value);
   }

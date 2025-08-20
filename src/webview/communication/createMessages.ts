@@ -1,10 +1,7 @@
-import { Option } from "ts-results";
-import { getConfiguration } from "../../config";
-import { InfoOrError } from "../../image-watch-tree/PythonObjectsList";
-import { Session, sessionToId } from "../../session/Session";
-import { getSessionData } from "../../session/SessionData";
-import { hasValue, valueOrEval } from "../../utils/Utils";
-import {
+import type { Option } from 'ts-results';
+import type { InfoOrError } from '../../image-watch-tree/PythonObjectsList';
+import type { Session } from '../../session/Session';
+import type {
   AppMode,
   ExtensionRequest,
   ExtensionResponse,
@@ -12,7 +9,11 @@ import {
   ImagePlaceholderMessage,
   SessionId,
   ValueVariableKind,
-} from "../webview";
+} from '../webview';
+import { getConfiguration } from '../../config';
+import { sessionToId } from '../../session/Session';
+import { getSessionData } from '../../session/SessionData';
+import { hasValue, valueOrEval } from '../../utils/Utils';
 
 function expressingWithInfoIntoImagePlaceholder(
   exp: string,
@@ -24,8 +25,8 @@ function expressingWithInfoIntoImagePlaceholder(
     return undefined;
   }
   const viewables = infoOrError.safeUnwrap()[0];
-  const supported =
-    viewables.filter((v) => valueOrEval(v.supportsImageViewer)).length > 0;
+  const supported
+    = viewables.filter(v => valueOrEval(v.supportsImageViewer)).length > 0;
   if (!supported) {
     return undefined;
   }
@@ -35,7 +36,7 @@ function expressingWithInfoIntoImagePlaceholder(
     image_id: [sessionId, exp],
     expression: exp,
     value_variable_kind: valueVariableKind,
-    is_batched: viewables[0].group === "tensor", // currently, support tensor only if it's the only option
+    is_batched: viewables[0].group === 'tensor', // currently, support tensor only if it's the only option
     additional_info: info,
   };
 }
@@ -50,25 +51,25 @@ function imageObjects(session: Option<Session>): ImagePlaceholderMessage[] {
   const currentPythonObjectsList = getSessionData(
     session.val,
   )?.currentPythonObjectsList;
-  const validVariables: ImagePlaceholderMessage[] =
-    currentPythonObjectsList?.variablesList
+  const validVariables: ImagePlaceholderMessage[]
+    = currentPythonObjectsList?.variablesList
       .map(([exp, info]) =>
         expressingWithInfoIntoImagePlaceholder(
           exp,
           info,
-          "variable",
+          'variable',
           sessionId,
         ),
       )
       .filter(hasValue) ?? [];
-  const validExpressions: ImagePlaceholderMessage[] =
-    currentPythonObjectsList
+  const validExpressions: ImagePlaceholderMessage[]
+    = currentPythonObjectsList
       ?.expressionsList({ skipInvalid: true })
       ?.map(([exp, info]) =>
         expressingWithInfoIntoImagePlaceholder(
           exp,
           info,
-          "expression",
+          'expression',
           sessionId,
         ),
       )
@@ -82,80 +83,80 @@ export class WebviewRequests {
   static setSessionNames(names: {
     [k: SessionId]: string;
   }): ExtensionRequest & {
-    type: "SetSessionNames";
+    type: 'SetSessionNames';
   } {
     return {
-      type: "SetSessionNames",
+      type: 'SetSessionNames',
       session_names: names,
     };
   }
 
   static replaceImages(session: Option<Session>): ExtensionRequest & {
-    type: "ReplaceData";
+    type: 'ReplaceData';
   } {
     const replacementImages = imageObjects(session);
     return {
-      type: "ReplaceData",
+      type: 'ReplaceData',
       session_id: session.map(sessionToId).unwrapOr(null),
       replacement_images: replacementImages,
     };
   }
 
   static configuration(): ExtensionRequest & {
-    type: "Configuration";
+    type: 'Configuration';
   } {
-    let autoUpdateImages: boolean | "true" | "false" | "pinned" | undefined =
-      getConfiguration("autoUpdateImages");
-    if (typeof autoUpdateImages === "boolean") {
+    let autoUpdateImages: boolean | 'true' | 'false' | 'pinned' | undefined
+      = getConfiguration('autoUpdateImages');
+    if (typeof autoUpdateImages === 'boolean') {
       // Convert boolean to string for compatibility with the webview
-      autoUpdateImages = autoUpdateImages ? "true" : "false";
+      autoUpdateImages = autoUpdateImages ? 'true' : 'false';
     }
 
     return {
-      type: "Configuration",
+      type: 'Configuration',
       invert_scroll_direction:
-        getConfiguration("viewerUi.invertMouseWheelZoom") ?? null,
-      auto_update_images: autoUpdateImages ?? "true",
+        getConfiguration('viewerUi.invertMouseWheelZoom') ?? null,
+      auto_update_images: autoUpdateImages ?? 'true',
     };
   }
 
   static showImage(image_data: ImageMessage): ExtensionRequest & {
-    type: "ShowImage";
+    type: 'ShowImage';
   } {
     return {
-      type: "ShowImage",
+      type: 'ShowImage',
       image_data,
       options: {},
     };
   }
 
   static setMode(mode: AppMode): ExtensionRequest & {
-    type: "SetMode";
+    type: 'SetMode';
   } {
     return {
-      type: "SetMode",
-      mode: mode,
+      type: 'SetMode',
+      mode,
     };
   }
 }
 
 export class WebviewResponses {
   static imagesObjects(session: Option<Session>): ExtensionResponse & {
-    type: "ReplaceData";
+    type: 'ReplaceData';
   } {
     const replacementImages = imageObjects(session);
     return {
-      type: "ReplaceData",
+      type: 'ReplaceData',
       session_id: session.map(sessionToId).unwrapOr(null),
       replacement_images: replacementImages,
     };
   }
 
   static imageData(imageData: ImageMessage): ExtensionResponse & {
-    type: "ImageData";
+    type: 'ImageData';
   } {
     return {
-      type: "ImageData",
+      type: 'ImageData',
       ...imageData,
     };
   }

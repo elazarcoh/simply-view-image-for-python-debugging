@@ -1,55 +1,86 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-    "files.exclude": {
-        "out": false // set this to true to hide the "out" folder with the compiled JS files
-    },
-    "search.exclude": {
-        "out": true // set this to false to include "out" folder in search results
-    },
-    "eslint.useFlatConfig": true,
-    "npm.packageManager": "yarn",
-    "files.associations": {
-        "vscode-ext-config.json": "jsonc"
-    },
-    "cSpell.enabled": true,
-    "prettier.enable": true,
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    // "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-    "python.analysis.exclude": [
-        "src/**/*.py"
-    ],
-    "python.analysis.ignore": [
-        "src/**/*.py"
-    ],
-    "cSpell.words": [
-        "numpy"
-    ],
-  // Disable the default formatter, use eslint instead
-  "prettier.enable": false,
+  "files.exclude": {
+    "out": false // set this to true to hide the "out" folder with the compiled JS files
+  },
+  "search.exclude": {
+    "out": true // set this to false to include "out" folder in search results
+  },
+  "eslint.useFlatConfig": true,
+  "npm.packageManager": "yarn",
+  "files.associations": {
+    "vscode-ext-config.json": "jsonc"
+  },
+  "cSpell.enabled": true,
+  // "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+  "python.analysis.exclude": [
+    "src/**/*.py"
+  ],
+  "python.analysis.ignore": [
+    "src/**/*.py"
+  ],
+  "cSpell.words": [
+    "numpy"
+  ],
   "editor.formatOnSave": false,
-
   // Auto fix
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.organizeImports": "never"
   },
-
   // Silent the stylistic rules in you IDE, but still auto fix them
   "eslint.rules.customizations": [
-    { "rule": "style/*", "severity": "off", "fixable": true },
-    { "rule": "format/*", "severity": "off", "fixable": true },
-    { "rule": "*-indent", "severity": "off", "fixable": true },
-    { "rule": "*-spacing", "severity": "off", "fixable": true },
-    { "rule": "*-spaces", "severity": "off", "fixable": true },
-    { "rule": "*-order", "severity": "off", "fixable": true },
-    { "rule": "*-dangle", "severity": "off", "fixable": true },
-    { "rule": "*-newline", "severity": "off", "fixable": true },
-    { "rule": "*quotes", "severity": "off", "fixable": true },
-    { "rule": "*semi", "severity": "off", "fixable": true }
+    {
+      "rule": "style/*",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "format/*",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*-indent",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*-spacing",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*-spaces",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*-order",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*-dangle",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*-newline",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*quotes",
+      "severity": "off",
+      "fixable": true
+    },
+    {
+      "rule": "*semi",
+      "severity": "off",
+      "fixable": true
+    }
   ],
-
   // Enable eslint for all supported languages
   "eslint.validate": [
     "javascript",

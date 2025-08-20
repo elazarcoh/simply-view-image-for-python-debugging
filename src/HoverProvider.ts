@@ -1,20 +1,21 @@
-import * as vscode from "vscode";
-import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
-import { constructObjectShapeCode } from "./python-communication/BuildPythonCode";
-import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { joinResult } from "./utils/Result";
-import { debugSession } from "./session/Session";
+import * as vscode from 'vscode';
+import { constructObjectShapeCode } from './python-communication/BuildPythonCode';
+import { evaluateInPython } from './python-communication/RunPythonCode';
+import { activeDebugSessionData } from './session/debugger/DebugSessionsHolder';
+import { debugSession } from './session/Session';
+import { joinResult } from './utils/Result';
 
 function shapeToString(shape: PythonObjectShape): string {
   if (Array.isArray(shape)) {
-    return `shape: (${shape.join(", ")})`;
-  } else {
+    return `shape: (${shape.join(', ')})`;
+  }
+  else {
     return (
-      "(" +
-      Object.entries(shape)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(", ") +
-      ")"
+      `(${
+        Object.entries(shape)
+          .map(([key, value]) => `${key}=${value}`)
+          .join(', ')
+      })`
     );
   }
 }
@@ -27,15 +28,15 @@ export class HoverProvider implements vscode.HoverProvider {
   ): Promise<vscode.Hover | undefined> {
     const session = vscode.debug.activeDebugSession;
     if (
-      session === undefined ||
-      activeDebugSessionData(session).isStopped === false
+      session === undefined
+      || activeDebugSessionData(session).isStopped === false
     ) {
       return undefined;
     }
 
     const range = document.getWordRangeAtPosition(position);
     const selectedVariable = document.getText(range);
-    if (selectedVariable === "") {
+    if (selectedVariable === '') {
       return undefined;
     }
 

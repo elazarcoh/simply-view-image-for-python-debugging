@@ -1,8 +1,8 @@
-import * as vscode from "vscode";
-import { Service } from "typedi";
-import { Viewable } from "./viewable/Viewable";
-import { makeViewWatchTreeItemCommand } from "./image-watch-tree/WatchTreeRelatedCommands";
-import { logWarn } from "./Logging";
+import type { Viewable } from './viewable/Viewable';
+import { Service } from 'typedi';
+import * as vscode from 'vscode';
+import { makeViewWatchTreeItemCommand } from './image-watch-tree/WatchTreeRelatedCommands';
+import { logWarn } from './Logging';
 
 @Service()
 export class AllViewables {
@@ -15,7 +15,7 @@ export class AllViewables {
 
   public addViewable(viewable: Viewable): vscode.Disposable | undefined {
     if (this.allViewables.includes(viewable)) {
-      logWarn("Viewable already added", viewable.type);
+      logWarn('Viewable already added', viewable.type);
       return undefined;
     }
     this._allViewables.push(viewable);
@@ -39,12 +39,13 @@ export class AllViewables {
 
     const dispose = () => {
       const index = allViewables.indexOf(viewable);
-      if (index > -1) allViewables.splice(index, 1);
+      if (index > -1)
+        allViewables.splice(index, 1);
 
-      if (!allViewables.some((v) => v.group === group)) {
+      if (!allViewables.some(v => v.group === group)) {
         // no more remained from the group, dispose
         groups.delete(group);
-        groupDisposables.forEach((d) => d.dispose());
+        groupDisposables.forEach(d => d.dispose());
       }
     };
 

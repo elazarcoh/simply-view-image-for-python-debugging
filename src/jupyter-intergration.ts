@@ -1,17 +1,16 @@
-import { Jupyter } from "@vscode/jupyter-extension";
-import _ from "lodash";
-import { Ok } from "ts-results";
-import Container from "typedi";
-import * as vscode from "vscode";
-import { AllViewables } from "./AllViewables";
-import { runSetup } from "./python-communication/Setup";
-import { jupyterSession } from "./session/Session";
-import { getSessionData } from "./session/SessionData";
-import { viewObject } from "./ViewPythonObject";
+import type { Jupyter } from '@vscode/jupyter-extension';
+import { Ok } from 'ts-results';
+import Container from 'typedi';
+import * as vscode from 'vscode';
+import { AllViewables } from './AllViewables';
+import { runSetup } from './python-communication/Setup';
+import { jupyterSession } from './session/Session';
+import { getSessionData } from './session/SessionData';
+import { viewObject } from './ViewPythonObject';
 
-const COMMAND = "svifpd.view-jupyter-debug-variable";
+const COMMAND = 'svifpd.view-jupyter-debug-variable';
 
-type JupyterVariable = {
+interface JupyterVariable {
   name: string;
   supportsDataExplorer: boolean;
   type: string;
@@ -19,12 +18,12 @@ type JupyterVariable = {
   fileName: { path: string; scheme: string };
   value: string;
   size: number;
-};
+}
 
 export async function viewVariableFromJupyterDebugView(
   variable: JupyterVariable,
 ) {
-  const ext = vscode.extensions.getExtension<Jupyter>("ms-toolsai.jupyter");
+  const ext = vscode.extensions.getExtension<Jupyter>('ms-toolsai.jupyter');
   await ext?.activate();
   const api = ext?.exports;
   if (!api) {
@@ -45,7 +44,7 @@ export async function viewVariableFromJupyterDebugView(
     return;
   }
   const viewable = Container.get(AllViewables).allViewables.find(
-    (v) => v.type === "numpy_image",
+    v => v.type === 'numpy_image',
   );
   if (!viewable) {
     return;

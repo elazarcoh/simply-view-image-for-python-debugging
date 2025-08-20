@@ -1,16 +1,18 @@
-import { Kernel } from "@vscode/jupyter-extension";
-import _ from "lodash";
-import Container from "typedi";
-import * as vscode from "vscode";
-import { CurrentPythonObjectsListData } from "../../image-watch-tree/PythonObjectsList";
-import { SavePathHelper } from "../../SerializationHelper";
-import {
+import type { Kernel } from '@vscode/jupyter-extension';
+import type * as vscode from 'vscode';
+import type {
   WebviewClient,
+} from '../../webview/communication/WebviewClient';
+import type { JupyterSession } from '../Session';
+import type { SessionData } from '../SessionData';
+import _ from 'lodash';
+import Container from 'typedi';
+import { CurrentPythonObjectsListData } from '../../image-watch-tree/PythonObjectsList';
+import { SavePathHelper } from '../../SerializationHelper';
+import {
   WebviewClientFactory,
-} from "../../webview/communication/WebviewClient";
-import { SessionData } from "../SessionData";
-import { JupyterHandler } from "./jupyterHandler";
-import { JupyterSession } from "../Session";
+} from '../../webview/communication/WebviewClient';
+import { JupyterHandler } from './jupyterHandler';
 
 export class JupyterSessionData implements SessionData {
   public readonly savePathHelper: SavePathHelper;
@@ -27,7 +29,7 @@ export class JupyterSessionData implements SessionData {
     public readonly notebookUri: vscode.Uri,
     public readonly kernel: Kernel,
   ) {
-    this.savePathHelper = new SavePathHelper(_.uniqueId("jupyter-session-"));
+    this.savePathHelper = new SavePathHelper(_.uniqueId('jupyter-session-'));
     this.currentPythonObjectsList = new CurrentPythonObjectsListData();
     this.jupyterHandler = new JupyterHandler(this.kernel);
     this.webviewClient = Container.get(WebviewClientFactory).create(session);

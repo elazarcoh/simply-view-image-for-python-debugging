@@ -1,15 +1,16 @@
-import * as vscode from "vscode";
-import {
+import type { Result } from '../../utils/Result';
+import type {
   FromWebviewMessageWithId,
   ImageMessage,
   MessageId,
   RequestImageData,
-} from "../webview";
-import { logTrace } from "../../Logging";
-import { WebviewCommunication } from "./WebviewClient";
-import { WebviewRequests, WebviewResponses } from "./createMessages";
-import { disposeAll } from "../../utils/VSCodeUtils";
-import { errorMessage, Result } from "../../utils/Result";
+} from '../webview';
+import type { WebviewCommunication } from './WebviewClient';
+import * as vscode from 'vscode';
+import { logTrace } from '../../Logging';
+import { errorMessage } from '../../utils/Result';
+import { disposeAll } from '../../utils/VSCodeUtils';
+import { WebviewRequests, WebviewResponses } from './createMessages';
 
 export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -36,7 +37,7 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
     this.webviewCommunication.setReady(true);
     this.webviewCommunication.sendRequest(WebviewRequests.configuration());
     this.webviewCommunication.sendRequest(
-      WebviewRequests.setMode("single-image"),
+      WebviewRequests.setMode('single-image'),
     );
   }
 
@@ -47,29 +48,30 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
         id,
         WebviewResponses.imageData(imageMessage.safeUnwrap()),
       );
-    } else {
+    }
+    else {
       // TODO: show error message in webview
       vscode.window.showErrorMessage(errorMessage(imageMessage));
     }
   }
 
   private async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
-    logTrace("Received message from webview", messageWithId);
+    logTrace('Received message from webview', messageWithId);
 
     const { id, message } = messageWithId;
 
     const type = message.type;
-    logTrace("Received message type", type);
+    logTrace('Received message type', type);
     switch (type) {
-      case "WebviewReady":
+      case 'WebviewReady':
         return this.handleWebviewReady(id);
-      case "RequestImageData":
+      case 'RequestImageData':
         return this.handleImageDataRequest(id, message);
       // not need to handle these messages in single image mode
-      case "RequestImages":
-      case "RequestBatchItemData":
-      case "AddExpression":
-      case "EditExpression":
+      case 'RequestImages':
+      case 'RequestBatchItemData':
+      case 'AddExpression':
+      case 'EditExpression':
         return;
 
       default:

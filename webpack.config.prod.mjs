@@ -1,10 +1,11 @@
-import devConfigs from "./webpack.config.mjs";
+import devConfigs from './webpack.config.mjs';
+
 const [WebviewConfigDev, extensionConfigDev, Webview3rdPartyDev] = devConfigs;
 
-/**@type {import('webpack').Configuration}*/
+/** @type {import('webpack').Configuration} */
 const prodConfig = {
-  mode: "production",
-  devtool: "source-map",
+  mode: 'production',
+  devtool: 'source-map',
 };
 export default [
   {

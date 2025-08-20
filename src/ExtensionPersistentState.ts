@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
-import { Service } from "typedi";
+import type * as vscode from 'vscode';
+import { Service } from 'typedi';
 
 @Service()
 export class ExtensionPersistentState {

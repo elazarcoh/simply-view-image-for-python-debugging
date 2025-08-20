@@ -1,5 +1,5 @@
-type VariableSelection = { variable: string };
-type ExpressionSelection = { expression: string };
+interface VariableSelection { variable: string }
+interface ExpressionSelection { expression: string }
 
 type PythonObjectRepresentation = VariableSelection | ExpressionSelection;
 

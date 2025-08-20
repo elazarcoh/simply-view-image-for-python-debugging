@@ -4,7 +4,6 @@
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/elazarcoh.simply-view-image-for-python-debugging.svg?label=Installs)](https://marketplace.visualstudio.com/items?itemName=elazarcoh.simply-view-image-for-python-debugging)
 [![Rating](https://img.shields.io/visual-studio-marketplace/r/elazarcoh.simply-view-image-for-python-debugging.svg?label=Rating)](https://marketplace.visualstudio.com/items?itemName=elazarcoh.simply-view-image-for-python-debugging)
 
-
 This extension offers a powerful and versatile solution for visualizing images, plots, and tensors during Python debugging. It is designed to enhance your debugging workflow with a rich set of features.
 
 ## Features
@@ -12,6 +11,7 @@ This extension offers a powerful and versatile solution for visualizing images, 
 ### Image Viewer
 
 A built-in, enhanced image viewer with the following capabilities:
+
 <!-- - **Image Values**: Display pixel values directly on the image. <img src="readme-assets/values-example.png" width="400" alt="Image Values"/>
 - **Heatmap**: Visualize images as heatmaps with customizable color maps. <img src="readme-assets/heatmap-example.png" width="400" alt="Heatmap"/>
 - **Segmentation**: View label images with color mapping (e.g., 0=black, 1=red, etc.). <img src="readme-assets/segmentation-example.png" width="400" alt="Segmentation"/> -->

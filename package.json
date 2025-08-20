@@ -1,21 +1,14 @@
 {
+  "publisher": "elazarcoh",
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
-  "description": "simply view the image of the image variables when debugging python",
   "version": "4.0.17",
-  "publisher": "elazarcoh",
-  "icon": "icon.png",
-  "preview": false,
-  "engines": {
-    "vscode": "^1.63.0"
-  },
+  "packageManager": "yarn@4.4.1",
+  "description": "simply view the image of the image variables when debugging python",
   "repository": {
     "type": "git",
     "url": "https://github.com/elazarcoh/simply-view-image-for-python-debugging"
   },
-  "categories": [
-    "Other"
-  ],
   "keywords": [
     "Python",
     "image",
@@ -33,6 +26,15 @@
     "numpy",
     "PIL"
   ],
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "icon.png",
+  "preview": false,
+  "engines": {
+    "vscode": "^1.63.0"
+  },
   "activationEvents": [
     "onDebugResolve:python",
     "onDebugResolve:debugpy",
@@ -42,7 +44,6 @@
     "onWebviewPanel:jupyter-variables",
     "onWebviewPanel:jupyter"
   ],
-  "main": "./dist/extension.js",
   "contributes": {
     "jupyterVariableViewers": [
       {
@@ -510,7 +511,22 @@
     "package:pre-release": "vsce package --pre-release",
     "install-extension": "vsce package -o svifpd.vsix && code --install-extension svifpd.vsix",
     "lint": "eslint . --config eslint.config.mjs",
+    "lint:fix": "eslint . --config eslint.config.mjs --fix",
     "clean": "rimraf dist src/webview-ui/pkg"
+  },
+  "dependencies": {
+    "@jupyterlab/services": "^7.3.5",
+    "@vscode/codicons": "^0.0.36",
+    "@vscode/jupyter-extension": "^1.1.1",
+    "exifreader": "^4.26.1",
+    "jimp": "^1.6.0",
+    "lodash": "^4.17.21",
+    "parsimmon": "^1.18.1",
+    "reflect-metadata": "^0.2.2",
+    "ts-results": "^3.3.0",
+    "typedi": "^0.10.0",
+    "vscode-debugprotocol": "^1.51.0",
+    "vscode-extensions-json-generator": "^0.2.2"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.2.1",
@@ -541,20 +557,5 @@
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
     "webpack-shell-plugin-next": "^2.3.2"
-  },
-  "dependencies": {
-    "@jupyterlab/services": "^7.3.5",
-    "@vscode/codicons": "^0.0.36",
-    "@vscode/jupyter-extension": "^1.1.1",
-    "exifreader": "^4.26.1",
-    "jimp": "^1.6.0",
-    "lodash": "^4.17.21",
-    "parsimmon": "^1.18.1",
-    "reflect-metadata": "^0.2.2",
-    "ts-results": "^3.3.0",
-    "typedi": "^0.10.0",
-    "vscode-debugprotocol": "^1.51.0",
-    "vscode-extensions-json-generator": "^0.2.2"
-  },
-  "packageManager": "yarn@4.4.1"
+  }
 }

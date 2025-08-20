@@ -1,4 +1,4 @@
-type SetupCode = {
+interface SetupCode {
   /**
    * Code that is run once, to set up the environment
    */
@@ -11,9 +11,9 @@ type SetupCode = {
    * Unique identifier for this setup code. Used to debug errors in the setup code.
    */
   id: string;
-};
+}
 
-type EvalCode<_ResultType, Args extends Array<unknown> = []> = {
+interface EvalCode<_ResultType, Args extends Array<unknown> = []> {
   /**
    * Function that generates a python expression to evaluate.
    *
@@ -26,13 +26,13 @@ type EvalCode<_ResultType, Args extends Array<unknown> = []> = {
    *  the result of evaluating the expression passed to this method.
    */
   evalCode: (expression: string, ...args: Args) => string;
-};
+}
 
-type RunInPythonOptions = {
-  context: "watch" | "repl" | "hover";
+interface RunInPythonOptions {
+  context: 'watch' | 'repl' | 'hover';
   frameId?: number;
-};
+}
 
-type EvalCodePython<_ResultType> = {
+interface EvalCodePython<_ResultType> {
   pythonCode: string;
-};
+}

@@ -1,17 +1,18 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 
 type EditorSelection = ExpressionSelection | VariableSelection;
 
 export function isExpressionSelection(
   selection: EditorSelection,
 ): selection is ExpressionSelection {
-  return "expression" in selection;
+  return 'expression' in selection;
 }
 
 export function selectionString(selection: EditorSelection): string {
   if (isExpressionSelection(selection)) {
     return selection.expression;
-  } else {
+  }
+  else {
     return selection.variable;
   }
 }
@@ -21,7 +22,7 @@ export function currentUserSelection(
   range: vscode.Range,
 ): EditorSelection | undefined {
   const selected = document.getText(range);
-  if (selected !== "") {
+  if (selected !== '') {
     return { expression: selected }; // the user selection
   }
 
@@ -29,9 +30,10 @@ export function currentUserSelection(
   const selectedVariable = document.getText(
     document.getWordRangeAtPosition(range.start),
   );
-  if (selectedVariable !== "") {
+  if (selectedVariable !== '') {
     return { variable: selectedVariable };
-  } else {
+  }
+  else {
     return undefined;
   }
 }
@@ -42,11 +44,11 @@ export async function openImageToTheSide(
 ): Promise<unknown> {
   const options = {
     viewColumn: vscode.ViewColumn.Beside,
-    preview: preview,
+    preview,
     preserveFocus: true,
   };
   return vscode.commands.executeCommand(
-    "vscode.open",
+    'vscode.open',
     vscode.Uri.file(path),
     options,
   );

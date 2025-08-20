@@ -1,30 +1,30 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
-		"outDir": "out",
-		"lib": [
-			"ES2021"
-		],
-		"sourceMap": true,
-		"rootDirs": [
-			"src",
-			"webview-ui/src"
-		],
-		"strict": true, /* enable all strict type-checking options */
-		"esModuleInterop": true,
-		/* Additional Checks */
-		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true,
-	},
-	"exclude": [
-		"node_modules",
-		".vscode-test",
-		"python_test",
-		"temp-ignore",
-		"example-plugin",
-	]
+  "compilerOptions": {
+    "target": "es6",
+    "lib": [
+      "ES2021"
+    ],
+    /* Additional Checks */
+    // "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+    // "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
+    // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "rootDirs": [
+      "src",
+      "webview-ui/src"
+    ],
+    "module": "commonjs",
+    "strict": true, /* enable all strict type-checking options */
+    "outDir": "out",
+    "sourceMap": true,
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "python_test",
+    "temp-ignore",
+    "example-plugin"
+  ]
 }

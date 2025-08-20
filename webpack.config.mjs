@@ -1,9 +1,9 @@
-//@ts-check
+// @ts-check
 
-"use strict";
+'use strict';
 
-import webpackExtensionConfig from "./webpack.extension.config.mjs";
-import webpackWebviewConfig from "./webpack.webview.config.mjs";
+import webpackExtensionConfig from './webpack.extension.config.mjs';
+import webpackWebviewConfig from './webpack.webview.config.mjs';
 
 const [extensionConfig] = webpackExtensionConfig;
 const [webviewConfig, webview3rdParty] = webpackWebviewConfig;

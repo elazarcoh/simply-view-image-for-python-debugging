@@ -1,21 +1,22 @@
-import * as vscode from "vscode";
+import type { DiagnosticsTreeItem } from './DiagnosticsItem';
+import type { InfoOrError } from './PythonObjectsList';
+import { Service } from 'typedi';
+import * as vscode from 'vscode';
+import { getConfiguration } from '../config';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { Err, errorMessage } from '../utils/Result';
+import { isOf, zip } from '../utils/Utils';
+import { globalExpressionsList } from './PythonObjectsList';
 import {
   AddExpressionWatchTreeItem,
   ExpressionWatchTreeItem,
-} from "./WatchExpression";
-import { Service } from "typedi";
-import { VariableWatchTreeItem } from "./WatchVariable";
+} from './WatchExpression';
 import {
   ErrorWatchTreeItem,
   PythonObjectInfoLineTreeItem,
   PythonObjectTreeItem,
-} from "./WatchTreeItem";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { globalExpressionsList, InfoOrError } from "./PythonObjectsList";
-import { isOf, zip } from "../utils/Utils";
-import { Err, errorMessage } from "../utils/Result";
-import { DiagnosticsTreeItem } from "./DiagnosticsItem";
-import { getConfiguration } from "../config";
+} from './WatchTreeItem';
+import { VariableWatchTreeItem } from './WatchVariable';
 
 class ItemsRootTreeItem extends vscode.TreeItem {
   private _items: TreeItem[] | (() => Promise<TreeItem[]>);
@@ -24,7 +25,8 @@ class ItemsRootTreeItem extends vscode.TreeItem {
     public readonly label: string,
     items: TreeItem[] | (() => Promise<TreeItem[]>),
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
-      .TreeItemCollapsibleState.Expanded,
+      .TreeItemCollapsibleState
+      .Expanded,
     contextValue: string | undefined = undefined,
   ) {
     super(label, collapsibleState);
@@ -33,18 +35,18 @@ class ItemsRootTreeItem extends vscode.TreeItem {
   }
 
   async items(): Promise<TreeItem[]> {
-    return typeof this._items === "function" ? this._items() : this._items;
+    return typeof this._items === 'function' ? this._items() : this._items;
   }
 }
 
-type TreeItem =
-  | VariableWatchTreeItem
-  | ExpressionWatchTreeItem
-  | ErrorWatchTreeItem
-  | typeof AddExpressionWatchTreeItem
-  | PythonObjectInfoLineTreeItem
-  | ItemsRootTreeItem
-  | DiagnosticsTreeItem;
+type TreeItem
+  = | VariableWatchTreeItem
+    | ExpressionWatchTreeItem
+    | ErrorWatchTreeItem
+    | typeof AddExpressionWatchTreeItem
+    | PythonObjectInfoLineTreeItem
+    | ItemsRootTreeItem
+    | DiagnosticsTreeItem;
 
 @Service() // This is a service, the actual items are retrieved using the DebugSessionData
 export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
@@ -68,40 +70,40 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     if (element === undefined) {
       // root
       const debugSessionData = activeDebugSessionData();
-      const variableItems =
-        debugSessionData?.currentPythonObjectsList.variablesList.map(
+      const variableItems
+        = debugSessionData?.currentPythonObjectsList.variablesList.map(
           ([exp, info]) =>
             info.err
-              ? new ErrorWatchTreeItem(exp, errorMessage(info), "variable")
+              ? new ErrorWatchTreeItem(exp, errorMessage(info), 'variable')
               : new VariableWatchTreeItem(
-                  exp,
-                  info.safeUnwrap()[0],
-                  info.safeUnwrap()[1],
-                ),
+                exp,
+                info.safeUnwrap()[0],
+                info.safeUnwrap()[1],
+              ),
         ) ?? [];
 
-      const expressionsInfoOrNotReady =
-        debugSessionData?.currentPythonObjectsList.expressionsInfo ??
-        (Array(globalExpressionsList.length).fill(
-          Err("Not ready") as InfoOrError,
-        ) as InfoOrError[]);
+      const expressionsInfoOrNotReady
+        = debugSessionData?.currentPythonObjectsList.expressionsInfo
+          ?? (Array.from({ length: globalExpressionsList.length }).fill(
+            Err('Not ready') as InfoOrError,
+          ) as InfoOrError[]);
 
       const expressionsItems = zip(
         globalExpressionsList,
         expressionsInfoOrNotReady,
       ).map(([exp, info]) =>
         info.err
-          ? new ErrorWatchTreeItem(exp, errorMessage(info), "expression")
+          ? new ErrorWatchTreeItem(exp, errorMessage(info), 'expression')
           : new ExpressionWatchTreeItem(
-              exp,
-              info.safeUnwrap()[0],
-              info.safeUnwrap()[1],
-            ),
+            exp,
+            info.safeUnwrap()[0],
+            info.safeUnwrap()[1],
+          ),
       );
 
       // Set the tracking state if was tracked before
-      const trackedPythonObjects =
-        activeDebugSessionData()?.trackedPythonObjects;
+      const trackedPythonObjects
+        = activeDebugSessionData()?.trackedPythonObjects;
       if (trackedPythonObjects !== undefined) {
         const nonErrorItems = [...variableItems, ...expressionsItems].filter(
           isOf(VariableWatchTreeItem, ExpressionWatchTreeItem),
@@ -117,43 +119,47 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
       }
 
       const items = [
-        new ItemsRootTreeItem("Variables", variableItems),
-        new ItemsRootTreeItem("Expressions", [
+        new ItemsRootTreeItem('Variables', variableItems),
+        new ItemsRootTreeItem('Expressions', [
           ...expressionsItems,
           AddExpressionWatchTreeItem,
         ]),
       ];
 
       if (
-        this.showDiagnosticsTemporarily ||
-        (getConfiguration("showDiagnosticInfoInTreeView", null, false) ?? false)
+        this.showDiagnosticsTemporarily
+        || (getConfiguration('showDiagnosticInfoInTreeView', null, false) ?? false)
       ) {
         const getter = async () => {
-          const diagnostics =
-            debugSessionData?.diagnostics.getDiagnosticsItems();
+          const diagnostics
+            = debugSessionData?.diagnostics.getDiagnosticsItems();
           return diagnostics ?? [];
         };
         const item = new ItemsRootTreeItem(
-          "Extension Diagnostics",
+          'Extension Diagnostics',
           getter,
           vscode.TreeItemCollapsibleState.Expanded,
-          "svifpd:diagnosticsRoot",
+          'svifpd:diagnosticsRoot',
         );
         debugSessionData?.diagnostics.onDidChange(() => this.refresh(item));
         items.push(item);
       }
 
       return items;
-    } else if (element instanceof ItemsRootTreeItem) {
+    }
+    else if (element instanceof ItemsRootTreeItem) {
       return element.items();
-    } else if (element instanceof PythonObjectTreeItem) {
+    }
+    else if (element instanceof PythonObjectTreeItem) {
       const infoItems = Object.entries(element.info).map(
         ([name, value]) => new PythonObjectInfoLineTreeItem(name, value),
       );
       return infoItems;
-    } else if (element === AddExpressionWatchTreeItem) {
+    }
+    else if (element === AddExpressionWatchTreeItem) {
       return [];
-    } else {
+    }
+    else {
       return [];
     }
   }

@@ -1,10 +1,10 @@
-import { DebugProtocol } from "vscode-debugprotocol";
+import type { DebugProtocol } from 'vscode-debugprotocol';
 
 type DebugProtocolVariable = Required<
-  Pick<DebugProtocol.Variable, "name" | "evaluateName" | "type">
+  Pick<DebugProtocol.Variable, 'name' | 'evaluateName' | 'type'>
 >;
 
-type ScopeVariables = {
+interface ScopeVariables {
   locals: DebugProtocolVariable[];
   globals: DebugProtocolVariable[];
-};
+}

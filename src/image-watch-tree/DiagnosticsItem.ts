@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
-import { getSetupStatus } from "../python-communication/Setup";
-import { PYTHON_MODULE_NAME } from "../python-communication/BuildPythonCode";
-import { debugSession } from "../session/Session";
+import * as vscode from 'vscode';
+import { PYTHON_MODULE_NAME } from '../python-communication/BuildPythonCode';
+import { getSetupStatus } from '../python-communication/Setup';
+import { debugSession } from '../session/Session';
 
 export class ExtensionDiagnostics {
   public readonly _diagnosticsItems: DiagnosticsTreeItem[] = [];

@@ -1,23 +1,23 @@
-import * as vscode from "vscode";
-import * as crypto from "node:crypto";
+import type * as vscode from 'vscode';
+import type { Viewable } from '../viewable/Viewable';
+import * as crypto from 'node:crypto';
+import { logError } from '../Logging';
 import {
   combineMultiEvalCodePython,
   constructValueWrappedExpressionFromEvalCode,
-} from "../python-communication/BuildPythonCode";
-import { evaluateInPython } from "../python-communication/RunPythonCode";
-import { Viewable } from "../viewable/Viewable";
-import { openImageToTheSide } from "../utils/VSCodeUtils";
-import { allFulfilled } from "../utils/Utils";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { logError } from "../Logging";
-import { errorMessage } from "../utils/Result";
-import { debugSession } from "../session/Session";
+} from '../python-communication/BuildPythonCode';
+import { evaluateInPython } from '../python-communication/RunPythonCode';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { debugSession } from '../session/Session';
+import { errorMessage } from '../utils/Result';
+import { allFulfilled } from '../utils/Utils';
+import { openImageToTheSide } from '../utils/VSCodeUtils';
 
-type TrackedObject = {
+interface TrackedObject {
   expression: PythonExpression;
   viewable: Viewable;
   savePath: string;
-};
+}
 
 export class TrackedPythonObjects {
   private readonly tracked = new Map<string, TrackedObject>();
@@ -25,9 +25,9 @@ export class TrackedPythonObjects {
   private genTrackingId(o: PythonExpression): TrackingId {
     return {
       id: crypto
-        .createHash("md5")
+        .createHash('md5')
         .update(o.expression)
-        .digest("hex")
+        .digest('hex')
         .toString(),
     };
   }
@@ -117,14 +117,15 @@ export async function saveAllTrackedObjects(
   );
   if (saveResult.err) {
     logError(`Failed to save tracked objects: ${errorMessage(saveResult)}`);
-    return;
-  } else {
+  }
+  else {
     await allFulfilled(
       trackedObjects.map(async (v) => {
         const pathWithSuffix = `${v.savePath}${v.viewable.suffix}`;
         if (v.viewable.onShow !== undefined) {
           await v.viewable.onShow(pathWithSuffix);
-        } else {
+        }
+        else {
           await openImageToTheSide(pathWithSuffix, false);
         }
       }),

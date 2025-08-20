@@ -20,4 +20,23 @@ export default antfu(
       'example-plugin',
     ],
   },
+  {
+    files: [
+      'src/**/*.ts',
+    ],
+
+    rules: {
+      'ts/no-explicit-any': ['error', { ignoreRestArgs: true }],
+      'ts/no-non-null-assertion': 'error',
+      'ts/no-unused-vars': ['error', {
+        args: 'all',
+        argsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      }],
+    },
+  },
 );

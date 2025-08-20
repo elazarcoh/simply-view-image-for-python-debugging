@@ -1,1 +1,1 @@
-export * from "../webview-ui/pkg/webview";
+export * from '../webview-ui/pkg/webview';

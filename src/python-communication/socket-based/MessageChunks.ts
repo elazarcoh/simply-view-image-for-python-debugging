@@ -1,5 +1,6 @@
-import { logDebug } from "../../Logging";
-import { MessageChunkHeader } from "./protocol";
+import type { MessageChunkHeader } from './protocol';
+import { Buffer } from 'node:buffer';
+import { logDebug } from '../../Logging';
 
 export class MessageChunks {
   private messageChunks: (Buffer | null)[];
@@ -10,8 +11,8 @@ export class MessageChunks {
     private expectedMessageLength: number,
     private expectedChunkCount: number,
   ) {
-    this.messageChunks = new Array(expectedChunkCount).fill(null);
-    this.messageHeaders = new Array(expectedChunkCount).fill(null);
+    this.messageChunks = Array.from<Buffer | null>({ length: expectedChunkCount }).fill(null);
+    this.messageHeaders = Array.from<MessageChunkHeader | null>({ length: expectedChunkCount }).fill(null);
   }
 
   addChunk(header: MessageChunkHeader, chunk: Buffer) {
@@ -45,18 +46,19 @@ export class MessageChunks {
     if (currentHeader !== null) {
       // got the same chunk twice. check if it's the same, if not, throw an error
       if (
-        currentHeader.messageID !== header.messageID ||
-        currentHeader.chunkCount !== header.chunkCount ||
-        currentHeader.chunkLength !== header.chunkLength ||
-        currentHeader.messageLength !== header.messageLength ||
-        currentHeader.requestId !== header.requestId ||
-        currentHeader.sender !== header.sender ||
-        currentHeader.messageType !== header.messageType
+        currentHeader.messageID !== header.messageID
+        || currentHeader.chunkCount !== header.chunkCount
+        || currentHeader.chunkLength !== header.chunkLength
+        || currentHeader.messageLength !== header.messageLength
+        || currentHeader.requestId !== header.requestId
+        || currentHeader.sender !== header.sender
+        || currentHeader.messageType !== header.messageType
       ) {
         throw new Error(
           `(reqId ${header.requestId}) Chunk number ${chunkNumber} already exists. current: ${JSON.stringify(this.messageHeaders[chunkNumber])}`,
         );
-      } else {
+      }
+      else {
         logDebug(
           `(reqId ${header.requestId}) Got the same chunk twice. Chunk number: ${chunkNumber}. Ignoring.`,
         );
@@ -70,7 +72,8 @@ export class MessageChunks {
         throw new Error(
           `(reqId ${header.requestId}) Chunk number ${chunkNumber} already exists. current with length: ${this.messageChunks[chunkNumber]?.length}`,
         );
-      } else {
+      }
+      else {
         logDebug(
           `(reqId ${header.requestId}) Got the same chunk twice. Chunk number: ${chunkNumber}. Ignoring.`,
         );
@@ -85,14 +88,14 @@ export class MessageChunks {
 
   isComplete() {
     return (
-      this.messageLength === this.expectedMessageLength &&
-      this.messageChunks.every((chunk) => chunk !== null)
+      this.messageLength === this.expectedMessageLength
+      && this.messageChunks.every(chunk => chunk !== null)
     );
   }
 
   fullMessage() {
     if (!this.isComplete()) {
-      throw new Error("Message is not complete");
+      throw new Error('Message is not complete');
     }
     // @ts-expect-error  - we checked that all chunks are not null
     const fullMessage = Buffer.concat(this.messageChunks);

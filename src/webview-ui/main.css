@@ -36,10 +36,7 @@
 .vscode-button.secondary {
   color: var(--vscode-button-secondaryForeground);
   background-color: var(--vscode-button-secondaryBackground);
-  border-color: var(
-    --vscode-button-border,
-    var(--vscode-button-secondaryBackground)
-  );
+  border-color: var(--vscode-button-border, var(--vscode-button-secondaryBackground));
 }
 
 .vscode-button.secondary:hover {
@@ -298,7 +295,7 @@ div.vscode-textfield input {
   width: 100%;
 }
 
-input.vscode-textfield:read-only:not([type="file"]) {
+input.vscode-textfield:read-only:not([type='file']) {
   cursor: not-allowed;
 }
 
@@ -378,7 +375,7 @@ input.vscode-textfield[type='file']::file-selector-button:hover,
   user-select: none;
 }
 
-.vscode-checkbox input[type="checkbox"] {
+.vscode-checkbox input[type='checkbox'] {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   height: 1px;
@@ -403,11 +400,11 @@ input.vscode-textfield[type='file']::file-selector-button:hover,
   display: none;
 }
 
-.vscode-checkbox input[type="checkbox"]:checked + label .icon-checked {
+.vscode-checkbox input[type='checkbox']:checked + label .icon-checked {
   display: block;
 }
 
-.vscode-checkbox input[type="checkbox"]:indeterminate + label .icon-indeterminate {
+.vscode-checkbox input[type='checkbox']:indeterminate + label .icon-indeterminate {
   display: block;
 }
 
@@ -430,13 +427,13 @@ input.vscode-textfield[type='file']::file-selector-button:hover,
   width: 18px;
 }
 
-.vscode-checkbox input[type="checkbox"]:invalid + label .icon,
-.vscode-checkbox input[type="checkbox"].invalid + label .icon {
+.vscode-checkbox input[type='checkbox']:invalid + label .icon,
+.vscode-checkbox input[type='checkbox'].invalid + label .icon {
   background-color: var(--vscode-inputValidation-errorBackground);
   border-color: var(--vscode-inputValidation-errorBorder, #be1100);
 }
 
-.vscode-checkbox input[type="checkbox"]:focus + label .icon {
+.vscode-checkbox input[type='checkbox']:focus + label .icon {
   border-color: var(--vscode-focusBorder);
 }
 

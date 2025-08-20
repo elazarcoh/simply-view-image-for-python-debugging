@@ -190,16 +190,16 @@ export class WebviewMessageHandler implements vscode.Disposable {
       return;
     }
     const session = maybeSession.val;
-    
+
     // Only support debug sessions for now
-    if (session.type !== "debug") {
-      logError("Save image is only supported for debug sessions");
+    if (session.type !== 'debug') {
+      logError('Save image is only supported for debug sessions');
       return;
     }
-    
+
     const debugSessionData = activeDebugSessionData();
     if (!debugSessionData || debugSessionData.setupOkay === false) {
-      logError("Cannot save image: debug session not ready");
+      logError('Cannot save image: debug session not ready');
       return;
     }
 
@@ -213,9 +213,10 @@ export class WebviewMessageHandler implements vscode.Disposable {
     if (trackedObject.viewable) {
       // Use the existing saveAllTrackedObjects functionality
       await this.saveTrackedObject(trackedObject, session.session);
-      logTrace("Image saved successfully for expression:", expression);
-    } else {
-      logError("Could not find viewable for expression:", expression);
+      logTrace('Image saved successfully for expression:', expression);
+    }
+    else {
+      logError('Could not find viewable for expression:', expression);
     }
   }
 
@@ -230,11 +231,12 @@ export class WebviewMessageHandler implements vscode.Disposable {
   private async saveTrackedObject(trackedObject: any, session: vscode.DebugSession) {
     try {
       // Import saveAllTrackedObjects here to avoid circular dependencies
-      const { saveAllTrackedObjects } = await import("../../image-watch-tree/TrackedPythonObjects");
+      const { saveAllTrackedObjects } = await import('../../image-watch-tree/TrackedPythonObjects');
       await saveAllTrackedObjects([trackedObject], session);
-      logTrace("Image saved successfully");
-    } catch (error) {
-      logError("Failed to save image:", error);
+      logTrace('Image saved successfully');
+    }
+    catch (error) {
+      logError('Failed to save image:', error);
     }
   }
 
@@ -258,13 +260,12 @@ export class WebviewMessageHandler implements vscode.Disposable {
         return this.handleAddExpression(id);
       case 'EditExpression':
         return this.handleEditExpression(id, message);
-      case "SaveImage":
+      case 'SaveImage':
         return this.handleSaveImage(id, message as any);
 
       default:
         // Use a more defensive approach for unknown message types
         logError(`Unknown message type: ${type}`);
-        return;
     }
   }
 }

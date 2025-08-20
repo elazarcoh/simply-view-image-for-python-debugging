@@ -1,14 +1,15 @@
-import Container from "typedi";
-import { AllViewables } from "./AllViewables";
-import { logError } from "./Logging";
+import type { Session } from './session/Session';
+import type { Result } from './utils/Result';
+import type { Viewable } from './viewable/Viewable';
+import Container from 'typedi';
+import { AllViewables } from './AllViewables';
+import { logError } from './Logging';
 import {
   combineMultiEvalCodePython,
   constructRunSameExpressionWithMultipleEvaluatorsCode,
-} from "./python-communication/BuildPythonCode";
-import { evaluateInPython } from "./python-communication/RunPythonCode";
-import { Viewable } from "./viewable/Viewable";
-import { Err, Ok, Result, errorMessage } from "./utils/Result";
-import { Session } from "./session/Session";
+} from './python-communication/BuildPythonCode';
+import { evaluateInPython } from './python-communication/RunPythonCode';
+import { Err, errorMessage, Ok } from './utils/Result';
 
 function listOfValidViewables(
   viewables: ReadonlyArray<Viewable>,
@@ -27,7 +28,7 @@ export async function findExpressionViewables(
   const viewables = Container.get(AllViewables).allViewables;
   const code = constructRunSameExpressionWithMultipleEvaluatorsCode(
     expression,
-    viewables.map((v) => v.testTypePythonCode),
+    viewables.map(v => v.testTypePythonCode),
   );
   const isOfType = await evaluateInPython(code, session);
 
@@ -38,7 +39,8 @@ export async function findExpressionViewables(
       )}`,
     );
     return Err(errorMessage(isOfType));
-  } else {
+  }
+  else {
     const objectViewables = listOfValidViewables(
       viewables,
       isOfType.safeUnwrap(),
@@ -53,10 +55,10 @@ export async function findExpressionsViewables(
   session: Session,
 ): Promise<Result<Viewable[][]>> {
   const viewables = Container.get(AllViewables).allViewables;
-  const codes = expressions.map((expression) =>
+  const codes = expressions.map(expression =>
     constructRunSameExpressionWithMultipleEvaluatorsCode(
       expression,
-      viewables.map((v) => v.testTypePythonCode),
+      viewables.map(v => v.testTypePythonCode),
     ),
   );
   const code = combineMultiEvalCodePython(codes);
@@ -64,11 +66,12 @@ export async function findExpressionsViewables(
 
   if (isOfType.err) {
     const message = `Error finding viewables for expressions \`${expressions.join(
-      ", ",
+      ', ',
     )}\`. Error: ${errorMessage(isOfType)}`;
     logError(message);
     return Err(errorMessage(isOfType));
-  } else {
+  }
+  else {
     const objectsViewables = isOfType
       .safeUnwrap()
       .map((isOfType: Result<boolean>[]) =>

@@ -1,4 +1,4 @@
-type BodyOf<T extends { body: unknown }> = T["body"];
+type BodyOf<T extends { body: unknown }> = T['body'];
 
 type Constructor<T> = new (...args: any[]) => T;
 type ExtractConstructorClass<Constructors extends unknown[]> = {
@@ -8,7 +8,6 @@ type ExtractConstructorClass<Constructors extends unknown[]> = {
 };
 type TupleToUnion<T extends unknown[]> = T[number];
 type NonEmptyArray<T> = [T, ...T[]];
-type MessageEvent<T> = { data: T };
 
 type FlattenedPromise<T> = unknown extends T
   ? Promise<T>
@@ -16,4 +15,4 @@ type FlattenedPromise<T> = unknown extends T
     ? T
     : Promise<T>;
 
-type Initializer<T> = T extends any ? T | (() => T) : never;
+type Initializer<T> = T extends unknown ? T | (() => T) : never;

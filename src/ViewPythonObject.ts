@@ -1,27 +1,30 @@
-import Container from "typedi";
-import * as vscode from "vscode";
-import { logWarn } from "./Logging";
-import { findExpressionViewables } from "./PythonObjectInfo";
-import { getConfiguration } from "./config";
-import { serializePythonObjectToDisk } from "./from-python-serialization/DiskSerialization";
-import { serializeImageUsingSocketServer } from "./from-python-serialization/SocketSerialization";
-import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { debugSession, maybeDebugSession, Session } from "./session/Session";
-import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
-import { findJupyterSessionByDocumentUri } from "./session/jupyter/JupyterSessionRegistry";
-import { Option } from "./utils/Option";
-import { valueOrEval } from "./utils/Utils";
+import type { Session } from './session/Session';
+import type { Viewable } from './viewable/Viewable';
+import type {
+  WebviewClient,
+} from './webview/communication/WebviewClient';
+import Container from 'typedi';
+import * as vscode from 'vscode';
+import { getConfiguration } from './config';
+import { serializePythonObjectToDisk } from './from-python-serialization/DiskSerialization';
+import { serializeImageUsingSocketServer } from './from-python-serialization/SocketSerialization';
+import { WatchTreeProvider } from './image-watch-tree/WatchTreeProvider';
+import { logWarn } from './Logging';
+import { findExpressionViewables } from './PythonObjectInfo';
+import { activeDebugSessionData } from './session/debugger/DebugSessionsHolder';
+import { findJupyterSessionByDocumentUri } from './session/jupyter/JupyterSessionRegistry';
+import { debugSession, maybeDebugSession } from './session/Session';
+import { Option } from './utils/Option';
+import { valueOrEval } from './utils/Utils';
 import {
   currentUserSelection,
   openImageToTheSide,
   selectionString,
-} from "./utils/VSCodeUtils";
-import { Viewable } from "./viewable/Viewable";
+} from './utils/VSCodeUtils';
+import { WebviewRequests } from './webview/communication/createMessages';
 import {
   GlobalWebviewClient,
-  WebviewClient,
-} from "./webview/communication/WebviewClient";
-import { WebviewRequests } from "./webview/communication/createMessages";
+} from './webview/communication/WebviewClient';
 
 export async function viewObject({
   obj,
@@ -41,9 +44,9 @@ export async function viewObject({
   webviewClient?: WebviewClient;
 }): Promise<void> {
   if (
-    !(forceDiskSerialization ?? false) &&
-    valueOrEval(viewable.supportsImageViewer) &&
-    getConfiguration("useExperimentalViewer", undefined, false) === true
+    !(forceDiskSerialization ?? false)
+    && valueOrEval(viewable.supportsImageViewer)
+    && getConfiguration('useExperimentalViewer', undefined, false) === true
   ) {
     const response = await serializeImageUsingSocketServer(
       obj,
@@ -60,14 +63,16 @@ export async function viewObject({
         openInPreview,
         forceDiskSerialization: true,
       });
-    } else {
+    }
+    else {
       webviewClient ??= Container.get(GlobalWebviewClient);
       await webviewClient.reveal();
       webviewClient.sendRequest(
         WebviewRequests.showImage(response.safeUnwrap()),
       );
     }
-  } else {
+  }
+  else {
     const resPath = await serializePythonObjectToDisk(
       obj,
       viewable,
@@ -77,7 +82,8 @@ export async function viewObject({
     if (resPath !== undefined) {
       if (viewable.onShow !== undefined) {
         await viewable.onShow(resPath);
-      } else {
+      }
+      else {
         await openImageToTheSide(resPath, openInPreview ?? true);
       }
     }
@@ -146,7 +152,7 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
       userSelectionAsString,
     );
   }
-  let savePath: string | undefined = undefined;
+  let savePath: string | undefined;
   if (objectViewables.ok && objectViewables.safeUnwrap().length > 0) {
     const trackedPythonObjects = debugSessionData.trackedPythonObjects;
     const trackingId = trackedPythonObjects.trackingIdIfTracked({
@@ -155,9 +161,9 @@ export async function trackObjectUnderCursor(): Promise<unknown> {
     const savePathIfSet = trackingId
       ? trackedPythonObjects.savePath(trackingId)
       : undefined;
-    savePath =
-      savePathIfSet ??
-      debugSessionData.savePathHelper.savePathFor(userSelection);
+    savePath
+      = savePathIfSet
+        ?? debugSessionData.savePathHelper.savePathFor(userSelection);
     trackedPythonObjects.track(
       { expression: userSelectionAsString },
       objectViewables.safeUnwrap()[0],

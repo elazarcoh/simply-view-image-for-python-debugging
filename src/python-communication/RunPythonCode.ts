@@ -1,20 +1,22 @@
-import * as vscode from "vscode";
-import { DebugProtocol } from "vscode-debugprotocol";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { stringifyPython } from "./BuildPythonCode";
-import { parsePythonResult } from "./PythonValueParser";
-import { Err, Ok, Result } from "../utils/Result";
-import { Kernel } from "@vscode/jupyter-extension";
-import { isDebugSession, isJupyterSession, Session } from "../session/Session";
+import type { Kernel } from '@vscode/jupyter-extension';
+import type { DebugProtocol } from 'vscode-debugprotocol';
+import type { Session } from '../session/Session';
+import type { Result } from '../utils/Result';
+import * as vscode from 'vscode';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { isDebugSession, isJupyterSession } from '../session/Session';
+import { Err, Ok } from '../utils/Result';
+import { stringifyPython } from './BuildPythonCode';
+import { parsePythonResult } from './PythonValueParser';
 
 // from https://github.com/microsoft/vscode-extension-samples/blob/main/jupyter-kernel-execution-sample/src/extension.ts
-const ErrorMimeType = vscode.NotebookCellOutputItem.error(new Error("")).mime;
+const ErrorMimeType = vscode.NotebookCellOutputItem.error(new Error('<error>')).mime;
 const textDecoder = new TextDecoder();
-type ExecutionError = {
+interface ExecutionError {
   name: string;
   message: string;
   stack: string;
-};
+}
 async function* executeCodeStreamInKernel(
   code: string,
   kernel: Kernel,
@@ -31,12 +33,14 @@ async function* executeCodeStreamInKernel(
             message: error.message,
             stack: error.stack,
           } as ExecutionError);
-        } else {
+        }
+        else {
           yield Ok(decoded);
         }
       }
     }
-  } finally {
+  }
+  finally {
     tokenSource.dispose();
   }
 }
@@ -44,11 +48,12 @@ async function runThroughJupyterKernel(
   code: string,
   kernel: Kernel,
 ): Promise<Result<string>> {
-  let result = "";
+  let result = '';
   for await (const output of executeCodeStreamInKernel(code, kernel)) {
     if (output.err) {
       return output;
-    } else if (output !== undefined) {
+    }
+    else if (output !== undefined) {
       result += output.val;
     }
   }
@@ -60,12 +65,12 @@ function runThroughDebugger(
   expression: string,
   { context, frameId }: RunInPythonOptions,
 ): Thenable<BodyOf<DebugProtocol.EvaluateResponse>> {
-  const debugVariablesTracker =
-    activeDebugSessionData(session).debugVariablesTracker;
+  const debugVariablesTracker
+    = activeDebugSessionData(session).debugVariablesTracker;
 
   frameId = frameId ?? debugVariablesTracker.frameId;
 
-  return session.customRequest("evaluate", {
+  return session.customRequest('evaluate', {
     expression,
     frameId,
     context,
@@ -99,7 +104,8 @@ async function runPython<R>(
         options,
       );
       retVal = res.result;
-    } else if (isJupyterSession(session)) {
+    }
+    else if (isJupyterSession(session)) {
       const res = await runThroughJupyterKernel(
         code.pythonCode,
         session.kernel,
@@ -108,24 +114,29 @@ async function runPython<R>(
         return res;
       }
       retVal = res.val;
-    } else {
-      return Err("Unknown session type");
+    }
+    else {
+      return Err('Unknown session type');
     }
 
     if (parse) {
       const parsed = parsePythonResult<R>(retVal);
       return parsed;
-    } else {
+    }
+    else {
       return Ok(null);
     }
-  } catch (error) {
+  }
+  catch (error) {
     if (error instanceof Error) {
-      if (error.message.includes("SyntaxError")) {
-        return Err("Syntax error");
-      } else {
+      if (error.message.includes('SyntaxError')) {
+        return Err('Syntax error');
+      }
+      else {
         return Err(error.message);
       }
-    } else {
+    }
+    else {
       return Err(JSON.stringify(error));
     }
   }
@@ -134,7 +145,7 @@ async function runPython<R>(
 export function execInPython(
   evalCodePython: EvalCodePython<unknown>,
   session: Session,
-  options: RunInPythonOptions = { context: "repl" },
+  options: RunInPythonOptions = { context: 'repl' },
 ): Promise<Result<null>> {
   const code = {
     pythonCode: `
@@ -150,7 +161,7 @@ ${evalCodePython.pythonCode}
 export function evaluateInPython<R = unknown>(
   evalCodePython: EvalCodePython<R>,
   session: Session,
-  options: RunInPythonOptions = { context: "repl" },
+  options: RunInPythonOptions = { context: 'repl' },
   stringify: boolean = true,
 ): Promise<Result<R>> {
   const code = stringify ? stringifyPython(evalCodePython) : evalCodePython;

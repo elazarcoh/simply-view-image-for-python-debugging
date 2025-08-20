@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import { Viewable } from "../viewable/Viewable";
-import { PythonObjectTreeItem } from "./WatchTreeItem";
+import type { Viewable } from '../viewable/Viewable';
+import * as vscode from 'vscode';
+import { PythonObjectTreeItem } from './WatchTreeItem';
 
 export class VariableWatchTreeItem extends PythonObjectTreeItem {
   constructor(
@@ -8,10 +8,11 @@ export class VariableWatchTreeItem extends PythonObjectTreeItem {
     viewables: Readonly<NonEmptyArray<Viewable>>,
     info: Readonly<PythonObjectInformation>,
     collapsibleState: vscode.TreeItemCollapsibleState = vscode
-      .TreeItemCollapsibleState.Collapsed,
+      .TreeItemCollapsibleState
+.Collapsed,
   ) {
     super(
-      "variable",
+      'variable',
       variableName,
       variableName,
       viewables,

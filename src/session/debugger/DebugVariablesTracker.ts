@@ -1,47 +1,47 @@
-import { DebugProtocol } from "vscode-debugprotocol";
-import { logDebug } from "../../Logging";
-import { PYTHON_MODULE_NAME } from "../../python-communication/BuildPythonCode";
+import type { DebugProtocol } from 'vscode-debugprotocol';
+import { logDebug } from '../../Logging';
+import { PYTHON_MODULE_NAME } from '../../python-communication/BuildPythonCode';
 
-type TrackedVariable = {
+interface TrackedVariable {
   name: string;
   evaluateName: string;
   frameId: number;
   type: string;
-};
+}
 
 const VARIABLES_TO_FILTER = new Set([
   PYTHON_MODULE_NAME,
-  "special variables",
-  "class variables",
-  "function variables",
+  'special variables',
+  'class variables',
+  'function variables',
 ]);
 
 const REGEX_TO_FILTER = [/__pydevd_ret_val_dict.*/];
 
 const TYPES_TO_FILTER = new Set([
-  "",
-  "module",
-  "function",
-  "dict",
-  "tuple",
-  "set",
-  "str",
-  "bytes",
-  "NoneType",
-  "int",
-  "float",
-  "bool",
-  "ZMQExitAutocall",
+  '',
+  'module',
+  'function',
+  'dict',
+  'tuple',
+  'set',
+  'str',
+  'bytes',
+  'NoneType',
+  'int',
+  'float',
+  'bool',
+  'ZMQExitAutocall',
 ]);
 
 function filterVariables(
   variables: DebugProtocol.Variable[],
 ): DebugProtocol.Variable[] {
   return variables.filter(
-    (variable) =>
-      !VARIABLES_TO_FILTER.has(variable.name) &&
-      (variable.type === undefined || !TYPES_TO_FILTER.has(variable.type)) &&
-      !REGEX_TO_FILTER.some((regex) => regex.test(variable.name)),
+    variable =>
+      !VARIABLES_TO_FILTER.has(variable.name)
+      && (variable.type === undefined || !TYPES_TO_FILTER.has(variable.type))
+      && !REGEX_TO_FILTER.some(regex => regex.test(variable.name)),
   );
 }
 
@@ -49,6 +49,7 @@ export class DebugVariablesTracker {
   readonly localVariables: {
     [frameId: number]: TrackedVariable[];
   } = {};
+
   readonly globalVariables: {
     [frameId: number]: TrackedVariable[];
   } = {};
@@ -59,26 +60,30 @@ export class DebugVariablesTracker {
       frameId: number;
     }
   > = new Map();
+
   readonly frameForVariableReference = new Map<
     number,
     {
       frameId: number;
-      scope: "local" | "global";
+      scope: 'local' | 'global';
     }
   >();
+
   readonly variablesRequests: Map<
     number,
     {
       frameId: number;
       variablesReference: number;
-      scope: "local" | "global";
+      scope: 'local' | 'global';
     }
   > = new Map();
+
   private _currentFrameId: number | undefined;
 
   setFrameId(frameId: number | undefined): void {
     this._currentFrameId = frameId;
   }
+
   get frameId(): number | undefined {
     return this._currentFrameId;
   }
@@ -103,12 +108,12 @@ export class DebugVariablesTracker {
       logDebug(`Local scope reference ${local.variablesReference}`);
       this.frameForVariableReference.set(local.variablesReference, {
         frameId,
-        scope: "local",
+        scope: 'local',
       });
       logDebug(`Global scope reference ${global.variablesReference}`);
       this.frameForVariableReference.set(global.variablesReference, {
         frameId,
-        scope: "global",
+        scope: 'global',
       });
     }
   }
@@ -140,13 +145,14 @@ export class DebugVariablesTracker {
       const localVariables = (this.localVariables[frameId] ??= []);
       const globalVariables = (this.globalVariables[frameId] ??= []);
 
-      if (request.scope === "global") {
+      if (request.scope === 'global') {
         globalVariables.length = 0;
-      } else {
+      }
+      else {
         localVariables.length = 0;
       }
-      const variablesForScope =
-        request.scope === "local" ? localVariables : globalVariables;
+      const variablesForScope
+        = request.scope === 'local' ? localVariables : globalVariables;
       this.setFrameId(frameId);
       for (const variable of filterVariables(response.body.variables)) {
         const evaluateName = variable.evaluateName ?? variable.name;
@@ -157,7 +163,7 @@ export class DebugVariablesTracker {
           name: variable.name,
           evaluateName,
           frameId,
-          type: variable.type ?? "unknown",
+          type: variable.type ?? 'unknown',
         });
       }
     }
@@ -175,6 +181,7 @@ export class DebugVariablesTracker {
     }
     return this.localVariables[frameId];
   }
+
   private globalVariablesForFrame(
     frameId: number | undefined,
   ): TrackedVariable[] | undefined {
@@ -187,10 +194,10 @@ export class DebugVariablesTracker {
   getVariable(name: string): TrackedVariable | undefined {
     return (
       this.localVariablesForFrame(this._currentFrameId)?.find(
-        (v) => v.evaluateName === name,
-      ) ??
-      this.globalVariablesForFrame(this._currentFrameId)?.find(
-        (v) => v.evaluateName === name,
+        v => v.evaluateName === name,
+      )
+      ?? this.globalVariablesForFrame(this._currentFrameId)?.find(
+        v => v.evaluateName === name,
       )
     );
   }
@@ -202,11 +209,11 @@ export class DebugVariablesTracker {
     return {
       locals:
         this.localVariablesForFrame(this.frameId)?.filter(
-          (v) => v.frameId === this._currentFrameId,
+          v => v.frameId === this._currentFrameId,
         ) ?? [],
       globals:
         this.globalVariablesForFrame(this.frameId)?.filter(
-          (v) => v.frameId === this._currentFrameId,
+          v => v.frameId === this._currentFrameId,
         ) ?? [],
     };
   }

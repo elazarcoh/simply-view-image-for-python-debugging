@@ -1,14 +1,16 @@
-import * as vscode from "vscode";
-import Container, { Service } from "typedi";
-import { JupyterSessionData } from "./JupyterSessionData";
-import { Jupyter, Kernel } from "@vscode/jupyter-extension";
-import { jupyterSession, JupyterSession } from "../Session";
-import { Err, joinResult, Ok, Result } from "../../utils/Result";
-import { runSetup } from "../../python-communication/Setup";
-import { convertExpressionIntoValueWrappedExpression } from "../../python-communication/BuildPythonCode";
-import { evaluateInPython } from "../../python-communication/RunPythonCode";
-import { logError } from "../../Logging";
-import { Option } from "ts-results";
+import type { Jupyter, Kernel } from '@vscode/jupyter-extension';
+import type { Result } from '../../utils/Result';
+import type { JupyterSession } from '../Session';
+import { Option } from 'ts-results';
+import Container, { Service } from 'typedi';
+import * as vscode from 'vscode';
+import { logError } from '../../Logging';
+import { convertExpressionIntoValueWrappedExpression } from '../../python-communication/BuildPythonCode';
+import { evaluateInPython } from '../../python-communication/RunPythonCode';
+import { runSetup } from '../../python-communication/Setup';
+import { Err, joinResult, Ok } from '../../utils/Result';
+import { jupyterSession } from '../Session';
+import { JupyterSessionData } from './JupyterSessionData';
 
 function waitForKernel(api: Jupyter, uri: vscode.Uri): Promise<Kernel> {
   return new Promise<Kernel>((resolve) => {
@@ -28,15 +30,16 @@ async function getSessionDocumentUri(
 ): Promise<Result<vscode.Uri>> {
   const setupOk = await runSetup(session, false);
   if (!setupOk) {
-    return Err("Failed to run setup");
+    return Err('Failed to run setup');
   }
-  const code = convertExpressionIntoValueWrappedExpression<string>("__file__");
+  const code = convertExpressionIntoValueWrappedExpression<string>('__file__');
   const res = joinResult(await evaluateInPython(code, session));
   const uri = res.andThen((r) => {
-    if (typeof r === "string") {
+    if (typeof r === 'string') {
       return Ok(vscode.Uri.file(r));
-    } else {
-      return Err("Failed to get session document uri");
+    }
+    else {
+      return Err('Failed to get session document uri');
     }
   });
   return uri;
@@ -74,13 +77,13 @@ class JupyterSessionRegistry {
   }
 
   public dispose(): void {
-    this._sessions.forEach((session) => session.dispose());
+    this._sessions.forEach(session => session.dispose());
     this._sessions.clear();
   }
 
   public findSessionByDocumentUri(uri: vscode.Uri): Option<JupyterSession> {
     const sessionData = Array.from(this._sessions.values()).find(
-      (sessionData) => sessionData.documentUri?.toString() === uri.toString(),
+      sessionData => sessionData.documentUri?.toString() === uri.toString(),
     );
     return Option.wrap(sessionData).map(({ notebookUri, kernel }) =>
       jupyterSession(notebookUri, kernel),
@@ -89,7 +92,7 @@ class JupyterSessionRegistry {
 }
 
 export async function onNotebookOpen(notebook: vscode.NotebookDocument) {
-  const ext = vscode.extensions.getExtension<Jupyter>("ms-toolsai.jupyter");
+  const ext = vscode.extensions.getExtension<Jupyter>('ms-toolsai.jupyter');
   await ext?.activate();
   const api = ext?.exports;
   if (!api) {
@@ -106,7 +109,7 @@ export async function onNotebookOpen(notebook: vscode.NotebookDocument) {
     new JupyterSessionData(session, uri, kernel),
   );
   if (!sessionData) {
-    logError("Failed to add session data to registry");
+    logError('Failed to add session data to registry');
     return;
   }
 
@@ -152,5 +155,5 @@ export function jupyterSessionData(
 }
 
 const jupyterSessionRegistry = Container.get(JupyterSessionRegistry);
-export const findJupyterSessionByDocumentUri =
-  jupyterSessionRegistry.findSessionByDocumentUri.bind(jupyterSessionRegistry);
+export const findJupyterSessionByDocumentUri
+  = jupyterSessionRegistry.findSessionByDocumentUri.bind(jupyterSessionRegistry);

@@ -1,17 +1,17 @@
-import { Inject, Service } from "typedi";
-import * as vscode from "vscode";
-import { logTrace } from "../../Logging";
-import { disposeAll } from "../../utils/VSCodeUtils";
-import { ImageViewPanel } from "../panels/ImageViewPanel";
-import {
+import type { Session } from '../../session/Session';
+import type {
   ExtensionRequest,
   ExtensionResponse,
   FromExtensionMessageWithId,
   MessageId,
-} from "../webview";
-import { WebviewMessageHandler } from "./WebviewMessageHandler";
-import { Session } from "../../session/Session";
-import { None, Option } from "ts-results";
+} from '../webview';
+import { None, Option } from 'ts-results';
+import { Inject, Service } from 'typedi';
+import * as vscode from 'vscode';
+import { logTrace } from '../../Logging';
+import { disposeAll } from '../../utils/VSCodeUtils';
+import { ImageViewPanel } from '../panels/ImageViewPanel';
+import { WebviewMessageHandler } from './WebviewMessageHandler';
 
 export class WebviewCommunication {
   private _isReady = false;
@@ -28,8 +28,9 @@ export class WebviewCommunication {
 
   async waitForReady(maxTries: number = 100) {
     const indefinite = maxTries < 0;
+    // eslint-disable-next-line no-unmodified-loop-condition
     while (!this.isReady && (maxTries > 0 || indefinite)) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
       maxTries--;
     }
   }
@@ -50,7 +51,7 @@ export class WebviewCommunication {
     const id = GlobalWebviewClient.randomMessageId();
     const messageWithId: FromExtensionMessageWithId = {
       id,
-      message: { kind: "Request", ...message },
+      message: { kind: 'Request', ...message },
     };
     this.sendToWebview(messageWithId);
   }
@@ -58,7 +59,7 @@ export class WebviewCommunication {
   sendResponse(id: MessageId, message: ExtensionResponse) {
     const messageWithId: FromExtensionMessageWithId = {
       id,
-      message: { kind: "Response", ...message },
+      message: { kind: 'Response', ...message },
     };
     this.sendToWebview(messageWithId);
   }
@@ -73,7 +74,7 @@ class WebviewClient implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
 
   constructor(
-    @Inject("vscode.ExtensionContext") context: vscode.ExtensionContext,
+    @Inject('vscode.ExtensionContext') context: vscode.ExtensionContext,
     public readonly session: Option<Session>,
   ) {
     this.context = context;
@@ -86,13 +87,13 @@ class WebviewClient implements vscode.Disposable {
   async reveal() {
     if (!this._currentPanel) {
       this._currentPanel = vscode.window.createWebviewPanel(
-        "image-view",
-        "Image View",
+        'image-view',
+        'Image View',
         vscode.ViewColumn.Beside,
         {
           enableScripts: true,
           localResourceRoots: [
-            vscode.Uri.joinPath(this.context.extensionUri, "dist"),
+            vscode.Uri.joinPath(this.context.extensionUri, 'dist'),
           ],
         },
       );
@@ -153,7 +154,7 @@ export type { WebviewClient };
 @Service()
 export class WebviewClientFactory {
   constructor(
-    @Inject("vscode.ExtensionContext")
+    @Inject('vscode.ExtensionContext')
     private readonly context: vscode.ExtensionContext,
   ) {}
 
@@ -165,7 +166,7 @@ export class WebviewClientFactory {
 @Service()
 export class GlobalWebviewClient extends WebviewClient {
   constructor(
-    @Inject("vscode.ExtensionContext")
+    @Inject('vscode.ExtensionContext')
     context: vscode.ExtensionContext,
   ) {
     super(

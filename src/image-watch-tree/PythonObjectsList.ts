@@ -1,22 +1,23 @@
-import Container, { Service } from "typedi";
-import * as vscode from "vscode";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { DebugVariablesTracker } from "../session/debugger/DebugVariablesTracker";
-import { logDebug, logError } from "../Logging";
+import type { DebugVariablesTracker } from '../session/debugger/DebugVariablesTracker';
+import type { Result } from '../utils/Result';
+import type { Viewable } from '../viewable/Viewable';
+import _ from 'lodash';
+import Container, { Service } from 'typedi';
+import * as vscode from 'vscode';
+import { logDebug, logError } from '../Logging';
 import {
   combineMultiEvalCodePython,
   constructRunSameExpressionWithMultipleEvaluatorsCode,
-} from "../python-communication/BuildPythonCode";
-import { evaluateInPython } from "../python-communication/RunPythonCode";
+} from '../python-communication/BuildPythonCode';
+import { evaluateInPython } from '../python-communication/RunPythonCode';
 import {
   findExpressionsViewables,
   findExpressionViewables,
-} from "../PythonObjectInfo";
-import { arrayUniqueByKey, notEmptyArray, zip } from "../utils/Utils";
-import { Viewable } from "../viewable/Viewable";
-import { Err, Ok, Result, errorMessage, isOkay } from "../utils/Result";
-import { debugSession } from "../session/Session";
-import _ from "lodash";
+} from '../PythonObjectInfo';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { debugSession } from '../session/Session';
+import { Err, errorMessage, isOkay, Ok } from '../utils/Result';
+import { arrayUniqueByKey, notEmptyArray, zip } from '../utils/Utils';
 
 // ExpressionsList is global to all debug sessions
 @Service()
@@ -24,8 +25,8 @@ class ExpressionsList {
   readonly expressions: string[] = [];
 }
 
-export const globalExpressionsList: ReadonlyArray<string> =
-  Container.get(ExpressionsList).expressions;
+export const globalExpressionsList: ReadonlyArray<string>
+  = Container.get(ExpressionsList).expressions;
 
 export type InfoOrError = Result<
   [NonEmptyArray<Viewable>, PythonObjectInformation]
@@ -54,7 +55,7 @@ export class CurrentPythonObjectsListData {
   }
 
   public manuallyAddVariable(variable: string, infoOrError: InfoOrError): void {
-    if (this._variablesList.find((v) => v[0] === variable) === undefined) {
+    if (this._variablesList.find(v => v[0] === variable) === undefined) {
       this._variablesList.push([variable, infoOrError]);
     }
   }
@@ -71,24 +72,26 @@ export class CurrentPythonObjectsListData {
 
   public find(expression: string):
     | {
-        type: "variable" | "expression";
-        InfoOrError: InfoOrError;
-      }
+      type: 'variable' | 'expression';
+      InfoOrError: InfoOrError;
+    }
     | undefined {
-    const variable = this._variablesList.find((v) => v[0] === expression);
+    const variable = this._variablesList.find(v => v[0] === expression);
     if (variable !== undefined) {
       return {
-        type: "variable",
+        type: 'variable',
         InfoOrError: variable[1],
       };
-    } else {
-      const index = globalExpressionsList.findIndex((e) => e === expression);
+    }
+    else {
+      const index = globalExpressionsList.findIndex(e => e === expression);
       if (index >= 0) {
         return {
-          type: "expression",
+          type: 'expression',
           InfoOrError: this._expressionsInfo[index],
         };
-      } else {
+      }
+      else {
         return undefined;
       }
     }
@@ -99,11 +102,11 @@ export class CurrentPythonObjectsListData {
   }: {
     skipInvalid: boolean;
   }): ReadonlyArray<ExpressingWithInfo> {
-    const expressionsInfoOrNotReady =
-      this.expressionsInfo ??
-      (Array(globalExpressionsList.length).fill(
-        Err("Not ready") as InfoOrError,
-      ) as InfoOrError[]);
+    const expressionsInfoOrNotReady
+      = this.expressionsInfo
+        ?? (Array.from({ length: globalExpressionsList.length }).fill(
+          Err('Not ready') as InfoOrError,
+        ) as InfoOrError[]);
 
     let expressions = zip(globalExpressionsList, expressionsInfoOrNotReady).map(
       ([exp, info]) => [exp, info] as ExpressingWithInfo,
@@ -126,17 +129,17 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
   }
 
   private async retrieveVariables(): Promise<string[]> {
-    const { locals, globals } =
-      await this.debugVariablesTracker.currentFrameVariables();
+    const { locals, globals }
+      = await this.debugVariablesTracker.currentFrameVariables();
     if (globals.length === 0 && locals.length === 0) {
       return [];
     }
     const allUniqueVariables = arrayUniqueByKey(
       [...globals, ...locals],
-      (v) => v.evaluateName,
+      v => v.evaluateName,
     );
 
-    return allUniqueVariables.map((v) => v.evaluateName);
+    return allUniqueVariables.map(v => v.evaluateName);
   }
 
   private async retrieveInformation({
@@ -156,39 +159,39 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     const variablesViewables = await findExpressionsViewables(
       variables,
       debugSession(this.debugSession),
-    ).then((r) =>
+    ).then(r =>
       r.err
-        ? Array<typeof r>(variables.length).fill(r)
-        : r.safeUnwrap().map((v) => Ok(v)),
+        ? Array.from<typeof r>({ length: variables.length }).fill(r)
+        : r.safeUnwrap().map(v => Ok(v)),
     );
 
     // expressions are evaluated separately, to avoid case of syntax error in one expression
     const expressionsViewables = await Promise.allSettled(
-      expressions.map((exp) =>
+      expressions.map(exp =>
         findExpressionViewables(exp, debugSession(this.debugSession)),
       ),
-    ).then((r) =>
-      r.map((v) => (v.status === "fulfilled" ? v.value : Err(v.reason))),
+    ).then(r =>
+      r.map(v => (v.status === 'fulfilled' ? v.value : Err(v.reason))),
     );
 
     const allViewables = [...variablesViewables, ...expressionsViewables].map(
-      (evs) =>
+      evs =>
         evs.ok
           ? evs.safeUnwrap().length > 0
             ? evs
-            : Err("Not viewable")
+            : Err('Not viewable')
           : evs,
     );
 
-    const informationEvalCode = allViewables.map((evs) =>
-      evs.map((vs) => vs.map((v) => v.infoPythonCode)),
+    const informationEvalCode = allViewables.map(evs =>
+      evs.map(vs => vs.map(v => v.infoPythonCode)),
     );
 
     const allExpressions = [...variables, ...expressions];
 
     const codeOrErrors = zip(allExpressions, informationEvalCode).map(
       ([exp, infoEvalCodes]) =>
-        infoEvalCodes.map((codes) =>
+        infoEvalCodes.map(codes =>
           constructRunSameExpressionWithMultipleEvaluatorsCode(exp, codes),
         ),
     );
@@ -196,7 +199,7 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     const codes = codesWithIndices
       .map(([, c]) => c)
       .filter(isOkay)
-      .map((e) => e.safeUnwrap());
+      .map(e => e.safeUnwrap());
     const validIndices = codesWithIndices
       .filter(([, c]) => c.ok)
       .map(([i]) => i);
@@ -228,17 +231,20 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     ]): InfoOrError => {
       if (maybeViewables.err) {
         return maybeViewables;
-      } else if (info.err) {
+      }
+      else if (info.err) {
         return info;
-      } else {
+      }
+      else {
         const viewables = maybeViewables.safeUnwrap();
         if (notEmptyArray(viewables)) {
           return Ok([
             viewables,
             removeSurroundingQuotesFromInfoObject(info.safeUnwrap()),
           ]);
-        } else {
-          return Err("Not viewable");
+        }
+        else {
+          return Err('Not viewable');
         }
       }
     };
@@ -266,8 +272,8 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
     this._variablesList.length = 0;
     const debugSessionData = activeDebugSessionData(this.debugSession);
     if (
-      debugSessionData.isStopped === false ||
-      debugSessionData.setupOkay === false
+      debugSessionData.isStopped === false
+      || debugSessionData.setupOkay === false
     ) {
       return;
     }
@@ -283,7 +289,7 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
       expressions: globalExpressionsList.slice(),
     });
     const validVariables: [string, InfoOrError][] = variableNames.map(
-      (v) => [v, Err("Not ready")] as ExpressingWithInfo,
+      v => [v, Err('Not ready')] as ExpressingWithInfo,
     );
     for (let i = 0; i < validVariables.length; i++) {
       const variable = validVariables[i];
@@ -297,7 +303,8 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
         );
         validVariables[i] = variable;
         validVariables[i][1] = info;
-      } else {
+      }
+      else {
         logDebug(
           `Error while getting information for variable '${name}': ${errorMessage(
             info,
@@ -333,14 +340,15 @@ export class CurrentPythonObjectsList extends CurrentPythonObjectsListData {
 function combineValidInfoErrorIfNone(
   infoOrErrors: Result<unknown>[],
 ): Result<Record<string, string>> {
-  const validRecords = infoOrErrors.filter(isOkay).map((p) => p.safeUnwrap());
+  const validRecords = infoOrErrors.filter(isOkay).map(p => p.safeUnwrap());
 
   if (validRecords.length === 0) {
-    return Err("Invalid expression");
-  } else {
+    return Err('Invalid expression');
+  }
+  else {
     const allEntries = validRecords
-      .flatMap((o) =>
-        typeof o === "object" && o !== null ? Object.entries(o) : [],
+      .flatMap(o =>
+        typeof o === 'object' && o !== null ? Object.entries(o) : [],
       )
       .map(([k, v]) => [k, JSON.stringify(v)] as const);
     const merged = Object.fromEntries(allEntries);
@@ -350,11 +358,11 @@ function combineValidInfoErrorIfNone(
 
 export async function addExpression(): Promise<boolean> {
   const maybeExpression = await vscode.window.showInputBox({
-    prompt: "Enter expression to watch",
-    placeHolder: "e.g. images[0]",
+    prompt: 'Enter expression to watch',
+    placeHolder: 'e.g. images[0]',
     ignoreFocusOut: true,
   });
-  if (maybeExpression !== undefined && maybeExpression !== "") {
+  if (maybeExpression !== undefined && maybeExpression !== '') {
     Container.get(ExpressionsList).expressions.push(maybeExpression);
     return true;
   }
@@ -366,9 +374,9 @@ export async function editExpression(expression: string): Promise<boolean> {
   const idx = expressions.indexOf(expression);
   if (idx > -1) {
     const maybeExpression = await vscode.window.showInputBox({
-      prompt: "Enter expression to watch",
+      prompt: 'Enter expression to watch',
       value: expression,
-      placeHolder: "e.g. images[0]",
+      placeHolder: 'e.g. images[0]',
       ignoreFocusOut: true,
     });
     if (maybeExpression !== undefined) {

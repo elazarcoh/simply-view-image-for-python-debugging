@@ -1,4 +1,5 @@
-import { MessageChunkHeader, RequestId } from "./protocol";
+import type { Buffer } from 'node:buffer';
+import type { MessageChunkHeader, RequestId } from './protocol';
 
 export type OnDataCallback = (header: MessageChunkHeader, data: Buffer) => void;
 

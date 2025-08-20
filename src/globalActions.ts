@@ -1,12 +1,13 @@
-import Container from "typedi";
-import { WatchTreeProvider } from "./image-watch-tree/WatchTreeProvider";
-import { DebugSession } from "./session/Session";
-import { getSessionData } from "./session/SessionData";
-import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
-import { WebviewRequests } from "./webview/communication/createMessages";
-import { Option } from "ts-results";
+import type { Option } from 'ts-results';
+import type { DebugSession } from './session/Session';
+import Container from 'typedi';
+import { WatchTreeProvider } from './image-watch-tree/WatchTreeProvider';
+import { getSessionData } from './session/SessionData';
+import { WebviewRequests } from './webview/communication/createMessages';
+import { GlobalWebviewClient } from './webview/communication/WebviewClient';
 
-/** Utility function to refresh views, e.g. TreeView and WebView.
+/**
+ * Utility function to refresh views, e.g. TreeView and WebView.
  *  If there's no session, it will basically clear the views.
  */
 export async function refreshAllDataViews(session: Option<DebugSession>) {

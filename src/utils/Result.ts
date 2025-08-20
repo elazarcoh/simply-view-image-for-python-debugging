@@ -1,5 +1,6 @@
-import * as tsResult from "ts-results";
-export { Ok, Err } from "ts-results";
+import * as tsResult from 'ts-results';
+
+export { Err, Ok } from 'ts-results';
 
 type ErrorType = Error | string;
 export type Result<T> = tsResult.Result<T, ErrorType>;
@@ -16,7 +17,7 @@ export function joinResult<T>(result: Result<Result<T>>): Result<T> {
   return result;
 }
 export function errorMessage(err: tsResult.Err<ErrorType>): string {
-  return typeof err.val === "string" ? err.val : err.val.message;
+  return typeof err.val === 'string' ? err.val : err.val.message;
 }
 export function isOkay<T>(result: Result<T>): result is tsResult.Ok<T> {
   return result.ok;

@@ -1,10 +1,10 @@
-import * as vscode from "vscode";
-import { arrayUnique } from "../utils/Utils";
-import { Viewable } from "../viewable/Viewable";
+import type { Viewable } from '../viewable/Viewable';
+import * as vscode from 'vscode';
+import { arrayUnique } from '../utils/Utils';
 
 enum PythonObjectTrackingState {
-  Tracked = "trackedVariable",
-  NotTracked = "nonTrackedVariable",
+  Tracked = 'trackedVariable',
+  NotTracked = 'nonTrackedVariable',
 }
 
 function buildWatchTreeItemContext({
@@ -15,19 +15,19 @@ function buildWatchTreeItemContext({
 }: {
   viewables: ReadonlyArray<Viewable>;
   trackingState: PythonObjectTrackingState;
-  itemType: "variable" | "expression";
+  itemType: 'variable' | 'expression';
   isError: true | false;
 }): string {
-  let context = "svifpd:";
+  let context = 'svifpd:';
   context += trackingState.toString();
   if (isError) {
-    context += "-errorItem";
+    context += '-errorItem';
   }
   if (viewables.length > 0) {
-    context += "-" + arrayUnique(viewables.map((v) => v.group)).join("_");
+    context += `-${arrayUnique(viewables.map(v => v.group)).join('_')}`;
   }
-  if (itemType === "expression") {
-    context += "-expressionItem";
+  if (itemType === 'expression') {
+    context += '-expressionItem';
   }
   return context;
 }
@@ -39,7 +39,7 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
   savePath?: string;
 
   constructor(
-    readonly itemType: "variable" | "expression",
+    readonly itemType: 'variable' | 'expression',
     label: string,
     public readonly expression: string,
     public readonly viewables: Readonly<NonEmptyArray<Viewable>>,
@@ -67,7 +67,7 @@ export abstract class PythonObjectTreeItem extends vscode.TreeItem {
   setTracked(trackingId: TrackingId): void {
     this.trackingId = trackingId;
     this.tracking = PythonObjectTrackingState.Tracked;
-    this.iconPath = new vscode.ThemeIcon("eye");
+    this.iconPath = new vscode.ThemeIcon('eye');
     this.updateContext();
   }
 
@@ -83,10 +83,10 @@ export class ErrorWatchTreeItem extends vscode.TreeItem {
   constructor(
     public readonly expression: string,
     error: string | Error,
-    private readonly itemType: "variable" | "expression",
+    private readonly itemType: 'variable' | 'expression',
   ) {
     super(expression, vscode.TreeItemCollapsibleState.None);
-    this.description = typeof error === "string" ? error : error.message;
+    this.description = typeof error === 'string' ? error : error.message;
     this.updateContext();
   }
 
@@ -108,6 +108,7 @@ export class PythonObjectInfoLineTreeItem extends vscode.TreeItem {
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
   }
-  static readonly contextValue = "infoItem";
+
+  static readonly contextValue = 'infoItem';
   readonly contextValue = PythonObjectInfoLineTreeItem.contextValue;
 }

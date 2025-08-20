@@ -1,14 +1,14 @@
-import * as vscode from "vscode";
-import { EXTENSION_CUSTOM_EDITOR_ID } from "./globals";
-import { WebviewCommunication } from "./webview/communication/WebviewClient";
-import { ImageViewPanel } from "./webview/panels/ImageViewPanel";
-import { disposeAll } from "./utils/VSCodeUtils";
-import { SingleImageModeWebviewMessageHandler } from "./webview/communication/SingleImageModeWebviewMessageHandler";
-import * as ExifReader from "exifreader";
-import { Jimp } from "jimp";
-import { ImageMessage } from "./webview/webview";
-import { Ok } from "./utils/Result";
-import { JimpMime } from "jimp";
+import type { Buffer } from 'node:buffer';
+import type { ImageMessage } from './webview/webview';
+import * as ExifReader from 'exifreader';
+import { Jimp, JimpMime } from 'jimp';
+import * as vscode from 'vscode';
+import { EXTENSION_CUSTOM_EDITOR_ID } from './globals';
+import { Ok } from './utils/Result';
+import { disposeAll } from './utils/VSCodeUtils';
+import { SingleImageModeWebviewMessageHandler } from './webview/communication/SingleImageModeWebviewMessageHandler';
+import { WebviewCommunication } from './webview/communication/WebviewClient';
+import { ImageViewPanel } from './webview/panels/ImageViewPanel';
 
 type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
 
@@ -26,24 +26,25 @@ async function getByFileType(
 ): Promise<{ width: number; height: number; channels: 1 | 2 | 3 | 4 }> {
   if (image.mime === JimpMime.png) {
     const tags = await ExifReader.load(uri.fsPath);
-    const width = tags["Image Width"]?.value;
-    const height = tags["Image Height"]?.value;
-    const colorType = tags["Color Type"]?.value as
+    const width = tags['Image Width']?.value;
+    const height = tags['Image Height']?.value;
+    const colorType = tags['Color Type']?.value as
       | keyof typeof PNG_COLOR_TYPE
       | undefined;
-    const channels =
-      colorType !== undefined ? PNG_COLOR_TYPE[colorType].channels : undefined;
+    const channels
+      = colorType !== undefined ? PNG_COLOR_TYPE[colorType].channels : undefined;
 
     if (width === undefined || height === undefined || channels === undefined) {
-      throw new Error("Missing image dimensions or channels");
+      throw new Error('Missing image dimensions or channels');
     }
 
     return { width, height, channels };
-  } else if (image.mime === JimpMime.bmp) {
+  }
+  else if (image.mime === JimpMime.bmp) {
     let channels: 1 | 2 | 3 | 4;
     const bp = image.bitmap;
-    if ("bitPP" in bp === false) {
-      throw new Error("Unsupported BMP image. Missing bitPP property");
+    if ('bitPP' in bp === false) {
+      throw new Error('Unsupported BMP image. Missing bitPP property');
     }
     const bitsPerPixel = bp.bitPP;
     switch (bitsPerPixel) {
@@ -57,7 +58,7 @@ async function getByFileType(
       }
       case 16: {
         channels = 4;
-        throw new Error("16-bit BMP images are not supported yet");
+        throw new Error('16-bit BMP images are not supported yet');
       }
       case 24: {
         channels = 3;
@@ -77,24 +78,26 @@ async function getByFileType(
       height: image.bitmap.height,
       channels,
     };
-  } else if (image.mime === JimpMime.tiff) {
+  }
+  else if (image.mime === JimpMime.tiff) {
     const tags = await ExifReader.load(uri.fsPath);
-    const width = tags["ImageWidth"]?.value;
-    const height = tags["ImageLength"]?.value;
-    const samplesPerPixel = tags["SamplesPerPixel"]?.value;
+    const width = tags.ImageWidth?.value;
+    const height = tags.ImageLength?.value;
+    const samplesPerPixel = tags.SamplesPerPixel?.value;
 
     return {
       width: width as number,
       height: height as number,
       channels: samplesPerPixel as 1 | 2 | 3 | 4,
     };
-  } else if (image.mime === JimpMime.jpeg) {
+  }
+  else if (image.mime === JimpMime.jpeg) {
     const tags = await ExifReader.load(uri.fsPath);
-    const width = tags["Image Width"]?.value;
-    const height = tags["Image Height"]?.value;
-    const colorComponents = tags["Color Components"]?.value;
-    if (typeof colorComponents !== "number") {
-      throw new Error("Missing color components");
+    const width = tags['Image Width']?.value;
+    const height = tags['Image Height']?.value;
+    const colorComponents = tags['Color Components']?.value;
+    if (typeof colorComponents !== 'number') {
+      throw new TypeError('Missing color components');
     }
     if ([1, 3, 4].includes(colorComponents) === false) {
       throw new Error(
@@ -107,7 +110,8 @@ async function getByFileType(
       height: height as number,
       channels: colorComponents as 1 | 2 | 3 | 4,
     };
-  } else {
+  }
+  else {
     throw new Error(`Unsupported file type: ${image.mime}`);
   }
 }
@@ -135,9 +139,10 @@ function prepareBuffer(
   const ic = numInputChannels;
   if (numChannels === ic) {
     arrayData.set(inputBuffer);
-  } else if (
-    (numChannels === 3 && ic === 4) ||
-    (numChannels === 4 && ic === 3)
+  }
+  else if (
+    (numChannels === 3 && ic === 4)
+    || (numChannels === 4 && ic === 3)
   ) {
     // This works for both 3 and 4 channel images
     const fillAlpha = ic === 3 && numChannels === 4;
@@ -150,17 +155,20 @@ function prepareBuffer(
         arrayData[base + 3] = 255;
       }
     }
-  } else if (numChannels === 2) {
+  }
+  else if (numChannels === 2) {
     for (let i = 0; i < inputBuffer.length; i += ic) {
       const base = (i / ic) * numChannels;
       arrayData[base] = inputBuffer[i];
       arrayData[base + 1] = inputBuffer[i + 1];
     }
-  } else if (numChannels === 1) {
+  }
+  else if (numChannels === 1) {
     for (let i = 0; i < inputBuffer.length; i += ic) {
       arrayData[i / ic] = inputBuffer[i];
     }
-  } else {
+  }
+  else {
     throw new Error(`Unsupported number of channels: ${numChannels}`);
   }
 
@@ -174,7 +182,7 @@ async function createMessage(uri: vscode.Uri): Promise<ImageMessage> {
   const outputLength = width * height * channels;
   const inputChannels = image.bitmap.data.length / (width * height);
   if (inputChannels !== 3 && inputChannels !== 4) {
-    throw new Error("Unsupported number of input channels");
+    throw new Error('Unsupported number of input channels');
   }
   const arrayBuffer = prepareBuffer(
     image.bitmap.data,
@@ -184,28 +192,27 @@ async function createMessage(uri: vscode.Uri): Promise<ImageMessage> {
   );
 
   const imageMessage: ImageMessage = {
-    image_id: ["customEditorSession", uri.toString()],
-    value_variable_kind: "variable",
-    expression: "image",
-    width: width,
-    height: height,
+    image_id: ['customEditorSession', uri.toString()],
+    value_variable_kind: 'variable',
+    expression: 'image',
+    width,
+    height,
     channels: channels as 1 | 2 | 3 | 4,
-    datatype: "uint8",
+    datatype: 'uint8',
     is_batched: false,
     batch_size: null,
     batch_items_range: null,
     additional_info: {},
     min: null,
     max: null,
-    data_ordering: "hwc",
+    data_ordering: 'hwc',
     bytes: arrayBuffer,
   };
   return imageMessage;
 }
 
 export class ImagePreviewCustomEditor
-  implements vscode.CustomReadonlyEditorProvider, vscode.Disposable
-{
+implements vscode.CustomReadonlyEditorProvider, vscode.Disposable {
   public static readonly viewType = EXTENSION_CUSTOM_EDITOR_ID;
 
   private _webviewMessageHandler?: SingleImageModeWebviewMessageHandler;
@@ -236,12 +243,13 @@ export class ImagePreviewCustomEditor
       ImageViewPanel.render(this.context, webviewEditor);
       webviewCommunication.waitForReady().then(() => {
         webviewCommunication.sendRequest({
-          type: "ShowImage",
+          type: 'ShowImage',
           image_data: imageMessage,
           options: {},
         });
       });
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
     }
   }
@@ -257,14 +265,15 @@ export async function openFileImage() {
     return;
   }
   const input = activeTab.input;
-  if (typeof input === "object" && input !== null && "uri" in input) {
+  if (typeof input === 'object' && input !== null && 'uri' in input) {
     const { uri } = input;
     await vscode.commands.executeCommand(
-      "vscode.openWith",
+      'vscode.openWith',
       uri,
       ImagePreviewCustomEditor.viewType,
     );
-  } else {
-    vscode.window.showErrorMessage("Failed to open the file");
+  }
+  else {
+    vscode.window.showErrorMessage('Failed to open the file');
   }
 }

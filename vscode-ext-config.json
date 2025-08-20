@@ -1,18 +1,18 @@
 {
-    "prefix": "svifpd",
-    "configurations": [
-        {
-            "filePath": "./src/config.ts",
-            "name": "Config"
-        }
-    ],
-    "targetFile": "package.json",
-    "tsconfig": "tsconfig.json",
-    "tags": [
-        "markdownDescription",
-        "scope",
-        "patternErrorMessage",
-        "deprecationMessage",
-        "enumDescriptions"
-    ]
+  "prefix": "svifpd",
+  "configurations": [
+    {
+      "filePath": "./src/config.ts",
+      "name": "Config"
+    }
+  ],
+  "targetFile": "package.json",
+  "tsconfig": "tsconfig.json",
+  "tags": [
+    "markdownDescription",
+    "scope",
+    "patternErrorMessage",
+    "deprecationMessage",
+    "enumDescriptions"
+  ]
 }

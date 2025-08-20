@@ -1,14 +1,15 @@
-import * as vscode from "vscode";
-import { Viewable } from "../viewable/Viewable";
-import { activeDebugSessionData } from "../session/debugger/DebugSessionsHolder";
-import { logDebug, logError } from "../Logging";
-import { isExpressionSelection } from "../utils/VSCodeUtils";
-import { constructValueWrappedExpressionFromEvalCode } from "../python-communication/BuildPythonCode";
-import { evaluateInPython } from "../python-communication/RunPythonCode";
-import { errorMessage, joinResult } from "../utils/Result";
-import { isDebugSession, Session } from "../session/Session";
-import { SavePathHelper } from "../SerializationHelper";
-import { jupyterSessionData } from "../session/jupyter/JupyterSessionRegistry";
+import type { SavePathHelper } from '../SerializationHelper';
+import type { Session } from '../session/Session';
+import type { Viewable } from '../viewable/Viewable';
+import * as vscode from 'vscode';
+import { logDebug, logError } from '../Logging';
+import { constructValueWrappedExpressionFromEvalCode } from '../python-communication/BuildPythonCode';
+import { evaluateInPython } from '../python-communication/RunPythonCode';
+import { activeDebugSessionData } from '../session/debugger/DebugSessionsHolder';
+import { jupyterSessionData } from '../session/jupyter/JupyterSessionRegistry';
+import { isDebugSession } from '../session/Session';
+import { errorMessage, joinResult } from '../utils/Result';
+import { isExpressionSelection } from '../utils/VSCodeUtils';
 
 export async function serializePythonObjectToDisk(
   obj: PythonObjectRepresentation,
@@ -20,10 +21,11 @@ export async function serializePythonObjectToDisk(
   if (isDebugSession(session)) {
     const debugSessionData = activeDebugSessionData(session.session);
     savePathHelper = debugSessionData.savePathHelper;
-  } else {
+  }
+  else {
     const data = jupyterSessionData(session.uri);
     if (!data) {
-      logError("Jupyter session data not found");
+      logError('Jupyter session data not found');
       return;
     }
     savePathHelper = data.savePathHelper;
@@ -54,10 +56,11 @@ export async function serializePythonObjectToDisk(
   if (result.err) {
     const message = `Error saving viewable of type ${
       viewable.type
-    }: ${errorMessage(result)}`.replaceAll("\\n", "\n");
+    }: ${errorMessage(result)}`.replaceAll('\\n', '\n');
     logError(message);
     vscode.window.showErrorMessage(message);
-  } else {
+  }
+  else {
     return pathWithSuffix;
   }
 }

@@ -4,16 +4,16 @@ export function allFulfilled<T>(ps: Promise<T>[]): Promise<T[]> {
     return t !== FAIL_TOKEN;
   };
   const resolvedPromises: Promise<T[]> = Promise.all(
-    ps.map((p) => p.catch((_) => FAIL_TOKEN)),
-  ).then((values) => values.filter(fulfilled) as T[]);
+    ps.map(p => p.catch(_ => FAIL_TOKEN)),
+  ).then(values => values.filter(fulfilled) as T[]);
   return resolvedPromises;
 }
 
 export function indent(content: string, n: number): string {
   return content
-    .split("\n")
-    .map((line) => " ".repeat(n) + line)
-    .join("\n");
+    .split('\n')
+    .map(line => ' '.repeat(n) + line)
+    .join('\n');
 }
 
 export function arrayUnique<T>(array: T[]): T[] {
@@ -21,7 +21,7 @@ export function arrayUnique<T>(array: T[]): T[] {
 }
 
 export function arrayUniqueByKey<T, V>(array: T[], key: (t: T) => V): T[] {
-  return [...new Map(array.map((item) => [key(item), item])).values()];
+  return [...new Map(array.map(item => [key(item), item])).values()];
 }
 
 type AnyArray<T> = T[] | readonly T[];
@@ -31,10 +31,10 @@ export function zip<Arrays extends ReadonlyArray<unknown>[]>(
 ): {
   [K in keyof Arrays]: Arrays[K] extends AnyArray<infer R> ? R : never;
 }[] {
-  const minLength = Math.min(...arrays.map((a) => a.length));
+  const minLength = Math.min(...arrays.map(a => a.length));
   const res = [];
   for (let i = 0; i < minLength; i++) {
-    res.push(arrays.map((a) => a[i]));
+    res.push(arrays.map(a => a[i]));
   }
   return res as {
     [K in keyof Arrays]: Arrays[K] extends AnyArray<infer R> ? R : never;
@@ -49,7 +49,7 @@ export function isOf<Constructors extends Constructor<unknown>[]>(
   return (
     value: unknown,
   ): value is TupleToUnion<ExtractConstructorClass<Constructors>> => {
-    return types.some((type) => value instanceof type);
+    return types.some(type => value instanceof type);
   };
 }
 
@@ -65,16 +65,16 @@ export function setDefault<K, V>(map: Map<K, V>, key: K, value: V): V {
   if (!map.has(key)) {
     map.set(key, value);
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion  -- we just set it
+  // eslint-disable-next-line ts/no-non-null-assertion  -- we just set it
   return map.get(key)!;
 }
 
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export function valueOrEval<T>(valueOrFunction: Initializer<T>) {
-  return typeof valueOrFunction === "function"
+  return typeof valueOrFunction === 'function'
     ? valueOrFunction()
     : valueOrFunction;
 }

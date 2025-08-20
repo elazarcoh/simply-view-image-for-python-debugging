@@ -1,9 +1,11 @@
-import { Service } from "typedi";
-import * as net from "net";
-import { RequestsManager } from "./RequestsManager";
-import { MessageChunkHeader, splitHeaderContentRest } from "./protocol";
-import { MessageChunks } from "./MessageChunks";
-import { logDebug, logInfo, logTrace } from "../../Logging";
+import type { MessageChunkHeader } from './protocol';
+import { Buffer } from 'node:buffer';
+import * as net from 'node:net';
+import { Service } from 'typedi';
+import { logDebug, logInfo, logTrace } from '../../Logging';
+import { MessageChunks } from './MessageChunks';
+import { splitHeaderContentRest } from './protocol';
+import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -23,22 +25,23 @@ export class SocketServer {
       keepAlive: true,
     };
     this.server = net.createServer(options);
-    this.server.on("connection", this.onClientConnected.bind(this));
+    this.server.on('connection', this.onClientConnected.bind(this));
   }
 
   async start() {
     if (this.started) {
-      throw new Error("SocketServer already started");
+      throw new Error('SocketServer already started');
     }
     this.server.listen(0);
     const address = this.server.address();
-    if (typeof address === "string") {
-      throw new Error("SocketServer address is a string");
-    } else if (address === null) {
-      throw new Error("SocketServer address is null");
+    if (typeof address === 'string') {
+      throw new TypeError('SocketServer address is a string');
+    }
+    else if (address === null) {
+      throw new Error('SocketServer address is null');
     }
     this.port = address.port;
-    logInfo("SocketServer started on port " + this.port);
+    logInfo(`SocketServer started on port ${this.port}`);
     this.started = true;
   }
 
@@ -48,10 +51,10 @@ export class SocketServer {
 
   get portNumber() {
     if (!this.started) {
-      throw new Error("SocketServer is not started");
+      throw new Error('SocketServer is not started');
     }
     if (this.port === undefined) {
-      throw new Error("SocketServer is not listening");
+      throw new Error('SocketServer is not listening');
     }
     return this.port;
   }
@@ -59,11 +62,12 @@ export class SocketServer {
   onClientConnected(socket: net.Socket): void {
     const outgoingRequestsManager = this.outgoingRequestsManager;
     const handleMessage = (header: MessageChunkHeader, data: Buffer) => {
-      logTrace("Received message from client. Request id:", header.requestId);
+      logTrace('Received message from client. Request id:', header.requestId);
       if (outgoingRequestsManager.hasRequest(header.requestId)) {
         // handle as response
         outgoingRequestsManager.onData(header, data);
-      } else {
+      }
+      else {
         // handle as request
         // const message = parseMessage(header, data);
         // logDebug("Parsed message from client", message);
@@ -82,17 +86,17 @@ export class SocketServer {
 
         const parsed = splitHeaderContentRest(data);
         if (parsed.err) {
-          logTrace("Waiting for more data");
+          logTrace('Waiting for more data');
           waitingForHandling = data;
           return;
         }
 
         const [header, content, rest] = parsed.safeUnwrap();
         if (rest.length > 0) {
-          logTrace("Received more data than expected");
+          logTrace('Received more data than expected');
           waitingForHandling = rest;
         }
-        logTrace("Parsed header", header);
+        logTrace('Parsed header', header);
         data = EMPTY_BUFFER;
 
         const chunks = setDefault(
@@ -103,7 +107,7 @@ export class SocketServer {
         chunks.addChunk(header, content);
 
         if (chunks.isComplete()) {
-          logTrace("Message is complete");
+          logTrace('Message is complete');
           const fullMessage = chunks.fullMessage();
           handleMessage(header, fullMessage);
         }
@@ -113,22 +117,23 @@ export class SocketServer {
       return (...args: any[]) => {
         try {
           fn(...args);
-        } catch (err) {
-          logDebug("Error in handler");
+        }
+        catch (err) {
+          logDebug('Error in handler');
           logDebug(err);
         }
       };
     };
 
-    socket.on("data", makeSafe(handleData));
-    socket.on("close", () => {
-      logTrace("Client closed connection");
+    socket.on('data', makeSafe(handleData));
+    socket.on('close', () => {
+      logTrace('Client closed connection');
     });
-    socket.on("end", () => {
-      logTrace("Client ended connection");
+    socket.on('end', () => {
+      logTrace('Client ended connection');
     });
-    socket.on("error", (err) => {
-      logDebug("Client connection error");
+    socket.on('error', (err) => {
+      logDebug('Client connection error');
       logDebug(err);
     });
   }
@@ -148,6 +153,6 @@ export function setDefault<K, V>(map: Map<K, V>, key: K, ctor: () => V): V {
   if (!map.has(key)) {
     map.set(key, ctor());
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion  -- we just set it
+  // eslint-disable-next-line ts/no-non-null-assertion  -- we just set it
   return map.get(key)!;
 }

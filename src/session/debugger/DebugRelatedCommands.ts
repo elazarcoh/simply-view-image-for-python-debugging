@@ -1,8 +1,8 @@
-import * as vscode from "vscode";
-import { DebugProtocol } from "vscode-debugprotocol";
-import { findExpressionViewables } from "../../PythonObjectInfo";
-import { viewObject } from "../../ViewPythonObject";
-import { debugSession } from "../../session/Session";
+import type { DebugProtocol } from 'vscode-debugprotocol';
+import * as vscode from 'vscode';
+import { findExpressionViewables } from '../../PythonObjectInfo';
+import { debugSession } from '../../session/Session';
+import { viewObject } from '../../ViewPythonObject';
 
 // update currently selected frame, using a hacky way (because the vscode API is lacking).
 export async function updateDebugFrameId(): Promise<void> {
@@ -21,13 +21,14 @@ export async function updateDebugFrameId(): Promise<void> {
         whitespaceLocation = new vscode.Position(i, whitespaceIndex);
       }
     }
-    if (whitespaceLocation === null) return;
+    if (whitespaceLocation === null)
+      return;
     activeTextEditor.selection = new vscode.Selection(
       whitespaceLocation,
       whitespaceLocation.translate({ characterDelta: 1 }),
     );
     await vscode.commands
-      .executeCommand("editor.debug.action.selectionToRepl", {})
+      .executeCommand('editor.debug.action.selectionToRepl', {})
       .then(() => {
         activeTextEditor.selection = prevSelection;
       });
@@ -40,11 +41,11 @@ export async function updateDebugFrameId(): Promise<void> {
 export function patchDebugVariableContext(
   variablesResponse: DebugProtocol.VariablesResponse,
 ): void {
-  const viewableTypes = ["AxesSubplot", "Figure"];
+  const viewableTypes = ['AxesSubplot', 'Figure'];
   variablesResponse.body.variables.forEach((v) => {
     if (v.type !== undefined && viewableTypes.includes(v.type)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (v as any).__vscodeVariableMenuContext = "viewableInGraphicViewer";
+      // eslint-disable-next-line ts/no-explicit-any
+      (v as any).__vscodeVariableMenuContext = 'viewableInGraphicViewer';
     }
   });
 }

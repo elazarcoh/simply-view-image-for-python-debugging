@@ -1,6 +1,6 @@
-type PythonExpression = {
+interface PythonExpression {
   expression: string;
-};
-type TrackingId = {
+}
+interface TrackingId {
   id: string;
-};
+}

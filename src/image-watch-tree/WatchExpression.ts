@@ -1,30 +1,31 @@
-import * as vscode from "vscode";
-import { refreshAllDataViews } from "../globalActions";
-import { maybeDebugSession } from "../session/Session";
-import { getSessionData } from "../session/SessionData";
-import { Viewable } from "../viewable/Viewable";
+import type { Viewable } from '../viewable/Viewable';
+import * as vscode from 'vscode';
+import { refreshAllDataViews } from '../globalActions';
+import { maybeDebugSession } from '../session/Session';
+import { getSessionData } from '../session/SessionData';
 import {
   addExpression,
   editExpression,
   removeAllExpressions,
   removeExpression,
-} from "./PythonObjectsList";
-import { PythonObjectTreeItem } from "./WatchTreeItem";
+} from './PythonObjectsList';
+import { PythonObjectTreeItem } from './WatchTreeItem';
 
 // singleton object that used to add expression when user click on it
 class _AddExpressionWatchTreeItem extends vscode.TreeItem {
   constructor(
-    public readonly label: string = "Add Expression",
+    public readonly label: string = 'Add Expression',
     public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode
-      .TreeItemCollapsibleState.None,
+      .TreeItemCollapsibleState
+      .None,
   ) {
     super(label, collapsibleState);
   }
 
   readonly command: vscode.Command = {
     command: `svifpd.add-expression`,
-    title: "Add Expression",
-    tooltip: "Add Expression",
+    title: 'Add Expression',
+    tooltip: 'Add Expression',
   };
 }
 export const AddExpressionWatchTreeItem = new _AddExpressionWatchTreeItem();
@@ -35,10 +36,11 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
     viewables: Readonly<NonEmptyArray<Viewable>>,
     info: Readonly<PythonObjectInformation>,
     collapsibleState: vscode.TreeItemCollapsibleState = vscode
-      .TreeItemCollapsibleState.Collapsed,
+      .TreeItemCollapsibleState
+.Collapsed,
   ) {
     super(
-      "expression",
+      'expression',
       expression,
       expression,
       viewables,

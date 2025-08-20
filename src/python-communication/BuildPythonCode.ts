@@ -1,11 +1,11 @@
-import COMMON from "../python/common.py?raw";
-import SOCKET_CLIENT from "../python/socket_client.py?raw";
-import Container from "typedi";
-import { AllViewables } from "../AllViewables";
-import { indent } from "../utils/Utils";
-import { Result } from "../utils/Result";
+import type { Result } from '../utils/Result';
+import Container from 'typedi';
+import { AllViewables } from '../AllViewables';
+import COMMON from '../python/common.py?raw';
+import SOCKET_CLIENT from '../python/socket_client.py?raw';
+import { indent } from '../utils/Utils';
 
-export const PYTHON_MODULE_NAME = "_python_view_image_mod";
+export const PYTHON_MODULE_NAME = '_python_view_image_mod';
 const SETUP_RESULT_VARIABLE_NAME = `${PYTHON_MODULE_NAME}_setup_result`;
 const SAME_VALUE_MULTIPLE_CALLABLES = `${PYTHON_MODULE_NAME}.same_value_multiple_callables`;
 const EVAL_INTO_VALUE_FUNCTION = `${PYTHON_MODULE_NAME}.eval_into_value`;
@@ -65,7 +65,7 @@ export function stringifyPython<R>(
 }
 
 export function convertBoolToPython(bool: boolean): string {
-  return bool ? "True" : "False";
+  return bool ? 'True' : 'False';
 }
 
 export function atModule(name: string): string {
@@ -73,7 +73,7 @@ export function atModule(name: string): string {
 }
 
 function concatExpressionsToPythonList(expressions: string[]): string {
-  return `[${expressions.join(", ")}]`;
+  return `[${expressions.join(', ')}]`;
 }
 
 function errorCapturingVariableName(id: string): string {
@@ -90,7 +90,7 @@ function combineSetupCodes(setupCodes: SetupCode[]): string {
         errorCapturingVariableName(id),
       ),
     )
-    .join("\n\n");
+    .join('\n\n');
 
   const code = `
 ${CREATE_MODULE_IF_NOT_EXISTS}
@@ -113,7 +113,7 @@ export function moduleSetupCode(): EvalCodePython<null> {
 
 export function viewablesSetupCode(): EvalCodePython<null> {
   const viewables = Container.get(AllViewables).allViewables;
-  const pythonCode = combineSetupCodes(viewables.map((v) => v.setupPythonCode));
+  const pythonCode = combineSetupCodes(viewables.map(v => v.setupPythonCode));
   return { pythonCode };
 }
 
@@ -124,8 +124,8 @@ export function convertExpressionIntoValueWrappedExpression<R>(
   expression: string,
 ): EvalCodePython<Result<R>> {
   // verify it's a single-line expression
-  if (expression.includes("\n")) {
-    throw new Error("Expression must be a single line");
+  if (expression.includes('\n')) {
+    throw new Error('Expression must be a single line');
   }
   const asLambda = `lambda: ${expression}`;
   const pythonCode = `${EVAL_INTO_VALUE_FUNCTION}(${asLambda})`;
@@ -155,7 +155,7 @@ export function constructRunSameExpressionWithMultipleEvaluatorsCode<
     : never;
 }> {
   const lazyEvalExpression = `lambda: ${expression}`;
-  const lambdas = evals.map(({ evalCode }) => `lambda x: ${evalCode("x")}`);
+  const lambdas = evals.map(({ evalCode }) => `lambda x: ${evalCode('x')}`);
   const asList = concatExpressionsToPythonList(lambdas);
   return {
     pythonCode: `${SAME_VALUE_MULTIPLE_CALLABLES}(${lazyEvalExpression}, ${asList})`,
@@ -189,28 +189,32 @@ export function constructObjectShapeCode(
   );
 }
 
-export type BaseSendAndCloseOptions = {
+export interface BaseSendAndCloseOptions {
   restrict_image_types?: boolean;
-};
+}
 export type OpenSendAndCloseTensorOptions = {
   max_size_bytes?: number;
   start: number;
   stop: number;
 } & BaseSendAndCloseOptions;
-export type OpenSendAndCloseOptions =
-  | BaseSendAndCloseOptions
-  | OpenSendAndCloseTensorOptions;
+export type OpenSendAndCloseOptions
+  = | BaseSendAndCloseOptions
+    | OpenSendAndCloseTensorOptions;
 
 function asPythonValue(value: string | number | boolean | null): string {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return `'${value}'`;
-  } else if (typeof value === "number") {
+  }
+  else if (typeof value === 'number') {
     return value.toString();
-  } else if (typeof value === "boolean") {
-    return value ? "True" : "False";
-  } else if (value === null) {
-    return "None";
-  } else {
+  }
+  else if (typeof value === 'boolean') {
+    return value ? 'True' : 'False';
+  }
+  else if (value === null) {
+    return 'None';
+  }
+  else {
     throw new Error(`Unsupported value type: ${typeof value}`);
   }
 }
@@ -225,9 +229,9 @@ export function constructOpenSendAndCloseCode(
     return `dict(${Object.entries(options)
       .filter(([_, value]) => value !== undefined)
       .map(([key, value]) => `${key}=${asPythonValue(value)}`)
-      .join(", ")})`;
+      .join(', ')})`;
   }
-  const optionsStr = options ? makeOptionsString(options) : "{}";
+  const optionsStr = options ? makeOptionsString(options) : '{}';
   return convertExpressionIntoValueWrappedExpression(
     `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${optionsStr})`,
   );

@@ -5,6 +5,7 @@ import type {
   MessageId,
   RequestBatchItemData,
   RequestImageData,
+  SaveImage,
 } from '../webview';
 import type { WebviewCommunication } from './WebviewClient';
 import Container from 'typedi';
@@ -23,13 +24,8 @@ import { getSessionData } from '../../session/SessionData';
 import { Option } from '../../utils/Option';
 import { errorMessage } from '../../utils/Result';
 import { disposeAll } from '../../utils/VSCodeUtils';
+import { viewObject } from '../../ViewPythonObject';
 import { WebviewRequests, WebviewResponses } from './createMessages';
-
-// Define SaveImage type for now until Rust codegen is fixed
-interface SaveImage {
-  image_id: { session_id: string; id: string };
-  expression: string;
-}
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -184,60 +180,18 @@ export class WebviewMessageHandler implements vscode.Disposable {
     }
   }
 
-  async handleSaveImage(id: MessageId, { image_id, expression }: SaveImage) {
+  async handleSaveImage(_id: MessageId, { expression }: SaveImage) {
     const maybeSession = this.thisSession;
     if (maybeSession.none) {
       return;
     }
     const session = maybeSession.val;
-
-    // Only support debug sessions for now
-    if (session.type !== 'debug') {
-      logError('Save image is only supported for debug sessions');
-      return;
-    }
-
-    const debugSessionData = activeDebugSessionData();
-    if (!debugSessionData || debugSessionData.setupOkay === false) {
-      logError('Cannot save image: debug session not ready');
-      return;
-    }
-
-    // Create a TrackedObject with the current image information
-    const trackedObject = {
-      expression: { expression },
-      viewable: await this.getViewableForExpression(expression, session),
-      savePath: debugSessionData.savePathHelper.savePathFor({ expression }),
-    };
-
-    if (trackedObject.viewable) {
-      // Use the existing saveAllTrackedObjects functionality
-      await this.saveTrackedObject(trackedObject, session.session);
-      logTrace('Image saved successfully for expression:', expression);
-    }
-    else {
-      logError('Could not find viewable for expression:', expression);
-    }
-  }
-
-  private async getViewableForExpression(expression: string, session: any) {
-    const objectViewables = await findExpressionViewables(expression, session);
-    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
-      return null;
-    }
-    return objectViewables.safeUnwrap()[0];
-  }
-
-  private async saveTrackedObject(trackedObject: any, session: vscode.DebugSession) {
-    try {
-      // Import saveAllTrackedObjects here to avoid circular dependencies
-      const { saveAllTrackedObjects } = await import('../../image-watch-tree/TrackedPythonObjects');
-      await saveAllTrackedObjects([trackedObject], session);
-      logTrace('Image saved successfully');
-    }
-    catch (error) {
-      logError('Failed to save image:', error);
-    }
+    viewObject({
+      obj: { expression },
+      session,
+      forceDiskSerialization: true,
+      openInPreview: true,
+    });
   }
 
   async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
@@ -261,7 +215,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       case 'EditExpression':
         return this.handleEditExpression(id, message);
       case 'SaveImage':
-        return this.handleSaveImage(id, message as any);
+        return this.handleSaveImage(id, message);
 
       default:
         // Use a more defensive approach for unknown message types

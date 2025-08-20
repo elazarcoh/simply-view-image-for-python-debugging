@@ -36,13 +36,25 @@ export async function viewObject({
   webviewClient,
 }: {
   obj: PythonObjectRepresentation;
-  viewable: Viewable;
+  viewable?: Viewable;
   session: Session;
   path?: string;
   openInPreview?: boolean;
   forceDiskSerialization?: boolean;
   webviewClient?: WebviewClient;
 }): Promise<void> {
+  if (viewable === undefined) {
+    const objectViewables = await findExpressionViewables(
+      selectionString(obj),
+      session,
+    );
+    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
+      logWarn(`No viewable found for object: ${obj}`);
+      return;
+    }
+    viewable = objectViewables.safeUnwrap()[0];
+  }
+
   if (
     !(forceDiskSerialization ?? false)
     && valueOrEval(viewable.supportsImageViewer)

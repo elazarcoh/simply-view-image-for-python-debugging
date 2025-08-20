@@ -9,6 +9,7 @@ import {
 
 import {
   refreshWatchTree,
+  saveTrackedImage,
   trackPythonObjectTreeItem,
   untrackPythonObjectTreeItem,
 } from './image-watch-tree/WatchTreeRelatedCommands';

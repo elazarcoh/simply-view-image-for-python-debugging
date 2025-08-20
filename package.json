@@ -538,6 +538,8 @@
     "install-extension": "vsce package -o svifpd.vsix && code --install-extension svifpd.vsix",
     "lint": "eslint . --config eslint.config.mjs",
     "lint:fix": "eslint . --config eslint.config.mjs --fix",
+    "clippy": "cd src/webview-ui && cargo clippy",
+    "clippy:fix": "cd src/webview-ui && cargo clippy --fix",
     "clean": "rimraf dist src/webview-ui/pkg"
   },
   "dependencies": {

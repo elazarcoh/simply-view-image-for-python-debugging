@@ -9,7 +9,6 @@ import {
 
 import {
   refreshWatchTree,
-  saveTrackedImage,
   trackPythonObjectTreeItem,
   untrackPythonObjectTreeItem,
 } from './image-watch-tree/WatchTreeRelatedCommands';
@@ -51,25 +50,10 @@ async function rerunSetup(): Promise<void> {
     await runSetup(debugSession(session), true);
   }
 }
+
 async function updateDiagnostics(): Promise<void> {
   const debugSessionData = activeDebugSessionData();
   await debugSessionData?.diagnostics.update();
-}
-
-async function saveCurrentImage(): Promise<void> {
-  // This will be triggered from a keyboard shortcut or command
-  // For now, we'll send a message to the webview to trigger the save
-  const webviewClient = Container.get(GlobalWebviewClient);
-  if (webviewClient) {
-    // Ideally, we would get the current image context from the webview
-    // For now, let's show a message that the feature needs the webview UI
-    vscode.window.showInformationMessage(
-      'To save an image, use the Save button in the image viewer or wait for the keyboard shortcut implementation.',
-    );
-  }
-  else {
-    vscode.window.showErrorMessage('Image viewer is not open. Please open an image first.');
-  }
 }
 
 // *********************************
@@ -100,8 +84,6 @@ const COMMANDS = {
   'svifpd.disable-plugin': disablePluginCommand,
   'svifpd.update-diagnostics': updateDiagnostics,
   'svifpd.open-file-image': openFileImage,
-  'svifpd.save-current-image': saveCurrentImage,
-  'svifpd.save-tracked-image': saveTrackedImage,
   [JUPYTER_VIEW_COMMAND]: viewVariableFromJupyterDebugView,
 };
 type Commands = typeof COMMANDS;

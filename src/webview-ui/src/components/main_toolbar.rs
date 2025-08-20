@@ -13,7 +13,8 @@ use crate::{
     coloring::Coloring,
     colormap::ColorMapKind,
     common::{AppMode, Image, ViewId},
-    components::{checkbox::Checkbox, display_options::DisplayOption},
+    components::{checkbox::Checkbox, display_options::DisplayOption, button::Button},
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 #[derive(PartialEq, Properties)]
@@ -209,6 +210,23 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         ));
     });
 
+    let on_save_image = Callback::from({
+        let cv = cv.clone();
+        move |_: MouseEvent| {
+            if let Some(ref cv) = cv.as_ref() {
+                let dispatch = Dispatch::<AppState>::global();
+                let state = dispatch.get();
+                if let Some(image) = state.images.borrow().get(cv.id()) {
+                    let expression = match image {
+                        Image::Placeholder(placeholder) => placeholder.expression.clone(),
+                        Image::Full(info) => info.expression.clone(),
+                    };
+                    VSCodeRequests::save_image(cv.id().clone(), expression);
+                }
+            }
+        }
+    });
+
     html! {
         <div class={style}>
 
@@ -219,6 +237,13 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
                         />
                 }
             }
+
+            <Button onclick={Some(on_save_image.clone())} class={classes!("save-button")}>
+                <span class={classes!("codicon", "codicon-save")} title="Save current image"></span>
+                {"Save"}
+            </Button>
+
+            <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
 
             <Checkbox
                 checked={*display_colorbar}

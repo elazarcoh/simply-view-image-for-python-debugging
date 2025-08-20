@@ -167,6 +167,20 @@
         "command": "svifpd.open-file-image",
         "title": "Extended Preview",
         "icon": "$(svifpd-inspect-image)"
+      },
+      {
+        "command": "svifpd.save-current-image",
+        "title": "Save Current Image",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python",
+        "icon": "$(save)"
+      },
+      {
+        "command": "svifpd.save-tracked-image",
+        "title": "Save Tracked Image",
+        "enablement": "inDebugMode",
+        "category": "Debug View Python",
+        "icon": "$(save)"
       }
     ],
     "menus": {
@@ -284,6 +298,13 @@
           "group": "inline@31"
         },
         {
+          "command": "svifpd.save-tracked-image",
+          "title": "Save Image",
+          "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:trackedVariable-.*?image.*/",
+          "group": "inline@25",
+          "icon": "$(save)"
+        },
+        {
           "command": "svifpd.edit-expression",
           "when": "view == pythonDebugImageWatch && viewItem =~ /svifpd:.*-expressionItem/",
           "group": "inline@20"
@@ -328,6 +349,11 @@
         "command": "svifpd.view-image",
         "key": "ctrl+alt+q",
         "when": "inDebugMode"
+      },
+      {
+        "command": "svifpd.save-current-image",
+        "key": "ctrl+s",
+        "when": "svifpd.imageViewerFocused"
       }
     ],
     "configuration": {

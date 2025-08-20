@@ -10,6 +10,27 @@ import {
   refreshWatchTree,
   trackPythonObjectTreeItem,
   untrackPythonObjectTreeItem,
+} from "./image-watch-tree/WatchTreeRelatedCommands";
+import { disablePluginCommand } from "./plugins";
+import {
+  trackObjectUnderCursor,
+  viewObject,
+  viewObjectUnderCursor,
+} from './ViewPythonObject';
+import { GlobalWebviewClient } from './webview/communication/WebviewClient';
+
+import Container from 'typedi';
+import * as vscode from 'vscode';
+import {
+  addExpressionTreeItem,
+  editExpressionTreeItem,
+  removeAllExpressionsTree,
+  removeExpressionTreeItem,
+} from './image-watch-tree/WatchExpression';
+import {
+  refreshWatchTree,
+  trackPythonObjectTreeItem,
+  untrackPythonObjectTreeItem,
 } from './image-watch-tree/WatchTreeRelatedCommands';
 import { openFileImage } from './ImagePreviewCustomEditor';
 import {
@@ -32,6 +53,41 @@ import {
 } from './ViewPythonObject';
 import { GlobalWebviewClient } from './webview/communication/WebviewClient';
 
+import * as vscode from "vscode";
+import {
+  updateDebugFrameId,
+  viewVariableFromVSCodeDebugViewAsImage,
+} from "./session/debugger/DebugRelatedCommands";
+import {
+  addExpressionTreeItem,
+  editExpressionTreeItem,
+  removeAllExpressionsTree,
+  removeExpressionTreeItem,
+} from "./image-watch-tree/WatchExpression";
+import {
+  refreshWatchTree,
+  trackPythonObjectTreeItem,
+  untrackPythonObjectTreeItem,
+} from "./image-watch-tree/WatchTreeRelatedCommands";
+import { disablePluginCommand } from "./plugins";
+import {
+  trackObjectUnderCursor,
+  viewObject,
+  viewObjectUnderCursor,
+} from "./ViewPythonObject";
+import Container from "typedi";
+import { GlobalWebviewClient } from "./webview/communication/WebviewClient";
+import { runSetup } from "./python-communication/Setup";
+import { activeDebugSessionData } from "./session/debugger/DebugSessionsHolder";
+import { openFileImage } from "./ImagePreviewCustomEditor";
+import {
+  JUPYTER_VIEW_COMMAND,
+  viewVariableFromJupyterDebugView,
+} from "./jupyter-intergration";
+import { logTrace } from "./Logging";
+import { debugSession } from "./session/Session";
+
+
 // *********************
 // Some general commands
 // *********************
@@ -52,6 +108,21 @@ async function rerunSetup(): Promise<void> {
 async function updateDiagnostics(): Promise<void> {
   const debugSessionData = activeDebugSessionData();
   await debugSessionData?.diagnostics.update();
+}
+
+async function saveCurrentImage(): Promise<void> {
+  // This will be triggered from a keyboard shortcut or command
+  // For now, we'll send a message to the webview to trigger the save
+  const webviewClient = Container.get(GlobalWebviewClient);
+  if (webviewClient) {
+    // Ideally, we would get the current image context from the webview
+    // For now, let's show a message that the feature needs the webview UI
+    vscode.window.showInformationMessage(
+      "To save an image, use the Save button in the image viewer or wait for the keyboard shortcut implementation."
+    );
+  } else {
+    vscode.window.showErrorMessage("Image viewer is not open. Please open an image first.");
+  }
 }
 
 // *********************************
@@ -82,6 +153,8 @@ const COMMANDS = {
   'svifpd.disable-plugin': disablePluginCommand,
   'svifpd.update-diagnostics': updateDiagnostics,
   'svifpd.open-file-image': openFileImage,
+  "svifpd.save-current-image": saveCurrentImage,
+  "svifpd.save-tracked-image": saveTrackedImage,
   [JUPYTER_VIEW_COMMAND]: viewVariableFromJupyterDebugView,
 };
 type Commands = typeof COMMANDS;

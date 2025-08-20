@@ -116,3 +116,47 @@ export function makeViewWatchTreeItemCommand(
     }
   };
 }
+
+export async function saveTrackedImage(item: PythonObjectTreeItem): Promise<void> {
+  const debugSession = vscode.debug.activeDebugSession;
+  if (!debugSession) {
+    vscode.window.showErrorMessage("No active debug session.");
+    return;
+  }
+
+  const debugSessionData = activeDebugSessionData(debugSession);
+  if (!debugSessionData.isStopped) {
+    vscode.window.showWarningMessage("Cannot save image while debugging is not paused.");
+    return;
+  }
+
+  if (!item.trackingId) {
+    vscode.window.showErrorMessage("Item is not tracked. Please track it first.");
+    return;
+  }
+
+  try {
+    // Get the tracked object
+    const trackedObjects = debugSessionData.trackedPythonObjects.allTracked;
+    const trackedObject = trackedObjects.find(obj => {
+      const trackingId = debugSessionData.trackedPythonObjects.trackingIdIfTracked(obj.expression);
+      return trackingId && trackingId.id === item.trackingId?.id;
+    });
+
+    if (!trackedObject) {
+      vscode.window.showErrorMessage("Tracked object not found.");
+      return;
+    }
+
+    // Use the existing saveAllTrackedObjects functionality
+    const { saveAllTrackedObjects } = await import("./TrackedPythonObjects");
+    await saveAllTrackedObjects([trackedObject], debugSession);
+    
+    const expression = item instanceof VariableWatchTreeItem 
+      ? item.variableName 
+      : item.expression;
+    vscode.window.showInformationMessage(`Image saved successfully: ${expression}`);
+  } catch (error) {
+    vscode.window.showErrorMessage(`Failed to save image: ${error}`);
+  }
+}

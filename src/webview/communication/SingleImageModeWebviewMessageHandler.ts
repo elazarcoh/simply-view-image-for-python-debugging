@@ -72,6 +72,7 @@ export class SingleImageModeWebviewMessageHandler implements vscode.Disposable {
       case 'RequestBatchItemData':
       case 'AddExpression':
       case 'EditExpression':
+      case 'SaveImage':
         return;
 
       default:

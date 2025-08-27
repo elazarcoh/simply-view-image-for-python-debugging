@@ -38,18 +38,18 @@ echo "Installing Python packages..."
 pip install --upgrade pip
 
 # Core dependencies for image/tensor/plot testing
-pip install numpy>=1.20.0
-pip install Pillow>=8.0.0
-pip install matplotlib>=3.3.0
-pip install plotly>=5.0.0
+pip install "numpy>=1.20.0"
+pip install "Pillow"
+pip install "matplotlib"
+pip install "plotly"
 
 # Optional dependencies (install if available)
 echo "Installing optional dependencies..."
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu || echo "PyTorch installation failed, continuing..."
-pip install tensorflow>=2.8.0 || echo "TensorFlow installation failed, continuing..."
-pip install scikit-image>=0.18.0 || echo "scikit-image installation failed, continuing..."
-pip install opencv-python>=4.5.0 || echo "OpenCV installation failed, continuing..."
-pip install imageio>=2.9.0 || echo "imageio installation failed, continuing..."
+pip install "tensorflow>=2.8.0" || echo "TensorFlow installation failed, continuing..."
+pip install "scikit-image" || echo "scikit-image installation failed, continuing..."
+pip install "opencv-python" || echo "OpenCV installation failed, continuing..."
+pip install "imageio" || echo "imageio installation failed, continuing..."
 
 echo "Python test environment setup complete!"
 echo "To activate the environment manually, run:"

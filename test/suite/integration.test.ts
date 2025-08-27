@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
-import { TestData, TestHelper } from './test-helpers';
+import { TestHelper } from './test-helpers';
 
 suite('End-to-End Integration Test Suite', () => {
   let testScriptPath: string;
@@ -12,7 +12,7 @@ suite('End-to-End Integration Test Suite', () => {
     await TestHelper.waitForExtensionActivation('elazarcoh.simply-view-image-for-python-debugging');
 
     // Create a test Python script
-    const scriptContent = TestData.generateBasicPythonScript();
+    const scriptContent = TestHelper.generateBasicPythonScript();
     testScriptPath = await TestHelper.createTempTestFile('integration_test.py', scriptContent);
   });
 

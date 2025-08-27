@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { getPythonTemplate } from '../test-data/python-templates';
 
 /**
  * Test utilities for Simply View Image extension testing
@@ -281,128 +282,46 @@ export class TestHelper {
       issues,
     };
   }
-}
 
-/**
- * Test fixtures and data generators
- */
-export class TestData {
   /**
    * Generate a basic Python test script content
    */
   static generateBasicPythonScript(): string {
-    return `
-import numpy as np
-try:
-    from PIL import Image
-except ImportError:
-    Image = None
-
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    plt = None
-
-# Create test data
-numpy_image = np.random.randint(0, 255, (50, 50, 3), dtype=np.uint8)
-print("Created numpy image:", numpy_image.shape)
-
-if Image:
-    pil_image = Image.fromarray(numpy_image)
-    print("Created PIL image:", pil_image.size)
-
-if plt:
-    fig, ax = plt.subplots()
-    x = np.linspace(0, 10, 50)
-    ax.plot(x, np.sin(x))
-    ax.set_title("Test Plot")
-    print("Created matplotlib plot")
-
-print("Test data created - set breakpoint here")
-`;
+    return getPythonTemplate('basicScript');
   }
 
   /**
    * Generate a complex Python test script
    */
   static generateComplexPythonScript(): string {
-    return `
-import numpy as np
-try:
-    from PIL import Image
-    import matplotlib.pyplot as plt
-    import plotly.graph_objects as go
-except ImportError as e:
-    print(f"Import warning: {e}")
-
-class TestDataContainer:
-    def __init__(self):
-        self.create_images()
-        self.create_plots()
-        self.create_tensors()
-    
-    def create_images(self):
-        # Various image formats
-        self.gray_image = np.random.randint(0, 255, (100, 100), dtype=np.uint8)
-        self.rgb_image = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        self.float_image = np.random.random((100, 100)).astype(np.float32)
-        
-        try:
-            self.pil_image = Image.fromarray(self.rgb_image)
-        except:
-            self.pil_image = None
-    
-    def create_plots(self):
-        try:
-            self.fig, self.ax = plt.subplots(figsize=(8, 6))
-            x = np.linspace(0, 10, 100)
-            self.ax.plot(x, np.sin(x), 'b-', label='sin')
-            self.ax.plot(x, np.cos(x), 'r--', label='cos')
-            self.ax.legend()
-            self.ax.set_title('Trigonometric Functions')
-        except:
-            self.fig, self.ax = None, None
-    
-    def create_tensors(self):
-        self.tensor_1d = np.array([1, 2, 3, 4, 5])
-        self.tensor_2d = np.random.random((5, 5))
-        self.tensor_3d = np.random.random((2, 3, 4))
-        self.tensor_4d = np.random.random((2, 2, 3, 3))
-
-# Create test data instance
-test_data = TestDataContainer()
-print("Complex test data created - set breakpoint here")
-`;
+    return getPythonTemplate('complexScript');
   }
 
   /**
    * Generate an error-testing Python script
    */
   static generateErrorTestScript(): string {
-    return `
-import numpy as np
+    return getPythonTemplate('errorTestScript');
+  }
 
-def test_edge_cases():
-    # Edge cases that might cause issues
-    empty_array = np.array([])
-    print("Empty array:", empty_array.shape)
-    
-    single_pixel = np.array([[255]], dtype=np.uint8)
-    print("Single pixel:", single_pixel.shape)
-    
-    # Arrays with special values
-    nan_array = np.full((10, 10), np.nan)
-    inf_array = np.full((10, 10), np.inf)
-    
-    # Very large array (commented to avoid memory issues)
-    # large_array = np.random.random((1000, 1000, 3))
-    
-    # Invalid shapes for images
-    invalid_shape = np.random.random((10, 10, 5))  # 5 channels
-    
-    print("Edge case data created - set breakpoint here")
+  /**
+   * Generate a performance testing Python script
+   */
+  static generatePerformanceTestScript(): string {
+    return getPythonTemplate('performanceScript');
+  }
 
-test_edge_cases()
-`;
+  /**
+   * Generate a tensor-specific testing Python script
+   */
+  static generateTensorTestScript(): string {
+    return getPythonTemplate('tensorScript');
+  }
+
+  /**
+   * Generate a plotting and visualization testing Python script
+   */
+  static generatePlotTestScript(): string {
+    return getPythonTemplate('plotScript');
   }
 }

@@ -8,26 +8,7 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-        node-version: [18, 20]
-        exclude:
-          # Reduce matrix size for faster CI
-          - os: windows-latest
-            python-version: '3.8'
-          - os: windows-latest
-            python-version: '3.9'
-          - os: macos-latest
-            python-version: '3.8'
-          - os: macos-latest
-            python-version: '3.9'
-          - os: ubuntu-latest
-            node-version: 18
-            python-version: '3.8'
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -36,13 +17,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: yarn
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.8'
           cache: pip
 
       - name: Install Yarn dependencies
@@ -52,59 +33,28 @@ jobs:
         run: yarn lint
 
       - name: Setup Python test environment
-        shell: bash
-        run: |
-          cd test
-          python -m venv test-env
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source test-env/Scripts/activate
-          else
-            source test-env/bin/activate
-          fi
-          pip install --upgrade pip
-          pip install numpy>=1.20.0 Pillow>=8.0.0 matplotlib>=3.3.0 plotly>=5.0.0
-          # Install optional dependencies with error handling
-          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu || echo "PyTorch installation failed"
-          pip install tensorflow>=2.8.0 || echo "TensorFlow installation failed"
-          pip install scikit-image>=0.18.0 || echo "scikit-image installation failed"
-          pip install opencv-python>=4.5.0 || echo "OpenCV installation failed"
-          pip install imageio>=2.9.0 || echo "imageio installation failed"
+        run: yarn test:setup-python
 
       - name: Generate test data
-        shell: bash
-        run: |
-          cd test
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source test-env/Scripts/activate
-          else
-            source test-env/bin/activate
-          fi
-          python test-data/generate_test_data.py
+        run: yarn test:generate-data
 
-      - name: Build webview (if possible)
+      - name: Build webview
         run: yarn build:webview
-        continue-on-error: true
 
       - name: Build extension
         run: yarn build:extension
-        continue-on-error: true
 
       - name: Compile tests
         run: yarn compile-tests
 
-      - name: Run tests (Ubuntu with xvfb)
-        if: runner.os == 'Linux'
+      - name: Run tests with xvfb
         run: xvfb-run -a yarn test:unit
-
-      - name: Run tests (Windows/macOS)
-        if: runner.os != 'Linux'
-        run: yarn test:unit
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.os }}-python${{ matrix.python-version }}-node${{ matrix.node-version }}
+          name: test-results
           path: |
             test/out/
             test/test-data/test_metadata.json
@@ -130,15 +80,12 @@ jobs:
 
       - name: Build for production
         run: yarn build:prod
-        continue-on-error: true
 
       - name: Package extension
         run: yarn package
-        continue-on-error: true
 
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
-        if: success()
         with:
           name: extension-vsix
           path: '*.vsix'

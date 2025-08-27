@@ -12,6 +12,7 @@ import plotly.express as px
 import os
 import json
 from pathlib import Path
+from python_script_templates import TEMPLATES
 
 def create_test_images():
     """Create various types of test images as numpy arrays."""
@@ -161,117 +162,26 @@ def create_tensor_data():
     return tensors
 
 def generate_test_scripts():
-    """Generate Python test scripts for debugging scenarios."""
+    """Generate Python test scripts for debugging scenarios using centralized templates."""
     scripts_dir = Path(__file__).parent / 'fixtures'
     scripts_dir.mkdir(exist_ok=True)
     
-    # Basic image test script
-    basic_script = '''
-import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
-
-# Create test data
-numpy_image = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-pil_image = Image.fromarray(numpy_image)
-
-# Create a simple plot
-fig, ax = plt.subplots()
-x = np.linspace(0, 10, 100)
-ax.plot(x, np.sin(x))
-ax.set_title("Test Plot")
-
-# Breakpoint for testing
-print("Test data created")  # Set breakpoint here
-'''
+    # Generate all test scripts from templates
+    script_files = {
+        'basic_test.py': TEMPLATES['basic'],
+        'complex_test.py': TEMPLATES['complex'],
+        'error_test.py': TEMPLATES['error'],
+        'performance_test.py': TEMPLATES['performance'],
+        'tensor_test.py': TEMPLATES['tensor'],
+        'plot_test.py': TEMPLATES['plot']
+    }
     
-    with open(scripts_dir / 'basic_test.py', 'w') as f:
-        f.write(basic_script)
+    for filename, content in script_files.items():
+        with open(scripts_dir / filename, 'w') as f:
+            f.write(content)
+        print(f"Generated {filename}")
     
-    # Complex test script with multiple data types
-    complex_script = '''
-import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-
-class TestData:
-    def __init__(self):
-        self.create_images()
-        self.create_plots()
-        self.create_tensors()
-    
-    def create_images(self):
-        # Various image types
-        self.gray_image = np.random.randint(0, 255, (50, 50), dtype=np.uint8)
-        self.rgb_image = np.random.randint(0, 255, (50, 50, 3), dtype=np.uint8)
-        self.float_image = np.random.random((50, 50))
-        self.pil_image = Image.fromarray(self.rgb_image)
-    
-    def create_plots(self):
-        # Matplotlib plots
-        self.fig, self.ax = plt.subplots()
-        x = np.linspace(0, 10, 50)
-        self.ax.plot(x, np.sin(x), 'b-', label='sin')
-        self.ax.plot(x, np.cos(x), 'r--', label='cos')
-        self.ax.legend()
-        
-        # Plotly plot
-        self.plotly_fig = go.Figure()
-        self.plotly_fig.add_trace(go.Scatter(x=x, y=np.sin(x), name='sin'))
-    
-    def create_tensors(self):
-        self.tensor_1d = np.array([1, 2, 3, 4, 5])
-        self.tensor_2d = np.random.random((5, 5))
-        self.tensor_3d = np.random.random((2, 3, 4))
-        
-        # Try PyTorch if available
-        try:
-            import torch
-            self.torch_tensor = torch.randn(3, 3)
-        except ImportError:
-            self.torch_tensor = None
-
-# Create test instance
-test_data = TestData()
-print("Complex test data created")  # Set breakpoint here
-'''
-    
-    with open(scripts_dir / 'complex_test.py', 'w') as f:
-        f.write(complex_script)
-    
-    # Error scenarios script
-    error_script = '''
-import numpy as np
-from PIL import Image
-
-# Test error handling scenarios
-def test_errors():
-    # Empty array
-    empty_array = np.array([])
-    
-    # Array with NaN values
-    nan_array = np.full((10, 10), np.nan)
-    
-    # Array with infinite values
-    inf_array = np.full((10, 10), np.inf)
-    
-    # Very large array (might cause memory issues)
-    try:
-        large_array = np.random.random((5000, 5000))
-    except MemoryError:
-        large_array = None
-    
-    # Invalid image data
-    invalid_shape = np.random.random((10, 10, 5))  # Invalid channel count
-    
-    print("Error test data created")  # Set breakpoint here
-
-test_errors()
-'''
-    
-    with open(scripts_dir / 'error_test.py', 'w') as f:
-        f.write(error_script)
+    print(f"Created {len(script_files)} Python test scripts in {scripts_dir}")
 
 def save_test_metadata():
     """Save metadata about test data for reference."""
@@ -279,7 +189,14 @@ def save_test_metadata():
         'numpy_images': list(create_test_images().keys()),
         'pil_images': list(create_pil_images().keys()),
         'tensors': list(create_tensor_data().keys()),
-        'test_scripts': ['basic_test.py', 'complex_test.py', 'error_test.py'],
+        'test_scripts': [
+            'basic_test.py',
+            'complex_test.py',
+            'error_test.py',
+            'performance_test.py',
+            'tensor_test.py',
+            'plot_test.py'
+        ],
         'matplotlib_plots': ['line_plot', 'scatter_plot', 'image_plot', 'subplots'],
         'plotly_plots': ['plotly_line', 'plotly_3d', 'plotly_heatmap']
     }

@@ -2,32 +2,16 @@ import * as assert from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { TestHelper } from './test-helpers';
 
 suite('Debug Integration Test Suite', () => {
   const testWorkspacePath = path.join(__dirname, '../../test-data/fixtures');
 
   suiteSetup(async () => {
-    // Ensure test scripts exist
+    // Ensure test scripts exist - they should be generated beforehand by generate_test_data.py
     const basicTestScript = path.join(testWorkspacePath, 'basic_test.py');
     if (!fs.existsSync(basicTestScript)) {
-      // Create a minimal test script if it doesn't exist
-      const testContent = `
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Create test data
-numpy_image = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-
-# Create a simple plot
-fig, ax = plt.subplots()
-x = np.linspace(0, 10, 100)
-ax.plot(x, np.sin(x))
-ax.set_title("Test Plot")
-
-print("Test data created")  # Set breakpoint here
-`;
-      fs.mkdirSync(path.dirname(basicTestScript), { recursive: true });
-      fs.writeFileSync(basicTestScript, testContent);
+      throw new Error(`Test script ${basicTestScript} does not exist. Run 'yarn test:generate-data' first.`);
     }
   });
 

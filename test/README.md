@@ -6,6 +6,89 @@ This directory contains a comprehensive end-to-end test suite for the VS Code ex
 
 The test suite validates the complete workflow from Python environment setup through debugging, extension activation, command execution, and webview interaction using the `vscode-extension-tester` framework.
 
+## End-to-End Test Categories
+
+### 1. Extension Activation Tests (`extension.test.ts`)
+
+| Test Name | Description | What It Tests |
+|-----------|-------------|---------------|
+| Extension Activation | Verifies extension loads and activates successfully | Extension lifecycle, activation events |
+| Command Registration | Validates all commands are properly registered | Command palette integration, command availability |
+| Configuration Access | Tests extension settings are accessible | Settings schema, configuration API |
+| Tree View Provider | Ensures tree view provider is registered | Image Watch view, tree data provider |
+
+### 2. Command Execution Tests (`commands.test.ts`)
+
+| Test Name | Description | What It Tests |
+|-----------|-------------|---------------|
+| Core Commands | Tests execution of all 19+ extension commands | Command handlers, parameter validation |
+| Error Handling | Validates graceful handling of invalid commands | Error recovery, user feedback |
+| Command Availability | Ensures commands are available when appropriate | Conditional command enablement |
+| Rapid Execution | Tests command resilience under rapid execution | Concurrency handling, rate limiting |
+
+### 3. Debug Integration Tests (`debug-integration.test.ts`)
+
+| Test Name | Description | What It Tests |
+|-----------|-------------|---------------|
+| Debug Session Start | Validates starting Python debug sessions | Debug adapter integration, session lifecycle |
+| Extension Setup | Tests extension initialization during debugging | Debug context setup, variable watching |
+| Multiple Sessions | Handles multiple concurrent debug sessions | Resource management, session isolation |
+| Session Cleanup | Ensures proper cleanup when debugging stops | Memory management, event unsubscription |
+
+### 4. Webview Functionality Tests (`webview.test.ts`)
+
+| Test Name | Description | What It Tests |
+|-----------|-------------|---------------|
+| Panel Creation | Tests webview panel creation and management | Webview API usage, panel lifecycle |
+| Security Settings | Validates security configuration and CSP | Security policies, script execution |
+| Resource Loading | Tests loading of images, CSS, and JS resources | Asset handling, resource URI generation |
+| State Management | Validates webview state persistence | State serialization, panel restoration |
+
+### 5. Configuration Management Tests (`configuration.test.ts`)
+
+| Test Name | Description | What It Tests |
+|-----------|-------------|---------------|
+| Settings Validation | Tests all configuration options | Settings schema compliance, type validation |
+| Value Persistence | Ensures settings persist across sessions | Configuration storage, workspace settings |
+| Type Checking | Validates configuration value types | Type safety, enum validation |
+| Temporary Modifications | Tests temporary setting changes | Configuration API, setting restoration |
+
+### 6. End-to-End Integration Tests (`integration.test.ts`)
+
+| Test Name | Description | What It Tests |
+|-----------|-------------|---------------|
+| Complete Workflow | Full extension lifecycle from activation to usage | End-to-end functionality, integration points |
+| Performance Monitoring | Tests extension performance under load | Memory usage, command execution time |
+| Error Recovery | Validates recovery from various error conditions | Fault tolerance, error handling |
+| Cross-Feature Integration | Tests interaction between different features | Feature compatibility, data flow |
+
+## Test Data and Fixtures
+
+### Python Test Scripts
+
+All Python test scripts are generated beforehand using centralized templates:
+
+| Script Name | Template Used | Purpose |
+|-------------|---------------|---------|
+| `basic_test.py` | `basicScript` | Simple debugging scenarios with numpy, PIL, matplotlib |
+| `complex_test.py` | `complexScript` | Advanced scenarios with multiple data types and classes |
+| `error_test.py` | `errorTestScript` | Edge cases and error handling scenarios |
+| `performance_test.py` | `performanceScript` | Large data and performance testing |
+| `tensor_test.py` | `tensorScript` | PyTorch and TensorFlow tensor testing |
+| `plot_test.py` | `plotScript` | Matplotlib and Plotly visualization testing |
+
+### Test Data Types
+
+The test suite generates comprehensive test data:
+
+| Data Type | Examples | Used In Tests |
+|-----------|----------|---------------|
+| **Numpy Arrays** | RGB images, grayscale, float arrays, edge cases | Image display, tensor visualization |
+| **PIL Images** | Various formats (PNG, JPEG, etc.) | Image processing, format compatibility |
+| **Matplotlib Plots** | Line plots, scatter plots, subplots, histograms | Plot visualization, figure handling |
+| **Plotly Plots** | Interactive plots, 3D visualizations, heatmaps | Interactive plot display |
+| **Tensors** | PyTorch tensors, TensorFlow tensors, multi-dimensional arrays | Tensor inspection, deep learning workflows |
+
 ## Test Structure
 
 ```
@@ -15,10 +98,14 @@ test/
 │   ├── commands.test.ts            # Command execution tests
 │   ├── debug-integration.test.ts   # Python debugging integration
 │   ├── webview.test.ts            # Webview functionality tests
+│   ├── configuration.test.ts      # Configuration management tests
+│   ├── integration.test.ts        # End-to-end integration tests
 │   ├── test-helpers.ts            # Test utilities and helpers
 │   └── index.ts                   # Test runner configuration
 ├── test-data/                     # Test data and fixtures
 │   ├── generate_test_data.py      # Python script to generate test data
+│   ├── python_script_templates.py # Python code templates
+│   ├── python-templates.ts       # TypeScript template definitions
 │   ├── fixtures/                  # Generated Python test scripts
 │   └── test_metadata.json         # Test data metadata
 ├── test-env/                      # Python virtual environment (created)
@@ -57,36 +144,6 @@ yarn compile-tests
 # Run tests only (after setup)
 yarn test:unit
 ```
-
-## Test Categories
-
-### Extension Activation Tests (`extension.test.ts`)
-
-- Extension loading and activation
-- Command registration verification
-- Configuration availability
-- Tree view provider registration
-
-### Command Tests (`commands.test.ts`)
-
-- All extension commands execution
-- Error handling validation
-- Command availability checks
-- Rapid command execution resilience
-
-### Debug Integration Tests (`debug-integration.test.ts`)
-
-- Python debugger session management
-- Extension setup during debugging
-- Multi-session handling
-- Debug session lifecycle
-
-### Webview Tests (`webview.test.ts`)
-
-- Webview panel creation and management
-- Security settings validation
-- Resource loading
-- State management
 
 ## Python Test Environment
 

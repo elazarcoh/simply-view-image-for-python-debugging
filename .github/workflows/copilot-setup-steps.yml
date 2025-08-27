@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  copilot-setup-steps:
     runs-on: ubuntu-latest
 
     steps:

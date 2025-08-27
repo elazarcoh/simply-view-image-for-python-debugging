@@ -17,15 +17,12 @@ fi
 TEST_DIR="$(dirname "$0")"
 cd "$TEST_DIR"
 
-# Create virtual environment
+# Create virtual environment if it doesn't exist
 VENV_DIR="test-env"
-if [ -d "$VENV_DIR" ]; then
-    echo "Virtual environment already exists. Removing and recreating..."
-    rm -rf "$VENV_DIR"
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv "$VENV_DIR"
 fi
-
-echo "Creating virtual environment..."
-python3 -m venv "$VENV_DIR"
 
 # Activate virtual environment
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then

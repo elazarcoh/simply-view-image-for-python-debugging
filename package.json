@@ -517,6 +517,7 @@
     "clean": "rimraf dist src/webview-ui/pkg",
     "compile-tests": "tsc -p test/tsconfig.json",
     "test:setup-python": "./test/setup-python-env.sh",
+    "test:reset-python-env": "rm -rf ./test/test-env",
     "test:generate-data": "cd test && bash -c 'source test-env/bin/activate && python test-data/generate_test_data.py'",
     "test:unit": "yarn compile-tests && node ./out/test/runTest.js",
     "test:e2e": "yarn test:setup-python && yarn test:generate-data && yarn test:unit",

@@ -37,4 +37,3 @@ jobs:
         run: |
           source $HOME/.cargo/env
           yarn build:webview && yarn build
-         

@@ -1,0 +1,7 @@
+Collecting numpy
+  Downloading numpy-2.3.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata
+     - 62.1 kB 253.7 MB/s 0:00:00
+Downloading numpy-2.3.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+   \ 16.6 MB 201.8 MB/s 0:00:00
+Installing collected packages: numpy
+Successfully installed numpy-2.3.2

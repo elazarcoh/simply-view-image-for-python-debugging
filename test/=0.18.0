@@ -1,0 +1,32 @@
+Collecting scikit-image
+  Downloading scikit_image-0.25.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata
+     - 14.4 kB ? 0:00:00
+Requirement already satisfied: numpy>=1.24 in ./test-env/lib/python3.12/site-packages (from scikit-image) (2.3.2)
+Collecting scipy>=1.11.4 (from scikit-image)
+  Downloading scipy-1.16.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata
+     - 62.0 kB 300.8 MB/s 0:00:00
+Requirement already satisfied: networkx>=3.0 in ./test-env/lib/python3.12/site-packages (from scikit-image) (3.3)
+Requirement already satisfied: pillow>=10.1 in ./test-env/lib/python3.12/site-packages (from scikit-image) (11.3.0)
+Collecting imageio!=2.35.0,>=2.33 (from scikit-image)
+  Downloading imageio-2.37.0-py3-none-any.whl.metadata
+     - 5.2 kB ? 0:00:00
+Collecting tifffile>=2022.8.12 (from scikit-image)
+  Downloading tifffile-2025.6.11-py3-none-any.whl.metadata
+     - 32.2 kB ? 0:00:00
+Requirement already satisfied: packaging>=21 in ./test-env/lib/python3.12/site-packages (from scikit-image) (25.0)
+Collecting lazy-loader>=0.4 (from scikit-image)
+  Downloading lazy_loader-0.4-py3-none-any.whl.metadata
+     - 7.6 kB ? 0:00:00
+Downloading scikit_image-0.25.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+   \ 15.0 MB 177.8 MB/s 0:00:00
+Downloading imageio-2.37.0-py3-none-any.whl
+   - 315.8 kB 212.9 MB/s 0:00:00
+Downloading lazy_loader-0.4-py3-none-any.whl
+   - 12.1 kB ? 0:00:00
+Downloading scipy-1.16.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+   | 35.2 MB 196.3 MB/s 0:00:00
+Downloading tifffile-2025.6.11-py3-none-any.whl
+   - 230.8 kB 189.5 MB/s 0:00:00
+Installing collected packages: tifffile, scipy, lazy-loader, imageio, scikit-image
+
+Successfully installed imageio-2.37.0 lazy-loader-0.4 scikit-image-0.25.2 scipy-1.16.1 tifffile-2025.6.11

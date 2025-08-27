@@ -34,6 +34,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build project
+        run: yarn build:webview && yarn build
+
+      - name: Install pre-commit hook
         run: |
-          source $HOME/.cargo/env
-          yarn build:webview && yarn build
+          mkdir -p .git/hooks
+          cat > .git/hooks/pre-commit <<'EOF'
+          #!/bin/sh
+          yarn lint && yarn build
+          EOF
+          chmod +x .git/hooks/pre-commit

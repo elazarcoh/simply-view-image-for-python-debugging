@@ -1,7 +1,0 @@
-Collecting Pillow
-  Downloading pillow-11.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata
-     - 9.0 kB ? 0:00:00
-Downloading pillow-11.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-   - 6.6 MB 185.2 MB/s 0:00:00
-Installing collected packages: Pillow
-Successfully installed Pillow-11.3.0

@@ -306,6 +306,7 @@ pub(crate) trait GLVerifyType {
     fn verify(&self, expected_type: GLConstant) -> Result<()>;
 }
 
+#[allow(dead_code)]
 fn impl_gl_verify_type(actual_gl_type: GLConstant, expected_gl_type: GLConstant) -> Result<()> {
     if expected_gl_type != actual_gl_type {
         Err(anyhow!(

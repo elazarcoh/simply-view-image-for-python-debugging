@@ -326,7 +326,7 @@ pub(crate) fn App() -> Html {
                 .dyn_into()
                 .unwrap();
 
-            [
+            let _ = [
                 webgl_utils::WebGlExtension::OesTextureFloat,
                 webgl_utils::WebGlExtension::OesTextureFloatLinear,
                 webgl_utils::WebGlExtension::ExtColorBufferFloat,

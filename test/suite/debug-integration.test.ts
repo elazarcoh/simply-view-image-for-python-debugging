@@ -1,11 +1,11 @@
-import * as assert from 'assert';
+import * as assert from 'node:assert';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 
 suite('Debug Integration Test Suite', () => {
   const testWorkspacePath = path.join(__dirname, '../../test-data/fixtures');
-  
+
   suiteSetup(async () => {
     // Ensure test scripts exist
     const basicTestScript = path.join(testWorkspacePath, 'basic_test.py');
@@ -31,16 +31,17 @@ print("Test data created")  # Set breakpoint here
     }
   });
 
-  test('Should be able to start debug session', async function() {
+  it('should be able to start debug session', async function () {
     this.timeout(30000); // Increase timeout for debug session setup
-    
+
     // Skip if Python is not available
     try {
       const pythonExtension = vscode.extensions.getExtension('ms-python.python');
       if (!pythonExtension) {
         this.skip();
       }
-    } catch (error) {
+    }
+    catch {
       this.skip();
     }
 
@@ -77,7 +78,7 @@ print("Test data created")  # Set breakpoint here
     assert.ok(vscode.debug.activeDebugSession, 'No active debug session');
   });
 
-  test('Should handle debug session termination gracefully', async function() {
+  it('should handle debug session termination gracefully', async function () {
     this.timeout(15000);
 
     // Only run if there's an active debug session
@@ -86,14 +87,14 @@ print("Test data created")  # Set breakpoint here
     }
 
     const session = vscode.debug.activeDebugSession;
-    
+
     // Terminate the session
     await vscode.debug.stopDebugging(session);
 
     // Wait for session to terminate
     await new Promise<void>((resolve) => {
       const timeout = setTimeout(resolve, 5000);
-      
+
       const disposable = vscode.debug.onDidTerminateDebugSession(() => {
         clearTimeout(timeout);
         disposable.dispose();
@@ -105,7 +106,7 @@ print("Test data created")  # Set breakpoint here
     assert.strictEqual(vscode.debug.activeDebugSession, undefined, 'Debug session still active');
   });
 
-  test('Extension setup command should be available during debugging', async function() {
+  it('extension setup command should be available during debugging', async function () {
     this.timeout(30000);
 
     // Skip if no Python extension
@@ -114,7 +115,8 @@ print("Test data created")  # Set breakpoint here
       if (!pythonExtension) {
         this.skip();
       }
-    } catch (error) {
+    }
+    catch {
       this.skip();
     }
 
@@ -154,7 +156,8 @@ print("Test data created")  # Set breakpoint here
       await vscode.commands.executeCommand('svifpd.run-setup');
       // If we get here, the command executed without throwing
       assert.ok(true, 'Setup command executed successfully');
-    } catch (error) {
+    }
+    catch (error) {
       // Setup might fail due to Python environment, but command should be available
       assert.ok(error instanceof Error, 'Setup command is available but failed due to environment');
     }
@@ -165,7 +168,7 @@ print("Test data created")  # Set breakpoint here
     }
   });
 
-  test('Should handle multiple debug sessions', async function() {
+  it('should handle multiple debug sessions', async function () {
     this.timeout(45000);
 
     // Skip if no Python extension
@@ -174,12 +177,13 @@ print("Test data created")  # Set breakpoint here
       if (!pythonExtension) {
         this.skip();
       }
-    } catch (error) {
+    }
+    catch {
       this.skip();
     }
 
     const sessions: vscode.DebugSession[] = [];
-    
+
     try {
       // Start first session
       const debugConfig1: vscode.DebugConfiguration = {
@@ -192,7 +196,7 @@ print("Test data created")  # Set breakpoint here
       };
 
       await vscode.debug.startDebugging(undefined, debugConfig1);
-      
+
       // Wait and capture first session
       await new Promise<void>((resolve) => {
         const disposable = vscode.debug.onDidChangeActiveDebugSession((session) => {
@@ -209,8 +213,8 @@ print("Test data created")  # Set breakpoint here
       // The extension should handle multiple sessions gracefully
       // We test this by verifying the extension doesn't crash when dealing with session switching
       assert.ok(vscode.debug.activeDebugSession, 'Active debug session should exist');
-      
-    } finally {
+    }
+    finally {
       // Clean up all sessions
       for (const session of sessions) {
         if (session) {

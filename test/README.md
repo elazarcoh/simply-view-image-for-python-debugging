@@ -30,11 +30,13 @@ test/
 ## Quick Start
 
 ### 1. Setup and Run All Tests
+
 ```bash
 yarn test:e2e
 ```
 
 This command will:
+
 - Set up the Python test environment
 - Generate test data
 - Compile TypeScript tests
@@ -59,24 +61,28 @@ yarn test:unit
 ## Test Categories
 
 ### Extension Activation Tests (`extension.test.ts`)
+
 - Extension loading and activation
 - Command registration verification
 - Configuration availability
 - Tree view provider registration
 
 ### Command Tests (`commands.test.ts`)
+
 - All extension commands execution
 - Error handling validation
 - Command availability checks
 - Rapid command execution resilience
 
 ### Debug Integration Tests (`debug-integration.test.ts`)
+
 - Python debugger session management
 - Extension setup during debugging
 - Multi-session handling
 - Debug session lifecycle
 
 ### Webview Tests (`webview.test.ts`)
+
 - Webview panel creation and management
 - Security settings validation
 - Resource loading
@@ -87,12 +93,14 @@ yarn test:unit
 The test suite automatically creates a Python virtual environment with the following packages:
 
 ### Core Dependencies
+
 - `numpy` - Array processing
 - `Pillow` - Image processing
 - `matplotlib` - Plotting
 - `plotly` - Interactive plots
 
 ### Optional Dependencies (installed if available)
+
 - `torch` + `torchvision` - PyTorch tensors
 - `tensorflow` - TensorFlow tensors
 - `scikit-image` - Image processing
@@ -119,7 +127,7 @@ The `generate_test_data.py` script creates:
 3. Select from available tasks:
    - "Setup Python Test Environment"
    - "Generate Test Data"
-   - "Compile Tests" 
+   - "Compile Tests"
    - "Run E2E Tests"
 
 ### Using Launch Configurations
@@ -133,6 +141,7 @@ The `generate_test_data.py` script creates:
 ### VS Code Test Settings
 
 The test runner is configured in `.vscode/launch.json`:
+
 - Uses test workspace folder
 - Loads extension in development mode
 - Enables test environment variables
@@ -140,6 +149,7 @@ The test runner is configured in `.vscode/launch.json`:
 ### TypeScript Configuration
 
 Tests use a separate TypeScript configuration (`test/tsconfig.json`):
+
 - CommonJS modules for Node.js compatibility
 - ES2020 target for modern features
 - Strict type checking enabled
@@ -149,6 +159,7 @@ Tests use a separate TypeScript configuration (`test/tsconfig.json`):
 ### GitHub Actions Workflow
 
 The `.github/workflows/test.yml` workflow:
+
 - Tests on Ubuntu, Windows, and macOS
 - Tests multiple Python versions (3.8-3.12)
 - Tests multiple Node.js versions
@@ -158,6 +169,7 @@ The `.github/workflows/test.yml` workflow:
 ### Matrix Testing
 
 The CI pipeline tests combinations of:
+
 - Operating systems: Ubuntu, Windows, macOS
 - Python versions: 3.8, 3.9, 3.10, 3.11, 3.12
 - Node.js versions: 18, 20
@@ -167,22 +179,26 @@ The CI pipeline tests combinations of:
 The `test-helpers.ts` file provides utilities for:
 
 ### Timing and Synchronization
+
 - `sleep()` - Wait for specified time
 - `waitForExtensionActivation()` - Wait for extension to activate
 - `waitForDebugSession()` - Wait for debug session to start
 - `waitForCondition()` - Wait for custom conditions
 
 ### Debug Session Management
+
 - `startDebugSession()` - Start Python debug session
 - `stopAllDebugSessions()` - Clean up debug sessions
 - `createPythonDebugConfig()` - Create debug configurations
 
 ### Command and Configuration
+
 - `executeCommandSafely()` - Execute commands with error handling
 - `isCommandRegistered()` - Check command availability
 - `setConfigTemporarily()` - Temporarily modify settings
 
 ### Test Data and Fixtures
+
 - `createTempTestFile()` - Create temporary test files
 - `generateBasicPythonScript()` - Generate test Python scripts
 - `verifyExtensionHealth()` - Check extension status
@@ -192,6 +208,7 @@ The `test-helpers.ts` file provides utilities for:
 ### Common Issues
 
 1. **Python Environment Setup Fails**
+
    ```bash
    # Manually create environment
    cd test
@@ -201,6 +218,7 @@ The `test-helpers.ts` file provides utilities for:
    ```
 
 2. **Test Compilation Errors**
+
    ```bash
    # Clean and rebuild
    yarn clean
@@ -219,6 +237,7 @@ The `test-helpers.ts` file provides utilities for:
 ### Debug Mode
 
 Run tests with additional debugging:
+
 ```bash
 # Enable debug logging
 NODE_ENV=test DEBUG=* yarn test:unit
@@ -231,6 +250,7 @@ yarn compile-tests
 ### Test Data Verification
 
 Check generated test data:
+
 ```bash
 cd test
 python -c "import json; print(json.load(open('test-data/test_metadata.json', 'r')))"

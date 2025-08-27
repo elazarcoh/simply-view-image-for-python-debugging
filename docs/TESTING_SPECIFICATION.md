@@ -1,12 +1,15 @@
 # End-to-End Testing Specification
+
 ## Simply View Image for Python Debugging Extension
 
 ### Overview
+
 This document outlines a comprehensive end-to-end testing strategy for the VS Code extension using the `vscode-extension-tester` package. The testing framework will validate the complete workflow from Python environment setup through debugging, extension activation, command execution, and webview interaction.
 
 ### Test Architecture
 
 #### 1. Test Infrastructure Setup
+
 - **Testing Framework**: [vscode-extension-tester](https://github.com/redhat-developer/vscode-extension-tester)
 - **Python Environment**: Automated setup with required dependencies
 - **VS Code Version**: Latest stable version for compatibility testing
@@ -15,6 +18,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
 #### 2. Testing Scope & Categories
 
 ##### A. Environment Setup Tests
+
 - [x] **Python Environment Validation**
   - Verify Python installation and version compatibility
   - Test installation of required packages (numpy, PIL, matplotlib, torch, etc.)
@@ -28,6 +32,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
   - Dependencies are correctly resolved
 
 ##### B. Python Debugging Integration Tests
+
 - [x] **Debug Session Initialization**
   - Start Python debugger on test scripts
   - Verify debug adapter connection (python, debugpy, jupyter)
@@ -41,6 +46,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
   - Validate error handling during setup failures
 
 ##### C. Core Extension Command Tests
+
 - [x] **Image Viewing Commands**
   - `svifpd.view-image`: View numpy arrays and PIL images
   - `svifpd.view-image-track`: Track image variables during debugging
@@ -65,6 +71,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
   - `svifpd.update-diagnostics`: Diagnostic information updates
 
 ##### D. Webview Functionality Tests
+
 - [x] **Webview Lifecycle**
   - Webview panel creation and initialization
   - Message passing between extension and webview
@@ -84,6 +91,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
   - Settings and preferences application
 
 ##### E. Integration & Edge Case Tests
+
 - [x] **Multi-format Support**
   - Numpy arrays with different dtypes and shapes
   - PIL Images in various formats (PNG, JPEG, etc.)
@@ -106,7 +114,9 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
 ### Test Implementation Plan
 
 #### Phase 1: Foundation Setup ✅ COMPLETED
+
 1. **Install and configure vscode-extension-tester** ✅
+
    ```bash
    yarn add --dev vscode-extension-tester @types/mocha mocha
    ```
@@ -122,6 +132,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
    - Extension loading and activation
 
 #### Phase 2: Core Test Implementation ✅ COMPLETED
+
 1. **Environment and Setup Tests** ✅
    - Python environment validation
    - Extension activation verification
@@ -138,6 +149,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
    - Expected behavior verification
 
 #### Phase 3: Advanced Feature Testing ✅ COMPLETED
+
 1. **Webview Integration Tests** ✅
    - Message passing validation
    - UI interaction simulation
@@ -149,6 +161,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
    - Edge case handling
 
 #### Phase 4: CI/CD Integration ✅ COMPLETED
+
 1. **Automated Test Execution** ✅
    - GitHub Actions workflow setup
    - Matrix testing across platforms
@@ -162,6 +175,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
 ### Test Data & Fixtures
 
 #### Python Test Scripts
+
 - **Basic Image Script**: Simple numpy array and PIL image creation
 - **Plot Generation Script**: Matplotlib and Plotly figure creation
 - **Tensor Operations Script**: PyTorch/TensorFlow tensor manipulation
@@ -169,6 +183,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
 - **Error Scenarios Script**: Various failure conditions
 
 #### Sample Data Sets
+
 - Different image sizes and formats
 - Various data types and ranges
 - Edge cases (empty arrays, NaN values, etc.)
@@ -177,6 +192,7 @@ This document outlines a comprehensive end-to-end testing strategy for the VS Co
 ### Configuration Files
 
 #### Test Environment Setup
+
 ```bash
 # setup-test-env.sh
 #!/bin/bash
@@ -186,6 +202,7 @@ pip install numpy PIL matplotlib plotly torch torchvision
 ```
 
 #### VS Code Test Configuration
+
 ```json
 {
   "vscode-extension-tester": {
@@ -201,6 +218,7 @@ pip install numpy PIL matplotlib plotly torch torchvision
 While the focus is on end-to-end testing, the following components should have targeted unit tests due to their complexity and importance:
 
 #### High Priority Unit Test Candidates
+
 - [ ] **Python Communication Layer** (`src/python-communication/`)
   - `RunPythonCode.ts`: Python code execution and evaluation
   - `Setup.ts`: Extension setup and error handling
@@ -227,6 +245,7 @@ While the focus is on end-to-end testing, the following components should have t
   - Error handling and recovery
 
 #### Testing Utilities & Helpers
+
 - Mock debug adapter implementation
 - Fake Python environment simulation
 - WebView message simulation framework
@@ -235,6 +254,7 @@ While the focus is on end-to-end testing, the following components should have t
 ### Success Criteria
 
 #### Minimum Viable Test Suite
+
 - [ ] Extension loads and activates successfully
 - [ ] Basic Python debugging workflow functions
 - [ ] Core image viewing commands work
@@ -242,6 +262,7 @@ While the focus is on end-to-end testing, the following components should have t
 - [ ] Error handling doesn't crash VS Code
 
 #### Comprehensive Test Coverage
+
 - [ ] 90%+ command coverage with positive/negative test cases
 - [ ] All supported data formats tested
 - [ ] Cross-platform compatibility verified
@@ -249,6 +270,7 @@ While the focus is on end-to-end testing, the following components should have t
 - [ ] Automated CI/CD pipeline operational
 
 #### Quality Metrics
+
 - [ ] Tests run in under 5 minutes for full suite
 - [ ] No flaky tests (95%+ reliability)
 - [ ] Clear test failure diagnostics
@@ -258,11 +280,13 @@ While the focus is on end-to-end testing, the following components should have t
 ### Maintenance & Evolution
 
 #### Test Data Management
+
 - Version control for test datasets
 - Regular updates for new Python package versions
 - Performance baseline maintenance
 
 #### Continuous Improvement
+
 - Regular test suite review and updates
 - New feature test addition process
 - Performance regression monitoring
@@ -270,4 +294,4 @@ While the focus is on end-to-end testing, the following components should have t
 
 ---
 
-*This specification will be updated as testing implementation progresses and new requirements are identified.*
+_This specification will be updated as testing implementation progresses and new requirements are identified._

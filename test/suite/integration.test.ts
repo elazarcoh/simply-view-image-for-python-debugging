@@ -1,17 +1,16 @@
-import * as assert from 'assert';
+import * as assert from 'node:assert';
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { TestHelper, TestData } from './test-helpers';
+import { TestData, TestHelper } from './test-helpers';
 
 suite('End-to-End Integration Test Suite', () => {
   let testScriptPath: string;
-  
-  suiteSetup(async function() {
+
+  suiteSetup(async function () {
     this.timeout(30000);
-    
+
     // Ensure extension is activated
     await TestHelper.waitForExtensionActivation('elazarcoh.simply-view-image-for-python-debugging');
-    
+
     // Create a test Python script
     const scriptContent = TestData.generateBasicPythonScript();
     testScriptPath = await TestHelper.createTempTestFile('integration_test.py', scriptContent);
@@ -22,7 +21,7 @@ suite('End-to-End Integration Test Suite', () => {
     TestHelper.cleanupTempFiles();
   });
 
-  test('Complete workflow: Extension activation → Commands → Configuration', async function() {
+  it('complete workflow: Extension activation → Commands → Configuration', async function () {
     this.timeout(20000);
 
     // 1. Verify extension is active
@@ -50,7 +49,7 @@ suite('End-to-End Integration Test Suite', () => {
     assert.ok(health.healthy || health.issues.length < 3, 'Extension should be mostly healthy');
   });
 
-  test('Python integration workflow (if Python extension available)', async function() {
+  it('python integration workflow (if Python extension available)', async function () {
     this.timeout(30000);
 
     // Skip if Python extension is not available
@@ -60,7 +59,7 @@ suite('End-to-End Integration Test Suite', () => {
 
     try {
       // 1. Create debug configuration
-      const debugConfig = TestHelper.createPythonDebugConfig(testScriptPath, 'Integration Test');
+      const _debugConfig = TestHelper.createPythonDebugConfig(testScriptPath, 'Integration Test');
 
       // 2. Test debug-related commands (they should not crash even if debug fails)
       const setupResult = await TestHelper.executeCommandSafely('svifpd.run-setup');
@@ -73,25 +72,25 @@ suite('End-to-End Integration Test Suite', () => {
       const debugCommands = [
         'svifpd.view-image',
         'svifpd.update-frame-id',
-        'svifpd.update-diagnostics'
+        'svifpd.update-diagnostics',
       ];
 
       for (const command of debugCommands) {
         const result = await TestHelper.executeCommandSafely(command);
         assert.ok(result.success !== undefined, `Command ${command} should be callable`);
       }
-
-    } catch (error) {
+    }
+    catch (error) {
       // Debug integration might fail in test environment, that's okay
       assert.ok(error instanceof Error, 'Debug integration should handle errors gracefully');
     }
   });
 
-  test('Configuration persistence and modification', async function() {
+  it('configuration persistence and modification', async function () {
     this.timeout(10000);
 
     const config = TestHelper.getExtensionConfig();
-    
+
     // Test temporary configuration changes
     const originalDebug = config.get('debug');
     const originalBackend = config.get('preferredBackend');
@@ -115,8 +114,8 @@ suite('End-to-End Integration Test Suite', () => {
 
       assert.strictEqual(config.get('debug'), originalDebug, 'Debug setting should be restored');
       assert.strictEqual(config.get('preferredBackend'), originalBackend, 'Backend setting should be restored');
-
-    } catch (error) {
+    }
+    catch (error) {
       // Ensure cleanup even if test fails
       await config.update('debug', originalDebug, vscode.ConfigurationTarget.Workspace);
       await config.update('preferredBackend', originalBackend, vscode.ConfigurationTarget.Workspace);
@@ -124,7 +123,7 @@ suite('End-to-End Integration Test Suite', () => {
     }
   });
 
-  test('Webview lifecycle management', async function() {
+  it('webview lifecycle management', async function () {
     this.timeout(15000);
 
     // 1. Open webview multiple times
@@ -137,7 +136,7 @@ suite('End-to-End Integration Test Suite', () => {
     // 2. Test webview-related commands
     const webviewCommands = [
       'svifpd.open-image-webview',
-      'svifpd.watch-refresh'
+      'svifpd.watch-refresh',
     ];
 
     for (const command of webviewCommands) {
@@ -155,7 +154,7 @@ suite('End-to-End Integration Test Suite', () => {
     assert.ok(results.every(r => r.success !== undefined), 'Rapid webview operations should not crash');
   });
 
-  test('Error handling and recovery', async function() {
+  it('error handling and recovery', async function () {
     this.timeout(10000);
 
     // 1. Test commands with invalid arguments
@@ -178,10 +177,12 @@ suite('End-to-End Integration Test Suite', () => {
       // Extension should not crash with invalid config
       await TestHelper.sleep(100);
       assert.ok(true, 'Extension should handle invalid configuration');
-    } catch (error) {
+    }
+    catch (error) {
       // It's okay if this throws an error
       assert.ok(error instanceof Error, 'Invalid configuration should throw proper error');
-    } finally {
+    }
+    finally {
       await config.update('debug', originalDebug, vscode.ConfigurationTarget.Workspace);
     }
 
@@ -190,7 +191,7 @@ suite('End-to-End Integration Test Suite', () => {
     assert.ok(health.healthy || health.issues.length < 5, 'Extension should recover from errors');
   });
 
-  test('Performance and resource management', async function() {
+  it('performance and resource management', async function () {
     this.timeout(15000);
 
     const startTime = Date.now();
@@ -200,7 +201,7 @@ suite('End-to-End Integration Test Suite', () => {
       'svifpd.open-settings',
       'svifpd.open-image-webview',
       'svifpd.watch-refresh',
-      'svifpd.update-diagnostics'
+      'svifpd.update-diagnostics',
     ];
 
     const rapidExecution = async () => {

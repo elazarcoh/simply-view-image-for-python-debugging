@@ -5,21 +5,25 @@ This guide provides a quick overview of the newly implemented comprehensive test
 ## 🚀 Quick Commands
 
 ### Run Complete Test Suite
+
 ```bash
 yarn test:e2e
 ```
+
 This single command will:
+
 1. Set up Python virtual environment with all dependencies
 2. Generate comprehensive test data (images, plots, tensors)
 3. Compile TypeScript tests
 4. Execute the full test suite
 
 ### Individual Test Components
+
 ```bash
 # Setup Python environment only
 yarn test:setup-python
 
-# Generate test data only 
+# Generate test data only
 yarn test:generate-data
 
 # Compile tests only
@@ -32,18 +36,21 @@ yarn test:unit
 ## 📋 What Gets Tested
 
 ### ✅ Extension Core Functionality
+
 - **Extension Activation**: Loading, command registration, configuration
 - **Commands**: All 19+ extension commands with error handling
 - **Configuration**: Settings validation, persistence, type checking
 - **Webview**: Panel creation, security, resource loading
 
 ### ✅ Python Integration
+
 - **Debug Sessions**: Start/stop, breakpoint handling, variable inspection
 - **Python Environment**: numpy, PIL, matplotlib, plotly, torch, tensorflow
 - **Data Types**: Images, plots, tensors in various formats
 - **Error Handling**: Graceful failure scenarios
 
 ### ✅ Cross-Platform Support
+
 - **Operating Systems**: Ubuntu, Windows, macOS
 - **Python Versions**: 3.8, 3.9, 3.10, 3.11, 3.12
 - **Node.js Versions**: 18, 20
@@ -76,11 +83,13 @@ test/
 ## 🔧 VS Code Integration
 
 ### Running Tests in VS Code
+
 1. Open Command Palette (`Ctrl+Shift+P`)
 2. Select "Tasks: Run Task"
 3. Choose "Run E2E Tests"
 
 ### Debugging Tests
+
 1. Open Debug view (`Ctrl+Shift+D`)
 2. Select "Extension Tests"
 3. Press `F5` to run with debugging
@@ -154,12 +163,14 @@ Comprehensive error scenario coverage:
 ## 🎯 Benefits for Development
 
 ### For Developers
+
 - **Confidence**: Comprehensive validation before releases
 - **Debugging**: Clear test failures pinpoint issues
 - **Regression Prevention**: Catches breaking changes early
 - **Documentation**: Tests serve as usage examples
 
 ### For Users
+
 - **Quality Assurance**: Extensively tested functionality
 - **Platform Support**: Verified cross-platform compatibility
 - **Reliability**: Error handling and edge case coverage
@@ -187,5 +198,5 @@ The test suite provides a solid foundation for the extension's continued develop
 
 ---
 
-*For detailed technical information, see `docs/TESTING_SPECIFICATION.md`*
-*For troubleshooting and advanced usage, see `test/README.md`*
+_For detailed technical information, see `docs/TESTING_SPECIFICATION.md`_
+_For troubleshooting and advanced usage, see `test/README.md`_

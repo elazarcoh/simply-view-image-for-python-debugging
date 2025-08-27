@@ -1,6 +1,6 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 
 /**
  * Test utilities for Simply View Image extension testing
@@ -17,7 +17,7 @@ export class TestHelper {
   /**
    * Wait for extension to be activated
    */
-  static async waitForExtensionActivation(extensionId: string, timeout: number = 10000): Promise<vscode.Extension<any>> {
+  static async waitForExtensionActivation(extensionId: string): Promise<vscode.Extension<any>> {
     const extension = vscode.extensions.getExtension(extensionId);
     if (!extension) {
       throw new Error(`Extension ${extensionId} not found`);
@@ -131,7 +131,8 @@ export class TestHelper {
     try {
       const result = await vscode.commands.executeCommand(command, ...args);
       return { success: true, result };
-    } catch (error) {
+    }
+    catch (error) {
       return { success: false, error: error as Error };
     }
   }
@@ -148,7 +149,7 @@ export class TestHelper {
       console: 'integratedTerminal',
       stopOnEntry: false,
       cwd: path.dirname(scriptPath),
-      python: 'python' // Use default Python
+      python: 'python', // Use default Python
     };
   }
 
@@ -196,9 +197,9 @@ export class TestHelper {
   static async setConfigTemporarily<T>(key: string, value: T, target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace): Promise<() => Promise<void>> {
     const config = this.getExtensionConfig();
     const originalValue = config.get(key);
-    
+
     await config.update(key, value, target);
-    
+
     // Return a cleanup function
     return async () => {
       await config.update(key, originalValue, target);
@@ -211,17 +212,17 @@ export class TestHelper {
   static async waitForCondition(
     condition: () => boolean | Promise<boolean>,
     timeout: number = 5000,
-    interval: number = 100
+    interval: number = 100,
   ): Promise<void> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       if (await condition()) {
         return;
       }
       await this.sleep(interval);
     }
-    
+
     throw new Error('Timeout waiting for condition');
   }
 
@@ -242,7 +243,7 @@ export class TestHelper {
     return {
       uri: vscode.Uri.file(path),
       name: 'Test Workspace',
-      index: 0
+      index: 0,
     };
   }
 
@@ -251,7 +252,7 @@ export class TestHelper {
    */
   static async verifyExtensionHealth(): Promise<{ healthy: boolean; issues: string[] }> {
     const issues: string[] = [];
-    
+
     // Check if extension is active
     const extension = vscode.extensions.getExtension('elazarcoh.simply-view-image-for-python-debugging');
     if (!extension?.isActive) {
@@ -270,13 +271,14 @@ export class TestHelper {
     try {
       const config = this.getExtensionConfig();
       config.get('debug'); // Just try to access a config value
-    } catch (error) {
+    }
+    catch {
       issues.push('Extension configuration is not accessible');
     }
 
     return {
       healthy: issues.length === 0,
-      issues
+      issues,
     };
   }
 }

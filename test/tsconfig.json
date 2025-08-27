@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "incremental": true,
     "target": "ES2020",
-    "outDir": "../out/test",
     "lib": ["ES2020"],
-    "sourceMap": true,
     "rootDir": ".",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
     "resolveJsonModule": true,
+    "strict": true,
     "declaration": false,
-    "incremental": true
+    "outDir": "../out/test",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
   "include": ["**/*"],
   "exclude": ["node_modules", "out", "dist", "**/*.d.ts"]

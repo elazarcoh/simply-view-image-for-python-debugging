@@ -40,12 +40,25 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+        "${workspaceFolder}/test/test-data/fixtures"
       ],
       "outFiles": [
         "${workspaceFolder}/out/test/**/*.js"
       ],
-      "preLaunchTask": "${defaultBuildTask}"
+      "sourceMaps": true,
+      "smartStep": true,
+      "preLaunchTask": "Compile Tests",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "presentation": {
+        "group": "2_tests",
+        "order": 1
+      }
     }
   ]
 }

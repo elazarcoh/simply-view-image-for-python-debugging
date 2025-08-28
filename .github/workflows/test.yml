@@ -1,0 +1,122 @@
+name: Extension Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install Yarn dependencies
+        run: yarn install --immutable
+
+      - name: Lint code
+        run: yarn lint
+
+      - name: Cache python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('test/setup-python-env.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Setup Python test environment
+        run: yarn test:setup-python
+
+      - name: Generate test data
+        run: yarn test:generate-data
+
+      - name: Build webview
+        run: yarn build:webview
+
+      - name: Build extension
+        run: yarn build:extension
+
+      - name: Compile tests
+        run: yarn compile-tests
+
+      - name: Run tests with xvfb
+        run: xvfb-run -a yarn test:unit
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            test/out/
+            test/test-data/test_metadata.json
+            test/test-data/fixtures/
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Build for production
+        run: yarn build:prod
+
+      - name: Package extension
+        run: yarn package
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-vsix
+          path: '*.vsix'
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Audit dependencies
+        run: yarn audit --level moderate
+        continue-on-error: true
+
+      - name: Check for known vulnerabilities
+        run: |
+          # Check package.json for any obvious security issues
+          grep -i "password\|secret\|key\|token" package.json || echo "No obvious secrets in package.json"

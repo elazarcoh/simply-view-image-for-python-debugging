@@ -1,3 +1,5 @@
+/* eslint-disable perfectionist/sort-imports */
+import 'reflect-metadata';
 import Container from 'typedi';
 import * as vscode from 'vscode';
 import { AllViewables } from './AllViewables';
@@ -26,7 +28,6 @@ import { PlotlyFigure, PyplotAxes, PyplotFigure } from './viewable/Plot';
 import { NumpyTensor, TorchTensor } from './viewable/Tensor';
 import { WebviewRequests } from './webview/communication/createMessages';
 import { GlobalWebviewClient } from './webview/communication/WebviewClient';
-import 'reflect-metadata';
 
 function onConfigChange(): void {
   initLog();

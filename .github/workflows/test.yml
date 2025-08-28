@@ -24,7 +24,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.8'
-          cache: pip
 
       - name: Install Yarn dependencies
         run: yarn install --immutable
@@ -34,6 +33,14 @@ jobs:
 
       - name: Setup Python test environment
         run: yarn test:setup-python
+
+      - name: Cache python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('test/setup-python-env.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Generate test data
         run: yarn test:generate-data

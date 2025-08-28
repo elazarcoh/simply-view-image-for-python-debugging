@@ -1,14 +1,48 @@
 # Test Suite for Simply View Image Extension
 
-This directory contains a comprehensive end-to-end test suite for the VS Code extension "Simply View Image for Python Debugging".
+This directory contains a comprehensive test suite for the VS Code extension "Simply View Image for Python Debugging".
 
 ## Overview
 
-The test suite validates the complete workflow from Python environment setup through debugging, extension activation, command execution, and webview interaction using the `vscode-extension-tester` framework.
+The test suite includes both basic functionality tests and integration tests with VS Code. It gracefully handles network connectivity issues common in CI environments.
 
-## End-to-End Test Categories
+## Test Runners
 
-### Core Functionality Tests
+### 🚀 Quick Start
+
+```bash
+yarn test           # Run all tests (recommended)
+yarn test:basic     # Run basic tests only (no VS Code required)
+yarn test:unit      # Run VS Code integration tests only
+yarn test:all       # Run comprehensive test suite with fallback
+```
+
+### Test Runner Descriptions
+
+| Command           | Description                          | Requirements              | Use Case                      |
+| ----------------- | ------------------------------------ | ------------------------- | ----------------------------- |
+| `yarn test`       | Complete test suite including setup  | Python, network access    | Full validation               |
+| `yarn test:basic` | Basic functionality tests            | None                      | CI environments, quick checks |
+| `yarn test:unit`  | VS Code integration tests            | VS Code download, display | Full integration testing      |
+| `yarn test:all`   | Comprehensive with graceful fallback | Python environment        | Robust CI/CD pipeline         |
+
+## Test Categories
+
+### ✅ Basic Tests (`basic.test.ts`)
+
+**Status: ✅ Working** - No VS Code integration required
+
+| Test Name            | Description                        | What It Tests                              |
+| -------------------- | ---------------------------------- | ------------------------------------------ |
+| Package Validation   | Verifies package.json is valid     | Extension metadata, main entry point       |
+| Extension Build      | Checks compiled extension exists   | Build process, webpack output              |
+| Test Data Generation | Validates Python test scripts      | Data generation pipeline                   |
+| Python Environment   | Confirms virtual environment setup | Python dependencies, environment isolation |
+| Configuration Schema | Tests settings structure           | Configuration schema validation            |
+
+### 🔧 Integration Tests (VS Code Required)
+
+**Status: ⚠️ Network dependent** - Requires VS Code download
 
 #### 1. Extension Activation Tests (`extension.test.ts`)
 
@@ -27,8 +61,6 @@ The test suite validates the complete workflow from Python environment setup thr
 | Value Persistence       | Ensures settings persist across sessions | Configuration storage, workspace settings   |
 | Type Checking           | Validates configuration value types      | Type safety, enum validation                |
 | Temporary Modifications | Tests temporary setting changes          | Configuration API, setting restoration      |
-
-### Integration Tests
 
 #### 3. Command Execution Tests (`commands.test.ts`)
 

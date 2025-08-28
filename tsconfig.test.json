@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2021", "DOM"],
+    "rootDir": ".",
+    "types": ["node", "mocha", "chai"],
+    "outDir": "out"
+  },
+  "include": [
+    "tests/ui-test/**/*"
+  ],
+  "exclude": [
+    "src/webview-ui/**/*"
+  ]
+}

@@ -3,6 +3,7 @@
 /dist/
 *.vsix
 /.vscode-test
+/.test-extensions
 __pycache__/
 .pnp.*
 .yarn/*

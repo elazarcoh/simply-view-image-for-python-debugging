@@ -1,10 +1,16 @@
 .vscode/**
 .vscode-test/**
+.test-extensions/**
 .github/**
 node_modules/**
 out/**
 src/**
 webview-ui/**
+tests/**
+test-backup/**
+vscode-extension-tester-example/**
+vscode-extension-tester.wiki/**
+temp-ignore/**
 .gitignore
 vsc-exdtension-quickstart.md
 **/tsconfig.json
@@ -20,3 +26,7 @@ vscode-ext-config.json
 eslint*
 .yarnrc.yml
 icons/**
+.mocharc.js
+.prettierrc
+.node-version
+.actrc

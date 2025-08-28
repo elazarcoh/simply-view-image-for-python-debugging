@@ -13,7 +13,8 @@ use crate::{
     coloring::Coloring,
     colormap::ColorMapKind,
     common::{AppMode, Image, ViewId},
-    components::{checkbox::Checkbox, display_options::DisplayOption},
+    components::{checkbox::Checkbox, display_options::DisplayOption, icon_button::IconButton},
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 #[derive(PartialEq, Properties)]
@@ -209,6 +210,20 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         ));
     });
 
+    let on_save_image = use_callback(cv.clone(), |_, cv| {
+        if let Some(ref cv) = cv.as_ref() {
+            let dispatch = Dispatch::<AppState>::global();
+            let state = dispatch.get();
+            if let Some(image) = state.images.borrow().get(cv.id()) {
+                let expression = match image {
+                    Image::Placeholder(placeholder) => placeholder.expression.clone(),
+                    Image::Full(info) => info.expression.clone(),
+                };
+                VSCodeRequests::save_image(cv.id().clone(), expression);
+            };
+        }
+    });
+
     html! {
         <div class={style}>
 
@@ -219,6 +234,16 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
                         />
                 }
             }
+
+            <IconButton
+                onclick={Some(on_save_image.clone())}
+                title={"Save Image to Disk"}
+                aria_label={"Save Image to Disk"}
+                icon={"codicon codicon-save"}
+                disabled={cv.as_ref().is_none() }
+            />
+
+            <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
 
             <Checkbox
                 checked={*display_colorbar}

@@ -6,6 +6,7 @@ import {
   removeAllExpressionsTree,
   removeExpressionTreeItem,
 } from './image-watch-tree/WatchExpression';
+
 import {
   refreshWatchTree,
   trackPythonObjectTreeItem,
@@ -49,6 +50,7 @@ async function rerunSetup(): Promise<void> {
     await runSetup(debugSession(session), true);
   }
 }
+
 async function updateDiagnostics(): Promise<void> {
   const debugSessionData = activeDebugSessionData();
   await debugSessionData?.diagnostics.update();

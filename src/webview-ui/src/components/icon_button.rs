@@ -17,6 +17,8 @@ pub(crate) struct IconButtonProps {
     pub spin: Option<bool>,
     #[prop_or_default]
     pub title: Option<AttrValue>,
+    #[prop_or_default]
+    pub disabled: bool,
 }
 
 #[styled_component]
@@ -28,6 +30,7 @@ pub(crate) fn IconButton(props: &IconButtonProps) -> Html {
         onclick,
         spin,
         title,
+        disabled,
     } = props;
 
     let node_ref = use_node_ref();
@@ -67,7 +70,7 @@ pub(crate) fn IconButton(props: &IconButtonProps) -> Html {
     );
 
     html! {
-        <button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={classes!("vscode-action-button", class.clone())} title={title.clone()}>
+        <button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={classes!("vscode-action-button", class.clone())} title={title.clone()} disabled={*disabled}>
             <span class={classes!(icon, spin_style, spin.map(|v| if v { "spin" } else { "" }))}></span>
         </button>
     }

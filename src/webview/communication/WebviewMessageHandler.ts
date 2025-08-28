@@ -5,6 +5,7 @@ import type {
   MessageId,
   RequestBatchItemData,
   RequestImageData,
+  SaveImage,
 } from '../webview';
 import type { WebviewCommunication } from './WebviewClient';
 import Container from 'typedi';
@@ -23,6 +24,7 @@ import { getSessionData } from '../../session/SessionData';
 import { Option } from '../../utils/Option';
 import { errorMessage } from '../../utils/Result';
 import { disposeAll } from '../../utils/VSCodeUtils';
+import { viewObject } from '../../ViewPythonObject';
 import { WebviewRequests, WebviewResponses } from './createMessages';
 
 export class WebviewMessageHandler implements vscode.Disposable {
@@ -178,6 +180,20 @@ export class WebviewMessageHandler implements vscode.Disposable {
     }
   }
 
+  async handleSaveImage(_id: MessageId, { expression }: SaveImage) {
+    const maybeSession = this.thisSession;
+    if (maybeSession.none) {
+      return;
+    }
+    const session = maybeSession.val;
+    viewObject({
+      obj: { expression },
+      session,
+      forceDiskSerialization: true,
+      openInPreview: true,
+    });
+  }
+
   async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
     logTrace('Received message from webview', messageWithId);
 
@@ -198,11 +214,12 @@ export class WebviewMessageHandler implements vscode.Disposable {
         return this.handleAddExpression(id);
       case 'EditExpression':
         return this.handleEditExpression(id, message);
+      case 'SaveImage':
+        return this.handleSaveImage(id, message);
 
       default:
-        ((_: never) => {
-          throw new Error(`Unknown message type: ${type}`);
-        })(type);
+        // Use a more defensive approach for unknown message types
+        logError(`Unknown message type: ${type}`);
     }
   }
 }

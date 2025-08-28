@@ -247,7 +247,7 @@ def create_plots():
     print("Plot data created - set breakpoint here")
 
 create_plots()
-`
+`,
 };
 
 /**

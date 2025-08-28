@@ -2,7 +2,6 @@ import * as assert from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { TestHelper } from './test-helpers';
 
 suite('Debug Integration Test Suite', () => {
   const testWorkspacePath = path.join(__dirname, '../../test-data/fixtures');

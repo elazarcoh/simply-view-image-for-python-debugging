@@ -12,61 +12,61 @@ The test suite validates the complete workflow from Python environment setup thr
 
 #### 1. Extension Activation Tests (`extension.test.ts`)
 
-| Test Name | Description | What It Tests |
-|-----------|-------------|---------------|
-| Extension Activation | Verifies extension loads and activates successfully | Extension lifecycle, activation events |
-| Command Registration | Validates all commands are properly registered | Command palette integration, command availability |
-| Configuration Access | Tests extension settings are accessible | Settings schema, configuration API |
-| Tree View Provider | Ensures tree view provider is registered | Image Watch view, tree data provider |
+| Test Name            | Description                                         | What It Tests                                     |
+| -------------------- | --------------------------------------------------- | ------------------------------------------------- |
+| Extension Activation | Verifies extension loads and activates successfully | Extension lifecycle, activation events            |
+| Command Registration | Validates all commands are properly registered      | Command palette integration, command availability |
+| Configuration Access | Tests extension settings are accessible             | Settings schema, configuration API                |
+| Tree View Provider   | Ensures tree view provider is registered            | Image Watch view, tree data provider              |
 
 #### 2. Configuration Management Tests (`configuration.test.ts`)
 
-| Test Name | Description | What It Tests |
-|-----------|-------------|---------------|
-| Settings Validation | Tests all configuration options | Settings schema compliance, type validation |
-| Value Persistence | Ensures settings persist across sessions | Configuration storage, workspace settings |
-| Type Checking | Validates configuration value types | Type safety, enum validation |
-| Temporary Modifications | Tests temporary setting changes | Configuration API, setting restoration |
+| Test Name               | Description                              | What It Tests                               |
+| ----------------------- | ---------------------------------------- | ------------------------------------------- |
+| Settings Validation     | Tests all configuration options          | Settings schema compliance, type validation |
+| Value Persistence       | Ensures settings persist across sessions | Configuration storage, workspace settings   |
+| Type Checking           | Validates configuration value types      | Type safety, enum validation                |
+| Temporary Modifications | Tests temporary setting changes          | Configuration API, setting restoration      |
 
 ### Integration Tests
 
 #### 3. Command Execution Tests (`commands.test.ts`)
 
-| Test Name | Description | What It Tests |
-|-----------|-------------|---------------|
-| Core Commands | Tests execution of all 19+ extension commands | Command handlers, parameter validation |
-| Error Handling | Validates graceful handling of invalid commands | Error recovery, user feedback |
-| Command Availability | Ensures commands are available when appropriate | Conditional command enablement |
-| Rapid Execution | Tests command resilience under rapid execution | Concurrency handling, rate limiting |
+| Test Name            | Description                                     | What It Tests                          |
+| -------------------- | ----------------------------------------------- | -------------------------------------- |
+| Core Commands        | Tests execution of all 19+ extension commands   | Command handlers, parameter validation |
+| Error Handling       | Validates graceful handling of invalid commands | Error recovery, user feedback          |
+| Command Availability | Ensures commands are available when appropriate | Conditional command enablement         |
+| Rapid Execution      | Tests command resilience under rapid execution  | Concurrency handling, rate limiting    |
 
 #### 4. Debug Integration Tests (`debug-integration.test.ts`)
 
-| Test Name | Description | What It Tests |
-|-----------|-------------|---------------|
-| Debug Session Start | Validates starting Python debug sessions | Debug adapter integration, session lifecycle |
-| Extension Setup | Tests extension initialization during debugging | Debug context setup, variable watching |
-| Multiple Sessions | Handles multiple concurrent debug sessions | Resource management, session isolation |
-| Session Cleanup | Ensures proper cleanup when debugging stops | Memory management, event unsubscription |
+| Test Name           | Description                                     | What It Tests                                |
+| ------------------- | ----------------------------------------------- | -------------------------------------------- |
+| Debug Session Start | Validates starting Python debug sessions        | Debug adapter integration, session lifecycle |
+| Extension Setup     | Tests extension initialization during debugging | Debug context setup, variable watching       |
+| Multiple Sessions   | Handles multiple concurrent debug sessions      | Resource management, session isolation       |
+| Session Cleanup     | Ensures proper cleanup when debugging stops     | Memory management, event unsubscription      |
 
 ### User Interface Tests
 
 #### 5. Webview Functionality Tests (`webview.test.ts`)
 
-| Test Name | Description | What It Tests |
-|-----------|-------------|---------------|
-| Panel Creation | Tests webview panel creation and management | Webview API usage, panel lifecycle |
-| Security Settings | Validates security configuration and CSP | Security policies, script execution |
-| Resource Loading | Tests loading of images, CSS, and JS resources | Asset handling, resource URI generation |
-| State Management | Validates webview state persistence | State serialization, panel restoration |
+| Test Name         | Description                                    | What It Tests                           |
+| ----------------- | ---------------------------------------------- | --------------------------------------- |
+| Panel Creation    | Tests webview panel creation and management    | Webview API usage, panel lifecycle      |
+| Security Settings | Validates security configuration and CSP       | Security policies, script execution     |
+| Resource Loading  | Tests loading of images, CSS, and JS resources | Asset handling, resource URI generation |
+| State Management  | Validates webview state persistence            | State serialization, panel restoration  |
 
 #### 6. End-to-End Integration Tests (`integration.test.ts`)
 
-| Test Name | Description | What It Tests |
-|-----------|-------------|---------------|
-| Complete Workflow | Full extension lifecycle from activation to usage | End-to-end functionality, integration points |
-| Performance Monitoring | Tests extension performance under load | Memory usage, command execution time |
-| Error Recovery | Validates recovery from various error conditions | Fault tolerance, error handling |
-| Cross-Feature Integration | Tests interaction between different features | Feature compatibility, data flow |
+| Test Name                 | Description                                       | What It Tests                                |
+| ------------------------- | ------------------------------------------------- | -------------------------------------------- |
+| Complete Workflow         | Full extension lifecycle from activation to usage | End-to-end functionality, integration points |
+| Performance Monitoring    | Tests extension performance under load            | Memory usage, command execution time         |
+| Error Recovery            | Validates recovery from various error conditions  | Fault tolerance, error handling              |
+| Cross-Feature Integration | Tests interaction between different features      | Feature compatibility, data flow             |
 
 ## Test Data and Fixtures
 
@@ -74,28 +74,28 @@ The test suite validates the complete workflow from Python environment setup thr
 
 All Python test scripts are generated beforehand using centralized templates:
 
-| Script Name | Template Used | Purpose |
-|-------------|---------------|---------|
-| `basic_test.py` | `basicScript` | Simple debugging scenarios with numpy, PIL, matplotlib |
-| `complex_test.py` | `complexScript` | Advanced scenarios with multiple data types and classes |
-| `error_test.py` | `errorTestScript` | Edge cases and error handling scenarios |
-| `performance_test.py` | `performanceScript` | Large data and performance testing |
-| `tensor_test.py` | `tensorScript` | PyTorch and TensorFlow tensor testing |
-| `plot_test.py` | `plotScript` | Matplotlib and Plotly visualization testing |
+| Script Name           | Template Used       | Purpose                                                 |
+| --------------------- | ------------------- | ------------------------------------------------------- |
+| `basic_test.py`       | `basicScript`       | Simple debugging scenarios with numpy, PIL, matplotlib  |
+| `complex_test.py`     | `complexScript`     | Advanced scenarios with multiple data types and classes |
+| `error_test.py`       | `errorTestScript`   | Edge cases and error handling scenarios                 |
+| `performance_test.py` | `performanceScript` | Large data and performance testing                      |
+| `tensor_test.py`      | `tensorScript`      | PyTorch and TensorFlow tensor testing                   |
+| `plot_test.py`        | `plotScript`        | Matplotlib and Plotly visualization testing             |
 
 ### Test Data Types
 
 The test suite generates comprehensive test data:
 
-| Data Type | Examples | Used In Tests | Generated File |
-|-----------|----------|---------------|----------------|
-| **Numpy Arrays** | RGB images, grayscale, float arrays, edge cases | Image display, tensor visualization | All test scripts |
-| **PIL Images** | Various formats (PNG, JPEG, etc.) | Image processing, format compatibility | basic_test.py, complex_test.py |
-| **Matplotlib Plots** | Line plots, scatter plots, subplots, histograms | Plot visualization, figure handling | plot_test.py, complex_test.py |
-| **Plotly Plots** | Interactive plots, 3D visualizations, heatmaps | Interactive plot display | plot_test.py, complex_test.py |
-| **Tensors** | PyTorch tensors, TensorFlow tensors, multi-dimensional arrays | Tensor inspection, deep learning workflows | tensor_test.py, complex_test.py |
-| **Edge Cases** | Empty arrays, NaN values, infinite values, invalid shapes | Error handling, robustness testing | error_test.py |
-| **Performance Data** | Large arrays, high precision data, memory stress tests | Performance monitoring, memory limits | performance_test.py |
+| Data Type            | Examples                                                      | Used In Tests                              | Generated File                  |
+| -------------------- | ------------------------------------------------------------- | ------------------------------------------ | ------------------------------- |
+| **Numpy Arrays**     | RGB images, grayscale, float arrays, edge cases               | Image display, tensor visualization        | All test scripts                |
+| **PIL Images**       | Various formats (PNG, JPEG, etc.)                             | Image processing, format compatibility     | basic_test.py, complex_test.py  |
+| **Matplotlib Plots** | Line plots, scatter plots, subplots, histograms               | Plot visualization, figure handling        | plot_test.py, complex_test.py   |
+| **Plotly Plots**     | Interactive plots, 3D visualizations, heatmaps                | Interactive plot display                   | plot_test.py, complex_test.py   |
+| **Tensors**          | PyTorch tensors, TensorFlow tensors, multi-dimensional arrays | Tensor inspection, deep learning workflows | tensor_test.py, complex_test.py |
+| **Edge Cases**       | Empty arrays, NaN values, infinite values, invalid shapes     | Error handling, robustness testing         | error_test.py                   |
+| **Performance Data** | Large arrays, high precision data, memory stress tests        | Performance monitoring, memory limits      | performance_test.py             |
 
 ## Test Structure
 

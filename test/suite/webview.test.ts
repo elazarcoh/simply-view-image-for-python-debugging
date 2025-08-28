@@ -1,10 +1,10 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 
-suite('Webview Functionality Test Suite', () => {
+describe('webview Functionality Test Suite', () => {
   let webviewPanel: vscode.WebviewPanel | undefined;
 
-  suiteSetup(async () => {
+  before(async () => {
     // Ensure extension is activated
     const extension = vscode.extensions.getExtension('elazarcoh.simply-view-image-for-python-debugging');
     if (extension && !extension.isActive) {
@@ -12,7 +12,7 @@ suite('Webview Functionality Test Suite', () => {
     }
   });
 
-  suiteTeardown(() => {
+  after(() => {
     // Clean up any open webview panels
     if (webviewPanel) {
       webviewPanel.dispose();

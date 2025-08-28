@@ -2,8 +2,8 @@ import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 import { TestHelper } from './test-helpers';
 
-suite('Configuration Management Test Suite', () => {
-  suiteSetup(async () => {
+describe('configuration Management Test Suite', () => {
+  before(async () => {
     // Ensure extension is activated
     await TestHelper.waitForExtensionActivation('elazarcoh.simply-view-image-for-python-debugging');
   });

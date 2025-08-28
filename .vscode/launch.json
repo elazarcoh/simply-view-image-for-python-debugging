@@ -46,9 +46,18 @@
       "outFiles": [
         "${workspaceFolder}/out/test/**/*.js"
       ],
+      "sourceMaps": true,
+      "smartStep": true,
       "preLaunchTask": "Compile Tests",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "env": {
         "NODE_ENV": "test"
+      },
+      "presentation": {
+        "group": "2_tests",
+        "order": 1
       }
     }
   ]

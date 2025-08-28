@@ -3,10 +3,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-suite('Debug Integration Test Suite', () => {
+describe('debug Integration Test Suite', () => {
   const testWorkspacePath = path.join(__dirname, '../../test-data/fixtures');
 
-  suiteSetup(async () => {
+  before(async () => {
     // Ensure test scripts exist - they should be generated beforehand by generate_test_data.py
     const basicTestScript = path.join(testWorkspacePath, 'basic_test.py');
     if (!fs.existsSync(basicTestScript)) {

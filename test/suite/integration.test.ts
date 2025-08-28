@@ -2,10 +2,10 @@ import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 import { TestHelper } from './test-helpers';
 
-suite('End-to-End Integration Test Suite', () => {
+describe('end-to-End Integration Test Suite', () => {
   let testScriptPath: string;
 
-  suiteSetup(async function () {
+  before(async function () {
     this.timeout(30000);
 
     // Ensure extension is activated
@@ -16,7 +16,7 @@ suite('End-to-End Integration Test Suite', () => {
     testScriptPath = await TestHelper.createTempTestFile('integration_test.py', scriptContent);
   });
 
-  suiteTeardown(() => {
+  after(() => {
     // Cleanup temporary files
     TestHelper.cleanupTempFiles();
   });

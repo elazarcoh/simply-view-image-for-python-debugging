@@ -1,8 +1,8 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 
-suite('Extension Commands Test Suite', () => {
-  suiteSetup(async () => {
+describe('extension Commands Test Suite', () => {
+  before(async () => {
     // Ensure extension is activated
     const extension = vscode.extensions.getExtension('elazarcoh.simply-view-image-for-python-debugging');
     if (extension && !extension.isActive) {

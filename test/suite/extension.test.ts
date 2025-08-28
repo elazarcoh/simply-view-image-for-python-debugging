@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 
-suite('Extension Activation Test Suite', () => {
+describe('extension Activation Test Suite', () => {
   it('extension should be present and activate', async () => {
     // Get the extension
     const extension = vscode.extensions.getExtension('elazarcoh.simply-view-image-for-python-debugging');

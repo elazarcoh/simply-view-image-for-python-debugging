@@ -39,4 +39,16 @@ export default antfu(
       }],
     },
   },
+  {
+    files: [
+      'tests/**/*.ts',
+      '**/*.test.ts',
+    ],
+    rules: {
+      'no-console': 'off',
+      'ts/no-require-imports': 'off',
+      'ts/no-unused-expressions': 'off',
+      'unused-imports/no-unused-vars': 'off',
+    },
+  },
 );

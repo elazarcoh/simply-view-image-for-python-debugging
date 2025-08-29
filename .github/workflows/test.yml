@@ -52,7 +52,7 @@ jobs:
         run: yarn build:extension
 
       - name: Run tests with xvfb
-        run: xvfb-run -a yarn ui-test
+        run: xvfb-run -a yarn test:compile && xvfb-run -a extest setup-and-run -y --install_dependencies 'ms-python.python' --storage test-resources './out/tests/ui-test/*.test.js'
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -60,9 +60,27 @@ jobs:
         with:
           name: test-results
           path: |
-            test/out/
-            test/test-data/test_metadata.json
-            test/test-data/fixtures/
+            out/tests/
+            test-resources/settings/
+            test-resources/*.json
+
+      - name: Store UI test logs
+        uses: actions/upload-artifact@v4
+        if: failure() || cancelled()
+        with:
+          name: logs-ubuntu-latest
+          path: |
+            test-resources/settings/logs/*
+            test-resources/*.log
+
+      - name: Store UI Test screenshots
+        uses: actions/upload-artifact@v4
+        if: failure() || cancelled()
+        with:
+          name: screenshots-ubuntu-latest
+          path: |
+            test-resources/screenshots/*.png
+            test-resources/**/*.png
 
   build:
     runs-on: ubuntu-latest
@@ -116,4 +134,36 @@ jobs:
       - name: Check for known vulnerabilities
         run: |
           # Check package.json for any obvious security issues
-          grep -i "password\|secret\|key\|token" package.json || echo "No obvious secrets in package.json"
+          grep -i "password\|secret\|key\|token" package.json || \
+            echo "No obvious secrets in package.json"
+
+  check:
+    if: always()
+    runs-on: ubuntu-latest
+    name: 🚦 Status Check
+    needs: [test, build, security]
+    steps:
+      - name: ℹ️ Test Matrix Result
+        run: |
+          echo "Test result = ${{ needs.test.result }}"
+          echo "Build result = ${{ needs.build.result }}"
+          echo "Security result = ${{ needs.security.result }}"
+      - name: ✅ Status Check - success
+        if: >-
+          ${{ needs.test.result == 'success' &&
+              needs.build.result == 'success' &&
+              (needs.security.result == 'success' ||
+               needs.security.result == 'skipped') }}
+        run: |
+          echo "All tests successfully completed!"
+          exit 0
+      - name: ❌ Status Check - failure
+        if: >-
+          ${{ needs.test.result != 'success' ||
+              needs.build.result != 'success' }}
+        run: |
+          echo "Status Check failed!"
+          echo "Test result: ${{ needs.test.result }}"
+          echo "Build result: ${{ needs.build.result }}"
+          echo "Security result: ${{ needs.security.result }}"
+          exit 1

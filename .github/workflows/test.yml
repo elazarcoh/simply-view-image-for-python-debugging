@@ -52,7 +52,7 @@ jobs:
         run: yarn build:extension
 
       - name: Run tests with xvfb
-        run: xvfb-run -a yarn test:compile && xvfb-run -a extest setup-and-run -y --install_dependencies 'ms-python.python' --storage test-resources './out/tests/ui-test/*.test.js'
+        run: xvfb-run -a yarn test:compile && xvfb-run -a extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources 
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

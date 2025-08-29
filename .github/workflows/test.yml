@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: yarn
 
       - name: Setup Python
@@ -30,14 +30,6 @@ jobs:
 
       - name: Lint code
         run: yarn lint
-
-      - name: Cache VS Code and test resources
-        uses: actions/cache@v4
-        with:
-          path: test-resources
-          key: ${{ runner.os }}-vscode-test-${{ hashFiles('package.json') }}-v2
-          restore-keys: |
-            ${{ runner.os }}-vscode-test-
 
       - name: Cache python dependencies
         uses: actions/cache@v4
@@ -71,16 +63,12 @@ jobs:
             echo "This is a known issue in some CI environments"
             echo "setup_success=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          TEST_RESOURCES: ${{ github.workspace }}/test-resources
         timeout-minutes: 8
         continue-on-error: true
 
       - name: Run tests with xvfb
         if: steps.vscode-setup.outputs.setup_success == 'true'
         run: xvfb-run -a yarn ui-test:run
-        env:
-          TEST_RESOURCES: ${{ github.workspace }}/test-resources
         timeout-minutes: 10
 
       - name: UI tests skipped notification

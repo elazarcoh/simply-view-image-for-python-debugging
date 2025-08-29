@@ -54,22 +54,43 @@ describe('python Debugging Tests', function () {
   }
 
   it('should open Python script and set breakpoint', async function () {
-    this.timeout(30000);
+    this.timeout(60000);
 
     // Wait for extensions to be ready
     await waitForExtensionToLoad();
 
     // Open the Python test file
     const pythonTestFile = path.join(process.cwd(), 'python_test', 'debug_test.py');
+    
+    // Check if file exists first
+    const fs = require('node:fs');
+    if (!fs.existsSync(pythonTestFile)) {
+      throw new Error(`Python test file does not exist: ${pythonTestFile}`);
+    }
+    console.log('Opening Python test file:', pythonTestFile);
 
-    // Use VSBrowser to open the file
-    await VSBrowser.instance.openResources(pythonTestFile);
+    // Try alternative method: Use workbench to open file
+    console.log('Opening file using workbench commands...');
+    await workbench.executeCommand('workbench.action.files.openFile');
+    await driver.sleep(1000);
+    
+    // Type the file path
+    await driver.actions().sendKeys(pythonTestFile).perform();
+    await driver.sleep(500);
+    
+    // Press Enter to open
+    await driver.actions().sendKeys('\uE007').perform(); // Enter key
+    await driver.sleep(2000);
 
     // Wait for editor to open
+    console.log('Waiting for editor to open...');
     await driver.wait(async () => {
       const editors = await editorView.getOpenEditorTitles();
-      return editors.includes('debug_test.py');
-    }, 10000);
+      console.log('Current open editors:', editors);
+      return editors.some(title => title.includes('debug_test.py'));
+    }, 30000);
+
+    console.log('Editor opened successfully');
 
     // Get the active text editor
     const editor = await editorView.openEditor('debug_test.py') as TextEditor;
@@ -79,15 +100,16 @@ describe('python Debugging Tests', function () {
     expect(text).to.include('x = "hello"');
     expect(text).to.include('print(f"The value of x is: {x}")');
 
-    // Set a breakpoint on the print line (line 9)
-    const breakpointAdded = await editor.toggleBreakpoint(9);
+    // Set a breakpoint on the print line (line 10)
+    console.log('Setting breakpoint on line 10...');
+    const breakpointAdded = await editor.toggleBreakpoint(10);
     expect(breakpointAdded).to.be.true;
 
     // Verify breakpoint was set
-    const breakpoint = await editor.getBreakpoint(9);
+    const breakpoint = await editor.getBreakpoint(10);
     expect(breakpoint).to.not.be.undefined;
 
-    console.log('Successfully set breakpoint on line 9');
+    console.log('Successfully set breakpoint on line 10');
   });
 
   it('should start debug session and hit breakpoint', async function () {

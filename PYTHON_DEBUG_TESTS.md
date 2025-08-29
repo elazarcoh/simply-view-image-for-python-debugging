@@ -143,6 +143,40 @@ npx mocha out/tests/ui-test/python-debug-verify.test.js
 - Session lifecycle management
 - Variable inspection capabilities
 
+### Extension Dependency Management
+
+The implementation leverages VS Code Extension Tester's built-in dependency management instead of manual extension installation:
+
+**Package Configuration:**
+
+```json
+{
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "scripts": {
+    "ui-test": "yarn test:compile && extest setup-and-run -y -i './out/tests/ui-test/*.test.js'"
+  }
+}
+```
+
+**Test Implementation:**
+
+```typescript
+// Clean approach using framework capabilities
+async function waitForExtensionToLoad(): Promise<void> {
+  await driver.sleep(2000);
+  console.log('Extensions loaded automatically via --install_dependencies');
+}
+```
+
+**Benefits:**
+
+- Simpler test code without manual installation logic
+- Leverages testing framework's built-in capabilities
+- More reliable dependency management
+- Follows VS Code extension testing best practices
+
 ### CI Compatibility
 
 - Headless browser support
@@ -156,7 +190,7 @@ All tests are designed to provide meaningful feedback:
 
 - ✅ Python script validation
 - ✅ Debug configuration verification
-- ✅ Extension installation capabilities
+- ✅ Extension dependency management via extest
 - ✅ Breakpoint functionality
 - ✅ Debug session management
 - ✅ CI environment compatibility
@@ -170,7 +204,7 @@ This implementation successfully meets all requirements:
 3. ✅ **Sets breakpoints**: Automated breakpoint on line 9
 4. ✅ **Starts debug session**: Multiple initiation methods
 5. ✅ **Verifies breakpoint hit**: Checks paused state and line number
-6. ✅ **Installs Python extension**: Automatic marketplace installation
+6. ✅ **Automated extension dependencies**: Uses extest --install_dependencies for Python extension
 7. ✅ **CI compatibility**: Multiple test layers for reliability
 
 The tests will pass meaningfully in CI environments through the verification layer while providing full debugging capabilities for local development and testing scenarios.

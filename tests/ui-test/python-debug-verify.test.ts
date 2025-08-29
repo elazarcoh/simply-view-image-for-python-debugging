@@ -84,7 +84,7 @@ describe('python Debugging Components', () => {
     const testContent = fs.readFileSync(testFile, 'utf8');
 
     // Verify test contains required functionality
-    expect(testContent).to.include('installPythonExtension');
+    expect(testContent).to.include('waitForExtensionToLoad'); // Updated approach without manual installation
     expect(testContent).to.include('toggleBreakpoint');
     expect(testContent).to.include('debugView.start()');
     expect(testContent).to.include('DebugToolbar.create');
@@ -135,7 +135,13 @@ describe('python Debugging Components', () => {
 
     // Verify debug test meets requirements
     const testContent = fs.readFileSync(debugTest, 'utf8');
-    expect(testContent).to.include('installPythonExtension'); // Requirement 6
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    const packageJson = fs.readFileSync(packageJsonPath, 'utf8');
+    const packageData = JSON.parse(packageJson);
+
+    // Requirement 6: Automated dependency installation via extest --install_dependencies
+    expect(packageData.extensionDependencies).to.include('ms-python.python'); // Extension dependency declared
+    expect(packageData.scripts['ui-test']).to.include('-i'); // Test script uses --install_dependencies
     expect(testContent).to.include('toggleBreakpoint'); // Requirement 3
     expect(testContent).to.include('debugView.start'); // Requirement 4
     expect(testContent).to.include('waitForBreakPoint'); // Requirement 5
@@ -145,7 +151,7 @@ describe('python Debugging Components', () => {
     console.log('  ✓ Test sets breakpoint in the script');
     console.log('  ✓ Test starts debug session');
     console.log('  ✓ Test checks debugger stops at breakpoint');
-    console.log('  ✓ Test installs Python extension automatically');
+    console.log('  ✓ Extension dependencies managed via extest --install_dependencies');
     console.log('  ✓ Tests are designed to work in CI environment');
   });
 });

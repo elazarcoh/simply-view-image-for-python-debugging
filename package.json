@@ -44,6 +44,9 @@
     "onWebviewPanel:jupyter-variables",
     "onWebviewPanel:jupyter"
   ],
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
   "contributes": {
     "jupyterVariableViewers": [
       {
@@ -516,7 +519,7 @@
     "lint:fix": "eslint . --config eslint.config.mjs --fix",
     "clean": "rimraf dist src/webview-ui/pkg",
     "test:compile": "tsc -p ./tsconfig.test.json",
-    "ui-test": "yarn test:compile && extest setup-and-run -y './out/tests/ui-test/*.test.js'",
+    "ui-test": "yarn test:compile && extest setup-and-run -y -i './out/tests/ui-test/*.test.js'",
     "ui-test:setup": "extest setup-tests",
     "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/*.test.js'"
   },

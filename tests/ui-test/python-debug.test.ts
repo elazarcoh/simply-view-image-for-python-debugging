@@ -5,7 +5,6 @@
 
 import type {
   DebugView,
-  ExtensionsViewSection,
   TextEditor,
   WebDriver,
 } from 'vscode-extension-tester';
@@ -34,9 +33,6 @@ describe('python Debugging Tests', function () {
     workbench = new Workbench();
     editorView = new EditorView();
 
-    // First install Python extension if not already installed
-    await installPythonExtension();
-
     // Wait for VS Code to be ready
     await driver.wait(async () => {
       try {
@@ -47,66 +43,21 @@ describe('python Debugging Tests', function () {
         return false;
       }
     }, 30000);
+
+    console.log('VS Code is ready for testing');
   });
 
-  async function installPythonExtension(): Promise<void> {
-    try {
-      console.log('Checking for Python extension...');
-
-      // Open extensions view
-      const activityBar = new ActivityBar();
-      const extensionsControl = await activityBar.getViewControl('Extensions');
-      const extensionsView = await extensionsControl?.openView();
-
-      if (!extensionsView) {
-        throw new Error('Could not open extensions view');
-      }
-
-      // Wait for extensions to load
-      await driver.wait(async () => {
-        const sections = await extensionsView.getContent().getSections();
-        return sections.length > 0;
-      }, 15000);
-
-      // Check if Python extension is already installed
-      const installedSection = await extensionsView.getContent().getSection('Installed') as ExtensionsViewSection;
-
-      try {
-        const pythonExtension = await installedSection.findItem('@installed Python');
-        if (pythonExtension) {
-          console.log('Python extension is already installed');
-          return;
-        }
-      }
-      catch {
-        // Extension not found in installed, proceed to install
-      }
-
-      // Try to find and install Python extension from marketplace
-      console.log('Installing Python extension from marketplace...');
-      const marketplaceSection = await extensionsView.getContent().getSections();
-      const section = marketplaceSection[0] as ExtensionsViewSection;
-
-      // Search for Python extension
-      const pythonExtension = await section.findItem('ms-python.python');
-
-      if (pythonExtension && !await pythonExtension.isInstalled()) {
-        console.log('Installing Python extension...');
-        await pythonExtension.install(120000); // 2 minutes timeout
-        console.log('Python extension installed successfully');
-      }
-      else {
-        console.log('Python extension already available');
-      }
-    }
-    catch (error) {
-      console.warn('Could not install Python extension automatically:', error);
-      // Continue with test anyway - Python extension might be available through other means
-    }
+  async function waitForExtensionToLoad(): Promise<void> {
+    // Wait for Python extension to be available
+    await driver.sleep(2000);
+    console.log('Extensions should be loaded automatically via --install_dependencies');
   }
 
   it('should open Python script and set breakpoint', async function () {
     this.timeout(30000);
+
+    // Wait for extensions to be ready
+    await waitForExtensionToLoad();
 
     // Open the Python test file
     const pythonTestFile = path.join(process.cwd(), 'python_test', 'debug_test.py');

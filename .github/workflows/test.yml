@@ -59,7 +59,7 @@ jobs:
       - name: Run tests with xvfb
         run: |
           mkdir -p test-results
-          MOCHA_JUNIT=true xvfb-run -a yarn test:compile && MOCHA_JUNIT=true xvfb-run -a extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources
+          MOCHA_JUNIT=true xvfb-run -a yarn test:compile && MOCHA_JUNIT=true xvfb-run -a yarn extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources
         continue-on-error: true
 
       - name: Upload test results to GitHub

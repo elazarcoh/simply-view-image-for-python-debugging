@@ -523,7 +523,8 @@
     "ui-test": "yarn test:compile && extest setup-and-run -y --install_dependencies 'ms-python.python' './out/tests/ui-test/*.test.js'",
     "ui-test:setup": "extest setup-tests",
     "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/*.test.js'",
-    "ui-test:offscreen": "xvfb-run -a yarn ui-test"
+    "ui-test:offscreen": "xvfb-run -a yarn ui-test",
+    "extest": "extest"
   },
   "dependencies": {
     "@jupyterlab/services": "^7.3.5",

@@ -106,7 +106,7 @@ describe('python Debugging Components', () => {
     expect(testContent).to.include('should open and validate Python test script');
     expect(testContent).to.include('should verify Python extension availability');
     expect(testContent).to.include('should demonstrate basic debugging workflow');
-    expect(testContent).to.include('VSBrowser.instance.openResources');
+    expect(testContent).to.include('VSBrowser.instance.driver');
 
     console.log('✓ Basic debug test for CI environments is implemented');
   });

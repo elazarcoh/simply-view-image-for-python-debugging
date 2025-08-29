@@ -105,3 +105,19 @@ This extension builds upon the foundational work of [john-guo](https://github.co
    ```bash
    yarn build
    ```
+
+### Testing
+
+The extension includes comprehensive UI tests to ensure functionality across different environments:
+
+1. **Compile tests**:
+   ```bash
+   yarn test:compile
+   ```
+
+2. **Run UI tests**:
+   ```bash
+   yarn ui-test
+   ```
+
+For detailed information about the testing infrastructure, see [tests/UI_TESTS.md](tests/UI_TESTS.md).

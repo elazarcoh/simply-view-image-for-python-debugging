@@ -18,6 +18,10 @@ export default antfu(
     ignores: [
       'icons',
       'example-plugin',
+      'vscode-extension-tester-example',
+      'vscode-extension-tester.wiki',
+      'dist',
+      '.yarn',
     ],
   },
   {
@@ -37,6 +41,18 @@ export default antfu(
         varsIgnorePattern: '^_',
         ignoreRestSiblings: true,
       }],
+    },
+  },
+  {
+    files: [
+      'tests/**/*.ts',
+      '**/*.test.ts',
+    ],
+    rules: {
+      'no-console': 'off',
+      'ts/no-require-imports': 'off',
+      'ts/no-unused-expressions': 'off',
+      'unused-imports/no-unused-vars': 'off',
     },
   },
 );

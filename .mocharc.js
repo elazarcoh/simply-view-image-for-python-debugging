@@ -4,5 +4,5 @@ module.exports = {
   reporter: 'spec',
   slow: 5000,
   retries: 1,
-  bail: false
+  bail: false,
 };

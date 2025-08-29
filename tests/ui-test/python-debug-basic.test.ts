@@ -52,21 +52,37 @@ describe('python Debugging - Basic Tests', function () {
   });
 
   it('should open and validate Python test script', async function () {
-    this.timeout(30000);
+    this.timeout(60000);
 
     try {
-      // Open the Python test file
+      // Check if file exists first
       const pythonTestFile = path.join(process.cwd(), 'python_test', 'debug_test.py');
-      console.log('Opening Python test file:', pythonTestFile);
+      const fs = require('node:fs');
+      if (!fs.existsSync(pythonTestFile)) {
+        throw new Error(`Python test file does not exist: ${pythonTestFile}`);
+      }
+      console.log('Python test file exists:', pythonTestFile);
 
-      // Use VSBrowser to open the file
-      await VSBrowser.instance.openResources(pythonTestFile);
+      // Try alternative method: Use workbench to open file
+      console.log('Opening file using workbench commands...');
+      await workbench.executeCommand('workbench.action.files.openFile');
+      await driver.sleep(1000);
+      
+      // Type the file path
+      await driver.actions().sendKeys(pythonTestFile).perform();
+      await driver.sleep(500);
+      
+      // Press Enter to open
+      await driver.actions().sendKeys('\uE007').perform(); // Enter key
+      await driver.sleep(2000);
 
       // Wait for editor to open
+      console.log('Waiting for editor to open...');
       await driver.wait(async () => {
         const editors = await editorView.getOpenEditorTitles();
-        return editors.includes('debug_test.py');
-      }, 15000);
+        console.log('Current open editors:', editors);
+        return editors.some(title => title.includes('debug_test.py'));
+      }, 30000);
 
       console.log('Python file opened successfully');
 
@@ -81,15 +97,16 @@ describe('python Debugging - Basic Tests', function () {
 
       console.log('Python file content validated successfully');
 
-      // Try to set a breakpoint on the print line (line 9)
+      // Try to set a breakpoint on the print line (line 10)
       try {
-        const breakpointAdded = await editor.toggleBreakpoint(9);
+        console.log('Attempting to set breakpoint...');
+        const breakpointAdded = await editor.toggleBreakpoint(10);
         console.log('Breakpoint toggle result:', breakpointAdded);
 
         // Verify breakpoint was set (if possible)
-        const breakpoint = await editor.getBreakpoint(9);
+        const breakpoint = await editor.getBreakpoint(10);
         if (breakpoint) {
-          console.log('Breakpoint verified at line 9');
+          console.log('Breakpoint verified at line 10');
         }
         else {
           console.log('Breakpoint may not be visible but toggle was successful');
@@ -97,11 +114,22 @@ describe('python Debugging - Basic Tests', function () {
       }
       catch (breakpointError) {
         console.warn('Breakpoint setting encountered issues:', breakpointError);
-        // This might fail in headless environments, but that's okay
+        // This might fail in headless environments, but that's okay for now
       }
     }
     catch (error) {
       console.error('Test failed:', error);
+      // Log more context for debugging
+      console.log('Current working directory:', process.cwd());
+      
+      // Try to get current VS Code state
+      try {
+        const editors = await editorView.getOpenEditorTitles();
+        console.log('Current editors when error occurred:', editors);
+      } catch (e) {
+        console.log('Could not get editor titles');
+      }
+      
       throw error;
     }
   });

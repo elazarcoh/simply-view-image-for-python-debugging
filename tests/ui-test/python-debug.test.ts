@@ -61,7 +61,7 @@ describe('python Debugging Tests', function () {
 
     // Open the Python test file
     const pythonTestFile = path.join(process.cwd(), 'python_test', 'debug_test.py');
-    
+
     // Check if file exists first
     const fs = require('node:fs');
     if (!fs.existsSync(pythonTestFile)) {
@@ -73,11 +73,11 @@ describe('python Debugging Tests', function () {
     console.log('Opening file using workbench commands...');
     await workbench.executeCommand('workbench.action.files.openFile');
     await driver.sleep(1000);
-    
+
     // Type the file path
     await driver.actions().sendKeys(pythonTestFile).perform();
     await driver.sleep(500);
-    
+
     // Press Enter to open
     await driver.actions().sendKeys('\uE007').perform(); // Enter key
     await driver.sleep(2000);

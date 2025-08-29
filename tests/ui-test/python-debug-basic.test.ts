@@ -67,11 +67,11 @@ describe('python Debugging - Basic Tests', function () {
       console.log('Opening file using workbench commands...');
       await workbench.executeCommand('workbench.action.files.openFile');
       await driver.sleep(1000);
-      
+
       // Type the file path
       await driver.actions().sendKeys(pythonTestFile).perform();
       await driver.sleep(500);
-      
+
       // Press Enter to open
       await driver.actions().sendKeys('\uE007').perform(); // Enter key
       await driver.sleep(2000);
@@ -121,15 +121,16 @@ describe('python Debugging - Basic Tests', function () {
       console.error('Test failed:', error);
       // Log more context for debugging
       console.log('Current working directory:', process.cwd());
-      
+
       // Try to get current VS Code state
       try {
         const editors = await editorView.getOpenEditorTitles();
         console.log('Current editors when error occurred:', editors);
-      } catch (e) {
+      }
+      catch (e) {
         console.log('Could not get editor titles');
       }
-      
+
       throw error;
     }
   });

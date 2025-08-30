@@ -16,6 +16,14 @@
       "program": "${workspaceFolder}/python_test/debug_test.py",
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Python: Main Workflow Test",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/python_test/main_workflow_test.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ]
 }

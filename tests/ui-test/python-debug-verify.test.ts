@@ -83,15 +83,17 @@ describe('python Debugging Components', () => {
 
     const testContent = fs.readFileSync(testFile, 'utf8');
 
-    // Verify test contains required functionality
-    expect(testContent).to.include('waitForExtensionToLoad'); // Updated approach without manual installation
+    // Verify test contains required functionality for main workflow
+    expect(testContent).to.include('main Workflow: Python Debugging with Image Viewing');
+    expect(testContent).to.include('should open and validate Python test script with image data');
+    expect(testContent).to.include('should set breakpoints on lines with image variables');
+    expect(testContent).to.include('should start Python debug session and stop at breakpoints');
+    expect(testContent).to.include('should test extension image viewing commands during debugging');
+    expect(testContent).to.include('should verify webview functionality and image display capability');
     expect(testContent).to.include('toggleBreakpoint');
-    expect(testContent).to.include('debugView.start()');
-    expect(testContent).to.include('DebugToolbar.create');
     expect(testContent).to.include('waitForBreakPoint');
-    expect(testContent).to.include('getPausedBreakpoint');
 
-    console.log('✓ Comprehensive debug test implementation is present');
+    console.log('✓ Comprehensive main workflow debug test implementation is present');
   });
 
   it('should have basic debug test for CI environments', () => {
@@ -102,25 +104,24 @@ describe('python Debugging Components', () => {
 
     const testContent = fs.readFileSync(basicTestFile, 'utf8');
 
-    // Verify basic test contains essential checks
-    expect(testContent).to.include('should open and validate Python test script');
-    expect(testContent).to.include('should verify Python extension availability');
-    expect(testContent).to.include('should demonstrate basic debugging workflow');
+    // Verify basic test contains essential webview and functionality checks
+    expect(testContent).to.include('should open the image view webview and verify basic UI elements');
     expect(testContent).to.include('VSBrowser.instance.driver');
+    expect(testContent).to.include('svifpd.open-image-webview');
 
     console.log('✓ Basic debug test for CI environments is implemented');
   });
 
   it('should validate test structure meets requirements', () => {
     // Verify all required components are present based on the problem statement:
-    // 1. Basic test that creates a python script ✓
-    // 2. Script sets a variable x to "hello" and prints it ✓
-    // 3. Set a breakpoint somewhere in script ✓
-    // 4. Start debug session with this script ✓
-    // 5. Check that debugger stops on breakpoint ✓
-    // 6. Install Python extension inside VS Code in tests ✓
+    // 1. Python script with image/tensor data structures ✓
+    // 2. Script sets variables and prints them ✓
+    // 3. Test sets breakpoints in script ✓
+    // 4. Test starts debug session with script ✓
+    // 5. Test checks that debugger stops on breakpoint ✓
+    // 6. Extension dependencies managed automatically ✓
 
-    const pythonScript = path.join(process.cwd(), 'python_test', 'debug_test.py');
+    const pythonScript = path.join(process.cwd(), 'python_test', 'main_workflow_test.py');
     const debugTest = path.join(process.cwd(), 'tests', 'ui-test', 'python-debug.test.ts');
     const basicTest = path.join(process.cwd(), 'tests', 'ui-test', 'python-debug-basic.test.ts');
 
@@ -130,27 +131,35 @@ describe('python Debugging Components', () => {
 
     // Verify Python script content meets requirements
     const scriptContent = fs.readFileSync(pythonScript, 'utf8');
-    expect(scriptContent).to.include('x = "hello"'); // Requirement 2
-    expect(scriptContent).to.include('print('); // Requirement 2
+    expect(scriptContent).to.include('x = "hello"'); // Basic variable
+    expect(scriptContent).to.include('sample_image = create_sample_image()'); // Image data
+    expect(scriptContent).to.include('sample_tensor = create_sample_tensor()'); // Tensor data
+    expect(scriptContent).to.include('print('); // Print statements for breakpoints
 
-    // Verify debug test meets requirements
+    // Verify main workflow test implementation
     const testContent = fs.readFileSync(debugTest, 'utf8');
     const packageJsonPath = path.join(process.cwd(), 'package.json');
     const packageJson = fs.readFileSync(packageJsonPath, 'utf8');
     const packageData = JSON.parse(packageJson);
 
-    // Requirement 6: Automated dependency installation via extest --install_dependencies
-    expect(packageData.extensionDependencies).to.include('ms-python.python'); // Extension dependency declared
-    expect(packageData.scripts['ui-test']).to.include('-i'); // Test script uses --install_dependencies
-    expect(testContent).to.include('toggleBreakpoint'); // Requirement 3
-    expect(testContent).to.include('debugView.start'); // Requirement 4
-    expect(testContent).to.include('waitForBreakPoint'); // Requirement 5
+    // Extension dependency declared for automatic installation
+    expect(packageData.extensionDependencies).to.include('ms-python.python');
+    expect(packageData.scripts['ui-test']).to.include('--install_dependencies'); // Auto-install dependencies
 
-    console.log('✓ All requirements from problem statement are implemented:');
-    console.log('  ✓ Created Python script that sets x="hello" and prints it');
-    console.log('  ✓ Test sets breakpoint in the script');
-    console.log('  ✓ Test starts debug session');
-    console.log('  ✓ Test checks debugger stops at breakpoint');
+    // Main workflow test components
+    expect(testContent).to.include('toggleBreakpoint'); // Sets breakpoints
+    expect(testContent).to.include('debugView.start'); // Starts debug session
+    expect(testContent).to.include('waitForBreakPoint'); // Waits for breakpoint hit
+    expect(testContent).to.include('svifpd.view-image'); // Tests extension functionality
+    expect(testContent).to.include('main_workflow_test.py'); // Uses the correct test script
+
+    console.log('✓ All requirements for main workflow test are implemented:');
+    console.log('  ✓ Created Python script with image/tensor data structures');
+    console.log('  ✓ Script sets x="hello" and other variables, prints them');
+    console.log('  ✓ Test sets breakpoints on lines with image variables');
+    console.log('  ✓ Test starts debug session with main workflow script');
+    console.log('  ✓ Test checks debugger stops at breakpoints');
+    console.log('  ✓ Test validates extension image viewing commands');
     console.log('  ✓ Extension dependencies managed via extest --install_dependencies');
     console.log('  ✓ Tests are designed to work in CI environment');
   });

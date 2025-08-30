@@ -7,12 +7,17 @@ import type { ExtensionsViewItem, ExtensionsViewSection } from 'vscode-extension
 import { expect } from 'chai';
 import { ActivityBar } from 'vscode-extension-tester';
 import pjson from '../../package.json';
+import { setupTestEnvironment } from './test-utils';
 
 describe('simply View Image Extension Tests', () => {
   let extension: ExtensionsViewItem;
 
   before(async function () {
     this.timeout(15000);
+
+    // Setup test environment: ensure VS Code is ready and extension is activated
+    await setupTestEnvironment(15000);
+
     // Open the extensions view
     const view = await (await new ActivityBar().getViewControl('Extensions'))?.openView();
     await view?.getDriver().wait(async () => {

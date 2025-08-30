@@ -519,9 +519,10 @@
     "lint:fix": "eslint . --config eslint.config.mjs --fix",
     "clean": "rimraf dist src/webview-ui/pkg",
     "test:compile": "tsc -p ./tsconfig.test.json",
+    "test:watch": "tsc --watch -p ./tsconfig.test.json",
     "test:validate": "yarn test:compile && node run-basic-tests.mjs",
     "ui-test": "yarn test:compile && extest setup-and-run -y --install_dependencies 'ms-python.python' './out/tests/ui-test/*.test.js'",
-    "ui-test:setup": "extest setup-tests",
+    "ui-test:setup": "extest setup-tests --install_dependencies 'ms-python.python'",
     "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/*.test.js'",
     "ui-test:offscreen": "xvfb-run -a yarn ui-test",
     "extest": "extest"

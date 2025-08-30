@@ -34,18 +34,21 @@
       }
     },
     {
-      "name": "Extension Tests",
-      "type": "extensionHost",
+      "name": "Debug UI Tests",
+      "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${execPath}",
+      "program": "${workspaceFolder}/node_modules/.bin/extest",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+        "run-tests",
+        // "${workspaceFolder}/out/tests/ui-test/*.js",
+        "${workspaceFolder}/out/tests/ui-test/*-basic.test.js",
+        "--mocha_config",
+        "${workspaceFolder}/src/ui-test/.mocharc-debug.js"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/test/**/*.js"
-      ],
-      "preLaunchTask": "${defaultBuildTask}"
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "Compile tests"
     }
   ]
 }

@@ -6,6 +6,7 @@
 import * as path from 'node:path';
 import { expect } from 'chai';
 import { ActivityBar, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { setupTestEnvironment } from './test-utils';
 
 describe('extension Activation Tests', function () {
   let workbench: Workbench;
@@ -19,18 +20,8 @@ describe('extension Activation Tests', function () {
     try {
       workbench = new Workbench();
 
-      // Wait for VS Code to be ready
-      await VSBrowser.instance.driver.wait(async () => {
-        try {
-          await new ActivityBar().getViewControl('Explorer');
-          return true;
-        }
-        catch {
-          return false;
-        }
-      }, 30000);
-
-      console.log('VS Code is ready for testing');
+      // Setup test environment: ensure VS Code is ready and extension is activated
+      await setupTestEnvironment(60000);
     }
     catch (error) {
       console.warn('Setup encountered issues:', error);

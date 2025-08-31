@@ -11,6 +11,7 @@ export interface DebugTestOptions {
   timeout?: number;
   retryCount?: number;
   sleepDuration?: number;
+  autoEnsureViews?: boolean; // Automatically ensure views are open/valid
 }
 
 export interface VariableActionOptions {
@@ -25,9 +26,21 @@ export interface ExpressionOptions {
   timeout?: number;
 }
 
+export interface SetupEditorOptions {
+  fileName: string;
+  breakpointLines?: number[];
+  debugConfig?: string;
+  openFile?: boolean;
+}
+
 export interface ScreenshotOptions {
   name: string;
   elementType?: 'webview' | 'editor' | 'fullscreen';
+}
+
+export interface WebviewOptions {
+  autoOpen?: boolean;
+  timeout?: number;
 }
 
 /**
@@ -54,6 +67,7 @@ export class DebugTestHelper {
       timeout: 30000,
       retryCount: 5,
       sleepDuration: 1000,
+      autoEnsureViews: true,
       ...options,
     };
   }
@@ -141,20 +155,23 @@ export class DebugTestHelper {
    * Select a launch configuration for debugging
    */
   async selectLaunchConfiguration(configNamePattern: string): Promise<this> {
-    if (!this.debugView) {
+    if (this.options.autoEnsureViews) {
+      await this.ensureDebugViewOpen();
+    }
+    else if (!this.debugView) {
       throw new Error('Debug view not opened. Call openDebugPanel() first.');
     }
 
     console.log(`Step: Getting launch configurations matching "${configNamePattern}"`);
 
-    const configs = await this.debugView.getLaunchConfigurations();
+    const configs = await this.debugView!.getLaunchConfigurations();
     const configName = configs.find(c => c.includes(configNamePattern));
 
     if (!configName) {
       throw new Error(`Could not find launch configuration matching "${configNamePattern}". Available: ${configs.join(', ')}`);
     }
 
-    await this.debugView.selectLaunchConfiguration(configName);
+    await this.debugView!.selectLaunchConfiguration(configName);
     console.log(`Step: Launch configuration "${configName}" selected`);
     return this;
   }
@@ -163,12 +180,15 @@ export class DebugTestHelper {
    * Start debugging session
    */
   async startDebugging(): Promise<this> {
-    if (!this.debugView) {
+    if (this.options.autoEnsureViews) {
+      await this.ensureDebugViewOpen();
+    }
+    else if (!this.debugView) {
       throw new Error('Debug view not opened. Call openDebugPanel() first.');
     }
 
     console.log('Step: Starting debug session');
-    await this.debugView.start();
+    await this.debugView!.start();
     await VSBrowser.instance.driver.sleep(3000);
     console.log('Step: Debug session started');
     return this;
@@ -234,9 +254,29 @@ export class DebugTestHelper {
     }
 
     console.log(`Step: Adding breakpoint at line ${lineNumber}`);
-    // Note: The exact API for adding breakpoints may vary
-    // This is a placeholder for the actual implementation
-    console.log(`Step: Breakpoint added at line ${lineNumber} (implementation may vary)`);
+
+    try {
+      // Use the goto line command to navigate to the specific line
+      await new Workbench().executeCommand('workbench.action.gotoLine');
+      await VSBrowser.instance.driver.sleep(500);
+
+      // Enter the line number in the input box
+      const input = await InputBox.create(this.options.timeout);
+      await input.setText(lineNumber.toString());
+      await input.confirm();
+      await VSBrowser.instance.driver.sleep(500);
+
+      // Toggle breakpoint using command
+      await new Workbench().executeCommand('editor.debug.action.toggleBreakpoint');
+
+      await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
+      console.log(`Step: Breakpoint added at line ${lineNumber}`);
+    }
+    catch (error) {
+      console.warn(`Warning: Could not add breakpoint at line ${lineNumber}: ${error}`);
+      // Don't throw error, as this might not be critical for some tests
+    }
+
     return this;
   }
 
@@ -248,13 +288,16 @@ export class DebugTestHelper {
    * Expand the Image Watch section in the debug view
    */
   async expandImageWatchSection(): Promise<this> {
-    if (!this.debugView) {
+    if (this.options.autoEnsureViews) {
+      await this.ensureDebugViewOpen();
+    }
+    else if (!this.debugView) {
       throw new Error('Debug view not opened. Call openDebugPanel() first.');
     }
 
     console.log('Step: Expanding Image Watch section');
 
-    this.imageWatchSection = await this.debugView.getContent().getSection('Image Watch');
+    this.imageWatchSection = await this.debugView!.getContent().getSection('Image Watch');
 
     try {
       await this.imageWatchSection.expand(2000);
@@ -278,13 +321,16 @@ export class DebugTestHelper {
    * Refresh the Image Watch section
    */
   async refreshImageWatch(): Promise<this> {
-    if (!this.imageWatchSection) {
+    if (this.options.autoEnsureViews) {
+      await this.ensureImageWatchSectionExpanded();
+    }
+    else if (!this.imageWatchSection) {
       throw new Error('Image Watch section not available. Call expandImageWatchSection() first.');
     }
 
     console.log('Step: Refreshing Image Watch section');
 
-    const refreshButton = await this.imageWatchSection.getAction('Refresh');
+    const refreshButton = await this.imageWatchSection!.getAction('Refresh');
     if (!refreshButton) {
       throw new Error('Refresh button is not available');
     }
@@ -303,13 +349,16 @@ export class DebugTestHelper {
    * Find and expand a tree item in the Image Watch section
    */
   async findAndExpandTreeItem(itemName: string): Promise<TreeItem> {
-    if (!this.imageWatchSection) {
+    if (this.options.autoEnsureViews) {
+      await this.ensureImageWatchSectionExpanded();
+    }
+    else if (!this.imageWatchSection) {
       throw new Error('Image Watch section not available. Call expandImageWatchSection() first.');
     }
 
     console.log(`Step: Finding tree item "${itemName}"`);
 
-    const item = await this.imageWatchSection.findItem(itemName) as TreeItem | undefined;
+    const item = await this.imageWatchSection!.findItem(itemName) as TreeItem | undefined;
     if (!item) {
       throw new Error(`Tree item "${itemName}" not found`);
     }
@@ -544,7 +593,10 @@ export class DebugTestHelper {
 
     switch (elementType) {
       case 'webview': {
-        if (!this.webviewTab) {
+        if (this.options.autoEnsureViews) {
+          await this.ensureWebviewOpen();
+        }
+        else if (!this.webviewTab) {
           throw new Error('Webview not available for screenshot. Call waitForImageWebview() first.');
         }
         const editorView = new EditorView();
@@ -620,11 +672,175 @@ export class DebugTestHelper {
     return this;
   }
 
+  // =============================================================================
+  // VALIDATION AND AUTO-ENSURING METHODS
+  // =============================================================================
+
   /**
-   * Clean up resources
+   * Ensure the debug view is open and accessible
+   */
+  async ensureDebugViewOpen(): Promise<this> {
+    if (!this.debugView || !await this.isViewValid(this.debugView)) {
+      console.log('Step: Debug view not valid, opening debug panel');
+      await this.openDebugPanel();
+    }
+    else {
+      console.log('Step: Debug view already open and valid');
+    }
+    return this;
+  }
+
+  /**
+   * Ensure the Image Watch section is expanded and accessible
+   */
+  async ensureImageWatchSectionExpanded(): Promise<this> {
+    await this.ensureDebugViewOpen();
+
+    if (!this.imageWatchSection || !await this.isSectionValid(this.imageWatchSection)) {
+      console.log('Step: Image Watch section not valid, expanding section');
+      await this.expandImageWatchSection();
+    }
+    else {
+      console.log('Step: Image Watch section already expanded and valid');
+    }
+    return this;
+  }
+
+  /**
+   * Ensure the webview is open and accessible
+   */
+  async ensureWebviewOpen(): Promise<this> {
+    if (!this.webviewTab || !await this.isWebviewValid()) {
+      console.log('Step: Webview not valid, finding/opening webview');
+      try {
+        await this.findImageWebview();
+      }
+      catch (error) {
+        console.log('Step: Webview not found, waiting for it to open');
+        await this.waitForImageWebview();
+      }
+    }
+    else {
+      console.log('Step: Webview already open and valid');
+    }
+    return this;
+  }
+
+  /**
+   * Check if a view section is valid and accessible
+   */
+  private async isViewValid(view: DebugView): Promise<boolean> {
+    try {
+      // Try to interact with the view to see if it's valid
+      await view.isDisplayed();
+      return true;
+    }
+    catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Check if a section is valid and accessible
+   */
+  private async isSectionValid(section: ViewSection): Promise<boolean> {
+    try {
+      // Try to interact with the section to see if it's valid
+      return await section.isDisplayed() && await section.isExpanded();
+    }
+    catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Check if the webview is valid and accessible
+   */
+  private async isWebviewValid(): Promise<boolean> {
+    try {
+      if (!this.webviewTab)
+        return false;
+      // Try to get title to see if tab is still valid
+      await this.webviewTab.getTitle();
+      return true;
+    }
+    catch (error) {
+      return false;
+    }
+  }
+
+  // =============================================================================
+  // HIGH-LEVEL ORCHESTRATION METHODS
+  // =============================================================================
+
+  /**
+   * High-level method to set up editor for debugging
+   */
+  async setupEditorForDebug(options: SetupEditorOptions): Promise<this> {
+    const { fileName, breakpointLines = [], debugConfig = 'Python: Current File', openFile = true } = options;
+
+    console.log(`Step: Setting up editor for debug - ${fileName}`);
+
+    // Open file if requested
+    if (openFile) {
+      await this.openFile(fileName);
+    }
+    await this.openEditor(fileName);
+
+    // Set up breakpoints
+    for (const line of breakpointLines) {
+      await this.addBreakpoint(line);
+    }
+
+    // Set up debug configuration
+    await this.ensureDebugViewOpen();
+    await this.selectLaunchConfiguration(debugConfig);
+
+    console.log(`Step: Editor setup completed for ${fileName}`);
+    return this;
+  }
+
+  /**
+   * High-level method to get webview, ensuring it's open
+   */
+  async getWebview(options: WebviewOptions = {}): Promise<this> {
+    const { autoOpen = true, timeout = this.options.timeout } = options;
+
+    console.log('Step: Getting webview');
+
+    if (autoOpen) {
+      await this.ensureWebviewOpen();
+    }
+    else {
+      if (!this.webviewTab) {
+        throw new Error('Webview not available and autoOpen is disabled');
+      }
+    }
+
+    console.log('Step: Webview is ready');
+    return this;
+  }
+
+  /**
+   * High-level method to start a complete debug session
+   */
+  async startCompleteDebugSession(options: SetupEditorOptions): Promise<this> {
+    console.log('Step: Starting complete debug session');
+
+    await this.setupEditorForDebug(options);
+    await this.startDebugging();
+    await this.waitForBreakpoint();
+    await this.ensureImageWatchSectionExpanded();
+
+    console.log('Step: Complete debug session started');
+    return this;
+  }
+
+  /**
+   * Clean up resources - enhanced to close all editors and reset VS Code state
    */
   async cleanup(): Promise<void> {
-    console.log('Step: Cleaning up DebugTestHelper resources');
+    console.log('Step: Starting comprehensive cleanup of DebugTestHelper resources');
 
     // Stop debugging if still active
     if (this.debugToolbar) {
@@ -636,6 +852,42 @@ export class DebugTestHelper {
       }
     }
 
+    // Close all editors
+    try {
+      console.log('Step: Closing all editors');
+      const editorView = new EditorView();
+      await editorView.closeAllEditors();
+    }
+    catch (error) {
+      console.warn('Error closing editors during cleanup:', error);
+    }
+
+    // Try to close any open dialogs or input boxes
+    try {
+      console.log('Step: Dismissing any open dialogs');
+      // Close any open command palette or dialogs using commands
+      await new Workbench().executeCommand('workbench.action.closeQuickOpen');
+    }
+    catch (error) {
+      console.warn('Error dismissing dialogs during cleanup:', error);
+    }
+
+    // Reset the workbench to a clean state
+    try {
+      console.log('Step: Resetting workbench state');
+      // Close any open command palette
+      await new Workbench().executeCommand('workbench.action.closeQuickOpen');
+
+      // Reset the perspective to default if possible
+      await new Workbench().executeCommand('workbench.action.resetViewLocations');
+    }
+    catch (error) {
+      console.warn('Error resetting workbench during cleanup:', error);
+    }
+
+    // Wait a bit for everything to settle
+    await VSBrowser.instance.driver.sleep(1000);
+
     // Reset internal state
     this.debugView = null;
     this.debugToolbar = null;
@@ -643,6 +895,6 @@ export class DebugTestHelper {
     this.currentEditor = null;
     this.webviewTab = null;
 
-    console.log('Step: DebugTestHelper cleanup completed');
+    console.log('Step: Comprehensive DebugTestHelper cleanup completed');
   }
 }

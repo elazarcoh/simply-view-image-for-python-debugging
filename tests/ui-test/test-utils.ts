@@ -2,6 +2,7 @@
  * Test utilities for Simply View Image for Python Debugging extension
  */
 
+import type { ViewSection } from 'vscode-extension-tester';
 import { ActivityBar, EditorView, InputBox, SideBarView, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
 
 /**
@@ -107,16 +108,15 @@ export async function setupTestEnvironment(timeout: number = 60000): Promise<voi
 }
 
 /**
- * Opens the Image View webview by clicking the browser icon in the Image Watch view.
- * This function navigates to the Debug view, finds the Image Watch panel, and clicks the
- * "Open Image Webview" button (browser icon) as defined in the package.json view/title menu.
+ * Ensures the Image Watch section is available and expanded in the Debug view.
+ * This function navigates to the Debug view, finds the Image Watch panel, and expands it.
  *
  * @param timeout - Timeout in milliseconds (default: 30000)
- * @returns Promise<boolean> - Returns true if webview was successfully opened
+ * @returns Promise<ViewSection | null> - Returns the Image Watch section object or null if not found
  */
-export async function openImageWebview(timeout: number = 30000): Promise<boolean> {
+export async function ensureImageWatchSectionExpanded(timeout: number = 30000): Promise<ViewSection | null> {
   try {
-    console.log('Opening Image View webview via UI...');
+    console.log('Ensuring Image Watch section is expanded...');
 
     // Navigate to Debug view where the Image Watch panel is located
     const activityBar = new ActivityBar();
@@ -168,7 +168,7 @@ export async function openImageWebview(timeout: number = 30000): Promise<boolean
       }
     }, timeout / 2);
 
-    // Get the Image Watch section and click the action button
+    // Get the Image Watch section
     const sections = await content.getSections();
     let imageWatchSection = null;
 
@@ -187,21 +187,48 @@ export async function openImageWebview(timeout: number = 30000): Promise<boolean
 
     if (!imageWatchSection) {
       console.warn('Image Watch section not found');
-      return false;
+      return null;
     }
 
     // Expand the section
     try {
       await imageWatchSection.expand(2000);
       await VSBrowser.instance.driver.sleep(1000);
-      const isExpended = await imageWatchSection.isExpanded();
-      if (!isExpended) {
+      const isExpanded = await imageWatchSection.isExpanded();
+      if (!isExpanded) {
         console.warn('Failed to expand Image Watch section');
-        return false;
+        return null;
       }
+      console.log('✓ Image Watch section is expanded and ready');
+      return imageWatchSection;
     }
     catch (error) {
       console.warn('Error expanding Image Watch section:', error);
+      return null;
+    }
+  }
+  catch (error) {
+    console.warn('Failed to ensure Image Watch section is expanded:', error);
+    return null;
+  }
+}
+
+/**
+ * Opens the Image View webview by clicking the browser icon in the Image Watch view.
+ * Uses the ensureImageWatchSectionExpanded function to get the section first.
+ *
+ * @param timeout - Timeout in milliseconds (default: 30000)
+ * @returns Promise<boolean> - Returns true if webview was successfully opened
+ */
+export async function openImageWebview(timeout: number = 30000): Promise<boolean> {
+  try {
+    console.log('Opening Image View webview via UI...');
+
+    // Ensure the Image Watch section is expanded and get the section object
+    const imageWatchSection = await ensureImageWatchSectionExpanded(timeout);
+
+    if (!imageWatchSection) {
+      console.warn('Could not get Image Watch section');
       return false;
     }
 

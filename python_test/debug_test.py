@@ -1,15 +1,18 @@
-"""
-Simple Python script for debugging test
-"""
+import numpy as np
 
 def main():
-    # Set variable x to hello
-    x = "hello"
+    x = np.array([
+        [255, 0, 0], 
+        [0, 255, 0], 
+        [0, 0, 255], 
+        [255, 255, 255]
+    ],
+    dtype=np.uint8
+    ).reshape(2, 2, 3)
+
+
+    breakpoint()
     
-    # Print the variable (good place for a breakpoint)
-    print(f"The value of x is: {x}")
-    
-    # Additional line to ensure script execution continues
     print("Script execution completed")
 
 if __name__ == "__main__":

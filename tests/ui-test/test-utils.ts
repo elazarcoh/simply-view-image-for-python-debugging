@@ -5,7 +5,7 @@
 import type { DebugView, EditorTab, ViewSection } from 'vscode-extension-tester';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ActivityBar, EditorView, InputBox, SideBarView, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { ActivityBar, EditorView, InputBox, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
 
 /**
  * Ensures the Simply View Image for Python Debugging extension is activated.

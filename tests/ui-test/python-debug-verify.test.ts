@@ -3,13 +3,10 @@
  * This test verifies the Python debugging components without requiring UI automation
  */
 
-import type { Button, DebugView, Editor, TreeItem } from 'vscode-extension-tester';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { expect } from 'chai';
-import { ActivityBar, DebugToolbar, EditorView, VSBrowser, WebView, Workbench } from 'vscode-extension-tester';
-import { fileInWorkspace, openWorkspace, WORKSPACE_DIR } from './globals';
-import { ensureImageWatchSectionExpanded, getOpenedImageWebview as getOpenedImageWebviewTab, openEditor, openFile, waitForImageWebviewToOpen, writeScreenshot } from './test-utils';
+import type { DebugView, Editor, TreeItem } from 'vscode-extension-tester';
+import { ActivityBar, DebugToolbar, EditorView, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { fileInWorkspace, openWorkspace } from './globals';
+import { ensureImageWatchSectionExpanded, getOpenedImageWebview as getOpenedImageWebviewTab, openEditor, writeScreenshot } from './test-utils';
 
 describe('python Debugging Components', () => {
   before(async () => {

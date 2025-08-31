@@ -2,7 +2,7 @@
  * Test utilities for Simply View Image for Python Debugging extension
  */
 
-import { ActivityBar, EditorView, SideBarView, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { ActivityBar, EditorView, InputBox, SideBarView, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
 
 /**
  * Ensures the Simply View Image for Python Debugging extension is activated.
@@ -360,4 +360,30 @@ export async function getActiveImageWebviewTab(groupIndex: number = 0) {
     console.warn('Error getting active webview tab:', error);
     return null;
   }
+}
+
+export async function openFile(filePath: string) {
+  await new Workbench().executeCommand('workbench.action.quickOpen');
+
+  const input = await InputBox.create();
+  await input.setText(filePath);
+  await input.confirm();
+}
+
+export async function openWorkspace(workspacePath: string) {
+  await new Workbench().executeCommand('workbench.action.openWorkspace');
+  const input = await InputBox.create();
+  await input.setText(workspacePath);
+  await input.confirm();
+}
+
+export async function openEditor(file: string) {
+  const titleBar = new TitleBar();
+  const item = await titleBar.getItem('File');
+  const fileMenu = await item!.select();
+  const openItem = await fileMenu.getItem('Open File...');
+  await openItem!.select();
+  const input = await InputBox.create();
+  await input.setText(file);
+  await input.confirm();
 }

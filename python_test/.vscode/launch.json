@@ -3,17 +3,9 @@
   "configurations": [
     {
       "name": "Python: Current File",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal",
-      "justMyCode": true
-    },
-    {
-      "name": "Python: Debug Test Script",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/python_test/debug_test.py",
       "console": "integratedTerminal",
       "justMyCode": true
     }

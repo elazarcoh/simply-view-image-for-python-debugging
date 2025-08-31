@@ -3,11 +3,24 @@
  * This test verifies the Python debugging components without requiring UI automation
  */
 
+import type { DebugView } from 'vscode-extension-tester';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { expect } from 'chai';
+import { set } from 'lodash';
+import { ActivityBar, DebugToolbar, EditorView, InputBox, Key, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { openEditor, openFile, openWorkspace } from './test-utils';
 
 describe('python Debugging Components', () => {
+  before(async function () {
+    this.timeout(9999999);
+
+    // open the $cwd/python_test/debug_test.py file
+    const filePath = path.join(process.cwd(), 'python_test', '.vscode', 'workspace.code-workspace');
+    await openWorkspace(filePath);
+    await VSBrowser.instance.driver.sleep(500);
+  });
+
   it('should have a valid Python test script', () => {
     const pythonTestFile = path.join(process.cwd(), 'python_test', 'debug_test.py');
 
@@ -75,83 +88,52 @@ describe('python Debugging Components', () => {
     }
   });
 
-  it('should have comprehensive debug test implementation', () => {
-    const testFile = path.join(process.cwd(), 'tests', 'ui-test', 'python-debug.test.ts');
+  it('should be able to put a break point, start debug, and inspect the variable', async () => {
+    await openFile('debug_test.py');
 
-    // Verify the main debug test exists
-    expect(fs.existsSync(testFile)).to.be.true;
+    // go to line
+    const workbench = new Workbench();
+    await workbench.executeCommand('Go to Line');
+    await VSBrowser.instance.driver.sleep(500);
+    const inputBox = await InputBox.create();
+    await inputBox.setText(':10');
+    await inputBox.confirm();
+    await VSBrowser.instance.driver.sleep(500);
+    // add breakpoint using command
+    await workbench.executeCommand('Debug: Toggle Breakpoint');
 
-    const testContent = fs.readFileSync(testFile, 'utf8');
+    // Open the debug panel
+    const btn = await new ActivityBar().getViewControl('Run');
+    if (!btn) {
+      throw new Error('Could not find Run and Debug view');
+    }
+    const debugView = (await btn.openView()) as DebugView;
 
-    // Verify test contains required functionality
-    expect(testContent).to.include('waitForExtensionToLoad'); // Updated approach without manual installation
-    expect(testContent).to.include('toggleBreakpoint');
-    expect(testContent).to.include('debugView.start()');
-    expect(testContent).to.include('DebugToolbar.create');
-    expect(testContent).to.include('waitForBreakPoint');
-    expect(testContent).to.include('getPausedBreakpoint');
+    // get titles of all available launch configurations
+    const configs = await debugView.getLaunchConfigurations();
+    const configName = configs.find(c => c.startsWith('Python: Current File'));
+    if (!configName) {
+      throw new Error('Could not find Python: Debug Test Script configuration');
+    }
+    // select launch configuration by title
+    await debugView.selectLaunchConfiguration(configName);
 
-    console.log('✓ Comprehensive debug test implementation is present');
-  });
+    // start selected launch configuration
+    await debugView.start();
+    await VSBrowser.instance.driver.sleep(3000);
 
-  it('should have basic debug test for CI environments', () => {
-    const basicTestFile = path.join(process.cwd(), 'tests', 'ui-test', 'python-debug-basic.test.ts');
+    // wait for the bar to show up to 5 seconds, check every second
+    const bar = await DebugToolbar.create();
+    const isDisplayed = VSBrowser.instance.driver.wait(async () => {
+      return bar.isDisplayed();
+    }, 5000, 'Debug toolbar did not appear in time', 1000);
+    if (!isDisplayed) {
+      throw new Error('Debug toolbar did not appear in time');
+    }
 
-    // Verify the basic test exists
-    expect(fs.existsSync(basicTestFile)).to.be.true;
+    // wait for breakpoints to be hit
+    await bar.waitForBreakPoint(3000);
 
-    const testContent = fs.readFileSync(basicTestFile, 'utf8');
-
-    // Verify basic test contains essential checks
-    expect(testContent).to.include('should open and validate Python test script');
-    expect(testContent).to.include('should verify Python extension availability');
-    expect(testContent).to.include('should demonstrate basic debugging workflow');
-    expect(testContent).to.include('VSBrowser.instance.driver');
-
-    console.log('✓ Basic debug test for CI environments is implemented');
-  });
-
-  it('should validate test structure meets requirements', () => {
-    // Verify all required components are present based on the problem statement:
-    // 1. Basic test that creates a python script ✓
-    // 2. Script sets a variable x to "hello" and prints it ✓
-    // 3. Set a breakpoint somewhere in script ✓
-    // 4. Start debug session with this script ✓
-    // 5. Check that debugger stops on breakpoint ✓
-    // 6. Install Python extension inside VS Code in tests ✓
-
-    const pythonScript = path.join(process.cwd(), 'python_test', 'debug_test.py');
-    const debugTest = path.join(process.cwd(), 'tests', 'ui-test', 'python-debug.test.ts');
-    const basicTest = path.join(process.cwd(), 'tests', 'ui-test', 'python-debug-basic.test.ts');
-
-    expect(fs.existsSync(pythonScript)).to.be.true;
-    expect(fs.existsSync(debugTest)).to.be.true;
-    expect(fs.existsSync(basicTest)).to.be.true;
-
-    // Verify Python script content meets requirements
-    const scriptContent = fs.readFileSync(pythonScript, 'utf8');
-    expect(scriptContent).to.include('x = "hello"'); // Requirement 2
-    expect(scriptContent).to.include('print('); // Requirement 2
-
-    // Verify debug test meets requirements
-    const testContent = fs.readFileSync(debugTest, 'utf8');
-    const packageJsonPath = path.join(process.cwd(), 'package.json');
-    const packageJson = fs.readFileSync(packageJsonPath, 'utf8');
-    const packageData = JSON.parse(packageJson);
-
-    // Requirement 6: Automated dependency installation via extest --install_dependencies
-    expect(packageData.extensionDependencies).to.include('ms-python.python'); // Extension dependency declared
-    expect(packageData.scripts['ui-test']).to.include('-i'); // Test script uses --install_dependencies
-    expect(testContent).to.include('toggleBreakpoint'); // Requirement 3
-    expect(testContent).to.include('debugView.start'); // Requirement 4
-    expect(testContent).to.include('waitForBreakPoint'); // Requirement 5
-
-    console.log('✓ All requirements from problem statement are implemented:');
-    console.log('  ✓ Created Python script that sets x="hello" and prints it');
-    console.log('  ✓ Test sets breakpoint in the script');
-    console.log('  ✓ Test starts debug session');
-    console.log('  ✓ Test checks debugger stops at breakpoint');
-    console.log('  ✓ Extension dependencies managed via extest --install_dependencies');
-    console.log('  ✓ Tests are designed to work in CI environment');
+    await VSBrowser.instance.driver.sleep(1000);
   });
 });

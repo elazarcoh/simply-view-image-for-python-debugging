@@ -41,9 +41,9 @@
       "args": [
         "run-tests",
         // "${workspaceFolder}/out/tests/ui-test/*.js",
-        "${workspaceFolder}/out/tests/ui-test/*-basic.test.js",
+        "${workspaceFolder}/out/tests/ui-test/*-verify.test.js",
         "--mocha_config",
-        "${workspaceFolder}/src/ui-test/.mocharc-debug.js"
+        "${workspaceFolder}/tests/ui-test/.mocharc-debug.js"
       ],
       "skipFiles": ["<node_internals>/**"],
       "console": "integratedTerminal",

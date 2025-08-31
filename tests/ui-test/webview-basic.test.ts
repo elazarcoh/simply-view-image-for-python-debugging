@@ -5,7 +5,7 @@
 
 import { expect } from 'chai';
 import { VSBrowser, Workbench } from 'vscode-extension-tester';
-import { isImageWebviewOpen, openImageWebview, setupTestEnvironment, waitForImageWebviewToOpen } from './test-utils';
+import { getOpenedImageWebview, openImageWebview, setupTestEnvironment, waitForImageWebviewToOpen } from './test-utils';
 
 describe('simply View Image Extension - Webview Tests', function () {
   let workbench: Workbench;
@@ -35,7 +35,7 @@ describe('simply View Image Extension - Webview Tests', function () {
       console.log('Testing webview functionality...');
 
       // First check if webview is already open
-      const alreadyOpen = await isImageWebviewOpen();
+      const alreadyOpen = await getOpenedImageWebview();
       if (alreadyOpen) {
         console.log('✓ Image View webview is already open');
         expect(true).to.be.true;
@@ -58,7 +58,7 @@ describe('simply View Image Extension - Webview Tests', function () {
           await VSBrowser.instance.driver.sleep(1000);
 
           // Wait for webview to actually open after command
-          webviewOpened = await waitForImageWebviewToOpen(5000);
+          webviewOpened = (await waitForImageWebviewToOpen(5000)) !== null;
 
           if (webviewOpened) {
             console.log('Webview opened via command fallback');
@@ -71,7 +71,7 @@ describe('simply View Image Extension - Webview Tests', function () {
 
       if (webviewOpened) {
         // Verify the webview is actually open using our utility function
-        const isOpen = await isImageWebviewOpen();
+        const isOpen = await getOpenedImageWebview();
 
         if (isOpen) {
           console.log('✓ Image View webview opened and verified via EditorView API');

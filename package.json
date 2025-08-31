@@ -523,8 +523,9 @@
     "test:validate": "yarn test:compile && node run-basic-tests.mjs",
     "ui-test": "yarn test:compile && extest setup-and-run -y --install_dependencies 'ms-python.python' './out/tests/ui-test/*.test.js'",
     "ui-test:setup": "extest setup-tests --install_dependencies 'ms-python.python'",
-    "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/*.test.js'",
+    "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/*-verify.test.js'",
     "ui-test:offscreen": "xvfb-run -a yarn ui-test",
+    "ui-test:offscreen:run": "xvfb-run -a yarn ui-test:run",
     "extest": "extest"
   },
   "dependencies": {

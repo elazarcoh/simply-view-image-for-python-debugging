@@ -2,7 +2,9 @@
  * Test utilities for Simply View Image for Python Debugging extension
  */
 
-import type { ViewSection } from 'vscode-extension-tester';
+import type { DebugView, EditorTab, ViewSection } from 'vscode-extension-tester';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { ActivityBar, EditorView, InputBox, SideBarView, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
 
 /**
@@ -118,77 +120,14 @@ export async function ensureImageWatchSectionExpanded(timeout: number = 30000): 
   try {
     console.log('Ensuring Image Watch section is expanded...');
 
-    // Navigate to Debug view where the Image Watch panel is located
-    const activityBar = new ActivityBar();
-    const debugControl = await activityBar.getViewControl('Debug Console');
-    if (!debugControl) {
-      console.warn('Debug view control not found, trying alternative approach...');
-      // Try to open debug view via command
-      const workbench = new Workbench();
-      await workbench.executeCommand('workbench.view.debug');
-      await VSBrowser.instance.driver.sleep(2000);
+    // Open the debug panel
+    const btn = await new ActivityBar().getViewControl('Run');
+    if (!btn) {
+      throw new Error('Could not find Run and Debug view');
     }
-    else {
-      const debugView = await debugControl.openView();
-      await VSBrowser.instance.driver.sleep(2000);
-    }
+    const debugView = (await btn.openView()) as DebugView;
 
-    // Get the sidebar view to access the Image Watch section
-    const sideBar = new SideBarView();
-    const content = sideBar.getContent();
-
-    // Wait for the Image Watch section to be available
-    await VSBrowser.instance.driver.wait(async () => {
-      try {
-        const sections = await content.getSections();
-        const imageWatchSection = sections.find(section =>
-          section.getTitle().then(title => title.includes('Image Watch')).catch(() => false),
-        );
-
-        if (imageWatchSection) {
-          console.log('Found Image Watch section');
-          return true;
-        }
-
-        console.log('Image Watch section not found, available sections:');
-        for (const section of sections) {
-          try {
-            const title = await section.getTitle();
-            console.log(`- ${title}`);
-          }
-          catch (e) {
-            console.log('- (unable to get title)');
-          }
-        }
-        return false;
-      }
-      catch (error) {
-        console.log('Error accessing sections:', error);
-        return false;
-      }
-    }, timeout / 2);
-
-    // Get the Image Watch section
-    const sections = await content.getSections();
-    let imageWatchSection = null;
-
-    for (const section of sections) {
-      try {
-        const title = await section.getTitle();
-        if (title.includes('Image Watch')) {
-          imageWatchSection = section;
-          break;
-        }
-      }
-      catch (e) {
-        // Continue checking other sections
-      }
-    }
-
-    if (!imageWatchSection) {
-      console.warn('Image Watch section not found');
-      return null;
-    }
+    const imageWatchSection = await debugView.getContent().getSection('Image Watch');
 
     // Expand the section
     try {
@@ -264,14 +203,14 @@ export async function openImageWebview(timeout: number = 30000): Promise<boolean
  * @param groupIndex - Optional editor group index to check (default: check all groups)
  * @returns Promise<boolean> - Returns true if webview is open
  */
-export async function isImageWebviewOpen(groupIndex?: number): Promise<boolean> {
+export async function getOpenedImageWebview(groupIndex?: number): Promise<EditorTab | null> {
   try {
     const editorView = new EditorView();
 
+    const openedTabs = await editorView.getOpenTabs(groupIndex);
+
     // Get open editor titles for the specified group or all groups
-    const openTitles = groupIndex !== undefined
-      ? await editorView.getOpenEditorTitles(groupIndex)
-      : await editorView.getOpenEditorTitles();
+    const openTitles = await Promise.all(openedTabs.map(async tab => tab.getTitle()));
 
     console.log('Currently open editor titles:', openTitles);
 
@@ -280,45 +219,25 @@ export async function isImageWebviewOpen(groupIndex?: number): Promise<boolean> 
       'Image View',
     ];
 
-    const hasWebview = openTitles.some(title =>
+    const index = openTitles.findIndex(title =>
       webviewTitles.some(webviewTitle =>
         title.toLowerCase().includes(webviewTitle.toLowerCase()),
       ),
     );
 
+    const hasWebview = index !== -1;
+
     if (hasWebview) {
       console.log('✓ Image View webview is open');
-      return true;
-    }
-
-    // Additional check: look for webview tabs by examining tab objects
-    try {
-      const openTabs = groupIndex !== undefined
-        ? await (await editorView.getEditorGroup(groupIndex)).getOpenTabs()
-        : await editorView.getOpenTabs();
-
-      for (const tab of openTabs) {
-        const tabTitle = await tab.getTitle();
-        const isWebviewTab = webviewTitles.some(webviewTitle =>
-          tabTitle.toLowerCase().includes(webviewTitle.toLowerCase()),
-        );
-
-        if (isWebviewTab) {
-          console.log(`✓ Found webview tab: "${tabTitle}"`);
-          return true;
-        }
-      }
-    }
-    catch (tabError) {
-      console.log('Could not check individual tabs:', tabError);
+      return openedTabs[index];
     }
 
     console.log('Image View webview is not currently open');
-    return false;
+    return null;
   }
   catch (error) {
     console.warn('Error checking if webview is open:', error);
-    return false;
+    return null;
   }
 }
 
@@ -330,61 +249,19 @@ export async function isImageWebviewOpen(groupIndex?: number): Promise<boolean> 
  * @param groupIndex - Optional editor group index to check (default: check all groups)
  * @returns Promise<boolean> - Returns true if webview opens within timeout
  */
-export async function waitForImageWebviewToOpen(timeout: number = 10000, groupIndex?: number): Promise<boolean> {
+export async function waitForImageWebviewToOpen(timeout: number = 10000, groupIndex?: number): Promise<EditorTab | null> {
   try {
     console.log('Waiting for Image View webview to open...');
 
-    await VSBrowser.instance.driver.wait(async () => {
-      return await isImageWebviewOpen(groupIndex);
-    }, timeout);
+    const isOpen = await VSBrowser.instance.driver.wait(async () => {
+      return await getOpenedImageWebview(groupIndex);
+    }, timeout, 'Image View webview did not open in time', 1000);
 
     console.log('✓ Image View webview opened successfully');
-    return true;
+    return isOpen;
   }
   catch (error) {
     console.warn('Timeout waiting for webview to open:', error);
-    return false;
-  }
-}
-
-/**
- * Gets the active webview tab if it's related to the Image View extension.
- *
- * @param groupIndex - Optional editor group index to check (default: first group)
- * @returns Promise<EditorTab | null> - Returns the webview tab or null if not found
- */
-export async function getActiveImageWebviewTab(groupIndex: number = 0) {
-  try {
-    const editorView = new EditorView();
-    const activeTab = groupIndex !== undefined
-      ? await (await editorView.getEditorGroup(groupIndex)).getActiveTab()
-      : await editorView.getActiveTab();
-
-    if (!activeTab) {
-      return null;
-    }
-
-    const tabTitle = await activeTab.getTitle();
-
-    // Check if the active tab is a webview tab
-    const webviewTitles = [
-      'Image View',
-    ];
-
-    const isWebviewTab = webviewTitles.some(webviewTitle =>
-      tabTitle.toLowerCase().includes(webviewTitle.toLowerCase()),
-    );
-
-    if (isWebviewTab) {
-      console.log(`✓ Active webview tab found: "${tabTitle}"`);
-      return activeTab;
-    }
-
-    console.log(`Active tab "${tabTitle}" is not a webview tab`);
-    return null;
-  }
-  catch (error) {
-    console.warn('Error getting active webview tab:', error);
     return null;
   }
 }
@@ -397,7 +274,7 @@ export async function openFile(filePath: string) {
   await input.confirm();
 }
 
-export async function openWorkspace(workspacePath: string) {
+export async function openWorkspaceFile(workspacePath: string) {
   await new Workbench().executeCommand('workbench.action.openWorkspace');
   const input = await InputBox.create();
   await input.setText(workspacePath);
@@ -413,4 +290,10 @@ export async function openEditor(file: string) {
   const input = await InputBox.create();
   await input.setText(file);
   await input.confirm();
+}
+
+export async function writeScreenshot(data: string, name: string) {
+  const dir = VSBrowser.instance.getScreenshotsDir();
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, `${name}.png`), data, 'base64');
 }

@@ -1,3 +1,5 @@
+'use strict';
+
 // increase default test case timeout to 10 seconds for UI tests
 const process = require('node:process');
 

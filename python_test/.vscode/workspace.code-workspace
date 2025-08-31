@@ -3,5 +3,10 @@
         {
             "path": ".."
         }
-    ]
+    ],
+    "settings": {
+        "workbench.secondarySideBar.defaultVisibility": "hidden",
+        "workbench.panel.defaultLocation": "bottom",
+        "workbench.panel.opensMaximized": "never"
+    }
 }

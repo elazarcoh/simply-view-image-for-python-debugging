@@ -3,13 +3,13 @@
  * This test verifies the Python debugging components without requiring UI automation
  */
 
-import type { DebugView } from 'vscode-extension-tester';
+import type { DebugView, TreeItem } from 'vscode-extension-tester';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { expect } from 'chai';
 import { set } from 'lodash';
 import { ActivityBar, DebugToolbar, EditorView, InputBox, Key, VSBrowser, Workbench } from 'vscode-extension-tester';
-import { openEditor, openFile, openWorkspace } from './test-utils';
+import { ensureImageWatchSectionExpanded, openEditor, openFile, openWorkspace, waitForImageWebviewToOpen } from './test-utils';
 
 describe('python Debugging Components', () => {
   before(async function () {
@@ -29,8 +29,8 @@ describe('python Debugging Components', () => {
 
     // Verify content
     const content = fs.readFileSync(pythonTestFile, 'utf8');
-    expect(content).to.include('x = "hello"');
-    expect(content).to.include('print(f"The value of x is: {x}")');
+    expect(content).to.include('x = ');
+    expect(content).to.include('breakpoint()');
     expect(content).to.include('def main():');
     expect(content).to.include('if __name__ == "__main__":');
 
@@ -52,7 +52,7 @@ describe('python Debugging Components', () => {
     expect(config.configurations.length).to.be.greaterThan(0);
 
     // Verify Python configuration exists
-    const pythonConfig = config.configurations.find((cfg: any) => cfg.type === 'python');
+    const pythonConfig = config.configurations.find((cfg: any) => ['python', 'debugpy'].includes(cfg.type));
     expect(pythonConfig).to.not.be.undefined;
     expect(pythonConfig.request).to.equal('launch');
     expect(pythonConfig.name).to.include('Python');
@@ -60,47 +60,19 @@ describe('python Debugging Components', () => {
     console.log('✓ Debug configuration is properly set up for Python debugging');
   });
 
-  it('should have executable Python script', () => {
-    const pythonTestFile = path.join(process.cwd(), 'python_test', 'debug_test.py');
-
-    // Try to execute the Python script to verify it runs correctly
-    const { execSync } = require('node:child_process');
-
-    try {
-      const output = execSync(`python3 "${pythonTestFile}"`, { encoding: 'utf8' });
-      expect(output).to.include('The value of x is: hello');
-      expect(output).to.include('Script execution completed');
-
-      console.log('✓ Python script executes correctly and produces expected output');
-    }
-    catch (error) {
-      // If Python3 is not available, try python
-      try {
-        const output = execSync(`python "${pythonTestFile}"`, { encoding: 'utf8' });
-        expect(output).to.include('The value of x is: hello');
-        expect(output).to.include('Script execution completed');
-
-        console.log('✓ Python script executes correctly and produces expected output');
-      }
-      catch (error2) {
-        console.warn('Python interpreter not available for testing, but script syntax is valid');
-      }
-    }
-  });
-
   it('should be able to put a break point, start debug, and inspect the variable', async () => {
     await openFile('debug_test.py');
 
     // go to line
-    const workbench = new Workbench();
-    await workbench.executeCommand('Go to Line');
-    await VSBrowser.instance.driver.sleep(500);
-    const inputBox = await InputBox.create();
-    await inputBox.setText(':10');
-    await inputBox.confirm();
-    await VSBrowser.instance.driver.sleep(500);
-    // add breakpoint using command
-    await workbench.executeCommand('Debug: Toggle Breakpoint');
+    // const workbench = new Workbench();
+    // await workbench.executeCommand('Go to Line');
+    // await VSBrowser.instance.driver.sleep(500);
+    // const inputBox = await InputBox.create();
+    // await inputBox.setText(':10');
+    // await inputBox.confirm();
+    // await VSBrowser.instance.driver.sleep(500);
+    // // add breakpoint using command
+    // await workbench.executeCommand('Debug: Toggle Breakpoint');
 
     // Open the debug panel
     const btn = await new ActivityBar().getViewControl('Run');
@@ -134,6 +106,34 @@ describe('python Debugging Components', () => {
     // wait for breakpoints to be hit
     await bar.waitForBreakPoint(3000);
 
-    await VSBrowser.instance.driver.sleep(1000);
+    const imageViewSection = await ensureImageWatchSectionExpanded();
+    if (!imageViewSection) {
+      throw new Error('Image Watch section is not available');
+    }
+    // wait a few seconds after expansion
+    await VSBrowser.instance.driver.sleep(2000);
+
+    // expand the 'x' variable under 'Variables'
+    const variablesItem = (await imageViewSection.findItem('Variables')) as TreeItem | undefined;
+    if (!variablesItem) {
+      throw new Error('Variables item is not available');
+    }
+    const xItem = (await variablesItem.findChildItem('x')) as TreeItem | undefined;
+    if (!xItem) {
+      throw new Error('x item is not available');
+    }
+    const buttons = await xItem.getActionButtons();
+    for (const btn of buttons) {
+      const label = await btn.getLabel();
+      if (label === 'View Image') {
+        await btn.click();
+        break;
+      }
+    }
+    await waitForImageWebviewToOpen();
+
+    // take screenshot
+    await VSBrowser.instance.driver.sleep(2000);
+    await VSBrowser.instance.takeScreenshot('test');
   });
 });

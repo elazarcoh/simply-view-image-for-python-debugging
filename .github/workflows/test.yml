@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p test-results
           MOCHA_JUNIT=true xvfb-run -a yarn test:compile && MOCHA_JUNIT=true xvfb-run -a yarn extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources
-        continue-on-error: true
+        # continue-on-error: true  # don't use it, so a proper error will show. instead, we use if: always() on the rest of the steps
 
       - name: Upload test results to GitHub
         uses: dorny/test-reporter@v1

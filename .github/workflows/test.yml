@@ -29,6 +29,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.8'
+          cache: 'pip'
+          cache-dependency-path: tests/test-data/workspace/requirements.txt
 
       - name: Install Yarn dependencies
         run: yarn install --immutable
@@ -36,19 +38,10 @@ jobs:
       - name: Lint code
         run: yarn lint
 
-      - name: Cache python dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('test/setup-python-env.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # - name: Setup Python test environment
-      #   run: yarn test:setup-python
-
-      # - name: Generate test data
-      #   run: yarn test:generate-data
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/test-data/workspace/requirements.txt
 
       - name: Build webview
         run: yarn build:webview

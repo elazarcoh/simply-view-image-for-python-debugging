@@ -18,10 +18,9 @@ export default antfu(
     ignores: [
       'icons',
       'example-plugin',
-      'vscode-extension-tester-example',
-      'vscode-extension-tester.wiki',
       'dist',
       '.yarn',
+      'python_test',
     ],
   },
   {

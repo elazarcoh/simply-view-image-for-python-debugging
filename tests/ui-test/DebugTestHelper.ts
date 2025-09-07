@@ -3,7 +3,8 @@
  * with the Simply View Image for Python Debugging extension.
  */
 
-import type { DebugView, Editor, EditorTab, TreeItem, ViewSection } from 'vscode-extension-tester';
+import type { DebugView, Editor, EditorTab, TreeItem, ViewSection, WebElement } from 'vscode-extension-tester';
+import { basename } from 'node:path/win32';
 import { ActivityBar, DebugToolbar, EditorView, InputBox, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
 import { writeScreenshot } from './test-utils';
 
@@ -19,6 +20,7 @@ export interface VariableActionOptions {
   variableName: string;
   retrySetup?: boolean;
   setupRetries?: number;
+  type: 'variable' | 'expression';
 }
 
 export interface ExpressionOptions {
@@ -28,14 +30,13 @@ export interface ExpressionOptions {
 
 export interface SetupEditorOptions {
   fileName: string;
-  breakpointLines?: number[];
   debugConfig?: string;
   openFile?: boolean;
 }
 
 export interface ScreenshotOptions {
   name: string;
-  elementType?: 'webview' | 'editor' | 'fullscreen';
+  element: WebElement | 'screen';
 }
 
 export interface WebviewOptions {
@@ -97,20 +98,34 @@ export class DebugTestHelper {
    * Open a file in the workspace
    */
   async openFile(filePath: string): Promise<this> {
+    const check = async () => {
+      const editorView = new EditorView();
+      const titles = await editorView.getOpenEditorTitles();
+      return titles.includes(basename(filePath));
+    };
+
     console.log(`Step: Opening file ${filePath}`);
 
     const titleBar = new TitleBar();
-    const fileMenu = await (await titleBar.getItem('File'))!.select();
+    const item = await titleBar.getItem('File');
+    const fileMenu = await item!.select();
     const openItem = await fileMenu.getItem('Open File...');
     await openItem!.select();
 
     const input = await InputBox.create();
     await input.setText(filePath);
-    await input.confirm();
 
-    await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log(`Step: File ${filePath} opened`);
-    return this;
+    for (let i = 0; i < 3; i++) {
+      await input.confirm();
+      const isOpened = await check();
+      if (isOpened) {
+        console.log(`Step: File ${filePath} is opened in an editor`);
+        return this;
+      }
+      await this.sleep(500);
+    }
+    await this.takeScreenshot({ name: 'failed-to-open-file', element: 'screen' });
+    throw new Error(`Failed to open file ${filePath} in an editor`);
   }
 
   /**
@@ -371,12 +386,12 @@ export class DebugTestHelper {
    * Find a variable and perform an action on it
    */
   async performVariableAction(options: VariableActionOptions): Promise<this> {
-    const { variableName, actionLabel, retrySetup = true, setupRetries = 5 } = options;
+    const { variableName, actionLabel, retrySetup = true, setupRetries = 5, type } = options;
 
     console.log(`Step: Finding variable "${variableName}"`);
 
     // First find the Variables item
-    const variablesItem = await this.findAndExpandTreeItem('Variables');
+    const variablesItem = await this.findAndExpandTreeItem(type === 'variable' ? 'Variables' : 'Expressions');
 
     // Try to find the specific variable with retries and setup refresh
     let variableItem: TreeItem | undefined;
@@ -585,52 +600,13 @@ export class DebugTestHelper {
    * Take a screenshot of the current webview or editor
    */
   async takeScreenshot(options: ScreenshotOptions): Promise<this> {
-    const { name, elementType = 'webview' } = options;
+    const { name, element } = options;
 
-    console.log(`Step: Taking ${elementType} screenshot "${name}"`);
+    console.log(`Step: Taking screenshot "${name}"`);
 
-    let screenshot: string;
-
-    switch (elementType) {
-      case 'webview': {
-        if (this.options.autoEnsureViews) {
-          await this.ensureWebviewOpen();
-        }
-        else if (!this.webviewTab) {
-          throw new Error('Webview not available for screenshot. Call waitForImageWebview() first.');
-        }
-        const editorView = new EditorView();
-        const webviewEditor = await editorView.openEditor('Image View');
-        if (!webviewEditor) {
-          throw new Error('Could not open Image View editor for screenshot');
-        }
-        screenshot = await webviewEditor.takeScreenshot();
-        break;
-      }
-      case 'editor': {
-        if (!this.currentEditor) {
-          throw new Error('No editor available for screenshot. Call openEditor() first.');
-        }
-        screenshot = await this.currentEditor.takeScreenshot();
-        break;
-      }
-      case 'fullscreen': {
-        // VSBrowser.takeScreenshot doesn't return the screenshot data, so we need a different approach
-        // We'll use a different method for fullscreen screenshots
-        const currentEditor = new EditorView();
-        const activeTab = await currentEditor.getActiveTab();
-        if (activeTab) {
-          screenshot = await activeTab.getDriver().takeScreenshot();
-        }
-        else {
-          throw new Error('No active tab available for fullscreen screenshot');
-        }
-        break;
-      }
-      default: {
-        throw new Error(`Unknown screenshot element type: ${elementType}`);
-      }
-    }
+    const screenshot = element === 'screen'
+      ? await VSBrowser.instance.driver.takeScreenshot()
+      : await element.takeScreenshot();
 
     await writeScreenshot(screenshot, name);
     console.log(`Step: Screenshot "${name}" saved`);
@@ -777,7 +753,7 @@ export class DebugTestHelper {
    * High-level method to set up editor for debugging
    */
   async setupEditorForDebug(options: SetupEditorOptions): Promise<this> {
-    const { fileName, breakpointLines = [], debugConfig = 'Python: Current File', openFile = true } = options;
+    const { fileName, debugConfig = 'Python: Current File', openFile = true } = options;
 
     console.log(`Step: Setting up editor for debug - ${fileName}`);
 
@@ -785,11 +761,15 @@ export class DebugTestHelper {
     if (openFile) {
       await this.openFile(fileName);
     }
-    await this.openEditor(fileName);
-
-    // Set up breakpoints
-    for (const line of breakpointLines) {
-      await this.addBreakpoint(line);
+    try {
+      await this.openEditor(basename(fileName));
+    }
+    catch (error) {
+      console.warn(`Warning: Could not open editor for ${fileName}: ${error}`);
+      const editorView = new EditorView();
+      const openedEditors = await editorView.getOpenEditorTitles();
+      console.log(`Opened editors: ${openedEditors.join(', ')}`);
+      throw error;
     }
 
     // Set up debug configuration
@@ -819,6 +799,25 @@ export class DebugTestHelper {
 
     console.log('Step: Webview is ready');
     return this;
+  }
+
+  async getWebviewEditor() {
+    const editorView = new EditorView();
+    let webviewEditor: Editor | undefined;
+    for (const group of await editorView.getEditorGroups()) {
+      const titles = await group.getOpenEditorTitles();
+      if (titles.includes('Image View')) {
+        webviewEditor = await group.openEditor('Image View');
+        if (webviewEditor) {
+          break;
+        }
+      }
+    }
+    if (!webviewEditor) {
+      console.error('Image View editor is not open');
+      throw new Error('Image View editor is not open');
+    }
+    return webviewEditor;
   }
 
   /**
@@ -896,5 +895,9 @@ export class DebugTestHelper {
     this.webviewTab = null;
 
     console.log('Step: Comprehensive DebugTestHelper cleanup completed');
+  }
+
+  sleep(ms: number) {
+    return VSBrowser.instance.driver.sleep(ms);
   }
 }

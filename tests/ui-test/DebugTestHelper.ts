@@ -405,7 +405,7 @@ export class DebugTestHelper {
       if (retrySetup) {
         console.log(`Step: Variable "${variableName}" not found, running setup and refresh (attempt ${i + 1})`);
         await new Workbench().executeCommand('svifpd.run-setup');
-        await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
+        await VSBrowser.instance.driver.sleep(500);
         await this.refreshImageWatch();
       }
     }

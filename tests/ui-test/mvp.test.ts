@@ -73,6 +73,7 @@ describe('python debugging with enhanced DebugTestHelper', () => {
     }
     catch (error) {
       console.error('❌ Enhanced debug test failed:', error);
+      await debugHelper.takeScreenshot({ name: 'enhanced-test-error', element: 'screen' });
       throw error;
     }
   }).timeout(120000);
@@ -107,6 +108,7 @@ describe('python debugging with enhanced DebugTestHelper', () => {
     }
     catch (error) {
       console.error('❌ Complete debug session test failed:', error);
+      await debugHelper.takeScreenshot({ name: 'complete-session-error', element: 'screen' });
       throw error;
     }
   }).timeout(120000);

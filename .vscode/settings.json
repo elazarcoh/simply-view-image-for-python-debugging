@@ -109,5 +109,5 @@
   "extesterRunner.additionalArgs": [
     "--install_dependencies",
     "ms-python.python"
-  ],
+  ]
 }

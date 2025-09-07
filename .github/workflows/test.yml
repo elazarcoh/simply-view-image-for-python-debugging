@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # required for committing back
+          fetch-depth: 0 # required for committing back
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,7 +32,7 @@ jobs:
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-fix eslint issues"
+          commit_message: 'chore: auto-fix eslint issues'
 
   test:
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.8'
-          cache: 'pip'
+          cache: pip
           cache-dependency-path: tests/test-data/workspace/requirements.txt
 
       - name: Install Yarn dependencies

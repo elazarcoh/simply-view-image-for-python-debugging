@@ -41,7 +41,7 @@
       "args": [
         "run-tests",
         // "${workspaceFolder}/out/tests/ui-test/*.js",
-        "${workspaceFolder}/out/tests/ui-test/*-verify.test.js",
+        "${workspaceFolder}/out/tests/ui-test/*-expressions.test.js",
         "--mocha_config",
         "${workspaceFolder}/tests/ui-test/.mocharc-debug.js"
       ],

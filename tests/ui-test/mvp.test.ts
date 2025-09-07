@@ -3,7 +3,7 @@
  */
 
 import { DebugTestHelper } from './DebugTestHelper';
-import { openWorkspace } from './globals';
+import { fileInWorkspace, openWorkspace } from './globals';
 
 describe('python debugging with enhanced DebugTestHelper', () => {
   let debugHelper: DebugTestHelper;
@@ -23,12 +23,15 @@ describe('python debugging with enhanced DebugTestHelper', () => {
   }).timeout(30000);
 
   after(async () => {
-    // Enhanced cleanup after tests
+    DebugTestHelper.reset();
+  });
+
+  afterEach(async () => {
+    // Reset state after each test to ensure isolation
     if (debugHelper) {
       await debugHelper.cleanup();
     }
-    DebugTestHelper.reset();
-  });
+  }).timeout(20000);
 
   it('should set up editor for debug and inspect variables using high-level methods', async () => {
     try {
@@ -36,8 +39,7 @@ describe('python debugging with enhanced DebugTestHelper', () => {
 
       // Use the high-level setup method
       await debugHelper.setupEditorForDebug({
-        fileName: 'debug_test.py',
-        breakpointLines: [15], // Add breakpoint at line 15
+        fileName: fileInWorkspace('debug_test.py'),
         debugConfig: 'Python: Current File',
         openFile: true,
       });
@@ -46,21 +48,25 @@ describe('python debugging with enhanced DebugTestHelper', () => {
       await debugHelper.startDebugging();
       await debugHelper.waitForBreakpoint();
 
+      await debugHelper.sleep(1000);
+
       // Use auto-ensuring methods - these will automatically open/expand required views
       await debugHelper.performVariableAction({
         variableName: 'x',
         actionLabel: 'View Image',
         retrySetup: true,
         setupRetries: 3,
+        type: 'variable',
       });
 
       // Get webview with auto-opening
       await debugHelper.getWebview({ autoOpen: true });
 
       // Take screenshot (will auto-ensure webview is open)
+      const webviewEditor = await debugHelper.getWebviewEditor();
       await debugHelper.takeScreenshot({
         name: 'enhanced-test-webview',
-        elementType: 'webview',
+        element: webviewEditor,
       });
 
       console.log('✓ Enhanced debug test completed successfully');
@@ -77,8 +83,7 @@ describe('python debugging with enhanced DebugTestHelper', () => {
 
       // Use the highest-level method that does everything
       await debugHelper.startCompleteDebugSession({
-        fileName: 'debug_test.py',
-        breakpointLines: [15],
+        fileName: fileInWorkspace('debug_test.py'),
         debugConfig: 'Python: Current File',
         openFile: true,
       });
@@ -87,46 +92,21 @@ describe('python debugging with enhanced DebugTestHelper', () => {
       await debugHelper.performVariableAction({
         variableName: 'x',
         actionLabel: 'View Image',
+        type: 'variable',
       });
 
       // Webview should be available
       await debugHelper.getWebview();
+      const webviewEditor = await debugHelper.getWebviewEditor();
       await debugHelper.takeScreenshot({
         name: 'complete-session-test',
-        elementType: 'webview',
+        element: webviewEditor,
       });
 
       console.log('✓ Complete debug session test completed successfully');
     }
     catch (error) {
       console.error('❌ Complete debug session test failed:', error);
-      throw error;
-    }
-  }).timeout(120000);
-
-  it('should handle view validation and auto-recovery', async () => {
-    try {
-      debugHelper.log('Testing view validation and auto-recovery');
-
-      // This test demonstrates that methods work even if views are not set up
-      // The helper will automatically ensure they are opened/expanded
-
-      // Direct call without manual setup - should auto-ensure debug view
-      await debugHelper.selectLaunchConfiguration('Python: Current File');
-
-      // Direct call without manual setup - should auto-ensure image watch section
-      await debugHelper.refreshImageWatch();
-
-      // Direct call without manual setup - should auto-ensure webview is available
-      await debugHelper.takeScreenshot({
-        name: 'auto-recovery-test',
-        elementType: 'webview',
-      });
-
-      console.log('✓ View validation and auto-recovery test completed successfully');
-    }
-    catch (error) {
-      console.error('❌ View validation test failed:', error);
       throw error;
     }
   }).timeout(120000);

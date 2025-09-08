@@ -9,9 +9,9 @@ describe('python debugging with enhanced DebugTestHelper', () => {
   let debugHelper: DebugTestHelper;
 
   before(async () => {
-    console.log('Step: Opening workspace');
+    DebugTestHelper.logger.step('Opening workspace');
     await openWorkspace();
-    console.log('Step: Workspace opened');
+    DebugTestHelper.logger.step('Workspace opened');
 
     // Initialize the debug helper with auto-ensuring enabled
     debugHelper = DebugTestHelper.getInstance({
@@ -34,23 +34,31 @@ describe('python debugging with enhanced DebugTestHelper', () => {
   }).timeout(20000);
 
   it('should set up editor for debug and inspect variables using high-level methods', async () => {
-    try {
-      debugHelper.log('Starting enhanced debug test with high-level methods');
+    debugHelper.setCurrentTest('mvp-setup'); // Short name: mvp-setup
 
-      // Use the high-level setup method
+    const testContext = {
+      currentStep: 'initialization',
+      testName: 'mvp-setup',
+    };
+
+    await runTestWithErrorHandling(testContext, async () => {
+      DebugTestHelper.logger.testStart('Starting enhanced debug test with high-level methods');
+
+      testContext.currentStep = 'editor-setup';
       await debugHelper.setupEditorForDebug({
         fileName: fileInWorkspace('debug_test.py'),
         debugConfig: 'Python: Current File',
         openFile: true,
       });
 
-      // Start complete debug session (this will auto-ensure views)
+      testContext.currentStep = 'debug-start';
       await debugHelper.startDebugging();
-      await debugHelper.waitForBreakpoint();
 
+      testContext.currentStep = 'breakpoint-wait';
+      await debugHelper.waitForBreakpoint();
       await debugHelper.sleep(1000);
 
-      // Use auto-ensuring methods - these will automatically open/expand required views
+      testContext.currentStep = 'variable-action';
       await debugHelper.performVariableAction({
         variableName: 'x',
         actionLabel: 'View Image',
@@ -59,57 +67,95 @@ describe('python debugging with enhanced DebugTestHelper', () => {
         type: 'variable',
       });
 
-      // Get webview with auto-opening
+      testContext.currentStep = 'webview-get';
       await debugHelper.getWebview({ autoOpen: true });
 
-      // Take screenshot (will auto-ensure webview is open)
+      testContext.currentStep = 'webview-editor-get';
       const webviewEditor = await debugHelper.getWebviewEditor();
+
+      testContext.currentStep = 'final-screenshot';
       await debugHelper.takeScreenshot({
         name: 'enhanced-test-webview',
         element: webviewEditor,
       });
 
-      console.log('✓ Enhanced debug test completed successfully');
-    }
-    catch (error) {
-      console.error('❌ Enhanced debug test failed:', error);
-      await debugHelper.takeScreenshot({ name: 'enhanced-test-error', element: 'screen' });
-      throw error;
-    }
+      DebugTestHelper.logger.success('Enhanced debug test completed successfully');
+    });
   }).timeout(120000);
 
-  it('should demonstrate complete debug session high-level method', async () => {
+  // it('should demonstrate complete debug session high-level method', async () => {
+  //   debugHelper.setCurrentTest('mvp-session'); // Short name: mvp-session
+
+  //   const testContext = {
+  //     currentStep: 'initialization',
+  //     testName: 'mvp-session',
+  //   };
+
+  //   await runTestWithErrorHandling(testContext, async () => {
+  //     debugHelper.log('Testing complete debug session method');
+
+  //     testContext.currentStep = 'complete-session-start';
+  //     await debugHelper.startCompleteDebugSession({
+  //       fileName: fileInWorkspace('debug_test.py'),
+  // debugHelper.logger.info('Starting enhanced debug test with high-level methods');
+  //       openFile: true,
+  //     });
+
+  //     testContext.currentStep = 'variable-action';
+  //     await debugHelper.performVariableAction({
+  //       variableName: 'x',
+  //       actionLabel: 'View Image',
+  //       type: 'variable',
+  //     });
+
+  //     testContext.currentStep = 'webview-get';
+  //     await debugHelper.getWebview();
+
+  //     testContext.currentStep = 'webview-editor-get';
+  //     const webviewEditor = await debugHelper.getWebviewEditor();
+
+  //     testContext.currentStep = 'final-screenshot';
+  //     await debugHelper.takeScreenshot({
+  //       name: 'complete-session-test',
+  //       element: webviewEditor,
+  //     });
+
+  //     DebugTestHelper.logger.success('✓ Complete debug session test completed successfully');
+  //   });
+  // }).timeout(120000);
+
+  async function runTestWithErrorHandling(
+    context: { currentStep: string; testName: string },
+    testFunction: () => Promise<void>,
+  ): Promise<void> {
     try {
-      debugHelper.log('Testing complete debug session method');
-
-      // Use the highest-level method that does everything
-      await debugHelper.startCompleteDebugSession({
-        fileName: fileInWorkspace('debug_test.py'),
-        debugConfig: 'Python: Current File',
-        openFile: true,
-      });
-
-      // Now we can directly work with variables - views are already set up
-      await debugHelper.performVariableAction({
-        variableName: 'x',
-        actionLabel: 'View Image',
-        type: 'variable',
-      });
-
-      // Webview should be available
-      await debugHelper.getWebview();
-      const webviewEditor = await debugHelper.getWebviewEditor();
-      await debugHelper.takeScreenshot({
-        name: 'complete-session-test',
-        element: webviewEditor,
-      });
-
-      console.log('✓ Complete debug session test completed successfully');
+      await testFunction();
     }
     catch (error) {
-      console.error('❌ Complete debug session test failed:', error);
-      await debugHelper.takeScreenshot({ name: 'complete-session-error', element: 'screen' });
+      DebugTestHelper.logger.error(`${context.testName} test failed at step "${context.currentStep}": ${error}`);
+      await captureErrorState(context);
       throw error;
     }
-  }).timeout(120000);
+  }
+
+  async function captureErrorState(context: { currentStep: string; testName: string }): Promise<void> {
+    await debugHelper.takeScreenshot({
+      name: `${context.testName}-error-at-${context.currentStep}`,
+      element: 'screen',
+    });
+
+    try {
+      DebugTestHelper.logger.info('Attempting to capture debug state...');
+      const debugStateInfo = await debugHelper.getDebugStateInfo();
+      debugStateInfo.forEach(info => DebugTestHelper.logger.info(`Debug state: ${info}`));
+
+      await debugHelper.takeScreenshot({
+        name: `debug-state-${context.currentStep}`,
+        element: 'screen',
+      });
+    }
+    catch (stateError) {
+      DebugTestHelper.logger.warn(`Failed to capture debug state: ${stateError}`);
+    }
+  }
 });

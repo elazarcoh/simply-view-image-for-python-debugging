@@ -4,6 +4,7 @@
     {
       "name": "Python: Current File",
       "type": "debugpy",
+      "python": "${env:pythonLocation}/bin/python",
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",

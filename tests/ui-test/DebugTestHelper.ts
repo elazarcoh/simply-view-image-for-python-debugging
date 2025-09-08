@@ -37,6 +37,7 @@ export interface SetupEditorOptions {
 export interface ScreenshotOptions {
   name: string;
   element: WebElement | 'screen';
+  testPrefix?: string;
 }
 
 export interface WebviewOptions {
@@ -62,6 +63,7 @@ export class DebugTestHelper {
   private imageWatchSection: ViewSection | null = null;
   private currentEditor: Editor | null = null;
   private webviewTab: EditorTab | null = null;
+  private currentTestName: string = 'unknown-test';
 
   private constructor(private options: DebugTestOptions = {}) {
     this.options = {
@@ -90,6 +92,14 @@ export class DebugTestHelper {
     DebugTestHelper.instance = null;
   }
 
+  /**
+   * Set the current test name for screenshot prefixes
+   */
+  setCurrentTest(testName: string): this {
+    this.currentTestName = testName;
+    return this;
+  }
+
   // =============================================================================
   // FILE OPERATIONS
   // =============================================================================
@@ -98,13 +108,13 @@ export class DebugTestHelper {
    * Open a file in the workspace
    */
   async openFile(filePath: string): Promise<this> {
-    const check = async () => {
+    const checkFileOpen = async () => {
       const editorView = new EditorView();
       const titles = await editorView.getOpenEditorTitles();
       return titles.includes(basename(filePath));
     };
 
-    console.log(`Step: Opening file ${filePath}`);
+    DebugTestHelper.logger.step(`Opening file ${filePath}`);
 
     const titleBar = new TitleBar();
     const item = await titleBar.getItem('File');
@@ -115,15 +125,17 @@ export class DebugTestHelper {
     const input = await InputBox.create();
     await input.setText(filePath);
 
-    for (let i = 0; i < 3; i++) {
+    // Try confirming the input up to 3 times
+    for (let attempt = 0; attempt < 3; attempt++) {
       await input.confirm();
-      const isOpened = await check();
+      const isOpened = await checkFileOpen();
       if (isOpened) {
-        console.log(`Step: File ${filePath} is opened in an editor`);
+        DebugTestHelper.logger.step(`File ${filePath} is opened in an editor`);
         return this;
       }
       await this.sleep(500);
     }
+
     await this.takeScreenshot({ name: 'failed-to-open-file', element: 'screen' });
     throw new Error(`Failed to open file ${filePath} in an editor`);
   }
@@ -132,7 +144,7 @@ export class DebugTestHelper {
    * Open an editor for a specific file
    */
   async openEditor(fileName: string): Promise<this> {
-    console.log(`Step: Opening editor for ${fileName}`);
+    DebugTestHelper.logger.step(`Opening editor for ${fileName}`);
 
     const editorView = new EditorView();
     this.currentEditor = await editorView.openEditor(fileName);
@@ -142,7 +154,7 @@ export class DebugTestHelper {
     }
 
     await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log(`Step: Editor for ${fileName} is displayed`);
+    DebugTestHelper.logger.step(`Editor for ${fileName} is displayed`);
     return this;
   }
 
@@ -154,7 +166,7 @@ export class DebugTestHelper {
    * Open the debug panel and prepare for debugging
    */
   async openDebugPanel(): Promise<this> {
-    console.log('Step: Opening debug panel');
+    DebugTestHelper.logger.step('Opening debug panel');
 
     const btn = await new ActivityBar().getViewControl('Run');
     if (!btn) {
@@ -162,7 +174,7 @@ export class DebugTestHelper {
     }
 
     this.debugView = (await btn.openView()) as DebugView;
-    console.log('Step: Debug panel opened');
+    DebugTestHelper.logger.step('Debug panel opened');
     return this;
   }
 
@@ -177,7 +189,7 @@ export class DebugTestHelper {
       throw new Error('Debug view not opened. Call openDebugPanel() first.');
     }
 
-    console.log(`Step: Getting launch configurations matching "${configNamePattern}"`);
+    DebugTestHelper.logger.step(`Getting launch configurations matching "${configNamePattern}"`);
 
     const configs = await this.debugView!.getLaunchConfigurations();
     const configName = configs.find(c => c.includes(configNamePattern));
@@ -187,7 +199,7 @@ export class DebugTestHelper {
     }
 
     await this.debugView!.selectLaunchConfiguration(configName);
-    console.log(`Step: Launch configuration "${configName}" selected`);
+    DebugTestHelper.logger.step(`Launch configuration "${configName}" selected`);
     return this;
   }
 
@@ -202,10 +214,10 @@ export class DebugTestHelper {
       throw new Error('Debug view not opened. Call openDebugPanel() first.');
     }
 
-    console.log('Step: Starting debug session');
+    DebugTestHelper.logger.step('Starting debug session');
     await this.debugView!.start();
     await VSBrowser.instance.driver.sleep(3000);
-    console.log('Step: Debug session started');
+    DebugTestHelper.logger.step('Debug session started');
     return this;
   }
 
@@ -213,7 +225,7 @@ export class DebugTestHelper {
    * Wait for debug toolbar to appear and breakpoint to be hit
    */
   async waitForBreakpoint(): Promise<this> {
-    console.log('Step: Waiting for debug toolbar');
+    DebugTestHelper.logger.step('Waiting for debug toolbar');
 
     this.debugToolbar = await DebugToolbar.create();
 
@@ -222,15 +234,30 @@ export class DebugTestHelper {
     }, this.options.timeout!, 'Debug toolbar did not appear in time', 1000);
 
     if (!isDisplayed) {
+      DebugTestHelper.logger.error('Debug toolbar did not appear in time. Taking screenshot...');
+      await this.takeScreenshot({
+        name: 'debug-toolbar-timeout',
+        element: 'screen',
+      });
       throw new Error('Debug toolbar did not appear in time');
     }
 
-    console.log('Step: Debug toolbar is displayed');
+    DebugTestHelper.logger.success('Debug toolbar is displayed');
+    DebugTestHelper.logger.step('Waiting for breakpoint to be hit');
 
-    console.log('Step: Waiting for breakpoint to be hit');
-    await this.debugToolbar.waitForBreakPoint(3000);
-    console.log('Step: Breakpoint hit');
-    return this;
+    try {
+      await this.debugToolbar.waitForBreakPoint(3000);
+      DebugTestHelper.logger.success('Breakpoint hit');
+      return this;
+    }
+    catch (breakpointError) {
+      DebugTestHelper.logger.error('Timeout waiting for breakpoint. Taking screenshot...');
+      await this.takeScreenshot({
+        name: 'breakpoint-timeout',
+        element: 'screen',
+      });
+      throw new Error(`Breakpoint was not hit in time: ${breakpointError}`);
+    }
   }
 
   /**
@@ -238,21 +265,21 @@ export class DebugTestHelper {
    */
   async stopDebugging(): Promise<this> {
     if (!this.debugToolbar) {
-      console.warn('Debug toolbar not available, trying to stop via debug view');
+      DebugTestHelper.logger.warn('Debug toolbar not available, trying to stop via debug view');
       // Fallback: try to get debug toolbar
       try {
         this.debugToolbar = await DebugToolbar.create();
       }
       catch (error) {
-        console.warn('Could not get debug toolbar for stopping:', error);
+        DebugTestHelper.logger.warn(`Could not get debug toolbar for stopping: ${error}`);
         return this;
       }
     }
 
-    console.log('Step: Stopping debugger');
+    DebugTestHelper.logger.step('Stopping debugger');
     await this.debugToolbar.stop();
     await VSBrowser.instance.driver.sleep(2000);
-    console.log('Step: Debugger stopped');
+    DebugTestHelper.logger.step('Debugger stopped');
     return this;
   }
 
@@ -268,30 +295,23 @@ export class DebugTestHelper {
       throw new Error('No editor is currently open. Call openEditor() first.');
     }
 
-    console.log(`Step: Adding breakpoint at line ${lineNumber}`);
+    DebugTestHelper.logger.step(`Adding breakpoint at line ${lineNumber}`);
 
-    try {
-      // Use the goto line command to navigate to the specific line
-      await new Workbench().executeCommand('workbench.action.gotoLine');
-      await VSBrowser.instance.driver.sleep(500);
+    // Use the goto line command to navigate to the specific line
+    await new Workbench().executeCommand('workbench.action.gotoLine');
+    await VSBrowser.instance.driver.sleep(500);
 
-      // Enter the line number in the input box
-      const input = await InputBox.create(this.options.timeout);
-      await input.setText(lineNumber.toString());
-      await input.confirm();
-      await VSBrowser.instance.driver.sleep(500);
+    // Enter the line number in the input box
+    const input = await InputBox.create(this.options.timeout);
+    await input.setText(lineNumber.toString());
+    await input.confirm();
+    await VSBrowser.instance.driver.sleep(500);
 
-      // Toggle breakpoint using command
-      await new Workbench().executeCommand('editor.debug.action.toggleBreakpoint');
+    // Toggle breakpoint using command
+    await new Workbench().executeCommand('editor.debug.action.toggleBreakpoint');
+    await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
-      await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-      console.log(`Step: Breakpoint added at line ${lineNumber}`);
-    }
-    catch (error) {
-      console.warn(`Warning: Could not add breakpoint at line ${lineNumber}: ${error}`);
-      // Don't throw error, as this might not be critical for some tests
-    }
-
+    DebugTestHelper.logger.step(`Breakpoint added at line ${lineNumber}`);
     return this;
   }
 
@@ -310,26 +330,74 @@ export class DebugTestHelper {
       throw new Error('Debug view not opened. Call openDebugPanel() first.');
     }
 
-    console.log('Step: Expanding Image Watch section');
+    DebugTestHelper.logger.step('Expanding Image Watch section');
 
-    this.imageWatchSection = await this.debugView!.getContent().getSection('Image Watch');
+    const imageWatchSection = await this.getImageWatchSection();
+    await this.expandSection(imageWatchSection);
+    await this.verifyExpansion(imageWatchSection);
 
-    try {
-      await this.imageWatchSection.expand(2000);
-      await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-
-      const isExpanded = await this.imageWatchSection.isExpanded();
-      if (!isExpanded) {
-        throw new Error('Failed to expand Image Watch section');
-      }
-
-      console.log('Step: Image Watch section expanded');
-    }
-    catch (error) {
-      throw new Error(`Error expanding Image Watch section: ${error}`);
-    }
-
+    this.imageWatchSection = imageWatchSection;
+    DebugTestHelper.logger.success('Image Watch section expanded');
     return this;
+  }
+
+  private async getImageWatchSection(): Promise<ViewSection> {
+    const imageWatchSection = await this.debugView!.getContent().getSection('Image Watch').catch(async (getSectionError) => {
+      DebugTestHelper.logger.error(`Error getting Image Watch section: ${getSectionError}`);
+      await this.takeScreenshot({
+        name: 'image-watch-section-get-error',
+        element: 'screen',
+      });
+
+      const sectionTitles = await this.getAvailableSectionTitles();
+      DebugTestHelper.logger.info(`Available debug sections when Image Watch section not found: [${sectionTitles.join(', ')}]`);
+      throw new Error(`Image Watch section not found. Available sections: [${sectionTitles.join(', ')}]. Original error: ${getSectionError}`);
+    });
+
+    return imageWatchSection;
+  }
+
+  private async expandSection(section: ViewSection): Promise<void> {
+    await section.expand(2000).catch(async (expandError) => {
+      DebugTestHelper.logger.error(`Error expanding Image Watch section: ${expandError}`);
+      await this.takeScreenshot({
+        name: 'image-watch-section-expand-error',
+        element: 'screen',
+      });
+      throw new Error(`Error expanding Image Watch section: ${expandError}`);
+    });
+
+    await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
+  }
+
+  private async verifyExpansion(section: ViewSection): Promise<void> {
+    const isExpanded = await section.isExpanded();
+    if (isExpanded)
+      return;
+
+    DebugTestHelper.logger.error('Failed to expand Image Watch section. Taking screenshot...');
+    await this.takeScreenshot({
+      name: 'image-watch-section-expand-failed',
+      element: 'screen',
+    });
+
+    const sectionTitles = await this.getAvailableSectionTitles();
+    DebugTestHelper.logger.info(`Available debug sections: [${sectionTitles.join(', ')}]`);
+    throw new Error(`Failed to expand Image Watch section. Available sections: [${sectionTitles.join(', ')}]`);
+  }
+
+  private async getAvailableSectionTitles(): Promise<string[]> {
+    const allSections = await this.debugView!.getContent().getSections();
+    return Promise.all(
+      allSections.map(async (section) => {
+        try {
+          return await section.getTitle();
+        }
+        catch (e) {
+          return '[Title unavailable]';
+        }
+      }),
+    );
   }
 
   /**
@@ -343,7 +411,7 @@ export class DebugTestHelper {
       throw new Error('Image Watch section not available. Call expandImageWatchSection() first.');
     }
 
-    console.log('Step: Refreshing Image Watch section');
+    DebugTestHelper.logger.step('Refreshing Image Watch section');
 
     const refreshButton = await this.imageWatchSection!.getAction('Refresh');
     if (!refreshButton) {
@@ -352,7 +420,7 @@ export class DebugTestHelper {
 
     await refreshButton.click();
     await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log('Step: Image Watch section refreshed');
+    DebugTestHelper.logger.step('Image Watch section refreshed');
     return this;
   }
 
@@ -371,15 +439,124 @@ export class DebugTestHelper {
       throw new Error('Image Watch section not available. Call expandImageWatchSection() first.');
     }
 
-    console.log(`Step: Finding tree item "${itemName}"`);
+    DebugTestHelper.logger.step(`Finding tree item "${itemName}"`);
 
-    const item = await this.imageWatchSection!.findItem(itemName) as TreeItem | undefined;
-    if (!item) {
-      throw new Error(`Tree item "${itemName}" not found`);
+    DebugTestHelper.logger.debug('Debugging tree structure in Image Watch section...');
+    const itemInfo = await this.getTreeItemDebugInfo();
+    DebugTestHelper.logger.info(`Found ${itemInfo.length} visible items in Image Watch section`);
+    DebugTestHelper.logger.info(`Available items in Image Watch section:\n${itemInfo.join('\n')}`);
+
+    const item = await this.findTreeItem(itemName, itemInfo);
+    await this.validateFoundItem(item, itemName);
+    await this.expandItemIfNeeded(item, itemName);
+
+    DebugTestHelper.logger.success(`Tree item "${itemName}" found and processed`);
+    return item;
+  }
+
+  private async getTreeItemDebugInfo(): Promise<string[]> {
+    const allItems = await this.imageWatchSection!.getVisibleItems();
+    const itemInfo: string[] = [];
+
+    for (let i = 0; i < allItems.length; i++) {
+      try {
+        const label = await (allItems[i] as any).getLabel?.() || await (allItems[i] as any).getText?.() || '[Label unavailable]';
+        const hasChildren = await (allItems[i] as TreeItem).hasChildren?.() || false;
+        const isExpanded = await (allItems[i] as TreeItem).isExpanded?.() || false;
+        itemInfo.push(`${i}: "${label}" (hasChildren: ${hasChildren}, expanded: ${isExpanded})`);
+      }
+      catch (e) {
+        itemInfo.push(`${i}: [Error getting info: ${e}]`);
+      }
     }
 
-    console.log(`Step: Tree item "${itemName}" found and expanded`);
+    return itemInfo;
+  }
+
+  private async findTreeItem(itemName: string, itemInfo: string[]): Promise<TreeItem> {
+    // For container items (Variables/Expressions), try a shallow search first
+    if (itemName === 'Variables' || itemName === 'Expressions') {
+      const item = await this.findContainerItem(itemName);
+      if (item)
+        return item;
+    }
+
+    // Fallback to the original findItem method
+    DebugTestHelper.logger.debug(`${itemName === 'Variables' || itemName === 'Expressions' ? 'Shallow search failed, f' : 'F'}alling back to findItem method for "${itemName}"`);
+
+    const item = await this.imageWatchSection!.findItem(itemName) as TreeItem | undefined;
+
+    if (!item) {
+      DebugTestHelper.logger.error(`Tree item "${itemName}" not found using findItem method`);
+      await this.takeScreenshot({
+        name: `tree-item-not-found-${itemName.replace(/[^a-z0-9]/gi, '-')}`,
+        element: 'screen',
+      });
+      throw new Error(`Tree item "${itemName}" not found. Available items:\n${itemInfo.join('\n')}`);
+    }
+
     return item;
+  }
+
+  private async findContainerItem(itemName: string): Promise<TreeItem | undefined> {
+    DebugTestHelper.logger.debug(`Performing shallow search for container "${itemName}"`);
+    const allItems = await this.imageWatchSection!.getVisibleItems();
+
+    for (const visibleItem of allItems) {
+      const label = await (visibleItem as any).getLabel?.() || await (visibleItem as any).getText?.() || '';
+      DebugTestHelper.logger.debug(`Checking visible item: "${label}"`);
+
+      if (label === itemName || (label.toLowerCase().includes(itemName.toLowerCase()) && label !== 'x')) {
+        DebugTestHelper.logger.success(`Found matching container item with label: "${label}"`);
+        return visibleItem as TreeItem;
+      }
+    }
+
+    return undefined;
+  }
+
+  private async validateFoundItem(item: TreeItem, itemName: string): Promise<void> {
+    DebugTestHelper.logger.success(`Found item for "${itemName}", validating...`);
+
+    const foundLabel = await (item as any).getLabel?.() || await (item as any).getText?.() || '[Label unavailable]';
+    const hasChildren = await item.hasChildren?.() || false;
+    const isExpanded = await item.isExpanded?.() || false;
+
+    DebugTestHelper.logger.info(`Found item details: label="${foundLabel}", hasChildren=${hasChildren}, expanded=${isExpanded}`);
+
+    // Critical validation: ensure we didn't get the wrong item
+    if (foundLabel !== itemName && !foundLabel.includes(itemName)) {
+      DebugTestHelper.logger.error(`CRITICAL: Found item label "${foundLabel}" doesn't match expected "${itemName}"`);
+      await this.takeScreenshot({
+        name: `wrong-item-found-expected-${itemName.replace(/[^a-z0-9]/gi, '-')}-got-${foundLabel.replace(/[^a-z0-9]/gi, '-')}`,
+        element: 'screen',
+      });
+      throw new Error(`Found wrong item: expected "${itemName}", got "${foundLabel}"`);
+    }
+
+    // Validate this is actually a container (Variables/Expressions should have children)
+    if ((itemName === 'Variables' || itemName === 'Expressions') && !hasChildren) {
+      DebugTestHelper.logger.warn(`Warning: Container "${itemName}" has no children. This might indicate an issue.`);
+      await this.takeScreenshot({
+        name: `container-no-children-${itemName.replace(/[^a-z0-9]/gi, '-')}`,
+        element: 'screen',
+      });
+    }
+  }
+
+  private async expandItemIfNeeded(item: TreeItem, itemName: string): Promise<void> {
+    const hasChildren = await item.hasChildren?.() || false;
+    const isExpanded = await item.isExpanded?.() || false;
+
+    if (!hasChildren || isExpanded)
+      return;
+
+    DebugTestHelper.logger.step(`Expanding "${itemName}" container...`);
+    await item.expand();
+    await VSBrowser.instance.driver.sleep(1000);
+
+    const isNowExpanded = await item.isExpanded();
+    DebugTestHelper.logger.info(`Container "${itemName}" expanded: ${isNowExpanded}`);
   }
 
   /**
@@ -388,58 +565,221 @@ export class DebugTestHelper {
   async performVariableAction(options: VariableActionOptions): Promise<this> {
     const { variableName, actionLabel, retrySetup = true, setupRetries = 5, type } = options;
 
-    console.log(`Step: Finding variable "${variableName}"`);
+    DebugTestHelper.logger.step(`Finding variable "${variableName}" of type "${type}"`);
 
-    // First find the Variables item
-    const variablesItem = await this.findAndExpandTreeItem(type === 'variable' ? 'Variables' : 'Expressions');
+    const containerName = type === 'variable' ? 'Variables' : 'Expressions';
+    DebugTestHelper.logger.debug(`Looking for container "${containerName}" for variable "${variableName}"`);
 
-    // Try to find the specific variable with retries and setup refresh
+    const variablesItem = await this.findAndExpandTreeItem(containerName);
+    await this.validateContainer(variablesItem, containerName, variableName);
+
+    const variableItem = await this.findVariableWithRetries(variablesItem, variableName, containerName, type, retrySetup, setupRetries);
+    await this.performActionOnVariable(variableItem, variableName, actionLabel);
+
+    DebugTestHelper.logger.success(`Action "${actionLabel}" performed on variable "${variableName}"`);
+    return this;
+  }
+
+  private async validateContainer(variablesItem: TreeItem, containerName: string, variableName: string): Promise<void> {
+    const containerLabel = await (variablesItem as any).getLabel?.() || await (variablesItem as any).getText?.() || '[Label unavailable]';
+    const containerHasChildren = await variablesItem.hasChildren?.() || false;
+
+    DebugTestHelper.logger.info(`Container validation: expected="${containerName}", actual="${containerLabel}", hasChildren=${containerHasChildren}`);
+
+    if (containerLabel === variableName) {
+      DebugTestHelper.logger.error(`CRITICAL BUG DETECTED: Container search returned the variable "${variableName}" instead of container "${containerName}"`);
+      DebugTestHelper.logger.error(`This means findItem("${containerName}") returned the "${variableName}" variable, which is incorrect.`);
+
+      await this.takeScreenshot({
+        name: `critical-container-bug-expected-${containerName.replace(/[^a-z0-9]/gi, '-')}-got-${variableName.replace(/[^a-z0-9]/gi, '-')}`,
+        element: 'screen',
+      });
+
+      const debugInfo = await this.getTreeStructureDebugInfo();
+      DebugTestHelper.logger.error(`Current tree structure:\n${debugInfo.join('\n')}`);
+      throw new Error(`Container bug: findItem("${containerName}") returned variable "${variableName}" instead of the container`);
+    }
+
+    if (!containerLabel.includes(containerName) && containerLabel !== containerName) {
+      DebugTestHelper.logger.warn(`Container label "${containerLabel}" doesn't match expected "${containerName}"`);
+    }
+
+    if (!containerHasChildren) {
+      DebugTestHelper.logger.warn(`Container "${containerName}" has no children - this might indicate no variables are available`);
+    }
+
+    DebugTestHelper.logger.success(`Container validation passed`);
+  }
+
+  private async findVariableWithRetries(
+    variablesItem: TreeItem,
+    variableName: string,
+    containerName: string,
+    type: string,
+    retrySetup: boolean,
+    setupRetries: number,
+  ): Promise<TreeItem> {
     let variableItem: TreeItem | undefined;
 
     for (let i = 0; i < setupRetries; i++) {
-      variableItem = (await variablesItem.findChildItem(variableName)) as TreeItem | undefined;
+      DebugTestHelper.logger.step(`Attempt ${i + 1}/${setupRetries}: Looking for variable "${variableName}" in ${containerName}`);
+
+      variableItem = await this.attemptFindVariable(variablesItem, variableName);
       if (variableItem) {
+        DebugTestHelper.logger.success(`Variable "${variableName}" found on attempt ${i + 1}`);
         break;
       }
 
+      variableItem = await this.handleSpecialVariableCase(variablesItem, variableName, type, i + 1);
+      if (variableItem)
+        break;
+
       if (retrySetup) {
-        console.log(`Step: Variable "${variableName}" not found, running setup and refresh (attempt ${i + 1})`);
-        await new Workbench().executeCommand('svifpd.run-setup');
-        await VSBrowser.instance.driver.sleep(500);
-        await this.refreshImageWatch();
+        await this.handleVariableNotFoundRetry(variablesItem, variableName, containerName, i + 1);
       }
     }
 
     if (!variableItem) {
-      throw new Error(`Variable "${variableName}" not found after ${setupRetries} attempts`);
+      await this.handleFinalVariableNotFound(variablesItem, variableName, containerName, setupRetries);
     }
 
-    console.log(`Step: Variable "${variableName}" found`);
+    return variableItem!;
+  }
 
-    // Get action buttons and find the specified action
-    console.log(`Step: Getting action buttons for "${variableName}"`);
+  private async attemptFindVariable(variablesItem: TreeItem, variableName: string): Promise<TreeItem | undefined> {
+    try {
+      return (await variablesItem.findChildItem(variableName)) as TreeItem | undefined;
+    }
+    catch (findError) {
+      DebugTestHelper.logger.error(`Error finding variable: ${findError}`);
+      return undefined;
+    }
+  }
+
+  private async handleSpecialVariableCase(variablesItem: TreeItem, variableName: string, type: string, attempt: number): Promise<TreeItem | undefined> {
+    if (type !== 'variable')
+      return undefined;
+
+    const childItems = await variablesItem.getChildren().catch(() => []);
+    const childLabels = await Promise.all(
+      childItems.map(async (child) => {
+        try {
+          return await (child as any).getLabel?.() || await (child as any).getText?.() || '[Name unavailable]';
+        }
+        catch (e) {
+          return '[Name unavailable]';
+        }
+      }),
+    );
+
+    const hasMetadataProperties = childLabels.some(label =>
+      ['type', 'shape', 'dtype', 'size', 'ndim', 'device'].includes(label),
+    );
+
+    if (hasMetadataProperties && variableName === 'x') {
+      DebugTestHelper.logger.debug(`Special case detected: Variables container appears to be the variable "${variableName}" itself`);
+      DebugTestHelper.logger.info(`Children are metadata properties: [${childLabels.join(', ')}]`);
+      DebugTestHelper.logger.success(`Using Variables container as variable "${variableName}" on attempt ${attempt}`);
+      return variablesItem;
+    }
+
+    return undefined;
+  }
+
+  private async handleVariableNotFoundRetry(variablesItem: TreeItem, variableName: string, containerName: string, attempt: number): Promise<void> {
+    DebugTestHelper.logger.warn(`Variable "${variableName}" not found, listing available variables and running setup (attempt ${attempt})`);
+
+    const availableVars = await this.getAvailableVariables(variablesItem).catch(() => ['[Failed to list]']);
+    DebugTestHelper.logger.info(`Available variables in ${containerName}: [${availableVars.join(', ')}]`);
+
+    await this.takeScreenshot({
+      name: `variable-not-found-attempt-${attempt}-${variableName.replace(/[^a-z0-9]/gi, '-')}`,
+      element: 'screen',
+    });
+
+    await new Workbench().executeCommand('svifpd.run-setup');
+    await VSBrowser.instance.driver.sleep(500);
+    await this.refreshImageWatch();
+  }
+
+  private async handleFinalVariableNotFound(variablesItem: TreeItem, variableName: string, containerName: string, setupRetries: number): Promise<never> {
+    DebugTestHelper.logger.error(`Variable "${variableName}" not found after ${setupRetries} attempts`);
+
+    const finalAvailableVars = await this.getAvailableVariables(variablesItem)
+      .catch((finalListError) => {
+        throw new Error(`Variable "${variableName}" not found after ${setupRetries} attempts and failed to list available variables: ${finalListError}`);
+      });
+
+    DebugTestHelper.logger.info(`Final check - Available variables in ${containerName}: [${finalAvailableVars.join(', ')}]`);
+
+    await this.takeScreenshot({
+      name: `variable-not-found-final-${variableName.replace(/[^a-z0-9]/gi, '-')}`,
+      element: 'screen',
+    });
+
+    throw new Error(`Variable "${variableName}" not found after ${setupRetries} attempts. Available variables: [${finalAvailableVars.join(', ')}]`);
+  }
+
+  private async performActionOnVariable(variableItem: TreeItem, variableName: string, actionLabel: string): Promise<void> {
+    DebugTestHelper.logger.step(`Variable "${variableName}" found`);
+    DebugTestHelper.logger.step(`Getting action buttons for "${variableName}"`);
+
     const buttons = await variableItem.getActionButtons();
+    DebugTestHelper.logger.info(`Found ${buttons.length} action buttons for variable "${variableName}"`);
 
-    let actionFound = false;
+    const availableActions: string[] = [];
+
     for (const btn of buttons) {
-      const label = await btn.getLabel();
-      console.log(`Step: Found button label: "${label}"`);
+      const label = await btn.getLabel().catch(() => '[Button label unavailable]');
+      availableActions.push(label);
+      DebugTestHelper.logger.step(`Found button label: "${label}"`);
+
       if (label === actionLabel) {
-        console.log(`Step: Clicking "${actionLabel}" button`);
+        DebugTestHelper.logger.step(`Clicking "${actionLabel}" button`);
         await btn.click();
-        actionFound = true;
-        break;
+        await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
+        return;
       }
     }
 
-    if (!actionFound) {
-      const availableActions = await Promise.all(buttons.map(btn => btn.getLabel()));
-      throw new Error(`Action "${actionLabel}" not found. Available actions: ${availableActions.join(', ')}`);
+    DebugTestHelper.logger.error(`Action "${actionLabel}" not found. Available actions: [${availableActions.join(', ')}]`);
+    await this.takeScreenshot({
+      name: `action-not-found-${actionLabel.replace(/[^a-z0-9]/gi, '-')}-on-${variableName.replace(/[^a-z0-9]/gi, '-')}`,
+      element: 'screen',
+    });
+    throw new Error(`Action "${actionLabel}" not found. Available actions: [${availableActions.join(', ')}]`);
+  }
+
+  private async getAvailableVariables(variablesItem: TreeItem): Promise<string[]> {
+    const childItems = await variablesItem.getChildren();
+    return Promise.all(
+      childItems.map(async (child) => {
+        try {
+          return await (child as any).getLabel?.() || await (child as any).getText?.() || '[Name unavailable]';
+        }
+        catch (e) {
+          return '[Name unavailable]';
+        }
+      }),
+    );
+  }
+
+  private async getTreeStructureDebugInfo(): Promise<string[]> {
+    const allItems = await this.imageWatchSection!.getVisibleItems();
+    const debugInfo: string[] = [];
+
+    for (let idx = 0; idx < allItems.length; idx++) {
+      try {
+        const label = await (allItems[idx] as any).getLabel?.() || await (allItems[idx] as any).getText?.() || '[Label unavailable]';
+        const hasChildren = await (allItems[idx] as TreeItem).hasChildren?.() || false;
+        debugInfo.push(`${idx}: "${label}" (hasChildren: ${hasChildren})`);
+      }
+      catch (e) {
+        debugInfo.push(`${idx}: [Error: ${e}]`);
+      }
     }
 
-    await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log(`Step: Action "${actionLabel}" performed on variable "${variableName}"`);
-    return this;
+    return debugInfo;
   }
 
   // =============================================================================
@@ -452,7 +792,7 @@ export class DebugTestHelper {
   async addExpression(options: ExpressionOptions): Promise<this> {
     const { expression, timeout = this.options.timeout } = options;
 
-    console.log(`Step: Adding expression "${expression}"`);
+    DebugTestHelper.logger.step(`Adding expression "${expression}"`);
 
     // Execute the add expression command
     await new Workbench().executeCommand('svifpd.add-expression');
@@ -465,7 +805,7 @@ export class DebugTestHelper {
       await input.confirm();
       await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
-      console.log(`Step: Expression "${expression}" added`);
+      DebugTestHelper.logger.step(`Expression "${expression}" added`);
     }
     catch (error) {
       throw new Error(`Failed to add expression "${expression}": ${error}`);
@@ -478,7 +818,7 @@ export class DebugTestHelper {
    * Edit an existing expression
    */
   async editExpression(oldExpression: string, newExpression: string): Promise<this> {
-    console.log(`Step: Editing expression from "${oldExpression}" to "${newExpression}"`);
+    DebugTestHelper.logger.step(`Editing expression from "${oldExpression}" to "${newExpression}"`);
 
     // This would typically involve finding the expression in the tree and using edit action
     // Implementation details depend on the exact UI structure
@@ -491,7 +831,7 @@ export class DebugTestHelper {
       await input.confirm();
       await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
-      console.log(`Step: Expression edited to "${newExpression}"`);
+      DebugTestHelper.logger.step(`Expression edited to "${newExpression}"`);
     }
     catch (error) {
       throw new Error(`Failed to edit expression: ${error}`);
@@ -508,14 +848,22 @@ export class DebugTestHelper {
    * Find and switch to the Image View webview
    */
   async findImageWebview(): Promise<this> {
-    console.log('Step: Finding Image View webview');
+    DebugTestHelper.logger.step('Finding Image View webview');
 
     const editorView = new EditorView();
     let webviewEditor: Editor | undefined;
 
-    for (const group of await editorView.getEditorGroups()) {
+    const groups = await editorView.getEditorGroups();
+    DebugTestHelper.logger.info(`Found ${groups.length} editor groups`);
+
+    // Search through all editor groups
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i];
       const titles = await group.getOpenEditorTitles();
+      DebugTestHelper.logger.info(`Group ${i} has open editors: [${titles.join(', ')}]`);
+
       if (titles.includes('Image View')) {
+        DebugTestHelper.logger.success(`Found 'Image View' in group ${i}`);
         webviewEditor = await group.openEditor('Image View');
         if (webviewEditor) {
           this.webviewTab = await this.findImageWebviewTab();
@@ -525,11 +873,26 @@ export class DebugTestHelper {
     }
 
     if (!webviewEditor) {
-      throw new Error('Image View webview is not open');
+      DebugTestHelper.logger.error('Image View webview is not open. Taking screenshot of current state...');
+
+      // Log all open editors for debugging
+      const allOpenTitles: string[] = [];
+      for (let i = 0; i < groups.length; i++) {
+        const groupTitles = await groups[i].getOpenEditorTitles();
+        allOpenTitles.push(...groupTitles.map(title => `Group${i}:${title}`));
+      }
+      DebugTestHelper.logger.info(`All open editors: [${allOpenTitles.join(', ')}]`);
+
+      await this.takeScreenshot({
+        name: 'webview-not-found',
+        element: 'screen',
+      });
+
+      throw new Error(`Image View webview is not open. Available editors: [${allOpenTitles.join(', ')}]`);
     }
 
     await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log('Step: Image View webview found and focused');
+    DebugTestHelper.logger.success('Image View webview found and focused');
     return this;
   }
 
@@ -537,18 +900,46 @@ export class DebugTestHelper {
    * Wait for the Image View webview to open
    */
   async waitForImageWebview(): Promise<this> {
-    console.log('Step: Waiting for Image View webview to open');
+    DebugTestHelper.logger.step('Waiting for Image View webview to open');
+
+    let attempts = 0;
+    const maxAttempts = Math.floor(this.options.timeout! / 1000);
 
     const webviewTab = await VSBrowser.instance.driver.wait(async () => {
-      return await this.findImageWebviewTab();
+      attempts++;
+      DebugTestHelper.logger.step(`Waiting for webview - attempt ${attempts}/${maxAttempts}`);
+
+      const tab = await this.findImageWebviewTab();
+      if (!tab) {
+        // Log current editor state every 5 attempts
+        if (attempts % 5 === 0) {
+          const editorView = new EditorView();
+          const groups = await editorView.getEditorGroups();
+          const allTitles: string[] = [];
+
+          for (let i = 0; i < groups.length; i++) {
+            const groupTitles = await groups[i].getOpenEditorTitles();
+            allTitles.push(...groupTitles.map(title => `Group${i}:${title}`));
+          }
+
+          DebugTestHelper.logger.info(`Attempt ${attempts}: Still waiting for webview. Current editors: [${allTitles.join(', ')}]`);
+        }
+      }
+
+      return tab;
     }, this.options.timeout!, 'Image View webview did not open in time', 1000);
 
     if (!webviewTab) {
+      DebugTestHelper.logger.error('Image View webview did not open in time. Taking final screenshot...');
+      await this.takeScreenshot({
+        name: 'webview-wait-timeout',
+        element: 'screen',
+      });
       throw new Error('Image View webview did not open in time');
     }
 
     this.webviewTab = webviewTab;
-    console.log('Step: Image View webview opened');
+    DebugTestHelper.logger.success('Image View webview opened');
     return this;
   }
 
@@ -571,7 +962,7 @@ export class DebugTestHelper {
       return index !== -1 ? openedTabs[index] : null;
     }
     catch (error) {
-      console.warn('Error finding Image View webview tab:', error);
+      DebugTestHelper.logger.warn(`Error finding Image View webview tab: ${error}`);
       return null;
     }
   }
@@ -584,11 +975,11 @@ export class DebugTestHelper {
       throw new Error('Webview not available. Call waitForImageWebview() first.');
     }
 
-    console.log('Step: Interacting with webview');
+    DebugTestHelper.logger.step('Interacting with webview');
     // Placeholder for specific webview interactions
     // This could include clicking buttons, changing settings, etc.
     await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log('Step: Webview interaction completed');
+    DebugTestHelper.logger.step('Webview interaction completed');
     return this;
   }
 
@@ -600,16 +991,20 @@ export class DebugTestHelper {
    * Take a screenshot of the current webview or editor
    */
   async takeScreenshot(options: ScreenshotOptions): Promise<this> {
-    const { name, element } = options;
+    const { name, element, testPrefix } = options;
 
-    console.log(`Step: Taking screenshot "${name}"`);
+    // Use test prefix from options, or fall back to current test name, or default
+    const prefix = testPrefix || this.currentTestName || 'test';
+    const fullName = `${prefix}-${name}`;
+
+    DebugTestHelper.logger.screenshot(`Taking screenshot "${fullName}"`);
 
     const screenshot = element === 'screen'
       ? await VSBrowser.instance.driver.takeScreenshot()
       : await element.takeScreenshot();
 
-    await writeScreenshot(screenshot, name);
-    console.log(`Step: Screenshot "${name}" saved`);
+    await writeScreenshot(screenshot, fullName);
+    DebugTestHelper.logger.screenshot(`Screenshot "${fullName}" saved`);
     return this;
   }
 
@@ -621,11 +1016,78 @@ export class DebugTestHelper {
    * Execute a VS Code command
    */
   async executeCommand(command: string): Promise<this> {
-    console.log(`Step: Executing command "${command}"`);
+    DebugTestHelper.logger.step(`Executing command "${command}"`);
     await new Workbench().executeCommand(command);
     await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
-    console.log(`Step: Command "${command}" executed`);
+    DebugTestHelper.logger.step(`Command "${command}" executed`);
     return this;
+  }
+
+  // =============================================================================
+  // DEBUG STATE ACCESS METHODS
+  // =============================================================================
+
+  /**
+   * Get debug state information for error reporting
+   */
+  async getDebugStateInfo(): Promise<string[]> {
+    const stateInfo: string[] = [];
+
+    try {
+      if (this.debugView) {
+        stateInfo.push('Debug view is available');
+        const sections = await this.debugView.getContent().getSections();
+        const sectionTitles = await Promise.all(
+          sections.map(async (section) => {
+            try {
+              return await section.getTitle();
+            }
+            catch (e) {
+              return '[Title unavailable]';
+            }
+          }),
+        );
+        stateInfo.push(`Available debug sections: [${sectionTitles.join(', ')}]`);
+      }
+      else {
+        stateInfo.push('Debug view not available');
+      }
+
+      if (this.debugToolbar) {
+        stateInfo.push('Debug toolbar is available');
+      }
+      else {
+        stateInfo.push('Debug toolbar not available');
+      }
+
+      if (this.imageWatchSection) {
+        stateInfo.push('Image Watch section is available');
+        const isExpanded = await this.imageWatchSection.isExpanded();
+        stateInfo.push(`Image Watch section expanded: ${isExpanded}`);
+      }
+      else {
+        stateInfo.push('Image Watch section not available');
+      }
+
+      if (this.webviewTab) {
+        stateInfo.push('Webview tab is available');
+        try {
+          const title = await this.webviewTab.getTitle();
+          stateInfo.push(`Webview title: "${title}"`);
+        }
+        catch (e) {
+          stateInfo.push('Webview title unavailable');
+        }
+      }
+      else {
+        stateInfo.push('Webview tab not available');
+      }
+    }
+    catch (error) {
+      stateInfo.push(`Error getting debug state: ${error}`);
+    }
+
+    return stateInfo;
   }
 
   // =============================================================================
@@ -641,11 +1103,58 @@ export class DebugTestHelper {
   }
 
   /**
-   * Log a custom message
+   * Static logger object for structured test output with emoji prefixes
    */
-  log(message: string): this {
-    console.log(`Step: ${message}`);
-    return this;
+  static logger = {
+    testStart: (message: string) => {
+      console.log(`🚀 Test Start: ${message}`);
+    },
+    step: (message: string) => {
+      console.log(`🔹 Step: ${message}`);
+    },
+    error: (message: string) => {
+      console.error(`❌ Error: ${message}`);
+    },
+    info: (message: string) => {
+      console.info(`ℹ️ Info: ${message}`);
+    },
+    warn: (message: string) => {
+      console.warn(`⚠️ Warning: ${message}`);
+    },
+    success: (message: string) => {
+      console.log(`✅ Success: ${message}`);
+    },
+    debug: (message: string) => {
+      console.debug(`🐞 Debug: ${message}`);
+    },
+    screenshot: (message: string) => {
+      console.log(`📸 Screenshot: ${message}`);
+    },
+    variable: (message: string) => {
+      console.log(`🧬 Variable: ${message}`);
+    },
+    expression: (message: string) => {
+      console.log(`📝 Expression: ${message}`);
+    },
+    webview: (message: string) => {
+      console.log(`🌐 Webview: ${message}`);
+    },
+    validating: (message: string) => {
+      console.log(`🔍 Validating: ${message}`);
+    },
+    cleanup: (message: string) => {
+      console.log(`🧹 Cleanup: ${message}`);
+    },
+    custom: (emoji: string, message: string) => {
+      console.log(`${emoji} ${message}`);
+    },
+  };
+
+  /**
+   * Helper method for sleep
+   */
+  sleep(ms: number) {
+    return VSBrowser.instance.driver.sleep(ms);
   }
 
   // =============================================================================
@@ -657,11 +1166,11 @@ export class DebugTestHelper {
    */
   async ensureDebugViewOpen(): Promise<this> {
     if (!this.debugView || !await this.isViewValid(this.debugView)) {
-      console.log('Step: Debug view not valid, opening debug panel');
+      DebugTestHelper.logger.step('Debug view not valid, opening debug panel');
       await this.openDebugPanel();
     }
     else {
-      console.log('Step: Debug view already open and valid');
+      DebugTestHelper.logger.step('Debug view already open and valid');
     }
     return this;
   }
@@ -673,11 +1182,11 @@ export class DebugTestHelper {
     await this.ensureDebugViewOpen();
 
     if (!this.imageWatchSection || !await this.isSectionValid(this.imageWatchSection)) {
-      console.log('Step: Image Watch section not valid, expanding section');
+      DebugTestHelper.logger.step('Image Watch section not valid, expanding section');
       await this.expandImageWatchSection();
     }
     else {
-      console.log('Step: Image Watch section already expanded and valid');
+      DebugTestHelper.logger.step('Image Watch section already expanded and valid');
     }
     return this;
   }
@@ -687,17 +1196,17 @@ export class DebugTestHelper {
    */
   async ensureWebviewOpen(): Promise<this> {
     if (!this.webviewTab || !await this.isWebviewValid()) {
-      console.log('Step: Webview not valid, finding/opening webview');
+      DebugTestHelper.logger.step('Webview not valid, finding/opening webview');
       try {
         await this.findImageWebview();
       }
       catch (error) {
-        console.log('Step: Webview not found, waiting for it to open');
+        DebugTestHelper.logger.step('Webview not found, waiting for it to open');
         await this.waitForImageWebview();
       }
     }
     else {
-      console.log('Step: Webview already open and valid');
+      DebugTestHelper.logger.step('Webview already open and valid');
     }
     return this;
   }
@@ -755,7 +1264,7 @@ export class DebugTestHelper {
   async setupEditorForDebug(options: SetupEditorOptions): Promise<this> {
     const { fileName, debugConfig = 'Python: Current File', openFile = true } = options;
 
-    console.log(`Step: Setting up editor for debug - ${fileName}`);
+    DebugTestHelper.logger.step(`Setting up editor for debug - ${fileName}`);
 
     // Open file if requested
     if (openFile) {
@@ -765,10 +1274,10 @@ export class DebugTestHelper {
       await this.openEditor(basename(fileName));
     }
     catch (error) {
-      console.warn(`Warning: Could not open editor for ${fileName}: ${error}`);
+      DebugTestHelper.logger.warn(`Could not open editor for ${fileName}: ${error}`);
       const editorView = new EditorView();
       const openedEditors = await editorView.getOpenEditorTitles();
-      console.log(`Opened editors: ${openedEditors.join(', ')}`);
+      DebugTestHelper.logger.info(`Opened editors: ${openedEditors.join(', ')}`);
       throw error;
     }
 
@@ -776,7 +1285,7 @@ export class DebugTestHelper {
     await this.ensureDebugViewOpen();
     await this.selectLaunchConfiguration(debugConfig);
 
-    console.log(`Step: Editor setup completed for ${fileName}`);
+    DebugTestHelper.logger.step(`Editor setup completed for ${fileName}`);
     return this;
   }
 
@@ -784,9 +1293,9 @@ export class DebugTestHelper {
    * High-level method to get webview, ensuring it's open
    */
   async getWebview(options: WebviewOptions = {}): Promise<this> {
-    const { autoOpen = true, timeout = this.options.timeout } = options;
+    const { autoOpen = true } = options;
 
-    console.log('Step: Getting webview');
+    DebugTestHelper.logger.step('Getting webview');
 
     if (autoOpen) {
       await this.ensureWebviewOpen();
@@ -797,26 +1306,56 @@ export class DebugTestHelper {
       }
     }
 
-    console.log('Step: Webview is ready');
+    DebugTestHelper.logger.step('Webview is ready');
     return this;
   }
 
   async getWebviewEditor() {
+    DebugTestHelper.logger.step('Getting Image View webview editor');
+
     const editorView = new EditorView();
     let webviewEditor: Editor | undefined;
-    for (const group of await editorView.getEditorGroups()) {
+    const groups = await editorView.getEditorGroups();
+
+    DebugTestHelper.logger.info(`Searching for Image View editor across ${groups.length} editor groups`);
+
+    // Search through all editor groups for Image View
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i];
       const titles = await group.getOpenEditorTitles();
+      DebugTestHelper.logger.info(`Group ${i} editors: [${titles.join(', ')}]`);
+
       if (titles.includes('Image View')) {
+        DebugTestHelper.logger.success(`Found 'Image View' in group ${i}, attempting to open...`);
         webviewEditor = await group.openEditor('Image View');
         if (webviewEditor) {
+          DebugTestHelper.logger.success('Successfully opened Image View editor');
           break;
         }
+        DebugTestHelper.logger.warn('Failed to open Image View editor in this group');
       }
     }
+
     if (!webviewEditor) {
-      console.error('Image View editor is not open');
-      throw new Error('Image View editor is not open');
+      DebugTestHelper.logger.error('Image View editor is not open. Logging current state...');
+
+      // Log all available editors
+      const allEditors: string[] = [];
+      for (let i = 0; i < groups.length; i++) {
+        const groupTitles = await groups[i].getOpenEditorTitles();
+        allEditors.push(...groupTitles.map(title => `Group${i}:${title}`));
+      }
+      DebugTestHelper.logger.info(`All available editors: [${allEditors.join(', ')}]`);
+
+      await this.takeScreenshot({
+        name: 'webview-editor-not-found',
+        element: 'screen',
+      });
+
+      throw new Error(`Image View editor is not open. Available editors: [${allEditors.join(', ')}]`);
     }
+
+    DebugTestHelper.logger.success('Image View webview editor obtained successfully');
     return webviewEditor;
   }
 
@@ -824,14 +1363,14 @@ export class DebugTestHelper {
    * High-level method to start a complete debug session
    */
   async startCompleteDebugSession(options: SetupEditorOptions): Promise<this> {
-    console.log('Step: Starting complete debug session');
+    DebugTestHelper.logger.step('Starting complete debug session');
 
     await this.setupEditorForDebug(options);
     await this.startDebugging();
     await this.waitForBreakpoint();
     await this.ensureImageWatchSectionExpanded();
 
-    console.log('Step: Complete debug session started');
+    DebugTestHelper.logger.step('Complete debug session started');
     return this;
   }
 
@@ -839,7 +1378,7 @@ export class DebugTestHelper {
    * Clean up resources - enhanced to close all editors and reset VS Code state
    */
   async cleanup(): Promise<void> {
-    console.log('Step: Starting comprehensive cleanup of DebugTestHelper resources');
+    DebugTestHelper.logger.cleanup('Starting comprehensive cleanup of DebugTestHelper resources');
 
     // Stop debugging if still active
     if (this.debugToolbar) {
@@ -847,42 +1386,27 @@ export class DebugTestHelper {
         await this.stopDebugging();
       }
       catch (error) {
-        console.warn('Error stopping debugger during cleanup:', error);
+        DebugTestHelper.logger.warn(`Error stopping debugger during cleanup: ${error}`);
       }
     }
 
     // Close all editors
     try {
-      console.log('Step: Closing all editors');
+      DebugTestHelper.logger.cleanup('Closing all editors');
       const editorView = new EditorView();
       await editorView.closeAllEditors();
     }
     catch (error) {
-      console.warn('Error closing editors during cleanup:', error);
+      DebugTestHelper.logger.warn(`Error closing editors during cleanup: ${error}`);
     }
 
     // Try to close any open dialogs or input boxes
-    try {
-      console.log('Step: Dismissing any open dialogs');
-      // Close any open command palette or dialogs using commands
-      await new Workbench().executeCommand('workbench.action.closeQuickOpen');
-    }
-    catch (error) {
-      console.warn('Error dismissing dialogs during cleanup:', error);
-    }
+    DebugTestHelper.logger.cleanup('Dismissing any open dialogs');
+    await new Workbench().executeCommand('workbench.action.closeQuickOpen');
 
     // Reset the workbench to a clean state
-    try {
-      console.log('Step: Resetting workbench state');
-      // Close any open command palette
-      await new Workbench().executeCommand('workbench.action.closeQuickOpen');
-
-      // Reset the perspective to default if possible
-      await new Workbench().executeCommand('workbench.action.resetViewLocations');
-    }
-    catch (error) {
-      console.warn('Error resetting workbench during cleanup:', error);
-    }
+    DebugTestHelper.logger.cleanup('Resetting workbench state');
+    await new Workbench().executeCommand('workbench.action.resetViewLocations');
 
     // Wait a bit for everything to settle
     await VSBrowser.instance.driver.sleep(1000);
@@ -893,11 +1417,8 @@ export class DebugTestHelper {
     this.imageWatchSection = null;
     this.currentEditor = null;
     this.webviewTab = null;
+    this.currentTestName = 'unknown-test';
 
-    console.log('Step: Comprehensive DebugTestHelper cleanup completed');
-  }
-
-  sleep(ms: number) {
-    return VSBrowser.instance.driver.sleep(ms);
+    DebugTestHelper.logger.cleanup('Comprehensive DebugTestHelper cleanup completed');
   }
 }

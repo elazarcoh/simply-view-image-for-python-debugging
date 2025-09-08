@@ -6,6 +6,7 @@ import type { DebugView, EditorTab, ViewSection } from 'vscode-extension-tester'
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ActivityBar, EditorView, InputBox, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
+import { DebugTestHelper } from './DebugTestHelper';
 
 /**
  * Ensures the Simply View Image for Python Debugging extension is activated.
@@ -18,7 +19,7 @@ export async function ensureExtensionActivated(timeout: number = 30000): Promise
   const extensionId = 'elazarcoh.simply-view-image-for-python-debugging';
 
   try {
-    console.log(`Ensuring extension '${extensionId}' is activated...`);
+    DebugTestHelper.logger.step(`Ensuring extension '${extensionId}' is activated...`);
 
     // Wait for the extension to be loaded and activated by checking for its commands
     await VSBrowser.instance.driver.wait(async () => {
@@ -36,11 +37,11 @@ export async function ensureExtensionActivated(timeout: number = 30000): Promise
         // Press Escape to close command palette
         await VSBrowser.instance.driver.actions().sendKeys('\uE00C').perform();
 
-        console.log('✓ Extension commands are available - extension is activated');
+        DebugTestHelper.logger.success('Extension commands are available - extension is activated');
         return true;
       }
       catch (error) {
-        console.log('Extension commands not yet available, retrying...', error);
+        DebugTestHelper.logger.info(`Extension commands not yet available, retrying... ${error}`);
         return false;
       }
     }, timeout);
@@ -49,19 +50,20 @@ export async function ensureExtensionActivated(timeout: number = 30000): Promise
     try {
       const workbench = new Workbench();
       await workbench.executeCommand('svifpd.refresh-variables');
-      console.log('✓ Extension command executed successfully - extension is fully activated');
+      DebugTestHelper.logger.success('Extension command executed successfully - extension is fully activated');
     }
     catch (cmdError) {
       // This is acceptable - the command might not be available outside debug context
-      console.log('Note: Some extension commands require debug context (this is normal)');
+      DebugTestHelper.logger.info('Note: Some extension commands require debug context (this is normal)');
     }
 
-    console.log('✓ Extension activation verification completed');
+    DebugTestHelper.logger.success('✓ Extension activation verification completed');
+    DebugTestHelper.logger.success('Extension activation verification completed');
   }
   catch (error) {
-    console.warn('Extension activation verification encountered issues:', error);
+    DebugTestHelper.logger.warn(`Extension activation verification encountered issues: ${error}`);
     // Don't throw - allow tests to proceed as extension might still be functional
-    console.log('Proceeding with tests - extension may still be functional');
+    DebugTestHelper.logger.info('Proceeding with tests - extension may still be functional');
   }
 }
 
@@ -73,7 +75,7 @@ export async function ensureExtensionActivated(timeout: number = 30000): Promise
  * @returns Promise<void>
  */
 export async function waitForVSCodeReady(timeout: number = 30000): Promise<void> {
-  console.log('Waiting for VS Code to be ready...');
+  DebugTestHelper.logger.step('Waiting for VS Code to be ready...');
 
   await VSBrowser.instance.driver.wait(async () => {
     try {
@@ -86,7 +88,8 @@ export async function waitForVSCodeReady(timeout: number = 30000): Promise<void>
     }
   }, timeout);
 
-  console.log('✓ VS Code is ready for testing');
+  DebugTestHelper.logger.success('✓ VS Code is ready for testing');
+  DebugTestHelper.logger.success('VS Code is ready for testing');
 }
 
 /**
@@ -100,12 +103,12 @@ export async function setupTestEnvironment(timeout: number = 60000): Promise<voi
   try {
     await waitForVSCodeReady(timeout / 2);
     await ensureExtensionActivated(timeout / 2);
-    console.log('✓ Test environment setup completed successfully');
+    DebugTestHelper.logger.success('Test environment setup completed successfully');
   }
   catch (error) {
-    console.warn('Test environment setup encountered issues:', error);
+    DebugTestHelper.logger.warn(`Test environment setup encountered issues: ${error}`);
     // Allow tests to continue - they may still pass
-    console.log('Continuing with tests despite setup issues...');
+    DebugTestHelper.logger.info('Continuing with tests despite setup issues...');
   }
 }
 
@@ -113,12 +116,11 @@ export async function setupTestEnvironment(timeout: number = 60000): Promise<voi
  * Ensures the Image Watch section is available and expanded in the Debug view.
  * This function navigates to the Debug view, finds the Image Watch panel, and expands it.
  *
- * @param timeout - Timeout in milliseconds (default: 30000)
  * @returns Promise<ViewSection | null> - Returns the Image Watch section object or null if not found
  */
-export async function ensureImageWatchSectionExpanded(timeout: number = 30000): Promise<ViewSection | null> {
+export async function ensureImageWatchSectionExpanded(): Promise<ViewSection | null> {
   try {
-    console.log('Ensuring Image Watch section is expanded...');
+    DebugTestHelper.logger.step('Ensuring Image Watch section is expanded...');
 
     // Open the debug panel
     const btn = await new ActivityBar().getViewControl('Run');
@@ -135,19 +137,20 @@ export async function ensureImageWatchSectionExpanded(timeout: number = 30000): 
       await VSBrowser.instance.driver.sleep(1000);
       const isExpanded = await imageWatchSection.isExpanded();
       if (!isExpanded) {
-        console.warn('Failed to expand Image Watch section');
+        DebugTestHelper.logger.warn('Failed to expand Image Watch section');
         return null;
       }
-      console.log('✓ Image Watch section is expanded and ready');
+      DebugTestHelper.logger.success('✓ Image Watch section is expanded and ready');
+      DebugTestHelper.logger.success('Image Watch section is expanded and ready');
       return imageWatchSection;
     }
     catch (error) {
-      console.warn('Error expanding Image Watch section:', error);
+      DebugTestHelper.logger.warn(`Error expanding Image Watch section: ${error}`);
       return null;
     }
   }
   catch (error) {
-    console.warn('Failed to ensure Image Watch section is expanded:', error);
+    DebugTestHelper.logger.warn(`Failed to ensure Image Watch section is expanded: ${error}`);
     return null;
   }
 }
@@ -156,18 +159,17 @@ export async function ensureImageWatchSectionExpanded(timeout: number = 30000): 
  * Opens the Image View webview by clicking the browser icon in the Image Watch view.
  * Uses the ensureImageWatchSectionExpanded function to get the section first.
  *
- * @param timeout - Timeout in milliseconds (default: 30000)
  * @returns Promise<boolean> - Returns true if webview was successfully opened
  */
-export async function openImageWebview(timeout: number = 30000): Promise<boolean> {
+export async function openImageWebview(): Promise<boolean> {
   try {
-    console.log('Opening Image View webview via UI...');
+    DebugTestHelper.logger.step('Opening Image View webview via UI...');
 
     // Ensure the Image Watch section is expanded and get the section object
-    const imageWatchSection = await ensureImageWatchSectionExpanded(timeout);
+    const imageWatchSection = await ensureImageWatchSectionExpanded();
 
     if (!imageWatchSection) {
-      console.warn('Could not get Image Watch section');
+      DebugTestHelper.logger.warn('Could not get Image Watch section');
       return false;
     }
 
@@ -176,22 +178,23 @@ export async function openImageWebview(timeout: number = 30000): Promise<boolean
     try {
       const openWebviewAction = await imageWatchSection.getAction('Open Image Webview');
       if (openWebviewAction) {
-        console.log('Found "Open Image Webview" action button, clicking...');
+        DebugTestHelper.logger.step('Found "Open Image Webview" action button, clicking...');
         await openWebviewAction.click();
         await VSBrowser.instance.driver.sleep(3000); // Wait for webview to load
-        console.log('✓ Image View webview opened successfully via action button');
+        DebugTestHelper.logger.success('Image View webview opened successfully via action button');
         return true;
       }
     }
     catch (actionError) {
-      console.log('Could not find "Open Image Webview" action button:', actionError);
+      DebugTestHelper.logger.info(`Could not find "Open Image Webview" action button: ${actionError}`);
     }
 
     console.warn('Failed to open webview via Image Watch section actions');
+    DebugTestHelper.logger.warn('Failed to open webview via Image Watch section actions');
     return false;
   }
   catch (error) {
-    console.warn('Failed to open webview via UI:', error);
+    DebugTestHelper.logger.warn(`Failed to open webview via UI: ${error}`);
     return false;
   }
 }
@@ -212,8 +215,6 @@ export async function getOpenedImageWebview(groupIndex?: number): Promise<Editor
     // Get open editor titles for the specified group or all groups
     const openTitles = await Promise.all(openedTabs.map(async tab => tab.getTitle()));
 
-    console.log('Currently open editor titles:', openTitles);
-
     // Check for webview-related titles
     const webviewTitles = [
       'Image View',
@@ -228,15 +229,16 @@ export async function getOpenedImageWebview(groupIndex?: number): Promise<Editor
     const hasWebview = index !== -1;
 
     if (hasWebview) {
-      console.log('✓ Image View webview is open');
+      DebugTestHelper.logger.success('Image View webview is open');
       return openedTabs[index];
     }
 
-    console.log('Image View webview is not currently open');
+    DebugTestHelper.logger.info('Image View webview is not currently open');
+    DebugTestHelper.logger.info('Image View webview is not currently open');
     return null;
   }
   catch (error) {
-    console.warn('Error checking if webview is open:', error);
+    DebugTestHelper.logger.warn(`Error checking if webview is open: ${error}`);
     return null;
   }
 }
@@ -251,17 +253,18 @@ export async function getOpenedImageWebview(groupIndex?: number): Promise<Editor
  */
 export async function waitForImageWebviewToOpen(timeout: number = 10000, groupIndex?: number): Promise<EditorTab | null> {
   try {
-    console.log('Waiting for Image View webview to open...');
+    DebugTestHelper.logger.step('Waiting for Image View webview to open...');
 
     const isOpen = await VSBrowser.instance.driver.wait(async () => {
       return await getOpenedImageWebview(groupIndex);
     }, timeout, 'Image View webview did not open in time', 1000);
 
-    console.log('✓ Image View webview opened successfully');
+    DebugTestHelper.logger.success('✓ Image View webview opened successfully');
+    DebugTestHelper.logger.success('Image View webview opened successfully');
     return isOpen;
   }
   catch (error) {
-    console.warn('Timeout waiting for webview to open:', error);
+    DebugTestHelper.logger.warn(`Timeout waiting for webview to open: ${error}`);
     return null;
   }
 }
@@ -296,4 +299,78 @@ export async function writeScreenshot(data: string, name: string) {
   const dir = VSBrowser.instance.getScreenshotsDir();
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, `${name}.png`), data, 'base64');
+}
+
+/**
+ * Enhanced screenshot utility that adds test-specific prefixes
+ * @param data - Screenshot data in base64 format
+ * @param name - Screenshot name
+ * @param testPrefix - Optional test prefix (e.g., 'ext-basic', 'mvp-high-level', 'expr-test')
+ */
+export async function takeScreenshot(data: string, name: string, testPrefix?: string) {
+  const finalName = testPrefix ? `${testPrefix}-${name}` : name;
+  await writeScreenshot(data, finalName);
+}
+
+/**
+ * Enhanced error handler that captures screenshots and debug information
+ * @param error - The error that occurred
+ * @param context - Additional context about where the error occurred
+ * @param stepName - The current test step name for better debugging
+ */
+export async function handleTestError(error: any, context: string, stepName?: string) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const baseScreenshotName = `error-${context}${stepName ? `-step-${stepName}` : ''}-${timestamp}`;
+
+  DebugTestHelper.logger.error(`Test error in ${context}${stepName ? ` at step "${stepName}"` : ''}: ${error}`);
+
+  try {
+  // Take a screenshot of the current state
+    const screenshot = await VSBrowser.instance.driver.takeScreenshot();
+    await writeScreenshot(screenshot, baseScreenshotName);
+    DebugTestHelper.logger.screenshot(`Error screenshot saved: ${baseScreenshotName}.png`);
+
+    // Try to capture additional debug information
+    try {
+      const editorView = new EditorView();
+      const groups = await editorView.getEditorGroups();
+      const allEditors: string[] = [];
+
+      for (let i = 0; i < groups.length; i++) {
+        const groupTitles = await groups[i].getOpenEditorTitles();
+        allEditors.push(...groupTitles.map(title => `Group${i}:${title}`));
+      }
+
+      // Try to get debug view information if available
+      try {
+        const activityBar = new ActivityBar();
+        const debugBtn = await activityBar.getViewControl('Run');
+        if (debugBtn) {
+          const debugView = await debugBtn.openView() as DebugView;
+          const sections = await debugView.getContent().getSections();
+          const sectionTitles = await Promise.all(
+            sections.map(async (section) => {
+              try {
+                return await section.getTitle();
+              }
+              catch (e) {
+                return '[Title unavailable]';
+              }
+            }),
+          );
+          DebugTestHelper.logger.info(`📝 Debug sections when error occurred: [${sectionTitles.join(', ')}]`);
+          DebugTestHelper.logger.info(`Debug sections when error occurred: [${sectionTitles.join(', ')}]`);
+        }
+      }
+      catch (debugInfoError) {
+        DebugTestHelper.logger.info(`Could not get debug view information: ${debugInfoError}`);
+      }
+    }
+    catch (infoError) {
+      DebugTestHelper.logger.info(`Could not gather additional debug information: ${infoError}`);
+    }
+  }
+  catch (screenshotError) {
+    DebugTestHelper.logger.error(`Failed to take error screenshot: ${screenshotError}`);
+  }
 }

@@ -18,7 +18,7 @@ type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
 const PNG_COLOR_TYPE: Record<number, { channels: 1 | 2 | 3 | 4 }> = {
   0: { channels: 1 }, // Grayscale
   2: { channels: 3 }, // RGB
-  3: { channels: 3 }, // Indexed-color: Jimp expands palette to RGB(A)
+  3: { channels: 4 }, // Indexed-color: placeholder, actual value calculated dynamically
   4: { channels: 2 }, // Grayscale + Alpha
   6: { channels: 4 }, // RGBA
 };
@@ -41,8 +41,9 @@ async function getByFileType(
     let channels: 1 | 2 | 3 | 4 | undefined;
     if (colorType === 3) {
       // Indexed-color: use Jimp's expanded channel count
-      const jimpChannels = image.bitmap.data.length
-        / (image.bitmap.width * image.bitmap.height);
+      const jimpChannels = Math.floor(
+        image.bitmap.data.length / (image.bitmap.width * image.bitmap.height),
+      );
       if (jimpChannels === 3 || jimpChannels === 4) {
         channels = jimpChannels as 3 | 4;
       }

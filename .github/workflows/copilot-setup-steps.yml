@@ -1,9 +1,13 @@
-name: Build with Copilot Agent
+name: Copilot Setup Steps
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
 
 jobs:
   copilot-setup-steps:

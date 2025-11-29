@@ -60,7 +60,13 @@ export function createDebugAdapterTracker(vscodeDebugSession: vscode.DebugSessio
   );
 
   const runSetupIfNotRunning = _.debounce(
-    _.partial(runSetup, debugSession(vscodeDebugSession)),
+    async () => {
+      if (getConfiguration('autoRunSetupOnDebugStart') === false) {
+        logDebug('Auto run setup on debug start is disabled. Skipping setup.');
+        return false;
+      }
+      return runSetup(debugSession(vscodeDebugSession));
+    },
     1000,
     {
       leading: true,

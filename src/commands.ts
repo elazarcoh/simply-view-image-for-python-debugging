@@ -1,5 +1,6 @@
 import Container from 'typedi';
 import * as vscode from 'vscode';
+import { EXTENSION_CONFIG_SECTION } from './config';
 import {
   addExpressionTreeItem,
   editExpressionTreeItem,
@@ -54,6 +55,20 @@ async function updateDiagnostics(): Promise<void> {
   await debugSessionData?.diagnostics.update();
 }
 
+async function enableAutoRunSetup(): Promise<void> {
+  await vscode.workspace.getConfiguration(EXTENSION_CONFIG_SECTION).update(
+    'autoRunSetupOnDebugStart',
+    true,
+  );
+}
+
+async function disableAutoRunSetup(): Promise<void> {
+  await vscode.workspace.getConfiguration(EXTENSION_CONFIG_SECTION).update(
+    'autoRunSetupOnDebugStart',
+    false,
+  );
+}
+
 // *********************************
 // VSCode extension commands helpers
 // *********************************
@@ -82,6 +97,8 @@ const COMMANDS = {
   'svifpd.disable-plugin': disablePluginCommand,
   'svifpd.update-diagnostics': updateDiagnostics,
   'svifpd.open-file-image': openFileImage,
+  'svifpd.auto-run-setup-enable': enableAutoRunSetup,
+  'svifpd.auto-run-setup-disable': disableAutoRunSetup,
   [JUPYTER_VIEW_COMMAND]: viewVariableFromJupyterDebugView,
 };
 type Commands = typeof COMMANDS;
@@ -135,6 +152,8 @@ export function registerExtensionCommands(
     _registerCommandByName('svifpd.disable-plugin'),
     _registerCommandByName('svifpd.update-diagnostics'),
     _registerCommandByName('svifpd.open-file-image'),
+    _registerCommandByName('svifpd.auto-run-setup-enable'),
+    _registerCommandByName('svifpd.auto-run-setup-disable'),
     _registerCommandByName(JUPYTER_VIEW_COMMAND),
   ];
 }

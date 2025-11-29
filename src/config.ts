@@ -123,6 +123,12 @@ export interface Config {
    * @enum [ true, false, "pinned" ]
    */
   'autoUpdateImages': true | false | 'pinned';
+
+  /**
+   * @default true
+   * @description Automatically run the extension setup (register python helpers) when a debug session starts. When disabled, use the 'Run Setup' command to manually register.
+   */
+  'autoRunSetupOnDebugStart': boolean;
 }
 
 export const EXTENSION_CONFIG_SECTION = 'svifpd';

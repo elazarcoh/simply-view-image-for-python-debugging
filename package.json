@@ -167,6 +167,16 @@
         "command": "svifpd.open-file-image",
         "title": "Extended Preview",
         "icon": "$(svifpd-inspect-image)"
+      },
+      {
+        "command": "svifpd.auto-run-setup-enable",
+        "title": "Auto Run Setup - Enable",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "svifpd.auto-run-setup-disable",
+        "title": "Auto Run Setup - Disable",
+        "icon": "$(debug-pause)"
       }
     ],
     "menus": {
@@ -226,6 +236,14 @@
         {
           "command": "svifpd.update-diagnostics",
           "when": "false"
+        },
+        {
+          "command": "svifpd.auto-run-setup-enable",
+          "when": "false"
+        },
+        {
+          "command": "svifpd.auto-run-setup-disable",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -233,6 +251,16 @@
           "command": "svifpd.watch-refresh",
           "when": "view == pythonDebugImageWatch",
           "group": "navigation@10"
+        },
+        {
+          "command": "svifpd.auto-run-setup-disable",
+          "when": "view == pythonDebugImageWatch && config.svifpd.autoRunSetupOnDebugStart",
+          "group": "navigation@15"
+        },
+        {
+          "command": "svifpd.auto-run-setup-enable",
+          "when": "view == pythonDebugImageWatch && !config.svifpd.autoRunSetupOnDebugStart",
+          "group": "navigation@15"
         },
         {
           "command": "svifpd.remove-all-expressions",
@@ -342,6 +370,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to allow plugins to register their own viewables."
+        },
+        "svifpd.autoRunSetupOnDebugStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run the extension setup (register python helpers) when a debug session starts. When disabled, use the 'Run Setup' command to manually register."
         },
         "svifpd.autoUpdateImages": {
           "type": [

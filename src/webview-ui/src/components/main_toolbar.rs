@@ -13,7 +13,8 @@ use crate::{
     coloring::Coloring,
     colormap::ColorMapKind,
     common::{AppMode, Image, ViewId},
-    components::{checkbox::Checkbox, display_options::DisplayOption},
+    components::{checkbox::Checkbox, display_options::DisplayOption, icon_button::IconButton},
+    vscode::vscode_requests::VSCodeRequests,
 };
 
 #[derive(PartialEq, Properties)]
@@ -165,6 +166,11 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             flex-direction: row;
             gap: 10px;
 
+            .disabled {
+                opacity: 0.5;
+                pointer-events: none;
+            }
+
             .help {
                 margin-left: auto;
             }
@@ -209,6 +215,29 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         ));
     });
 
+    // Get image info for save button
+    let current_image_info = use_selector_with_deps(
+        |state: &AppState, cv| {
+            cv.as_ref()
+                .as_ref()
+                .and_then(|cv| state.images.borrow().get(cv.id()).cloned())
+        },
+        cv.clone(),
+    );
+
+    let current_image_info_for_save = current_image_info.clone();
+    let on_save_click = Callback::from(move |_: MouseEvent| {
+        if let Some(ref image) = *current_image_info_for_save {
+            let minimal = image.minimal();
+            VSCodeRequests::save_image(
+                minimal.image_id.clone(),
+                minimal.expression.clone(),
+            );
+        }
+    });
+
+    let has_image = current_image_info.is_some();
+
     html! {
         <div class={style}>
 
@@ -229,6 +258,13 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             </Checkbox>
             <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
             <HeatmapColormapDropdown disabled={drawing_options.coloring != Coloring::Heatmap} />
+            <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
+            <IconButton
+                icon="codicon codicon-save"
+                onclick={Some(on_save_click)}
+                title={Some(AttrValue::from("Save Image"))}
+                class={classes!(if !has_image { "disabled" } else { "" })}
+            />
             <div class={classes!("codicon", "codicon-question", "help")} >
                 <span class={classes!("tooltiptext")}>
                     <p>{"Click + Drag to pan"}</p>

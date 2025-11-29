@@ -12,6 +12,7 @@ import * as path from 'node:path';
 import Container from 'typedi';
 import * as vscode from 'vscode';
 import { ExtensionPersistentState } from '../../ExtensionPersistentState';
+import { serializePythonObjectToDisk } from '../../from-python-serialization/DiskSerialization';
 import { serializeImageUsingSocketServer } from '../../from-python-serialization/SocketSerialization';
 import {
   addExpression,
@@ -27,7 +28,6 @@ import { Option } from '../../utils/Option';
 import { errorMessage } from '../../utils/Result';
 import { disposeAll } from '../../utils/VSCodeUtils';
 import { WebviewRequests, WebviewResponses } from './createMessages';
-import { saveImageToFile } from './saveImage';
 
 export class WebviewMessageHandler implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
@@ -208,21 +208,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
       return;
     }
 
-    const response = await serializeImageUsingSocketServer(
-      objectItemKind === 'variable'
-        ? { variable: expression }
-        : { expression },
-      objectViewables.safeUnwrap()[0],
-      session,
-    );
-
-    if (response.err) {
-      logError('Error retrieving image for save', errorMessage(response));
-      vscode.window.showErrorMessage('Failed to retrieve image data');
-      return;
-    }
-
-    const imageMessage = response.safeUnwrap();
+    const viewable = objectViewables.safeUnwrap()[0];
 
     // Get last save directory from persistent state
     const persistentState = Container.get(ExtensionPersistentState);
@@ -233,7 +219,7 @@ export class WebviewMessageHandler implements vscode.Disposable {
 
     // Sanitize the expression to create a valid filename
     const sanitizedName = expression.replace(/[<>:"/\\|?*]/g, '_');
-    const defaultFilename = `${sanitizedName}.png`;
+    const defaultFilename = `${sanitizedName}${viewable.suffix}`;
     const defaultPath = path.join(lastSaveDir, defaultFilename);
 
     // Show save dialog
@@ -251,18 +237,26 @@ export class WebviewMessageHandler implements vscode.Disposable {
     const saveDir = path.dirname(saveUri.fsPath);
     await persistentState.workspace.update('lastSaveImageDir', saveDir);
 
-    // Save the image
-    try {
-      await saveImageToFile(imageMessage, saveUri.fsPath);
-      logDebug(`Image saved to ${saveUri.fsPath}`);
-      const filename = path.basename(saveUri.fsPath);
+    // Remove file extension from path as serializePythonObjectToDisk adds the suffix
+    const savePathWithoutExtension = saveUri.fsPath.replace(/\.[^/.]+$/, '');
+
+    // Save the image using Python serialization
+    const pythonObject
+      = objectItemKind === 'variable'
+        ? { variable: expression }
+        : { expression };
+
+    const savedPath = await serializePythonObjectToDisk(
+      pythonObject,
+      viewable,
+      session,
+      savePathWithoutExtension,
+    );
+
+    if (savedPath !== undefined) {
+      logDebug(`Image saved to ${savedPath}`);
+      const filename = path.basename(savedPath);
       vscode.window.showInformationMessage(`Image saved: ${filename}`);
-    }
-    catch (error) {
-      logError('Error saving image', error);
-      vscode.window.showErrorMessage(
-        `Failed to save image: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
   }
 

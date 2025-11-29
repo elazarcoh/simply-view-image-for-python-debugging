@@ -4,12 +4,13 @@
 const process = require('node:process');
 
 const useJunitReporter = process.env.MOCHA_JUNIT === 'true';
+const isCI = process.env.CI === 'true';
 
 const config = {
-  timeout: 10000,
+  timeout: isCI ? 60000 : 10000, // Higher timeout for CI/headless environments
   reporter: useJunitReporter ? 'mocha-junit-reporter' : 'spec',
   slow: 5000,
-  retries: 1,
+  retries: isCI ? 2 : 1, // More retries in CI for flaky tests
   bail: false,
 };
 

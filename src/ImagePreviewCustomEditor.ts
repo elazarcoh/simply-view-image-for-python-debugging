@@ -12,12 +12,15 @@ import { ImageViewPanel } from './webview/panels/ImageViewPanel';
 
 type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
 
+// PNG color types and their native channel counts (before Jimp expansion)
+// Note: Color type 3 (indexed/paletted) stores palette indices, but Jimp
+// expands it to RGB(A), so we handle it separately below.
 const PNG_COLOR_TYPE: Record<number, { channels: 1 | 2 | 3 | 4 }> = {
-  0: { channels: 1 },
-  2: { channels: 3 },
-  3: { channels: 1 },
-  4: { channels: 2 },
-  6: { channels: 4 },
+  0: { channels: 1 }, // Grayscale
+  2: { channels: 3 }, // RGB
+  3: { channels: 3 }, // Indexed-color: Jimp expands palette to RGB(A)
+  4: { channels: 2 }, // Grayscale + Alpha
+  6: { channels: 4 }, // RGBA
 };
 
 async function getByFileType(
@@ -31,8 +34,27 @@ async function getByFileType(
     const colorType = tags['Color Type']?.value as
       | keyof typeof PNG_COLOR_TYPE
       | undefined;
-    const channels
-      = colorType !== undefined ? PNG_COLOR_TYPE[colorType].channels : undefined;
+
+    // For indexed-color (paletted) PNG (color type 3), Jimp expands the
+    // palette to RGB or RGBA. We use the actual channel count from Jimp's
+    // bitmap data to get the correct expanded representation.
+    let channels: 1 | 2 | 3 | 4 | undefined;
+    if (colorType === 3) {
+      // Indexed-color: use Jimp's expanded channel count
+      const jimpChannels = image.bitmap.data.length
+        / (image.bitmap.width * image.bitmap.height);
+      if (jimpChannels === 3 || jimpChannels === 4) {
+        channels = jimpChannels as 3 | 4;
+      }
+      else {
+        throw new Error(
+          `Unexpected channel count for indexed-color PNG: ${jimpChannels}`,
+        );
+      }
+    }
+    else if (colorType !== undefined) {
+      channels = PNG_COLOR_TYPE[colorType].channels;
+    }
 
     if (width === undefined || height === undefined || channels === undefined) {
       throw new Error('Missing image dimensions or channels');

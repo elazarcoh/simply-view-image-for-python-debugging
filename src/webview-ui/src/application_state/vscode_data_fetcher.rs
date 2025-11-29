@@ -178,7 +178,7 @@ impl ImagesFetcher {
 impl Listener for ImagesFetcher {
     type Store = AppState;
 
-    fn on_change(&mut self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
+    fn on_change(&self, _cx: &yewdux::Context, state: Rc<Self::Store>) {
         // Check if auto-update is enabled and should fetch for current images
         let should_auto_fetch = match &state.configuration.auto_update_images {
             AutoUpdateImages::True => true,

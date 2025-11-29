@@ -512,6 +512,8 @@
     }
   },
   "scripts": {
+    "webview:install": "cd src/webview-ui && cargo fetch",
+    "postinstall": "yarn run webview:install",
     "update-package-json": "update-package-json",
     "build:prod": "webpack --mode production --config webpack.config.prod.mjs",
     "build:webview": "webpack --mode development  --config webpack.webview.config.mjs",

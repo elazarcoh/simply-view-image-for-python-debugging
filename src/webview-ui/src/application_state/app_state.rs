@@ -87,7 +87,7 @@ impl Default for AppState {
 
 impl Store for AppState {
     fn new(cx: &yewdux::Context) -> Self {
-        init_listener(ImagesFetcher::default(), cx);
+        init_listener(ImagesFetcher::default, cx);
         Default::default()
     }
 

@@ -208,8 +208,8 @@ pub(crate) fn calculate_color_matrix(
     let (reorder, reorder_add) = match drawing_options.coloring {
         | Coloring::Default
         // Heatmap and Segmentation coloring using the default coloring
-        | Coloring::Segmentation { .. }
-        | Coloring::Heatmap{..} 
+        | Coloring::Segmentation
+        | Coloring::Heatmap 
          => {
             match datatype {
                 | Datatype::Uint8
@@ -304,7 +304,7 @@ pub(crate) fn calculate_color_matrix(
     let modify_value_mult = IDENTITY;
     let modify_value_add = ADD_ZERO;
 
-    let heatmap: bool = matches!(drawing_options.coloring, Coloring::Heatmap{..});
+    let heatmap: bool = matches!(drawing_options.coloring, Coloring::Heatmap);
     let (modify_value_mult, modify_value_add) = if drawing_options.high_contrast || heatmap  {
         stretch_values_matrix(image_info, image_computed_info, &drawing_options.clip)
     } else {

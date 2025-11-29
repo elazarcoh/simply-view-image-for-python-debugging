@@ -1,0 +1,46 @@
+name: Build with Copilot Agent
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build project
+        run: yarn build:webview && yarn build
+
+      - name: Install pre-commit hook
+        run: |
+          mkdir -p .git/hooks
+          cat > .git/hooks/pre-commit <<'EOF'
+          #!/bin/sh
+          yarn lint && yarn build
+          EOF
+          chmod +x .git/hooks/pre-commit

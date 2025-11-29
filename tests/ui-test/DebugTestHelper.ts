@@ -456,12 +456,12 @@ export class DebugTestHelper {
 
       // Log progress periodically
       const elapsed = Date.now() - startTime;
-      if (elapsed > 0 && elapsed % 3000 < 500) {
+      if (elapsed > 0 && elapsed % DebugTestHelper.PROGRESS_LOG_INTERVAL_MS < DebugTestHelper.POLL_INTERVAL_MS) {
         DebugTestHelper.logger.info(`Still waiting for items... current count: ${lastItemCount}, elapsed: ${Math.floor(elapsed / 1000)}s`);
       }
 
       return false;
-    }, timeout, `Image Watch section did not populate with ${minItems} items within ${timeout}ms`, 500);
+    }, timeout, `Image Watch section did not populate with ${minItems} items within ${timeout}ms`, DebugTestHelper.POLL_INTERVAL_MS);
 
     if (hasItems) {
       DebugTestHelper.logger.success(`Image Watch section has ${lastItemCount} item(s)`);
@@ -503,30 +503,34 @@ export class DebugTestHelper {
     return item;
   }
 
+  // Configuration constants for retry behavior
+  private static readonly ITEM_WAIT_MAX_RETRIES = 3;
+  private static readonly ITEM_WAIT_DELAY_MS = 5000;
+  private static readonly REFRESH_WAIT_MS = 1000;
+  private static readonly PROGRESS_LOG_INTERVAL_MS = 3000;
+  private static readonly POLL_INTERVAL_MS = 500;
+
   /**
    * Wait for items to be populated with retry logic for robustness
    */
   private async waitForItemsWithRetry(): Promise<void> {
-    const maxRetries = 3;
-    const waitPerRetry = 5000;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    for (let attempt = 1; attempt <= DebugTestHelper.ITEM_WAIT_MAX_RETRIES; attempt++) {
       const allItems = await this.imageWatchSection!.getVisibleItems();
 
       if (allItems.length > 0) {
         return;
       }
 
-      if (attempt < maxRetries) {
-        DebugTestHelper.logger.info(`No items found in Image Watch section, waiting... (attempt ${attempt}/${maxRetries})`);
-        await VSBrowser.instance.driver.sleep(waitPerRetry);
+      if (attempt < DebugTestHelper.ITEM_WAIT_MAX_RETRIES) {
+        DebugTestHelper.logger.info(`No items found in Image Watch section, waiting... (attempt ${attempt}/${DebugTestHelper.ITEM_WAIT_MAX_RETRIES})`);
+        await VSBrowser.instance.driver.sleep(DebugTestHelper.ITEM_WAIT_DELAY_MS);
 
         // Try refreshing the section
         try {
           const refreshButton = await this.imageWatchSection!.getAction('Refresh');
           if (refreshButton) {
             await refreshButton.click();
-            await VSBrowser.instance.driver.sleep(1000);
+            await VSBrowser.instance.driver.sleep(DebugTestHelper.REFRESH_WAIT_MS);
           }
         }
         catch (e) {

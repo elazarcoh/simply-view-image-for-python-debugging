@@ -13,12 +13,26 @@ const WORKSPACE_FILE = path.join(WORKSPACE_DIR, '.vscode', 'tests.code-workspace
  * @param options.maxRetries - Maximum number of retry attempts (default: 3)
  * @param options.retryDelay - Delay in ms between retries (default: 2000)
  * @param options.initialWait - Initial wait time in ms after opening (default: 3000)
+ * @param options.verifyTimeout - Timeout in ms for workspace title verification (default: 10000)
+ * @param options.pollInterval - Polling interval in ms for title verification (default: 500)
  */
 export async function openWorkspace(
   workspaceFile: string = WORKSPACE_FILE,
-  options: { maxRetries?: number; retryDelay?: number; initialWait?: number } = {},
+  options: {
+    maxRetries?: number;
+    retryDelay?: number;
+    initialWait?: number;
+    verifyTimeout?: number;
+    pollInterval?: number;
+  } = {},
 ) {
-  const { maxRetries = 3, retryDelay = 2000, initialWait = 3000 } = options;
+  const {
+    maxRetries = 3,
+    retryDelay = 2000,
+    initialWait = 3000,
+    verifyTimeout = 10000,
+    pollInterval = 500,
+  } = options;
   const workspaceName = path.basename(WORKSPACE_FILE, '.code-workspace');
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -34,7 +48,7 @@ export async function openWorkspace(
         const titleBar = new TitleBar();
         const title = await titleBar.getTitle();
         return title.startsWith(workspaceName);
-      }, 10000, `Workspace title did not match "${workspaceName}"`, 500);
+      }, verifyTimeout, `Workspace title did not match "${workspaceName}"`, pollInterval);
 
       if (isWorkspaceReady) {
         DebugTestHelper.logger.success(`Workspace opened successfully on attempt ${attempt}`);

@@ -1,9 +1,6 @@
-name: Build with Copilot Agent
+name: Copilot Setup Steps
 
-on:
-  push:
-    branches:
-      - main
+on: workflow_dispatch
 
 jobs:
   copilot-setup-steps:

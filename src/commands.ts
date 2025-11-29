@@ -59,6 +59,7 @@ async function enableAutoRunSetup(): Promise<void> {
   await vscode.workspace.getConfiguration(EXTENSION_CONFIG_SECTION).update(
     'autoRunSetupOnDebugStart',
     true,
+    vscode.ConfigurationTarget.Workspace,
   );
 }
 
@@ -66,6 +67,7 @@ async function disableAutoRunSetup(): Promise<void> {
   await vscode.workspace.getConfiguration(EXTENSION_CONFIG_SECTION).update(
     'autoRunSetupOnDebugStart',
     false,
+    vscode.ConfigurationTarget.Workspace,
   );
 }
 

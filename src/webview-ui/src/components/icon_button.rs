@@ -17,6 +17,8 @@ pub(crate) struct IconButtonProps {
     pub spin: Option<bool>,
     #[prop_or_default]
     pub title: Option<AttrValue>,
+    #[prop_or_default]
+    pub disabled: Option<bool>,
 }
 
 #[styled_component]
@@ -28,9 +30,11 @@ pub(crate) fn IconButton(props: &IconButtonProps) -> Html {
         onclick,
         spin,
         title,
+        disabled,
     } = props;
 
     let node_ref = use_node_ref();
+    let is_disabled = disabled.unwrap_or(false);
 
     // Hack to make the appearance="icon" work. The appearance attribute is not set normally.
     {
@@ -66,8 +70,25 @@ pub(crate) fn IconButton(props: &IconButtonProps) -> Html {
         "#
     );
 
+    let disabled_style = use_style!(
+        r#"
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        "#
+    );
+
     html! {
-        <button aria-label={aria_label.clone()} ref={node_ref} onclick={onclick.clone()} class={classes!("vscode-action-button", class.clone())} title={title.clone()}>
+        <button
+            aria-label={aria_label.clone()}
+            ref={node_ref}
+            onclick={onclick.clone()}
+            class={classes!("vscode-action-button", class.clone(), disabled_style)}
+            title={title.clone()}
+            disabled={is_disabled}
+        >
             <span class={classes!(icon, spin_style, spin.map(|v| if v { "spin" } else { "" }))}></span>
         </button>
     }

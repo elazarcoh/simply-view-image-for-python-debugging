@@ -166,11 +166,6 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             flex-direction: row;
             gap: 10px;
 
-            .disabled {
-                opacity: 0.5;
-                pointer-events: none;
-            }
-
             .help {
                 margin-left: auto;
             }
@@ -263,7 +258,7 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
                 icon="codicon codicon-save"
                 onclick={Some(on_save_click)}
                 title={Some(AttrValue::from("Save Image"))}
-                class={classes!(if !has_image { "disabled" } else { "" })}
+                disabled={Some(!has_image)}
             />
             <div class={classes!("codicon", "codicon-question", "help")} >
                 <span class={classes!("tooltiptext")}>

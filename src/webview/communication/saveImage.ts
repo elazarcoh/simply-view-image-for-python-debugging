@@ -61,7 +61,8 @@ function normalizeToUint8(
   max: number[] | null,
   channels: number,
 ): Uint8Array {
-  const pixelCount = data.length / (getDatatypeBytes(datatype) * channels);
+  const bytesPerElement = getDatatypeBytes(datatype);
+  const pixelCount = data.length / (bytesPerElement * channels);
   const result = new Uint8Array(pixelCount * channels);
 
   // Create a typed array view based on the datatype
@@ -72,6 +73,7 @@ function normalizeToUint8(
       typedData = data;
       break;
     case 'int8':
+      // Int8Array has 1 byte per element, same as Uint8Array
       typedData = new Int8Array(data.buffer, data.byteOffset, data.length);
       break;
     case 'uint16':
@@ -113,8 +115,9 @@ function normalizeToUint8(
       typedData = data;
   }
 
-  // If data is already uint8 and in valid range, use directly
-  if (datatype === 'uint8') {
+  // If data is already uint8 and no custom min/max is specified, use directly
+  // This preserves the original pixel values without normalization
+  if (datatype === 'uint8' && min === null && max === null) {
     result.set(data);
     return result;
   }

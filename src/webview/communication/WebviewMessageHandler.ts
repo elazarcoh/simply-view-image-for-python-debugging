@@ -255,7 +255,8 @@ export class WebviewMessageHandler implements vscode.Disposable {
     try {
       await saveImageToFile(imageMessage, saveUri.fsPath);
       logDebug(`Image saved to ${saveUri.fsPath}`);
-      vscode.window.showInformationMessage(`Image saved to ${saveUri.fsPath}`);
+      const filename = path.basename(saveUri.fsPath);
+      vscode.window.showInformationMessage(`Image saved: ${filename}`);
     }
     catch (error) {
       logError('Error saving image', error);

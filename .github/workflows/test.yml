@@ -73,9 +73,15 @@ jobs:
         run: yarn build:extension
 
       - name: Run tests with xvfb
+        env:
+          CI: 'true'
+          MOCHA_JUNIT: 'true'
+          # Increase stability for headless testing
+          DISPLAY: ':99.0'
         run: |
           mkdir -p test-results
-          MOCHA_JUNIT=true xvfb-run -a yarn test:compile && MOCHA_JUNIT=true xvfb-run -a yarn extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources
+          yarn test:compile
+          xvfb-run -a --server-args="-screen 0 1920x1080x24" yarn extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources
         # continue-on-error: true  # don't use it, so a proper error will show. instead, we use if: always() on the rest of the steps
 
       - name: Upload test results to GitHub

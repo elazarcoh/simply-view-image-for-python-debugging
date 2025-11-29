@@ -424,6 +424,52 @@ export class DebugTestHelper {
     return this;
   }
 
+  /**
+   * Wait for the Image Watch section to have visible items populated.
+   * This is crucial for headless/CI environments where UI may be slower to update.
+   * @param options - Configuration for waiting behavior
+   * @param options.timeout - Maximum time to wait in ms (default: 15000)
+   * @param options.minItems - Minimum number of items to wait for (default: 1)
+   */
+  async waitForImageWatchItems(options: { timeout?: number; minItems?: number } = {}): Promise<this> {
+    const { timeout = 15000, minItems = 1 } = options;
+
+    if (this.options.autoEnsureViews) {
+      await this.ensureImageWatchSectionExpanded();
+    }
+    else if (!this.imageWatchSection) {
+      throw new Error('Image Watch section not available. Call expandImageWatchSection() first.');
+    }
+
+    DebugTestHelper.logger.step(`Waiting for Image Watch section to have at least ${minItems} item(s)...`);
+
+    const startTime = Date.now();
+    let lastItemCount = 0;
+
+    const hasItems = await VSBrowser.instance.driver.wait(async () => {
+      const allItems = await this.imageWatchSection!.getVisibleItems();
+      lastItemCount = allItems.length;
+
+      if (lastItemCount >= minItems) {
+        return true;
+      }
+
+      // Log progress periodically
+      const elapsed = Date.now() - startTime;
+      if (elapsed > 0 && elapsed % 3000 < 500) {
+        DebugTestHelper.logger.info(`Still waiting for items... current count: ${lastItemCount}, elapsed: ${Math.floor(elapsed / 1000)}s`);
+      }
+
+      return false;
+    }, timeout, `Image Watch section did not populate with ${minItems} items within ${timeout}ms`, 500);
+
+    if (hasItems) {
+      DebugTestHelper.logger.success(`Image Watch section has ${lastItemCount} item(s)`);
+    }
+
+    return this;
+  }
+
   // =============================================================================
   // VARIABLE OPERATIONS
   // =============================================================================
@@ -441,6 +487,9 @@ export class DebugTestHelper {
 
     DebugTestHelper.logger.step(`Finding tree item "${itemName}"`);
 
+    // Wait for items to be populated before searching (improves robustness in CI)
+    await this.waitForItemsWithRetry();
+
     DebugTestHelper.logger.debug('Debugging tree structure in Image Watch section...');
     const itemInfo = await this.getTreeItemDebugInfo();
     DebugTestHelper.logger.info(`Found ${itemInfo.length} visible items in Image Watch section`);
@@ -452,6 +501,42 @@ export class DebugTestHelper {
 
     DebugTestHelper.logger.success(`Tree item "${itemName}" found and processed`);
     return item;
+  }
+
+  /**
+   * Wait for items to be populated with retry logic for robustness
+   */
+  private async waitForItemsWithRetry(): Promise<void> {
+    const maxRetries = 3;
+    const waitPerRetry = 5000;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const allItems = await this.imageWatchSection!.getVisibleItems();
+
+      if (allItems.length > 0) {
+        return;
+      }
+
+      if (attempt < maxRetries) {
+        DebugTestHelper.logger.info(`No items found in Image Watch section, waiting... (attempt ${attempt}/${maxRetries})`);
+        await VSBrowser.instance.driver.sleep(waitPerRetry);
+
+        // Try refreshing the section
+        try {
+          const refreshButton = await this.imageWatchSection!.getAction('Refresh');
+          if (refreshButton) {
+            await refreshButton.click();
+            await VSBrowser.instance.driver.sleep(1000);
+          }
+        }
+        catch (e) {
+          DebugTestHelper.logger.debug(`Could not refresh during wait: ${e}`);
+        }
+      }
+    }
+
+    // Don't throw here - let the calling code handle empty state
+    DebugTestHelper.logger.warn('Image Watch section has no visible items after waiting');
   }
 
   private async getTreeItemDebugInfo(): Promise<string[]> {

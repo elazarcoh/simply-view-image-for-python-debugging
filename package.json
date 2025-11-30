@@ -2,7 +2,7 @@
   "publisher": "elazarcoh",
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
-  "version": "4.0.17",
+  "version": "4.0.19",
   "packageManager": "yarn@4.4.1",
   "description": "simply view the image of the image variables when debugging python",
   "repository": {

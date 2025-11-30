@@ -1,5 +1,16 @@
 # Change Log
 
+## [4.0.19] - Pre-release
+
+### Added
+- Support for saving images directly from the webview
+- Setting to control auto-run setup on debug start (`svifpd.autoRunSetupOnDebugStart`)
+- Toggle buttons for auto-run setup in Image Watch view
+
+### Fixed
+- Fixed indexed-color PNG interpretation (now uses Jimp-expanded channels)
+- Preprocessing for single-channel images in save functions
+
 ## [4.0.17] - Pre-release
 
 ### Fixed

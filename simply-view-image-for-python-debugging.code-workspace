@@ -26,5 +26,7 @@
 		"cSpell.words": [
 			"colorbar"
 		],
+		// "extesterRunner.tempFolder": "${workspaceFolder}/test-results",
+		"extesterRunner.testFileGlob": "tests/ui-test/**/*.test.ts"
 	}
 }

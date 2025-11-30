@@ -3,6 +3,8 @@
 /dist/
 *.vsix
 /.vscode-test
+/.test-extensions
+/test-resources/
 __pycache__/
 .pnp.*
 .yarn/*
@@ -11,5 +13,4 @@ __pycache__/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
-/python_test
+/test-results/

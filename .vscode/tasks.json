@@ -29,6 +29,68 @@
       ],
       "label": "npm: build",
       "detail": "webpack --mode development"
+    },
+    {
+      "label": "Compile Tests",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["compile-tests"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Setup Python Test Environment",
+      "type": "shell",
+      "command": "./test/setup-python-env.sh",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Generate Test Data",
+      "type": "shell",
+      "command": "python",
+      "args": ["test-data/generate_test_data.py"],
+      "options": {
+        "cwd": "${workspaceFolder}/test"
+      },
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run E2E Tests",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["test:e2e"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "dependsOrder": "sequence",
+      "dependsOn": ["Setup Python Test Environment", "Generate Test Data", "Compile Tests"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
     }
   ]
 }

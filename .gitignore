@@ -12,4 +12,16 @@ __pycache__/
 !.yarn/sdks
 !.yarn/versions
 
+# Legacy test directory (replaced by comprehensive test suite)
 /python_test
+
+# Test artifacts and generated files
+/test/test-env/
+/test/out/
+/test/test-temp/
+/test/test-data/fixtures/
+/test/test-data/test_metadata.json
+/test/.pytest_cache/
+
+# Webview generated files
+/src/webview-ui/pkg/

@@ -5,17 +5,21 @@ import type {
   MessageId,
   RequestBatchItemData,
   RequestImageData,
+  SaveImage,
 } from '../webview';
 import type { WebviewCommunication } from './WebviewClient';
+import * as path from 'node:path';
 import Container from 'typedi';
 import * as vscode from 'vscode';
+import { ExtensionPersistentState } from '../../ExtensionPersistentState';
+import { serializePythonObjectToDisk } from '../../from-python-serialization/DiskSerialization';
 import { serializeImageUsingSocketServer } from '../../from-python-serialization/SocketSerialization';
 import {
   addExpression,
   editExpression,
 } from '../../image-watch-tree/PythonObjectsList';
 import { WatchTreeProvider } from '../../image-watch-tree/WatchTreeProvider';
-import { logError, logTrace } from '../../Logging';
+import { logDebug, logError, logTrace } from '../../Logging';
 import { findExpressionViewables } from '../../PythonObjectInfo';
 import { activeDebugSessionData } from '../../session/debugger/DebugSessionsHolder';
 import { maybeDebugSession } from '../../session/Session';
@@ -178,6 +182,84 @@ export class WebviewMessageHandler implements vscode.Disposable {
     }
   }
 
+  async handleSaveImage(_id: MessageId, { expression }: SaveImage) {
+    const maybeSession = this.thisSession;
+    if (maybeSession.none) {
+      vscode.window.showErrorMessage('No active debug session');
+      return;
+    }
+    const session = maybeSession.val;
+    const sessionData = getSessionData(session);
+    if (sessionData === undefined) {
+      vscode.window.showErrorMessage('No session data available');
+      return;
+    }
+
+    const currentPythonObjectsList = sessionData.currentPythonObjectsList;
+    const objectItemKind
+      = currentPythonObjectsList.find(expression)?.type ?? 'expression';
+
+    const objectViewables = await findExpressionViewables(expression, session);
+
+    if (objectViewables.err || objectViewables.safeUnwrap().length === 0) {
+      vscode.window.showErrorMessage(
+        `Cannot find viewable for expression: ${expression}`,
+      );
+      return;
+    }
+
+    const viewable = objectViewables.safeUnwrap()[0];
+
+    // Get last save directory from persistent state
+    const persistentState = Container.get(ExtensionPersistentState);
+    const lastSaveDir
+      = persistentState.workspace.get<string>('lastSaveImageDir')
+        ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+        ?? '';
+
+    // Sanitize the expression to create a valid filename
+    const sanitizedName = expression.replace(/[<>:"/\\|?*]/g, '_');
+    const defaultFilename = `${sanitizedName}${viewable.suffix}`;
+    const defaultPath = path.join(lastSaveDir, defaultFilename);
+
+    // Show save dialog
+    const saveUri = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.file(defaultPath),
+      filters: { Images: ['png'] },
+      title: 'Save Image',
+    });
+
+    if (saveUri === undefined) {
+      return; // User cancelled
+    }
+
+    // Save the last directory
+    const saveDir = path.dirname(saveUri.fsPath);
+    await persistentState.workspace.update('lastSaveImageDir', saveDir);
+
+    // Remove file extension from path as serializePythonObjectToDisk adds the suffix
+    const savePathWithoutExtension = saveUri.fsPath.replace(/\.[^/.]+$/, '');
+
+    // Save the image using Python serialization
+    const pythonObject
+      = objectItemKind === 'variable'
+        ? { variable: expression }
+        : { expression };
+
+    const savedPath = await serializePythonObjectToDisk(
+      pythonObject,
+      viewable,
+      session,
+      savePathWithoutExtension,
+    );
+
+    if (savedPath !== undefined) {
+      logDebug(`Image saved to ${savedPath}`);
+      const filename = path.basename(savedPath);
+      vscode.window.showInformationMessage(`Image saved: ${filename}`);
+    }
+  }
+
   async onWebviewMessage(messageWithId: FromWebviewMessageWithId) {
     logTrace('Received message from webview', messageWithId);
 
@@ -198,6 +280,8 @@ export class WebviewMessageHandler implements vscode.Disposable {
         return this.handleAddExpression(id);
       case 'EditExpression':
         return this.handleEditExpression(id, message);
+      case 'SaveImage':
+        return this.handleSaveImage(id, message);
 
       default:
         ((_: never) => {

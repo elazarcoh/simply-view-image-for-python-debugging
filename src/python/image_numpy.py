@@ -134,6 +134,19 @@ def numpy():
         else:
             return img
 
+    def _preperocess_single_channel(img):
+        import numpy as np
+        if img.ndim == 2:
+            return img
+        elif img.ndim == 3:
+            if img.shape[2] == 1:
+                # channel last
+                return img[:, :, 0]
+            elif img.shape[0] == 1:
+                # channel first
+                return img[0, :, :]
+        return img
+
     def opencv_imsave(path, img):
         import cv2
 
@@ -142,11 +155,12 @@ def numpy():
     def imageio_imsave(path, img):
         import imageio
 
-        imageio.imwrite(path, img)
+        imageio.imwrite(path, _preperocess_single_channel(img))
 
     def pillow_imsave(path, img):
         from PIL import Image
 
+        img = _preperocess_single_channel(img)
         img = Image.fromarray(img)
         img.save(path)
 

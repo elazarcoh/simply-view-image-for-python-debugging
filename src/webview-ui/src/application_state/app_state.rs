@@ -91,7 +91,7 @@ impl Default for AppState {
 
 impl Store for AppState {
     fn new(cx: &yewdux::Context) -> Self {
-        init_listener(ImagesFetcher::default(), cx);
+        init_listener(|| ImagesFetcher::default(), cx);
         Default::default()
     }
 
@@ -537,6 +537,10 @@ pub(crate) enum OverlayAction {
         image_id: ViewableObjectId,
         overlay_id: ViewableObjectId,
     },
+    Remove {
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+    },
     Hide {
         view_id: ViewId,
         image_id: ViewableObjectId,
@@ -567,19 +571,26 @@ impl Reducer<AppState> for OverlayAction {
                     overlay_id.clone(),
                 );
 
-                // init with 0.8 global alpha
+                // init with default overlay settings (0.8 alpha and segmentation coloring)
                 if state
                     .drawing_options
-                    .borrow_mut()
+                    .borrow()
                     .get(&overlay_id, &DrawingContext::Overlay)
                     .is_none()
                 {
-                    state
-                        .drawing_options
-                        .borrow_mut()
-                        .get_mut_ref(overlay_id, DrawingContext::Overlay)
-                        .global_alpha = 0.8;
+                    let mut drawing_options = state.drawing_options.borrow_mut();
+                    let drawing_options_ref =
+                        drawing_options.get_mut_ref(overlay_id, DrawingContext::Overlay);
+                    drawing_options_ref.global_alpha = 0.8;
+                    drawing_options_ref.coloring = Coloring::Segmentation;
+                    drawing_options_ref.zeros_as_transparent = true;
                 }
+            }
+            OverlayAction::Remove { view_id, image_id } => {
+                state
+                    .overlays
+                    .borrow_mut()
+                    .clear_overlay(view_id, &image_id);
             }
             OverlayAction::Hide {
                 view_id,

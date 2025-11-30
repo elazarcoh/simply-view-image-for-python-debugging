@@ -199,10 +199,14 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
                     event.prevent_default();
                     event.stop_propagation();
                     let view_id = ViewId::Primary;
-                    // Dispatch::<AppState>::global().apply(OverlayAction::Remove {
-                    //     view_id,
-                    //     overlay_id: image_id.clone(),
-                    // });
+                    let state = Dispatch::<AppState>::global().get();
+                    let cv = state.image_views.borrow().get_currently_viewing(view_id);
+                    if let Some(cv) = cv {
+                        Dispatch::<AppState>::global().apply(OverlayAction::Remove {
+                            view_id,
+                            image_id: cv.id().clone(),
+                        });
+                    }
                 }
             })}
             class={remove_overlay_style}

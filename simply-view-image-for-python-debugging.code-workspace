@@ -23,6 +23,7 @@
 			"rust": "html",
 		},
 		"rust-analyzer.check.command": "clippy",
+		"rust-analyzer.semanticHighlighting.strings.enable": false,
 		"cSpell.words": [
 			"colorbar"
 		],

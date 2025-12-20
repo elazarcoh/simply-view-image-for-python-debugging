@@ -113,13 +113,14 @@ bool is_edge(vec2 uv) {{
 
     // Calculate the position within the pixel
     vec2 pixel_position = fract(uv * u_buffer_dimension);
-
-    bool is_top_edge = pixel_position.y < EDGE_THICKNESS && is_top_border;
-    bool is_bottom_edge =
-        pixel_position.y > (1.0 - EDGE_THICKNESS) && is_bottom_border;
-    bool is_left_edge = pixel_position.x < EDGE_THICKNESS && is_left_border;
-    bool is_right_edge =
-        pixel_position.x > (1.0 - EDGE_THICKNESS) && is_right_border;
+    // New: compute image-pixel size in screen-pixels and a dynamic threshold.
+    float inv_derivative = 1.0 / max(abs(dFdx(uv * u_buffer_dimension).x), abs(dFdy(uv * u_buffer_dimension).y));
+    float dynamic_thickness = max(inv_derivative * EDGE_THICKNESS, 1.0);
+    
+    bool is_top_edge = (pixel_position.y * inv_derivative < dynamic_thickness) && is_top_border;
+    bool is_bottom_edge = ((1.0 - pixel_position.y) * inv_derivative < dynamic_thickness) && is_bottom_border;
+    bool is_left_edge = (pixel_position.x * inv_derivative < dynamic_thickness) && is_left_border;
+    bool is_right_edge = ((1.0 - pixel_position.x) * inv_derivative < dynamic_thickness) && is_right_border;
 
     return is_top_edge || is_bottom_edge || is_left_edge || is_right_edge;
 }}

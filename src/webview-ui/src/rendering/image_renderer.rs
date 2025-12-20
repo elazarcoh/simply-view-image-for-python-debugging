@@ -475,6 +475,11 @@ impl ImageRenderer {
             None
         };
 
+        let texture_size = Vec2::new(texture.image_size().width, texture.image_size().height);
+        uniform_values.insert("u_texture_size", UniformValue::Vec2(&texture_size));
+        let only_edges = true;
+        uniform_values.insert("u_only_edges", UniformValue::Bool(&only_edges));
+
         if texture_info.channels == Channels::One {
             if let Some(ref clip_min) = drawing_options.clip.min {
                 uniform_values.insert("u_clip_min", UniformValue::Bool(&true));
@@ -551,7 +556,11 @@ impl ImageRenderer {
                                 &drawing_options,
                             );
 
-                            text_color(pixel_color, &DrawingOptions::default())
+                            if only_edges {
+                                pixel_color
+                            } else {
+                                text_color(pixel_color, &DrawingOptions::default())
+                            }
                         }
                         _ => {
                             let rgba = Vec4::from(pixel_value.as_rgba_f32());
@@ -559,7 +568,11 @@ impl ImageRenderer {
                                 * (rgba / coloring_factors.normalization_factor)
                                 + coloring_factors.color_addition;
 
-                            text_color(pixel_color, &drawing_options)
+                            if only_edges {
+                                pixel_color
+                            } else {
+                                text_color(pixel_color, &drawing_options)
+                            }
                         }
                     };
 

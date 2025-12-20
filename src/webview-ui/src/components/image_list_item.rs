@@ -1,15 +1,15 @@
 use itertools::Itertools;
 use stylist::yew::use_style;
 use yew::prelude::*;
-use yewdux::Dispatch;
+use yewdux::{use_selector, Dispatch};
 
 use crate::{
-    application_state::{app_state::{AppState, OverlayAction, UiAction}, images::DrawingContext},
-    common::{Image, MinimalImageInfo, ValueVariableKind, ViewId},
-    components::{
-        context_menu::{use_context_menu, ContextMenuData, ContextMenuItem},
-        display_options::DisplayOption,
+    application_state::{
+        app_state::{AppState, OverlayAction, UiAction},
+        images::DrawingContext,
     },
+    common::{Image, MinimalImageInfo, ValueVariableKind, ViewId},
+    components::display_options::DisplayOption,
     vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -137,6 +137,83 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         html!(<></>)
     };
 
+    let is_overlay = use_selector({
+        let image_id = image_id.clone();
+        move |state: &AppState| {
+            let overlay = state
+                .image_views
+                .borrow()
+                .get_currently_viewing(ViewId::Primary)
+                .and_then(|cv| {
+                    state
+                        .overlays
+                        .borrow()
+                        .get_image_overlay(ViewId::Primary, cv.id())
+                        .map(|overlay| overlay.id.clone())
+                });
+            overlay.as_ref() == Some(&image_id)
+        }
+    });
+    let overlay_button = html! {
+        <IconButton
+            aria_label={"Overlay"}
+            title={"Overlay"}
+            icon={"svifpd-icons svifpd-icons-overlay"}
+            onclick={Callback::from({
+                let image_id = image_id.clone();
+                move |event: MouseEvent| {
+                    event.prevent_default();
+                    event.stop_propagation();
+
+                    let view_id = ViewId::Primary;
+                    let state = Dispatch::<AppState>::global().get();
+                    let cv = state.image_views.borrow().get_currently_viewing(view_id);
+                    if let Some(cv) = cv {
+                        Dispatch::<AppState>::global().apply(OverlayAction::Add {
+                            view_id,
+                            image_id: cv.id().clone(),
+                            overlay_id: image_id.clone(),
+                        });
+                    }
+                }
+            })}
+        />
+    };
+    let remove_overlay_style = use_style!(
+        r#"
+        background-color: var(--vscode-button-background);
+
+        &:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        "#
+    );
+    let remove_overlay_button = html! {
+        <IconButton
+            aria_label={"Remove Overlay"}
+            title={"Remove Overlay"}
+            icon={"svifpd-icons svifpd-icons-overlay"}
+            onclick={Callback::from({
+                let image_id = image_id.clone();
+                move |event: MouseEvent| {
+                    event.prevent_default();
+                    event.stop_propagation();
+                    let view_id = ViewId::Primary;
+                    // Dispatch::<AppState>::global().apply(OverlayAction::Remove {
+                    //     view_id,
+                    //     overlay_id: image_id.clone(),
+                    // });
+                }
+            })}
+            class={remove_overlay_style}
+        />
+    };
+    let set_remove_overlay_button = if *is_overlay {
+        remove_overlay_button
+    } else {
+        overlay_button
+    };
+
     let item_style = use_style!(
         r#"
 
@@ -158,47 +235,48 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         "#
     );
 
-    let ctx = use_context_menu();
+    // let ctx = use_context_menu();
 
-    let on_context = {
-        let image_id = image_id.clone();
-        let ctx = ctx.clone();
-        Callback::from(move |e: MouseEvent| {
-            e.prevent_default();
-            ctx.set(Some(ContextMenuData {
-                x: e.client_x(),
-                y: e.client_y(),
-                items: vec![ContextMenuItem {
-                    label: "Overlay".into(),
-                    action: Callback::from({
-                        let image_id = image_id.clone();
-                        let ctx = ctx.clone();
-                        move |_| {
-                            let view_id = ViewId::Primary;
-                            let state = Dispatch::<AppState>::global().get();
-                            let cv = state.image_views.borrow().get_currently_viewing(view_id);
-                            if let Some(cv) = cv {
-                                Dispatch::<AppState>::global().apply(OverlayAction::Add {
-                                    view_id,
-                                    image_id: cv.id().clone(),
-                                    overlay_id: image_id.clone(),
-                                });
-                            }
-                            ctx.set(None);
-                        }
-                    }),
-                    disabled: false,
-                }],
-            }));
-        })
-    };
+    // let on_context = {
+    //     let image_id = image_id.clone();
+    //     let ctx = ctx.clone();
+    //     Callback::from(move |e: MouseEvent| {
+    //         e.prevent_default();
+    //         ctx.set(Some(ContextMenuData {
+    //             x: e.client_x(),
+    //             y: e.client_y(),
+    //             items: vec![ContextMenuItem {
+    //                 label: "Overlay".into(),
+    //                 action: Callback::from({
+    //                     let image_id = image_id.clone();
+    //                     let ctx = ctx.clone();
+    //                     move |_| {
+    //                         let view_id = ViewId::Primary;
+    //                         let state = Dispatch::<AppState>::global().get();
+    //                         let cv = state.image_views.borrow().get_currently_viewing(view_id);
+    //                         if let Some(cv) = cv {
+    //                             Dispatch::<AppState>::global().apply(OverlayAction::Add {
+    //                                 view_id,
+    //                                 image_id: cv.id().clone(),
+    //                                 overlay_id: image_id.clone(),
+    //                             });
+    //                         }
+    //                         ctx.set(None);
+    //                     }
+    //                 }),
+    //                 disabled: false,
+    //             }],
+    //         }));
+    //     })
+    // };
 
     html! {
         <div
             class={item_style.clone()}
-            oncontextmenu={on_context}
+            // oncontextmenu={on_context}
         >
             <div class="item-label-container">
+                {set_remove_overlay_button}
                 {pin_unpin_button}
                 <label class="item-label" title={expression.clone()}>{&expression}</label>
                 if *value_variable_kind == ValueVariableKind::Expression {{edit_button}} else {<></>}

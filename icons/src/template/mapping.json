@@ -13,5 +13,6 @@
   "tensor": 60012,
   "image": 60013,
   "inspect-image": 60014,
-  "edges": 60015
+  "edges": 60015,
+  "overlay": 60016
 }

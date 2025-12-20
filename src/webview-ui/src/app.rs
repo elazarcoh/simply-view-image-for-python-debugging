@@ -70,9 +70,14 @@ fn rendering_context() -> impl RenderingContext {
             let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
             let currently_viewing = state.image_views.borrow().get_currently_viewing(view_id);
-            let overlays = currently_viewing.as_ref().map_or(Vec::new(), |cv| {
-                state.overlays.borrow().get_overlays(view_id, cv.id())
+            let overlay = currently_viewing.as_ref().and_then(|cv| {
+                state
+                    .overlays
+                    .borrow()
+                    .get_image_overlay(view_id, cv.id())
+                    .cloned()
             });
+
             let camera = state.view_cameras.borrow().get(view_id);
             let html_element = state
                 .image_views
@@ -90,7 +95,7 @@ fn rendering_context() -> impl RenderingContext {
                 camera,
                 html_element,
                 currently_viewing,
-                overlays,
+                overlay,
             }
         }
 

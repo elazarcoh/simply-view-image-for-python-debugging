@@ -5,7 +5,7 @@ use std::rc::Rc;
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
 use crate::{
-    application_state::{app_state::GlobalDrawingOptions, images::ImageAvailability},
+    application_state::{app_state::GlobalDrawingOptions, images::ImageAvailability, views::OverlayItem},
     coloring::DrawingOptions,
     colormap,
     common::{
@@ -18,7 +18,7 @@ use crate::{
 pub(crate) struct ImageViewData {
     pub html_element: HtmlElement,
     pub currently_viewing: Option<CurrentlyViewing>,
-    pub overlays: Vec<ViewableObjectId>,
+    pub overlay: Option<OverlayItem>,
     pub camera: camera::Camera,
 }
 

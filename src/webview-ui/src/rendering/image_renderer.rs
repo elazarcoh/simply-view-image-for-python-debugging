@@ -545,7 +545,7 @@ impl ImageRenderer {
                     Coloring::Edges => {
                         // for edges, the background color is always black
                         text_color(Vec4::new(0.0, 0.0, 0.0, 1.0), drawing_options)
-                    },
+                    }
                     Coloring::Heatmap | Coloring::Segmentation => {
                         let name = match drawing_options.coloring {
                             Coloring::Heatmap => &global_drawing_options.heatmap_colormap_name,
@@ -645,7 +645,10 @@ impl ImageRenderer {
 
         // Overlay specific uniforms
         uniform_values.insert("u_is_overlay", UniformValue::Bool(&true));
-        uniform_values.insert("u_overlay_alpha", UniformValue::Float(&overlay_item.alpha));
+        uniform_values.insert(
+            "u_overlay_alpha",
+            UniformValue::Float(&drawing_options.global_alpha),
+        );
         uniform_values.insert(
             "u_zeros_as_transparent",
             UniformValue::Bool(&drawing_options.zeros_as_transparent),
@@ -667,7 +670,7 @@ impl ImageRenderer {
         if let Some(overlay) = &image_view_data
             .overlay
             .as_ref()
-            .and_then(|o| (!o.hidden && o.alpha > 0.0).then_some(o))
+            .and_then(|o| (!o.hidden).then_some(o))
         {
             let texture = rendering_context.texture_by_id(&overlay.id);
             // log::debug!("Rendering overlay {:?}", overlay);

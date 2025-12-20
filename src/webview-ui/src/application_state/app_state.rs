@@ -298,7 +298,9 @@ impl Reducer<AppState> for StoreAction {
                         batch_item: current_drawing_options.batch_item,
                         ..DrawingOptions::default()
                     },
-                    UpdateDrawingOptions::Coloring(coloring @ (Coloring::Segmentation | Coloring::Edges)) => DrawingOptions {
+                    UpdateDrawingOptions::Coloring(
+                        coloring @ (Coloring::Segmentation | Coloring::Edges),
+                    ) => DrawingOptions {
                         coloring,
                         zeros_as_transparent: if drawing_context == DrawingContext::BaseImage {
                             current_drawing_options.zeros_as_transparent
@@ -544,7 +546,6 @@ pub(crate) enum OverlayAction {
         image_id: ViewableObjectId,
     },
     SetAlpha {
-        view_id: ViewId,
         image_id: ViewableObjectId,
         alpha: f32,
     },
@@ -560,10 +561,25 @@ impl Reducer<AppState> for OverlayAction {
                 image_id,
                 overlay_id,
             } => {
-                state
-                    .overlays
+                state.overlays.borrow_mut().add_overlay_to_image(
+                    view_id,
+                    image_id,
+                    overlay_id.clone(),
+                );
+
+                // init with 0.8 global alpha
+                if state
+                    .drawing_options
                     .borrow_mut()
-                    .add_overlay_to_image(view_id, image_id, overlay_id);
+                    .get(&overlay_id, &DrawingContext::Overlay)
+                    .is_none()
+                {
+                    state
+                        .drawing_options
+                        .borrow_mut()
+                        .get_mut_ref(overlay_id, DrawingContext::Overlay)
+                        .global_alpha = 0.8;
+                }
             }
             OverlayAction::Hide {
                 view_id,
@@ -586,26 +602,20 @@ impl Reducer<AppState> for OverlayAction {
                     overlay_item.hidden = false;
                 }
             }
-            OverlayAction::SetAlpha {
-                view_id,
-                image_id,
-                alpha,
-            } => {
-                if let Some(overlay_item) = state
-                    .overlays
-                    .borrow_mut()
-                    .get_image_overlay_mut(view_id, &image_id)
-                {
-                    let mut alpha = alpha;
-                    // Clamp alpha to [0.0, 1.0] range, with a threshold to avoid flickering
-                    if alpha < 0.02 {
-                        alpha = 0.0;
-                    }
-                    if alpha > 0.98 {
-                        alpha = 1.0;
-                    }
-                    overlay_item.alpha = alpha;
+            OverlayAction::SetAlpha { image_id, alpha } => {
+                let mut alpha = alpha;
+                // Clamp alpha to [0.0, 1.0] range, with a threshold to avoid flickering
+                if alpha < 0.02 {
+                    alpha = 0.0;
                 }
+                if alpha > 0.98 {
+                    alpha = 1.0;
+                }
+                state
+                    .drawing_options
+                    .borrow_mut()
+                    .get_mut_ref(image_id, DrawingContext::Overlay)
+                    .global_alpha = alpha;
             }
         }
 

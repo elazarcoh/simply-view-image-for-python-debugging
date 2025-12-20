@@ -10,6 +10,7 @@ use glam::{Mat3, UVec2, Vec2, Vec4};
 use web_sys::{WebGl2RenderingContext as GL, WebGl2RenderingContext};
 
 use crate::application_state::app_state::GlobalDrawingOptions;
+use crate::application_state::images::DrawingContext;
 use crate::application_state::images::ImageAvailability;
 use crate::application_state::views::OverlayItem;
 use crate::coloring;
@@ -293,7 +294,7 @@ impl ImageRenderer {
                     // for batch, we need to check if the batch item is available
                     let batch_index = if matches!(cv, CurrentlyViewing::BatchItem(_)) {
                         let batch_index = rendering_context
-                            .drawing_options(image_id)
+                            .drawing_options(image_id, &DrawingContext::BaseImage)
                             .0
                             .batch_item
                             .filter(|i| texture.borrow().textures.contains_key(i));
@@ -391,6 +392,7 @@ impl ImageRenderer {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn prepare_texture_uniforms<'a>(
         rendering_context: &dyn RenderingContext,
         rendering_data: &'a RenderingData,
@@ -398,6 +400,7 @@ impl ImageRenderer {
         colormap_texture: Option<&'a web_sys::WebGlTexture>,
         batch_item: Option<u32>,
         image_view_data: &ImageViewData,
+        drawing_context: &DrawingContext,
         uniform_values: &mut HashMap<&'static str, UniformValue<'a>>,
     ) {
         let texture_info = &texture.info;
@@ -422,13 +425,8 @@ impl ImageRenderer {
         let image_size = texture.image_size();
         let image_size_vec = Vec2::new(image_size.width, image_size.height);
 
-        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
-            image_view_data
-                .currently_viewing
-                .as_ref()
-                .map(CurrentlyViewing::id)
-                .unwrap(),
-        );
+        let image_id = &texture.info.image_id;
+        let (drawing_options, _) = rendering_context.drawing_options(image_id, drawing_context);
         let coloring_factors =
             calculate_color_matrix(texture_info, &texture.computed_info, &drawing_options);
 
@@ -598,13 +596,14 @@ impl ImageRenderer {
 
         let config = rendering_context.rendering_configuration();
 
-        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
-            image_view_data
-                .currently_viewing
-                .as_ref()
-                .map(CurrentlyViewing::id)
-                .unwrap(),
-        );
+        let (drawing_options, global_drawing_options) =
+            rendering_context.drawing_options(&overlay_item.id, &DrawingContext::Overlay);
+
+        // log::debug!(
+        //     "Rendering overlay {:?} with drawing options: {:?}",
+        //     overlay_item,
+        //     drawing_options
+        // );
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context
@@ -631,12 +630,17 @@ impl ImageRenderer {
             colormap_texture.as_ref(),
             batch_item,
             image_view_data,
+            &DrawingContext::Overlay,
             &mut uniform_values,
         );
 
         // Overlay specific uniforms
         uniform_values.insert("u_is_overlay", UniformValue::Bool(&true));
         uniform_values.insert("u_overlay_alpha", UniformValue::Float(&overlay_item.alpha));
+        uniform_values.insert(
+            "u_zeros_as_transparent",
+            UniformValue::Bool(&drawing_options.zeros_as_transparent),
+        );
 
         gl.use_program(Some(&program.program));
         set_uniforms(program, &uniform_values);
@@ -687,13 +691,15 @@ impl ImageRenderer {
         let program = ImageRenderer::program_for_texture(&texture, &rendering_data.programs);
         let config = rendering_context.rendering_configuration();
 
-        let (drawing_options, global_drawing_options) = rendering_context.drawing_options(
-            image_view_data
-                .currently_viewing
-                .as_ref()
-                .map(CurrentlyViewing::id)
-                .unwrap(),
-        );
+        let cv_id = image_view_data
+            .currently_viewing
+            .as_ref()
+            .map(CurrentlyViewing::id)
+            .unwrap_or_else(|| {
+                panic!("No currently viewing for image view data");
+            });
+        let (drawing_options, global_drawing_options) =
+            rendering_context.drawing_options(cv_id, &DrawingContext::BaseImage);
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context
@@ -722,12 +728,17 @@ impl ImageRenderer {
             colormap_texture.as_ref(),
             batch_item,
             image_view_data,
+            &DrawingContext::BaseImage,
             &mut uniform_values,
         );
 
         // Set the overlay specific uniforms
         uniform_values.insert("u_is_overlay", UniformValue::Bool(&false));
         uniform_values.insert("u_overlay_alpha", UniformValue::Float(&0.0));
+        uniform_values.insert(
+            "u_zeros_as_transparent",
+            UniformValue::Bool(&drawing_options.zeros_as_transparent),
+        );
 
         gl.use_program(Some(&program.program));
         set_uniforms(program, &uniform_values);

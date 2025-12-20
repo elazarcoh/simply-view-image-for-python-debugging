@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::{
-    application_state::app_state::{AppState, OverlayAction, UiAction},
+    application_state::{app_state::{AppState, OverlayAction, UiAction}, images::DrawingContext},
     common::{Image, MinimalImageInfo, ValueVariableKind, ViewId},
     components::{
         context_menu::{use_context_menu, ContextMenuData, ContextMenuItem},
@@ -209,7 +209,7 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
             </div>
 
             if let Image::Full(entry) = entry {
-                if *selected {<DisplayOption entry={entry.clone()} />} else {<></>}
+                if *selected {<DisplayOption entry={entry.clone()} drawing_context={DrawingContext::BaseImage} />} else {<></>}
             } else {<></>}
         </div>
     }

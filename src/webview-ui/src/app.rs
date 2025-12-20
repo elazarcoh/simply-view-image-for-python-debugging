@@ -4,6 +4,7 @@ use crate::application_state::app_state::GlobalDrawingOptions;
 use crate::application_state::app_state::ImageObject;
 use crate::application_state::app_state::StoreAction;
 use crate::application_state::app_state::UpdateDrawingOptions;
+use crate::application_state::images::DrawingContext;
 use crate::application_state::images::ImageAvailability;
 use crate::coloring::Coloring;
 use crate::coloring::DrawingOptions;
@@ -107,10 +108,16 @@ fn rendering_context() -> impl RenderingContext {
         fn drawing_options(
             &self,
             image_id: &ViewableObjectId,
+            drawing_context: &DrawingContext,
         ) -> (DrawingOptions, GlobalDrawingOptions) {
             let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
-            let drawing_options = state.drawing_options.borrow().get_or_default(image_id);
+            let drawing_options = state
+                .drawing_options
+                .borrow()
+                .get(image_id, drawing_context)
+                .cloned()
+                .unwrap_or_default();
             let global_drawing_options = state.global_drawing_options.clone();
             (drawing_options, global_drawing_options)
         }
@@ -152,8 +159,9 @@ fn rendering_context() -> impl RenderingContext {
             let drawing_options = state
                 .drawing_options
                 .borrow()
-                .get(cv.id())
-                .take_if(|drawing_options| drawing_options.coloring == Coloring::Heatmap);
+                .get(cv.id(), &DrawingContext::BaseImage)
+                .take_if(|drawing_options| drawing_options.coloring == Coloring::Heatmap)
+                .cloned();
             let global_drawing_options = state.global_drawing_options.clone();
             if let ImageAvailability::Available(texture_image) = self.texture_by_id(cv.id()) {
                 html_element
@@ -285,6 +293,7 @@ pub(crate) fn App() -> Html {
             )));
             dispatch.apply(StoreAction::UpdateDrawingOptions(
                 id.clone(),
+                DrawingContext::BaseImage,
                 UpdateDrawingOptions::Full(drawing_options.clone()),
             ));
             dispatch.apply(StoreAction::SetImageToView(id.clone(), view_id));

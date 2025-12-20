@@ -31,6 +31,7 @@ uniform float u_max_clip_value;
 // overlay related uniforms
 uniform bool u_is_overlay;
 uniform float u_overlay_alpha;
+uniform bool u_zeros_as_transparent;
 
 uniform bool u_use_colormap;
 uniform sampler2D u_colormap;
@@ -108,6 +109,10 @@ void main() {{
         }}
     }}
 
+    if (u_zeros_as_transparent && sampled.r == 0. && sampled.g == 0. && sampled.b == 0.) {{
+        color.a = 0.0;
+    }}
+
     if (!u_is_overlay) {{
         float c = checkboard(gl_FragCoord.xy);
         color.rgb = mix(vec3(c, c, c), color.rgb, color.a);
@@ -140,7 +145,7 @@ void main() {{
     }}
 
     if (u_is_overlay) {{
-        color.a = u_overlay_alpha;
+        color.a = u_overlay_alpha * color.a;
     }} else {{
         // alpha is always 1.0 after checkboard is mixed in
         color.a = 1.0;

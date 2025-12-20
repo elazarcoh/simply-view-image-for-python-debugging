@@ -3,10 +3,7 @@ use std::{collections::HashMap, iter::FromIterator};
 use web_sys::{CustomEvent, HtmlElement};
 use yew::NodeRef;
 
-use crate::{
-    coloring::DrawingOptions,
-    common::{constants::all_views, CurrentlyViewing, ViewId, ViewableObjectId},
-};
+use crate::common::{constants::all_views, CurrentlyViewing, ViewId, ViewableObjectId};
 
 pub(crate) struct ImageViews(HashMap<ViewId, (Option<CurrentlyViewing>, NodeRef)>);
 
@@ -97,7 +94,6 @@ pub(crate) struct OverlayItem {
     pub(crate) hidden: bool,
     pub(crate) alpha: f32,
     pub(crate) only_edges: bool,
-    pub(crate) display_options: DrawingOptions,
 }
 
 impl OverlayItem {
@@ -108,7 +104,6 @@ impl OverlayItem {
             hidden: false,
             alpha: 0.4,
             only_edges: false,
-            display_options: DrawingOptions::default(),
         }
     }
 }
@@ -131,19 +126,6 @@ impl Overlays {
         );
     }
 
-    pub(crate) fn remove_overlay(
-        &mut self,
-        view_id: ViewId,
-        image_id: &ViewableObjectId,
-        overlay_id: &ViewableObjectId,
-    ) {
-        if let Some(overlay_item) = self.overlays.get_mut(&(view_id, image_id.clone())) {
-            if overlay_item.id == *overlay_id {
-                self.overlays.remove(&(view_id, image_id.clone()));
-            }
-        }
-    }
-
     pub(crate) fn get_image_overlay(
         &self,
         view_id: ViewId,
@@ -160,7 +142,7 @@ impl Overlays {
         self.overlays.get_mut(&(view_id, image_id.clone()))
     }
 
-    pub(crate) fn clear_overlays(&mut self, view_id: ViewId, image_id: &ViewableObjectId) {
+    pub(crate) fn clear_overlay(&mut self, view_id: ViewId, image_id: &ViewableObjectId) {
         self.overlays.remove(&(view_id, image_id.clone()));
     }
 }

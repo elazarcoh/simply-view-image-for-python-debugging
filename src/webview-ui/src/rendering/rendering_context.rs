@@ -1,11 +1,15 @@
 use anyhow::Result;
-use yewdux::mrc::Mrc;
 use std::rc::Rc;
+use yewdux::mrc::Mrc;
 
 use web_sys::{HtmlElement, WebGl2RenderingContext};
 
 use crate::{
-    application_state::{app_state::GlobalDrawingOptions, images::ImageAvailability, views::OverlayItem},
+    application_state::{
+        app_state::GlobalDrawingOptions,
+        images::{DrawingContext, ImageAvailability},
+        views::OverlayItem,
+    },
     coloring::DrawingOptions,
     colormap,
     common::{
@@ -38,6 +42,7 @@ pub(crate) trait RenderingContext {
     fn drawing_options(
         &self,
         image_id: &ViewableObjectId,
+        drawing_context: &DrawingContext,
     ) -> (DrawingOptions, GlobalDrawingOptions);
     fn get_color_map(&self, name: &str) -> Result<Rc<colormap::ColorMap>>;
     fn get_color_map_texture(

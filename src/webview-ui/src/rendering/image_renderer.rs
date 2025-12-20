@@ -542,6 +542,10 @@ impl ImageRenderer {
 
                 // The actual pixel color might be different from the pixel value, depending on drawing options
                 let text_color = match drawing_options.coloring {
+                    Coloring::Edges => {
+                        // for edges, the background color is always black
+                        text_color(Vec4::new(0.0, 0.0, 0.0, 1.0), drawing_options)
+                    },
                     Coloring::Heatmap | Coloring::Segmentation => {
                         let name = match drawing_options.coloring {
                             Coloring::Heatmap => &global_drawing_options.heatmap_colormap_name,

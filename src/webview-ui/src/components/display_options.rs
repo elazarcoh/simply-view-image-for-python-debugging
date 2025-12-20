@@ -55,6 +55,7 @@ mod features {
         let gray_features = Feature::HighContrast | Feature::Heatmap | alpha_features;
         let integer_gray_features = Feature::Segmentation | gray_features;
         // let batched_features = EnumSet::only(Feature::Batched);
+        let binary_features = EnumSet::only(Feature::Segmentation);
         let no_additional_features = EnumSet::empty();
 
         for_all | match (channels, datatype) {
@@ -65,7 +66,7 @@ mod features {
             (Channels::One, Datatype::Int8) => integer_gray_features,
             (Channels::One, Datatype::Int16) => integer_gray_features,
             (Channels::One, Datatype::Int32) => integer_gray_features,
-            (Channels::One, Datatype::Bool) => no_additional_features,
+            (Channels::One, Datatype::Bool) => binary_features,
             (Channels::Two, Datatype::Uint8) => gray_alpha_features,
             (Channels::Two, Datatype::Uint16) => gray_alpha_features,
             (Channels::Two, Datatype::Uint32) => gray_alpha_features,
@@ -274,6 +275,18 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
             onclick={make_drawing_options_update(UpdateDrawingOptions::Coloring(Coloring::Segmentation))}
         />
     };
+    let edges_button = html! {
+        <IconButton
+            class={classes!(
+                base_style.clone(),
+                if drawing_options.coloring == Coloring::Edges { currently_selected_style.clone() } else { default_style.clone() }
+            )}
+            aria_label={"Edges"}
+            title={"Edges"}
+            icon={"svifpd-icons svifpd-icons-edges"}
+            onclick={make_drawing_options_update(UpdateDrawingOptions::Coloring(Coloring::Edges))}
+        />
+    };
     // let tensor_button = html! {
     //     <IconButton
     //         class={ if drawing_options.as_batch_slice.0 { currently_selected_style.clone() } else { default_style.clone() }}
@@ -319,6 +332,7 @@ pub(crate) fn DisplayOption(props: &DisplayOptionProps) -> Html {
     }
     if features.contains(features::Feature::Segmentation) {
         buttons.push(segmentation_button);
+        buttons.push(edges_button);
     }
     // if features.contains(features::Feature::Transpose) {
     //     buttons.push(transpose_button);

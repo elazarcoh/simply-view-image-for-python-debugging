@@ -32,6 +32,7 @@ uniform float u_max_clip_value;
 uniform bool u_is_overlay;
 uniform float u_overlay_alpha;
 uniform bool u_zeros_as_transparent;
+uniform bool u_edges_only;
 
 uniform bool u_use_colormap;
 uniform sampler2D u_colormap;
@@ -42,6 +43,9 @@ uniform bool u_enable_borders;
 const float CHECKER_SIZE = 10.0;
 const float WHITE_CHECKER = 0.9;
 const float BLACK_CHECKER = 0.6;
+
+// Thickness of the edge as a fraction of the pixel size
+const float EDGE_THICKNESS = 0.2;
 
 {ADDITIONAL_CONSTANTS}
 {ADDITIONAL_UNIFORMS}
@@ -54,6 +58,70 @@ float checkboard(vec2 st) {{
 
 bool is_nan(float val) {{
   return (val < 0. || 0. < val || val == 0.) ? false : true;
+}}
+
+bool is_edge(vec2 uv) {{
+    // Calculate the size of one pixel in texture coordinates
+    vec2 texel_size = 1.0 / u_buffer_dimension;
+
+    // Sample the current pixel and its neighbors
+    // uint current = texture(u_texture, uv).r;
+    float current;
+    {{
+        vec2 pix = uv;
+        vec4 sampled = vec4(0., 0., 0., 1.);
+        {SAMPLE_CODE}
+        current = sampled.r; // Assuming sampled is defined in the SAMPLE_CODE
+    }}
+    // uint top = texture(u_texture, uv - vec2(0.0, texel_size.y)).r;
+    float top;
+    {{
+        vec2 pix = uv - vec2(0.0, texel_size.y);
+        vec4 sampled = vec4(0., 0., 0., 1.);
+        {SAMPLE_CODE}
+        top = sampled.r; // Assuming sampled is defined in the SAMPLE_CODE
+    }}
+    // uint bottom = texture(u_texture, uv + vec2(0.0, texel_size.y)).r;
+    float bottom;
+    {{
+        vec2 pix = uv + vec2(0.0, texel_size.y);
+        vec4 sampled = vec4(0., 0., 0., 1.);
+        {SAMPLE_CODE}
+        bottom = sampled.r; // Assuming sampled is defined in the SAMPLE_CODE
+    }}
+    // uint left = texture(u_texture, uv - vec2(texel_size.x, 0.0)).r;
+    float left;
+    {{
+        vec2 pix = uv - vec2(texel_size.x, 0.0);
+        vec4 sampled = vec4(0., 0., 0., 1.);
+        {SAMPLE_CODE}
+        left = sampled.r; // Assuming sampled is defined in the SAMPLE_CODE
+    }}
+    // uint right = texture(u_texture, uv + vec2(texel_size.x, 0.0)).r;
+    float right;
+    {{
+        vec2 pix = uv + vec2(texel_size.x, 0.0);
+        vec4 sampled = vec4(0., 0., 0., 1.);
+        {SAMPLE_CODE}
+        right = sampled.r; // Assuming sampled is defined in the SAMPLE_CODE
+    }}
+
+    bool is_left_border = (current != left);
+    bool is_right_border = (current != right);
+    bool is_top_border = (current != top);
+    bool is_bottom_border = (current != bottom);
+
+    // Calculate the position within the pixel
+    vec2 pixel_position = fract(uv * u_buffer_dimension);
+
+    bool is_top_edge = pixel_position.y < EDGE_THICKNESS && is_top_border;
+    bool is_bottom_edge =
+        pixel_position.y > (1.0 - EDGE_THICKNESS) && is_bottom_border;
+    bool is_left_edge = pixel_position.x < EDGE_THICKNESS && is_left_border;
+    bool is_right_edge =
+        pixel_position.x > (1.0 - EDGE_THICKNESS) && is_right_border;
+
+    return is_top_edge || is_bottom_edge || is_left_edge || is_right_edge;
 }}
 
 {ADDITIONAL_FUNCTIONS}
@@ -109,7 +177,13 @@ void main() {{
         }}
     }}
 
-    if (u_zeros_as_transparent && sampled.r == 0. && sampled.g == 0. && sampled.b == 0.) {{
+    if (u_edges_only) {{
+        if (!is_edge(vout_uv)) {{
+            color = vec4(0.0, 0.0, 0.0, 1.0);
+        }} 
+    }}
+
+    if (u_zeros_as_transparent && color.r == 0. && color.g == 0. && color.b == 0.) {{
         color.a = 0.0;
     }}
 

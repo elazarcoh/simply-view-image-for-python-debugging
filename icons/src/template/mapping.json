@@ -12,5 +12,6 @@
   "legend": 60011,
   "tensor": 60012,
   "image": 60013,
-  "inspect-image": 60014
+  "inspect-image": 60014,
+  "edges": 60015
 }

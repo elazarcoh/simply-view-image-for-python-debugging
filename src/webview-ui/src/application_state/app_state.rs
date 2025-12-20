@@ -298,8 +298,8 @@ impl Reducer<AppState> for StoreAction {
                         batch_item: current_drawing_options.batch_item,
                         ..DrawingOptions::default()
                     },
-                    UpdateDrawingOptions::Coloring(Coloring::Segmentation) => DrawingOptions {
-                        coloring: Coloring::Segmentation,
+                    UpdateDrawingOptions::Coloring(coloring @ (Coloring::Segmentation | Coloring::Edges)) => DrawingOptions {
+                        coloring,
                         zeros_as_transparent: if drawing_context == DrawingContext::BaseImage {
                             current_drawing_options.zeros_as_transparent
                         } else {

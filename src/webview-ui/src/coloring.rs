@@ -14,6 +14,7 @@ pub(crate) enum Coloring {
     B,
     SwapRgbBgr,
     Segmentation,
+    Edges,
     Heatmap,
 }
 
@@ -210,8 +211,9 @@ pub(crate) fn calculate_color_matrix(
     let (reorder, reorder_add) = match drawing_options.coloring {
         | Coloring::Default
         // Heatmap and Segmentation coloring using the default coloring
-        | Coloring::Segmentation
-        | Coloring::Heatmap 
+        | Coloring::Segmentation 
+        | Coloring::Edges 
+        | Coloring::Heatmap
          => {
             match datatype {
                 | Datatype::Uint8

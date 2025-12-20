@@ -16,6 +16,8 @@ use crate::common::Size;
 use crate::common::ValueVariableKind;
 use crate::common::ViewId;
 use crate::common::ViewableObjectId;
+use crate::components::context_menu::ContextMenuProvider;
+use crate::components::context_menu_view::ContextMenu;
 use crate::components::main::Main;
 use crate::configurations;
 use crate::keyboard_event::KeyboardHandler;
@@ -32,6 +34,8 @@ use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
 use anyhow::{anyhow, Result};
+use gloo::events::EventListener;
+use gloo::events::EventListenerOptions;
 use itertools::izip;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -83,6 +87,7 @@ fn rendering_context() -> impl RenderingContext {
                     .image_views
                     .borrow()
                     .get_currently_viewing(view_id),
+                overlays: [].to_vec(),
             }
         }
 
@@ -358,6 +363,23 @@ pub(crate) fn App() -> Html {
         }
     });
 
+    // disable right-click context menu globally
+    use_effect_with((), |_| {
+        let document = web_sys::window().unwrap().document().unwrap();
+        let listener = EventListener::new_with_options(
+            &document,
+            "contextmenu",
+            EventListenerOptions::enable_prevent_default(),
+            move |event| {
+                event.prevent_default();
+            },
+        );
+
+        move || {
+            drop(listener);
+        }
+    });
+
     let main_style = use_style!(
         r#"
 
@@ -381,7 +403,10 @@ pub(crate) fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref}></canvas>
-            <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
+            <ContextMenuProvider>
+                <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
+                <ContextMenu />
+            </ContextMenuProvider>
         </div>
     }
 }

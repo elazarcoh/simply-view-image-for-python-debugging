@@ -477,8 +477,6 @@ impl ImageRenderer {
 
         let texture_size = Vec2::new(texture.image_size().width, texture.image_size().height);
         uniform_values.insert("u_texture_size", UniformValue::Vec2(&texture_size));
-        let only_edges = true;
-        uniform_values.insert("u_only_edges", UniformValue::Bool(&only_edges));
 
         if texture_info.channels == Channels::One {
             if let Some(ref clip_min) = drawing_options.clip.min {
@@ -509,6 +507,12 @@ impl ImageRenderer {
         gl.use_program(Some(&program.program));
         set_uniforms(program, &uniform_values);
         set_buffers_and_attributes(program, &rendering_data.image_plane_buffer);
+        draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
+
+        let only_edges = true;
+        uniform_values.insert("u_only_edges", UniformValue::Bool(&only_edges));
+
+        set_uniforms(program, &uniform_values);
         draw_buffer_info(gl, &rendering_data.image_plane_buffer, DrawMode::Triangles);
 
         let to_render_text =

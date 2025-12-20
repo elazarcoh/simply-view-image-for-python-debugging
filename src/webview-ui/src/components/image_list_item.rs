@@ -6,7 +6,10 @@ use yewdux::Dispatch;
 use crate::{
     application_state::app_state::{AppState, UiAction},
     common::{Image, MinimalImageInfo, ValueVariableKind},
-    components::display_options::DisplayOption,
+    components::{
+        context_menu::{use_context_menu, ContextMenuData, ContextMenuItem},
+        display_options::DisplayOption,
+    },
     vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -155,8 +158,54 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         "#
     );
 
+    let ctx = use_context_menu();
+    let name = "Image ".to_string() + &image_id.as_unique_string();
+
+    let on_context = {
+        let ctx = ctx.clone();
+        let name = name.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            ctx.set(Some(ContextMenuData {
+                x: e.client_x(),
+                y: e.client_y(),
+                items: vec![
+                    ContextMenuItem {
+                        label: "Rename".into(),
+                        action: Callback::from({
+                            let name = name.clone();
+                            move |_| {
+                                web_sys::window()
+                                    .unwrap()
+                                    .alert_with_message(&format!("Rename {}", name))
+                                    .ok();
+                            }
+                        }),
+                        disabled: false,
+                    },
+                    ContextMenuItem {
+                        label: "Delete".into(),
+                        action: Callback::from({
+                            let name = name.clone();
+                            move |_| {
+                                web_sys::window()
+                                    .unwrap()
+                                    .alert_with_message(&format!("Delete {}", name))
+                                    .ok();
+                            }
+                        }),
+                        disabled: false,
+                    },
+                ],
+            }));
+        })
+    };
+
     html! {
-        <div class={item_style.clone()}>
+        <div
+            class={item_style.clone()}
+            oncontextmenu={on_context}
+        >
             <div class="item-label-container">
                 {pin_unpin_button}
                 <label class="item-label" title={expression.clone()}>{&expression}</label>

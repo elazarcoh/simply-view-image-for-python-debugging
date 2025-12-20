@@ -18,6 +18,7 @@ use crate::{
 pub(crate) struct ImageViewData {
     pub html_element: HtmlElement,
     pub currently_viewing: Option<CurrentlyViewing>,
+    pub overlays: Vec<ViewableObjectId>,
     pub camera: camera::Camera,
 }
 

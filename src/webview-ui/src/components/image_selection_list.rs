@@ -106,7 +106,12 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
             {onclick}
             class={entry_style.clone()}
         >
-            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={*maybe_batch_item} />
+            <ImageListItem
+                entry={info.clone()}
+                selected={is_selected}
+                pinned={is_pinned}
+                batch_index={*maybe_batch_item}
+            />
         </div>
     }
 }

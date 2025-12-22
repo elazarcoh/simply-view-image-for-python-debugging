@@ -31,6 +31,14 @@ A built-in, enhanced image viewer with the following capabilities:
     <img src="readme-assets/segmentation-example.png" width="300" alt="Segmentation"/>
     <p style="word-break: break-word; white-space: normal; margin: 0 0 8px 0;">View label images with color mapping (e.g., 0=black, 1=red, etc.).</p>
   </div>
+  <div style="display: flex; flex-direction: column; align-items: center; width: 300px;">
+    <h4>Overlay</h4>
+    <div style="display:flex; gap:8px; align-items:center; justify-content:center;">
+      <img src="readme-assets/overlay-edge-example.png" width="140" alt="Overlay example 1"/>
+      <img src="readme-assets/overlay-fill-example.png" width="140" alt="Overlay example 2"/>
+    </div>
+    <p style="word-break: break-word; white-space: normal; margin: 0 0 8px 0;">Overlay one image on another</p>
+  </div>
 </div>
 
 ### Plot Viewer

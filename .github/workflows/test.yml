@@ -31,6 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     timeout-minutes: 30
+    outputs:
+      test-passed: ${{ steps.stats.outputs.passed }}
+      test-failed: ${{ steps.stats.outputs.failed }}
+      test-skipped: ${{ steps.stats.outputs.skipped }}
+      test-total: ${{ steps.stats.outputs.total }}
 
     steps:
       - name: Checkout
@@ -112,6 +117,31 @@ jobs:
           path: |
             test-resources/screenshots/*.png
             test-resources/**/*.png
+
+      - name: Extract test statistics
+        id: stats
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET, os, sys
+          try:
+              tree = ET.parse('test-results/junit.xml')
+              root = tree.getroot()
+              ts = root if root.tag == 'testsuite' else next(root.iter('testsuite'), root)
+              tests   = int(ts.get('tests',   0))
+              failures= int(ts.get('failures', 0))
+              errors  = int(ts.get('errors',   0))
+              skipped = int(ts.get('skipped',  0))
+              passed  = tests - failures - errors - skipped
+          except Exception as e:
+              print(f'Warning: could not parse junit.xml: {e}', file=sys.stderr)
+              tests = failures = errors = skipped = passed = 0
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'passed={passed}\n')
+              f.write(f'failed={failures + errors}\n')
+              f.write(f'skipped={skipped}\n')
+              f.write(f'total={tests}\n')
+          EOF
 
   build:
     runs-on: ubuntu-latest
@@ -197,3 +227,68 @@ jobs:
           echo "Build result: ${{ needs.build.result }}"
           echo "Security result: ${{ needs.security.result }}"
           exit 1
+
+      - name: Post PR summary comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const passed  = '${{ needs.test.outputs.test-passed  }}' || '0';
+            const failed  = '${{ needs.test.outputs.test-failed  }}' || '0';
+            const skipped = '${{ needs.test.outputs.test-skipped }}' || '0';
+            const total   = '${{ needs.test.outputs.test-total   }}' || '0';
+
+            const testResult  = '${{ needs.test.result }}';
+            const buildResult = '${{ needs.build.result }}';
+            const allGood = testResult === 'success' && buildResult === 'success';
+            const icon = allGood ? '✅' : '❌';
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Fetch artifact list for direct download links
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            const artifactLinks = artifacts
+              .map(a => `[${a.name}](${runUrl}/artifacts/${a.id})`)
+              .join(' &nbsp;·&nbsp; ');
+
+            const body = [
+              `<!-- ci-summary -->`,
+              `## ${icon} CI Results`,
+              ``,
+              `### 🧪 Tests`,
+              `| ✅ Passed | ❌ Failed | ⏭️ Skipped | 📊 Total |`,
+              `|:---------:|:---------:|:----------:|:--------:|`,
+              `| ${passed} | ${failed} | ${skipped} | ${total} |`,
+              ``,
+              `### 📦 Artifacts`,
+              artifactLinks || `_No artifacts found — [view run](${runUrl})_`,
+              ``,
+              `<sub>[→ Full run details](${runUrl})</sub>`,
+            ].join('\n');
+
+            // Create or update the sticky comment
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body?.includes('<!-- ci-summary -->'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

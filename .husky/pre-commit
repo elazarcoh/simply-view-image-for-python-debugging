@@ -1,0 +1,3 @@
+# Auto-fix lint issues before commit. Never blocks the commit — fixable problems
+# are corrected in-place and staged; non-fixable problems are left for CI to flag.
+yarn lint:fix && git add -A || true

@@ -559,7 +559,8 @@
     "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/mvp.test.js'",
     "ui-test:offscreen": "xvfb-run -a yarn ui-test",
     "ui-test:offscreen:run": "xvfb-run -a yarn ui-test:run",
-    "extest": "extest"
+    "extest": "extest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@jupyterlab/services": "^7.3.5",
@@ -596,6 +597,7 @@
     "eslint-webpack-plugin": "^4.2.0",
     "globals": "^15.14.0",
     "html-webpack-plugin": "^5.6.0",
+    "husky": "^9.1.7",
     "lethargy-ts": "^0.1.0",
     "lodash-cli": "^4.17.5",
     "mini-css-extract-plugin": "^2.9.1",

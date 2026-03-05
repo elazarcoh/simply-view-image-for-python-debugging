@@ -125,13 +125,12 @@ jobs:
           python3 - <<'EOF'
           import xml.etree.ElementTree as ET, os, sys
           try:
-              tree = ET.parse('test-results/junit.xml')
-              root = tree.getroot()
-              ts = root if root.tag == 'testsuite' else next(root.iter('testsuite'), root)
-              tests   = int(ts.get('tests',   0))
-              failures= int(ts.get('failures', 0))
-              errors  = int(ts.get('errors',   0))
-              skipped = int(ts.get('skipped',  0))
+              root = ET.parse('test-results/junit.xml').getroot()
+              # root is <testsuites> (aggregate) or <testsuite> — both carry totals at root level
+              tests   = int(root.get('tests',   0))
+              failures= int(root.get('failures', 0))
+              errors  = int(root.get('errors',   0))
+              skipped = int(root.get('skipped',  0))
               passed  = tests - failures - errors - skipped
           except Exception as e:
               print(f'Warning: could not parse junit.xml: {e}', file=sys.stderr)

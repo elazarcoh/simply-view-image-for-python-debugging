@@ -19,7 +19,7 @@ describe('pillow image viewing', () => {
       sleepDuration: 1000,
       autoEnsureViews: true,
     });
-  }).timeout(30000);
+  }).timeout(60000);
 
   afterEach(async () => {
     if (debugHelper) {

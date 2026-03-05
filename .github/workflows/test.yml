@@ -72,7 +72,7 @@ jobs:
         run: |
           mkdir -p test-results
           yarn test:compile
-          xvfb-run -a --server-args="-screen 0 1920x1080x24" yarn extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources --code_settings tests/vscode-test-settings.json --open_resource tests/test-data/workspace
+          xvfb-run -a --server-args="-screen 0 1920x1080x24" yarn extest setup-and-run './out/tests/ui-test/*.test.js' -y --install_dependencies 'ms-python.python' --storage test-resources --code_settings tests/vscode-test-settings.json
         # continue-on-error: true  # don't use it, so a proper error will show. instead, we use if: always() on the rest of the steps
 
       - name: Upload test results to GitHub

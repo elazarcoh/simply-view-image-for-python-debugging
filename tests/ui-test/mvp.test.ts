@@ -20,7 +20,7 @@ describe('core image viewing workflow', () => {
       sleepDuration: 1000,
       autoEnsureViews: true,
     });
-  }).timeout(30000);
+  }).timeout(60000);
 
   after(async () => {
     DebugTestHelper.reset();

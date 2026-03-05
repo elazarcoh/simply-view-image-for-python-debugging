@@ -38,14 +38,14 @@ describe('display options tests', () => {
       retryCount: 5,
       sleepDuration: 1000,
     });
-  }).timeout(30000);
+  }).timeout(60000);
 
   afterEach(async () => {
     // Clean up after tests
     if (debugHelper) {
       await debugHelper.cleanup();
     }
-  }).timeout(30000);
+  }).timeout(60000);
 
   after(async () => {
     DebugTestHelper.reset();

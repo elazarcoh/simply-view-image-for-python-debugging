@@ -4,6 +4,9 @@
   "displayName": "View Image for Python Debugging",
   "version": "4.0.19",
   "packageManager": "yarn@4.4.1",
+  "workspaces": [
+    "icons"
+  ],
   "description": "simply view the image of the image variables when debugging python",
   "repository": {
     "type": "git",
@@ -539,10 +542,11 @@
     "webview:install": "cd src/webview-ui && cargo fetch",
     "postinstall": "yarn run webview:install",
     "update-package-json": "update-package-json",
-    "build:prod": "webpack --mode production --config webpack.config.prod.mjs",
-    "build:webview": "webpack --mode development  --config webpack.webview.config.mjs",
+    "build:icons": "cd icons && yarn build",
+    "build:prod": "yarn build:icons && webpack --mode production --config webpack.config.prod.mjs",
+    "build:webview": "yarn build:icons && webpack --mode development  --config webpack.webview.config.mjs",
     "build:extension": "webpack --mode development  --config webpack.extension.config.mjs",
-    "build": "webpack --mode development",
+    "build": "yarn build:icons && webpack --mode development",
     "watch": "webpack --mode development --watch",
     "vscode:prepublish": "yarn run clean && yarn run build:prod",
     "package": "vsce package",

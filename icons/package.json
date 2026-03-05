@@ -2,6 +2,7 @@
   "name": "svifpd-icons",
   "version": "0.0.1",
   "fontVersion": "0.1",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "clean": "node ./scripts/reset.js",
@@ -9,7 +10,7 @@
     "sprite": "node ./scripts/svg-sprite.js --outDir dist --outFile svifpd-icons.svg",
     "export-to-csv": "node ./scripts/export-to-csv.js -f ./dist/svifpd-icons.woff2 > ./dist/svifpd-icons.csv",
     "fonts": "fantasticon",
-    "build": "npm run clean && npm run svgo && npm run fonts && npm run export-to-csv && npm run sprite",
+    "build": "yarn run clean && yarn run svgo && yarn run fonts && yarn run export-to-csv && yarn run sprite",
     "release": "release-it"
   },
   "devDependencies": {

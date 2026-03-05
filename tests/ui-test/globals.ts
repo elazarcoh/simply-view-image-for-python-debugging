@@ -35,6 +35,18 @@ export async function openWorkspace(
   } = options;
   const workspaceName = path.basename(WORKSPACE_FILE, '.code-workspace');
 
+  // Check if workspace is already open — avoid redundant re-open which can hit notification banners
+  try {
+    const currentTitle = await new TitleBar().getTitle();
+    if (currentTitle.startsWith(workspaceName)) {
+      DebugTestHelper.logger.success(`Workspace already open: "${currentTitle}"`);
+      return;
+    }
+  }
+  catch (_e) {
+    // Ignore — proceed with opening
+  }
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       DebugTestHelper.logger.step(`Opening workspace (attempt ${attempt}/${maxRetries})`);

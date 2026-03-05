@@ -116,6 +116,9 @@ export class DebugTestHelper {
 
     DebugTestHelper.logger.step(`Opening file ${filePath}`);
 
+    // Dismiss any visible notifications first to avoid them intercepting our UI interactions
+    await this.dismissNotifications();
+
     const titleBar = new TitleBar();
     const item = await titleBar.getItem('File');
     const fileMenu = await item!.select();
@@ -125,19 +128,35 @@ export class DebugTestHelper {
     const input = await InputBox.create();
     await input.setText(filePath);
 
-    // Try confirming the input up to 3 times
+    // Use keyboard Enter instead of input.confirm() — confirm() calls input.click() first which
+    // can fail when a VS Code notification banner overlaps the input at the top of the screen.
+    // After setText(), the input element is already focused so we can send Enter directly.
     for (let attempt = 0; attempt < 3; attempt++) {
-      await input.confirm();
+      await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
+      await this.sleep(500);
       const isOpened = await checkFileOpen();
       if (isOpened) {
         DebugTestHelper.logger.step(`File ${filePath} is opened in an editor`);
         return this;
       }
-      await this.sleep(500);
     }
 
     await this.takeScreenshot({ name: 'failed-to-open-file', element: 'screen' });
     throw new Error(`Failed to open file ${filePath} in an editor`);
+  }
+
+  /**
+   * Dismiss all visible VS Code notifications to avoid them intercepting UI clicks
+   */
+  async dismissNotifications(): Promise<void> {
+    try {
+      await new Workbench().executeCommand('notifications.clearAll');
+    }
+    catch (_e) {
+      // Ignore errors - notification dismissal is best-effort
+    }
+    // Brief pause for notification animations to complete
+    await VSBrowser.instance.driver.sleep(200);
   }
 
   /**
@@ -304,7 +323,8 @@ export class DebugTestHelper {
     // Enter the line number in the input box
     const input = await InputBox.create(this.options.timeout);
     await input.setText(lineNumber.toString());
-    await input.confirm();
+    // Use keyboard Enter instead of confirm() to avoid click interception issues
+    await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
     await VSBrowser.instance.driver.sleep(500);
 
     // Toggle breakpoint using command
@@ -467,6 +487,16 @@ export class DebugTestHelper {
       DebugTestHelper.logger.success(`Image Watch section has ${lastItemCount} item(s)`);
     }
 
+    return this;
+  }
+
+  /**
+   * Run the svifpd setup command to trigger the extension to detect variables
+   */
+  async runSetup(): Promise<this> {
+    DebugTestHelper.logger.step('Running svifpd setup command');
+    await new Workbench().executeCommand('svifpd.run-setup');
+    await VSBrowser.instance.driver.sleep(500);
     return this;
   }
 
@@ -904,7 +934,8 @@ export class DebugTestHelper {
     try {
       const input = await InputBox.create(timeout);
       await input.setText(expression);
-      await input.confirm();
+      // Use keyboard Enter to avoid click interception by notification banners
+      await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
       await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
       DebugTestHelper.logger.step(`Expression "${expression}" added`);
@@ -930,7 +961,8 @@ export class DebugTestHelper {
     try {
       const input = await InputBox.create();
       await input.setText(newExpression);
-      await input.confirm();
+      // Use keyboard Enter to avoid click interception by notification banners
+      await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
       await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
       DebugTestHelper.logger.step(`Expression edited to "${newExpression}"`);

@@ -158,7 +158,7 @@ describe('display options tests', () => {
       variableName,
       actionLabel: 'View Image',
       retrySetup: true,
-      setupRetries: 3,
+      setupRetries: 5,
       type: 'variable',
     });
 
@@ -232,10 +232,15 @@ describe('display options tests', () => {
 
     await debugHelper.startDebugging();
     await debugHelper.waitForBreakpoint();
-    await debugHelper.wait(1000);
+    await debugHelper.wait(2000); // extra wait for extension to process debug state in CI
 
     await debugHelper.expandImageWatchSection();
     await debugHelper.collapseOtherDebugSections();
+
+    // Explicitly trigger run-setup to ensure the extension detects variables
+    // (important on first test run in CI where extension may still be initializing)
+    await debugHelper.runSetup();
+    await debugHelper.wait(1000);
 
     // ===== Test 1: RGB Channel Filters =====
     DebugTestHelper.logger.step('Testing RGB channel display options on rgb_gradient...');

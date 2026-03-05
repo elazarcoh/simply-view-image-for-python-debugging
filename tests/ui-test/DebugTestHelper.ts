@@ -4,7 +4,7 @@
  */
 
 import type { DebugView, Editor, EditorTab, TreeItem, ViewSection, WebElement } from 'vscode-extension-tester';
-import { basename } from 'node:path/win32';
+import { basename } from 'node:path';
 import { ActivityBar, DebugToolbar, EditorView, InputBox, TitleBar, VSBrowser, Workbench } from 'vscode-extension-tester';
 import { writeScreenshot } from './test-utils';
 
@@ -663,7 +663,19 @@ export class DebugTestHelper {
     await this.validateContainer(variablesItem, containerName, variableName);
 
     const variableItem = await this.findVariableWithRetries(variablesItem, variableName, containerName, type, retrySetup, setupRetries);
-    await this.performActionOnVariable(variableItem, variableName, actionLabel);
+    try {
+      await this.performActionOnVariable(variableItem, variableName, actionLabel);
+    }
+    catch (actionError) {
+      // If action not found, re-resolve the tree in case the wrong item was matched
+      DebugTestHelper.logger.warn(`Action failed, re-resolving tree: ${actionError}`);
+      await this.refreshImageWatch();
+      await VSBrowser.instance.driver.sleep(2000);
+
+      const freshContainer = await this.findAndExpandTreeItem(containerName);
+      const freshVariable = await this.findVariableWithRetries(freshContainer, variableName, containerName, type, retrySetup, setupRetries);
+      await this.performActionOnVariable(freshVariable, variableName, actionLabel);
+    }
 
     DebugTestHelper.logger.success(`Action "${actionLabel}" performed on variable "${variableName}"`);
     return this;
@@ -746,7 +758,7 @@ export class DebugTestHelper {
   }
 
   private async handleSpecialVariableCase(variablesItem: TreeItem, variableName: string, type: string, attempt: number): Promise<TreeItem | undefined> {
-    if (type !== 'variable')
+    if (type !== 'variable' && type !== 'expression')
       return undefined;
 
     const childItems = await variablesItem.getChildren().catch(() => []);
@@ -765,10 +777,11 @@ export class DebugTestHelper {
       ['type', 'shape', 'dtype', 'size', 'ndim', 'device'].includes(label),
     );
 
-    if (hasMetadataProperties && variableName === 'x') {
-      DebugTestHelper.logger.debug(`Special case detected: Variables container appears to be the variable "${variableName}" itself`);
+    if (hasMetadataProperties) {
+      const containerLabel = type === 'variable' ? 'Variables' : 'Expressions';
+      DebugTestHelper.logger.debug(`Special case detected: ${containerLabel} container appears to be the ${type} "${variableName}" itself`);
       DebugTestHelper.logger.info(`Children are metadata properties: [${childLabels.join(', ')}]`);
-      DebugTestHelper.logger.success(`Using Variables container as variable "${variableName}" on attempt ${attempt}`);
+      DebugTestHelper.logger.success(`Using ${containerLabel} container as ${type} "${variableName}" on attempt ${attempt}`);
       return variablesItem;
     }
 
@@ -1244,6 +1257,37 @@ export class DebugTestHelper {
    */
   sleep(ms: number) {
     return VSBrowser.instance.driver.sleep(ms);
+  }
+
+  /**
+   * Collapse all debug sections except Image Watch to give it more visual space.
+   */
+  async collapseOtherDebugSections(): Promise<this> {
+    if (this.options.autoEnsureViews) {
+      await this.ensureDebugViewOpen();
+    }
+    else if (!this.debugView) {
+      throw new Error('Debug view not opened. Call openDebugPanel() first.');
+    }
+
+    DebugTestHelper.logger.step('Collapsing other debug sections');
+
+    const sections = await this.debugView!.getContent().getSections();
+    for (const section of sections) {
+      try {
+        const title = await section.getTitle();
+        if (title !== 'Image Watch' && await section.isExpanded()) {
+          await section.collapse();
+          DebugTestHelper.logger.debug(`Collapsed section: ${title}`);
+        }
+      }
+      catch (e) {
+        DebugTestHelper.logger.debug(`Could not collapse section: ${e}`);
+      }
+    }
+
+    DebugTestHelper.logger.success('Other debug sections collapsed');
+    return this;
   }
 
   // =============================================================================

@@ -5,6 +5,7 @@
 /.vscode-test
 /.test-extensions
 /test-resources/
+/.venv/
 __pycache__/
 .pnp.*
 .yarn/*

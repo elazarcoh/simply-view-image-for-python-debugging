@@ -40,7 +40,7 @@ const extensionConfig = {
     rules: [
       {
         test: /\.ts$/,
-        exclude: [/node_modules/, /webview-ui/],
+        exclude: [/node_modules/, /webview-ui/, /test-resources/],
         use: [
           {
             loader: 'ts-loader',

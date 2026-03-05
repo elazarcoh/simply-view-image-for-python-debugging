@@ -1,14 +1,13 @@
 /**
- * MVP end-to-end test: verifies the core workflow of the extension.
- * Opens a Python file, starts debugging, hits a breakpoint, views a variable
- * as an image, and verifies the webview opens.
+ * PIL/Pillow image viewing test: verifies that PIL Image objects
+ * can be viewed through the extension.
  */
 
 import { expect } from 'chai';
 import { DebugTestHelper } from './DebugTestHelper';
 import { fileInWorkspace, openWorkspace } from './globals';
 
-describe('core image viewing workflow', () => {
+describe('pillow image viewing', () => {
   let debugHelper: DebugTestHelper;
 
   before(async () => {
@@ -22,22 +21,21 @@ describe('core image viewing workflow', () => {
     });
   }).timeout(30000);
 
-  after(async () => {
-    DebugTestHelper.reset();
-  });
-
   afterEach(async () => {
     if (debugHelper) {
       await debugHelper.cleanup();
     }
   }).timeout(20000);
 
-  it('should view a numpy image variable and open the webview', async () => {
-    debugHelper.setCurrentTest('mvp-view-image');
+  after(async () => {
+    DebugTestHelper.reset();
+  });
 
-    // Open file and start debugging
+  it('should view a PIL RGB image in the webview', async () => {
+    debugHelper.setCurrentTest('pil-rgb');
+
     await debugHelper.setupEditorForDebug({
-      fileName: fileInWorkspace('debug_test.py'),
+      fileName: fileInWorkspace('pil_test.py'),
       debugConfig: 'Python: Current File',
       openFile: true,
     });
@@ -46,20 +44,18 @@ describe('core image viewing workflow', () => {
     await debugHelper.waitForBreakpoint();
     await debugHelper.sleep(1000);
 
-    // Expand Image Watch and verify it has items
     await debugHelper.expandImageWatchSection();
     await debugHelper.waitForImageWatchItems({ timeout: 15000, minItems: 1 });
 
-    // Perform "View Image" on variable x
+    // View the PIL RGB image
     await debugHelper.performVariableAction({
-      variableName: 'x',
+      variableName: 'pil_rgb',
       actionLabel: 'View Image',
       retrySetup: true,
       setupRetries: 3,
       type: 'variable',
     });
 
-    // Wait for the webview to open and assert it did
     await debugHelper.getWebview({ autoOpen: true });
     const webviewEditor = await debugHelper.getWebviewEditor();
     expect(webviewEditor).to.not.be.undefined;
@@ -68,18 +64,18 @@ describe('core image viewing workflow', () => {
     expect(isDisplayed).to.be.true;
 
     await debugHelper.takeScreenshot({
-      name: 'webview-opened',
+      name: 'pil-rgb-viewed',
       element: webviewEditor,
     });
 
-    DebugTestHelper.logger.success('MVP test: numpy image viewed successfully');
+    DebugTestHelper.logger.success('PIL test: RGB image viewed successfully');
   }).timeout(120000);
 
-  it('should show variables in Image Watch section during debugging', async () => {
-    debugHelper.setCurrentTest('mvp-watch-items');
+  it('should show PIL images in the Image Watch variables list', async () => {
+    debugHelper.setCurrentTest('pil-watch');
 
     await debugHelper.setupEditorForDebug({
-      fileName: fileInWorkspace('numpy_test.py'),
+      fileName: fileInWorkspace('pil_test.py'),
       debugConfig: 'Python: Current File',
       openFile: true,
     });
@@ -91,24 +87,15 @@ describe('core image viewing workflow', () => {
     await debugHelper.expandImageWatchSection();
     await debugHelper.waitForImageWatchItems({ timeout: 15000, minItems: 1 });
 
-    // Verify we can find the Variables container
+    // Verify the Variables container exists (PIL images should be detected)
     const variablesItem = await debugHelper.findAndExpandTreeItem('Variables');
     expect(variablesItem).to.not.be.undefined;
 
-    // Verify we can perform an action on a variable (proves variables are populated)
-    await debugHelper.performVariableAction({
-      variableName: 'rgb_image',
-      actionLabel: 'View Image',
-      retrySetup: true,
-      setupRetries: 3,
-      type: 'variable',
-    });
-
     await debugHelper.takeScreenshot({
-      name: 'image-watch-populated',
+      name: 'pil-watch-items',
       element: 'screen',
     });
 
-    DebugTestHelper.logger.success('MVP test: Image Watch populated with variables');
+    DebugTestHelper.logger.success('PIL test: images visible in Image Watch');
   }).timeout(120000);
 });

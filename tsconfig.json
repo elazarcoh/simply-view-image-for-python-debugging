@@ -27,6 +27,7 @@
     "python_test",
     "temp-ignore",
     "example-plugin",
-    "vscode-extension-tester-example"
+    "vscode-extension-tester-example",
+    "test-resources"
   ]
 }

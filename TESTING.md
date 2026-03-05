@@ -1,99 +1,91 @@
-# Testing Issues and Solutions
+# Testing
 
-## UI Test Issues
+## Overview
 
-The VS Code Extension Tester framework encounters compatibility issues with Node.js 22.x and browser session management. This is a known issue with the Chrome/ChromeDriver integration.
+The extension uses [vscode-extension-tester](https://github.com/redhat-developer/vscode-extension-tester) (ExTester) for end-to-end UI tests. Tests launch a real VS Code instance, open Python debug sessions, and verify the extension's image/plot viewing features.
 
-### Issue Details
+## Test Suites
 
-- **Error**: "session not created: probably user data directory is already in use"
-- **Cause**: VS Code Extension Tester framework has browser session conflicts
-- **Node.js Version**: v22.x (partially unsupported by ExTester, but works with proper configuration)
+| File                               | Description                                                           |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `extension.test.ts`                | Verifies extension is installed with correct metadata                 |
+| `mvp.test.ts`                      | Core workflow: debug Python → view numpy image → verify webview opens |
+| `python-debug-expressions.test.ts` | Add/view custom watch expressions in Image Watch                      |
+| `pil-image.test.ts`                | View PIL/Pillow images during debugging                               |
+| `matplotlib-plot.test.ts`          | View matplotlib figures via "View Plot" action                        |
+| `tracking.test.ts`                 | Variable tracking across breakpoints (continue → re-verify)           |
+| `display-options.test.ts`          | Display options (channel filters, heatmap, segmentation, etc.)        |
 
-### Current Solutions
+## Python Test Data
 
-#### 1. Basic Validation Tests (Working)
+Located in `tests/test-data/workspace/`:
+
+| Script                    | Variables                                                    |
+| ------------------------- | ------------------------------------------------------------ |
+| `debug_test.py`           | `x` — 2×2 RGB numpy array                                    |
+| `numpy_test.py`           | `rgb_image`, `float_image`, `gray_uint8`, `large_image`, `x` |
+| `pil_test.py`             | `pil_rgb`, `pil_gray`, `pil_rgba` (PIL Image objects)        |
+| `matplotlib_test.py`      | `fig_line`, `fig_bar` (matplotlib Figure objects)            |
+| `tracking_test.py`        | `img` modified across two breakpoints                        |
+| `display_options_test.py` | Various images for display option testing                    |
+
+## Running Tests
+
+### Quick validation (no browser)
 
 ```bash
 yarn test:validate
 ```
 
-These tests validate:
-
-- Extension package configuration
-- File structure and compilation
-- Commands and activation events
-- Basic environment setup
-
-#### 2. Full UI Tests (Browser Automation)
+### Full UI tests (needs display)
 
 ```bash
 yarn ui-test
 ```
 
-##### **Recommended: Run UI Tests Offscreen (Headless) with xvfb**
-
-For CI environments or headless systems, use:
+### Headless / CI (recommended)
 
 ```bash
 yarn ui-test:offscreen
 ```
 
-Or for better resolution and stability:
+Or with custom resolution:
 
 ```bash
 xvfb-run -a --server-args="-screen 0 1920x1080x24" yarn extest run-tests './out/tests/ui-test/*.test.js'
 ```
 
-This uses `xvfb-run` to simulate a display so Chrome/VSCode can launch. This is the recommended way to run full UI tests in headless or CI environments.
+### Run a single test file
 
-**Prerequisites:**
+```bash
+yarn test:compile && extest run-tests './out/tests/ui-test/mvp.test.js'
+```
 
-- If you get `xvfb-run: command not found`, install it with:
-  ```bash
-  sudo apt install xvfb
-  ```
-- Ensure Python dependencies are installed:
-  ```bash
-  pip install -r tests/test-data/workspace/requirements.txt
-  ```
+### Prerequisites
 
-**Environment Variables for CI:**
+- **xvfb** for headless: `sudo apt install xvfb`
+- **Python dependencies**: `pip install -r tests/test-data/workspace/requirements.txt`
+- **Build webview types first**: `yarn build:webview`
 
-The tests automatically detect CI environments and adjust behavior:
+## CI Environment
 
-- `CI=true` - Enables higher timeouts and more retries for stability
-- `MOCHA_JUNIT=true` - Outputs test results in JUnit format for CI reporting
+Tests detect CI via environment variables:
 
-#### 3. Test Robustness Features
+- `CI=true` — Enables higher timeouts (60s) and 2 retries per test
+- `MOCHA_JUNIT=true` — Outputs JUnit XML for CI test reporting
 
-The test framework includes several robustness improvements for headless/CI environments:
+The GitHub Actions workflow (`.github/workflows/test.yml`) runs the full suite with xvfb and uploads screenshots and test results as artifacts.
 
-1. **Workspace Loading Retry Logic**: The `openWorkspace()` function retries up to 3 times with configurable delays
-2. **Image Watch Item Waiting**: Tests wait for the Image Watch section to be fully populated before interacting
-3. **Mocha Configuration**: CI environments automatically use higher timeouts (60s) and more retries (2)
-4. **Screenshot on Failure**: Failed tests capture screenshots for debugging
+## Debugging Failures
 
-#### 4. Manual Testing
+- **Screenshots**: Every test failure captures a screenshot with the test name and failed step
+- **Debug state logging**: Failed tests log the Image Watch tree structure and debug session state
+- **Artifacts in CI**: Screenshots and JUnit XML are uploaded as workflow artifacts
+- **Debug launch config**: Use "Debug UI Tests" in `.vscode/launch.json` to step through tests
 
-For UI features, manual testing in VS Code is recommended:
+## Architecture
 
-1. Install extension: `yarn install-extension`
-2. Open Python debug session
-3. Test image viewing functionality
-
-### Recommendations
-
-- Use `yarn test:validate` for basic CI/CD pipelines
-- Use `yarn ui-test:offscreen` for full UI testing in CI with xvfb
-- Set `CI=true` environment variable in CI pipelines for optimal test configuration
-
-### Applied Fixes
-
-- Fixed VS Code Extension Tester browser.js to use unique user data directories
-- Created validation tests that don't require browser automation
-- Added React dependency to resolve npm warnings
-- Added retry logic for workspace loading
-- Added waiting for Image Watch section items to be populated
-- Improved mocha configuration with CI-aware timeouts and retries
-- Enhanced GitHub Actions workflow with proper xvfb configuration
+- **DebugTestHelper** (`DebugTestHelper.ts`): Singleton class with fluent API for all debug UI automation (file opening, debug sessions, Image Watch interaction, webview management, screenshots)
+- **test-utils.ts**: Shared utilities for extension activation, webview detection, and error handling
+- **globals.ts**: Workspace path constants and `openWorkspace()` with retry logic
+- **.mocharc.js**: CI-aware Mocha config (timeouts, retries, JUnit reporter)

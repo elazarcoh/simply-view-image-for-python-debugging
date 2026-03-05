@@ -8,9 +8,12 @@ src/**
 webview-ui/**
 tests/**
 test-backup/**
+test-resources/**
+test-results/**
 vscode-extension-tester-example/**
 vscode-extension-tester.wiki/**
 temp-ignore/**
+.venv/**
 .gitignore
 vsc-exdtension-quickstart.md
 **/tsconfig.json
@@ -30,3 +33,5 @@ icons/**
 .prettierrc
 .node-version
 .actrc
+test.log
+*.vsix

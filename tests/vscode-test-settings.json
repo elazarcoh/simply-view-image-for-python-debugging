@@ -1,0 +1,15 @@
+{
+  "security.workspace.trust.enabled": false,
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.enableExperiments": false,
+  "extensions.ignoreRecommendations": true,
+  "extensions.autoUpdate": false,
+  "update.mode": "none",
+  "telemetry.telemetryLevel": "off",
+  "python.showStartPage": false,
+  "python.experiments.enabled": false,
+  "editor.tabCompletion": "off",
+  "workbench.welcomePage.walkthroughs.openOnInstall": false,
+  "workbench.welcomePage.hiddenCategories": ["Setup", "Beginner", "Intermediate"]
+}

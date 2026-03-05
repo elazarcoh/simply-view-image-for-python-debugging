@@ -9,7 +9,7 @@ export class VariableWatchTreeItem extends PythonObjectTreeItem {
     info: Readonly<PythonObjectInformation>,
     collapsibleState: vscode.TreeItemCollapsibleState = vscode
       .TreeItemCollapsibleState
-.Collapsed,
+      .Collapsed,
   ) {
     super(
       'variable',

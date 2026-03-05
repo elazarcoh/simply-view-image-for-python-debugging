@@ -91,3 +91,4 @@ Common pitfalls and fixes
 - TS cannot find "../webview-ui/pkg/webview": run yarn build:webview first.
 - ESLint non-null assertion violations: refactor to proper runtime checks or optional chaining.
 - Unused variables: prefix with \_ or remove.
+- ExTester warnings about Node.js version: The extension works with Node.js 22.x; ignore ExTester recommendations for Node 20.x as this is a known compatibility issue with the testing framework, not the extension itself.

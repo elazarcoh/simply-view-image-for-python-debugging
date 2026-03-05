@@ -29,6 +29,19 @@
       ],
       "label": "npm: build",
       "detail": "webpack --mode development"
+    },
+    {
+      "label": "Compile tests",
+      "type": "typescript",
+      "tsconfig": "tsconfig.test.json",
+      "isBackground": true,
+      "option": "watch",
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "group": {
+        "kind": "build"
+      }
     }
   ]
 }

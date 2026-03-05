@@ -37,7 +37,7 @@ export class ExpressionWatchTreeItem extends PythonObjectTreeItem {
     info: Readonly<PythonObjectInformation>,
     collapsibleState: vscode.TreeItemCollapsibleState = vscode
       .TreeItemCollapsibleState
-.Collapsed,
+      .Collapsed,
   ) {
     super(
       'expression',

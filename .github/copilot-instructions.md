@@ -28,17 +28,17 @@ This is a VS Code extension with two main components:
 
 Use **Yarn only**. Do not use npm or tsc directly.
 
-| Command | Description |
-|---|---|
-| `yarn build` | Full extension build (development mode) |
-| `yarn build:webview` | Build Rust/wasm webview UI; generates `src/webview-ui/pkg/` |
-| `yarn build:extension` | Build VS Code extension bundle only |
-| `yarn build:prod` | Production build (used for publishing) |
-| `yarn watch` | Watch mode for fast iteration |
-| `yarn lint` | Run ESLint |
-| `yarn lint:fix` | Run ESLint with auto-fix |
-| `yarn clean` | Remove `dist/` and `src/webview-ui/pkg/` |
-| `yarn package` | Package as `.vsix` (runs `vscode:prepublish` automatically) |
+| Command                | Description                                                 |
+| ---------------------- | ----------------------------------------------------------- |
+| `yarn build`           | Full extension build (development mode)                     |
+| `yarn build:webview`   | Build Rust/wasm webview UI; generates `src/webview-ui/pkg/` |
+| `yarn build:extension` | Build VS Code extension bundle only                         |
+| `yarn build:prod`      | Production build (used for publishing)                      |
+| `yarn watch`           | Watch mode for fast iteration                               |
+| `yarn lint`            | Run ESLint                                                  |
+| `yarn lint:fix`        | Run ESLint with auto-fix                                    |
+| `yarn clean`           | Remove `dist/` and `src/webview-ui/pkg/`                    |
+| `yarn package`         | Package as `.vsix` (runs `vscode:prepublish` automatically) |
 
 ### Webview types prerequisite
 
@@ -47,17 +47,21 @@ Use **Yarn only**. Do not use npm or tsc directly.
 ## Testing
 
 ### Quick (no browser)
+
 ```bash
 yarn test:validate
 ```
 
 ### Single UI test file
+
 ```bash
 yarn test:compile && extest run-tests './out/tests/ui-test/mvp.test.js'
 ```
+
 Replace `mvp.test.js` with any file from `out/tests/ui-test/`. Available suites: `extension`, `mvp`, `python-debug-expressions`, `pil-image`, `matplotlib-plot`, `tracking`, `display-options`.
 
 ### Full UI tests (headless/CI)
+
 ```bash
 yarn ui-test:offscreen
 # or with explicit resolution:
@@ -65,11 +69,13 @@ xvfb-run -a --server-args="-screen 0 1920x1080x24" yarn extest run-tests './out/
 ```
 
 ### Test prerequisites
+
 - `xvfb` for headless: `sudo apt install xvfb`
 - Python deps: `pip install -r tests/test-data/workspace/requirements.txt`
 - Webview types: `yarn build:webview`
 
 ### CI environment variables
+
 - `CI=true` — higher timeouts (60 s) and 2 retries per test
 - `MOCHA_JUNIT=true` — JUnit XML output
 
@@ -94,20 +100,24 @@ xvfb-run -a --server-args="-screen 0 1920x1080x24" yarn extest run-tests './out/
 ## PR review checklist
 
 **Build and quality gates**
+
 - `yarn build:webview` succeeds.
 - `yarn build` (or `yarn build:extension`) succeeds without errors.
 - `yarn lint` passes; Prettier formatting respected.
 
 **Dependencies and assets**
+
 - No generated/binary files committed (`dist/`, `src/webview-ui/pkg/`, `*.vsix`, logs).
 - New deps are justified and pinned (Yarn 4 PnP).
 
 **Behavior and compatibility**
+
 - Preserves existing defaults; respects `svifpd.*` settings.
 - Edge cases handled: Windows/Unix paths, remote/WSL, empty/large images, null tensors.
 - Webview/extension message types remain compatible.
 
 **Publishing**
+
 - `.vsix` must not exceed 5 MB. Use `yarn package` for local install; do not commit the built `.vsix`.
 
 ## Common pitfalls

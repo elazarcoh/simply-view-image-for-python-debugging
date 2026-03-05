@@ -14,4 +14,4 @@ __pycache__/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-/test-results/
+/test-results/test.log

@@ -1,0 +1,709 @@
+[33m
+Warning: You are using the untested NodeJS version '22.18.0'. The latest supported version is '20.x.x'.
+	 We recommend to use tested version to have ExTester working properly.
+
+[0m
+Downloading VS Code: 1.106.3 / stable
+VS Code exists in local cache, skipping download
+ChromeDriver 138.0.7204.183 exists in local cache, skipping download
+Executing prepublish script 'yarn run vscode:prepublish'...
+    [webpack-cli] Compiler 'webview3rdParty' starting... 
+    [webpack-cli] Compiler 'webview3rdParty' is using config: '/home/elazar/devel/simply-view-image-for-python-debugging/webpack.config.prod.mjs'
+<i> [VSCode Extension Config Generator] writing updated json to "/home/elazar/devel/simply-view-image-for-python-debugging/package.json"
+    [webpack-cli] Compiler 'webview3rdParty' finished
+    [webpack-cli] Compiler 'webview' starting... 
+    [webpack-cli] Compiler 'webview' is using config: '/home/elazar/devel/simply-view-image-for-python-debugging/webpack.config.prod.mjs'
+🧐  Checking for wasm-pack...
+
+✅  wasm-pack is installed at /tmp/xfs-ad15662f/wasm-pack. 
+
+ℹ️  Compiling your crate in release mode...
+
+[INFO]: 🎯  Checking for the Wasm target...
+[INFO]: 🌀  Compiling to Wasm...
+warning: associated function `new` is never used
+ --> src/common/types.rs:9:19
+  |
+8 | impl SessionId {
+  | -------------- associated function in this implementation
+9 |     pub(crate) fn new(id: &str) -> Self {
+  |                   ^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: `svifpd-webview-ui` (lib) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.10s
+[INFO]: ⬇️  Installing wasm-bindgen...
+[INFO]: Optimizing wasm binaries with `wasm-opt`...
+[INFO]: Optional fields missing from Cargo.toml: 'description', 'repository', and 'license'. These are not necessary, but recommended
+[INFO]: ✨   Done in 15.15s
+[INFO]: 📦   Your wasm pkg is ready to publish at /home/elazar/devel/simply-view-image-for-python-debugging/src/webview-ui/pkg.
+✅  Your crate has been correctly compiled
+
+Executing pre-build scripts
+Executing pre-build scripts
+    [webpack-cli] Compiler 'webview' finished
+    [webpack-cli] Compiler 'extension' starting... 
+    [webpack-cli] Compiler 'extension' is using config: '/home/elazar/devel/simply-view-image-for-python-debugging/webpack.config.prod.mjs'
+    [webpack-cli] Compiler 'extension' finished
+webview:
+  assets by path *.js 582 KiB
+    asset 764.webview.js 535 KiB [emitted] [minimized] [big] (id hint: vendors) 1 related asset
+    asset 944.webview.js 41.8 KiB [emitted] [minimized] 1 related asset
+    asset webview.js 4.35 KiB [emitted] [minimized] (name: index) 1 related asset
+  assets by path *.css 42.1 KiB
+    asset codicon.css 29 KiB [emitted] [from: node_modules/@vscode/codicons/dist/codicon.css] [copied]
+    asset webview-ui.css 10.9 KiB [emitted] [from: src/webview-ui/main.css] [copied]
+    asset svifpd-icons.css 2.22 KiB [emitted] [from: icons/dist/svifpd-icons.css] [copied]
+  asset 6c690dffd652f7101314.module.wasm 1.52 MiB [emitted] [immutable] [big]
+  asset codicon.ttf 78.3 KiB [emitted] [from: node_modules/@vscode/codicons/dist/codicon.ttf] [copied]
+  asset svifpd-icons.woff2 3.81 KiB [emitted] [from: icons/dist/svifpd-icons.woff2] [copied]
+  asset index.html 1.02 KiB [emitted]
+  runtime modules 9.9 KiB 11 modules
+  cacheable modules 668 KiB (javascript) 1.52 MiB (webassembly)
+    modules by path ./src/webview-ui/ 50.7 KiB (javascript) 1.52 MiB (webassembly)
+      modules by path ./src/webview-ui/pkg/*.js 48 KiB
+        ./src/webview-ui/pkg/webview.js 173 bytes [built] [code generated]
+        ./src/webview-ui/pkg/webview_bg.js 47.9 KiB [built] [code generated]
+      ./src/webview-ui/index.js 134 bytes [built] [code generated]
+      ./src/webview-ui/pkg/webview_bg.wasm 2.56 KiB (javascript) 1.52 MiB (webassembly) [built] [code generated]
+    modules by path ./node_modules/text-encoding/ 617 KiB
+      ./node_modules/text-encoding/index.js 258 bytes [built] [code generated]
+      ./node_modules/text-encoding/lib/encoding.js 99.1 KiB [built] [code generated]
+      ./node_modules/text-encoding/lib/encoding-indexes.js 518 KiB [built] [code generated]
+
+  WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+  This can impact web performance.
+  Assets: 
+    6c690dffd652f7101314.module.wasm (1.52 MiB)
+    764.webview.js (535 KiB)
+
+  webview (webpack 5.97.1) compiled with 1 warning in 18633 ms
+
+extension:
+  asset extension.js 905 KiB [emitted] [minimized] (name: main) 2 related assets
+  orphan modules 274 KiB [orphan] 64 modules
+  runtime modules 1.89 KiB 5 modules
+  cacheable modules 2.56 MiB
+    modules by path ./node_modules/ 2.25 MiB 191 modules
+    modules by path ./src/ 317 KiB
+      javascript modules 286 KiB 61 modules
+      asset modules 31.5 KiB
+        ./src/python/image_numpy.py?raw 6.3 KiB [built] [code generated]
+        ./src/python/image_pillow.py?raw 752 bytes [built] [code generated]
+        ./src/python/plot_plotly.py?raw 594 bytes [built] [code generated]
+        ./src/python/plot_pyplot.py?raw 1.91 KiB [built] [code generated]
+        ./src/python/numpy_tensor.py?raw 3.15 KiB [built] [code generated]
+        ./src/python/torch_tensor.py?raw 1.3 KiB [built] [code generated]
+        + 2 modules
+  + 18 modules
+  extension (webpack 5.97.1) compiled successfully in 11206 ms
+
+webview3rdParty:
+  asset lethargy_ts.js 2.62 KiB [emitted] [minimized] (name: lethargy_ts) 1 related asset
+  runtime modules 670 bytes 3 modules
+  ./node_modules/lethargy-ts/lib/index.js 5.85 KiB [built] [code generated]
+  webview3rdParty (webpack 5.97.1) compiled successfully in 1088 ms
+ INFO  Files included in the VSIX:
+simply-view-image-for-python-debugging-4.0.19.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .prettierignore [0.02 KB]
+   ├─ LICENSE.txt [1.04 KB]
+   ├─ PYTHON_DEBUG_TESTS.md [5.88 KB]
+   ├─ TESTING.md [3.13 KB]
+   ├─ WORKFLOW_IMPROVEMENTS.md [3.11 KB]
+   ├─ changelog.md 
+   ├─ icon.png [56.71 KB]
+   ├─ package.json [19.28 KB]
+   ├─ readme.md 
+   ├─ test.log [5.55 KB]
+   ├─ tsconfig.test.json [0.26 KB]
+   ├─ webpack.extension.config.mjs [1.55 KB]
+   ├─ webpack.webview.config.mjs [3.56 KB]
+   ├─ dist/ (14 files) [3.11 MB]
+   └─ readme-assets/ (3 files) [62.14 KB]
+
+=> Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: /home/elazar/devel/simply-view-image-for-python-debugging/simply-view-image-for-python-debugging-4.0.19.vsix (32 files, 1.17 MB)
+Installing extensions...
+Extension 'simply-view-image-for-python-debugging-4.0.19.vsix' was successfully installed.
+Installing extensions...
+Extension 'ms-python.python' is already installed.
+Loading mocha configuration from /home/elazar/devel/simply-view-image-for-python-debugging/.mocharc.js
+
+
+Writing code settings to /tmp/test-resources/settings/User/settings.json
+Launching browser...
+Browser ready in 2396 ms
+Launching tests...
+  simply View Image Extension Tests
+🔹 Step: Waiting for VS Code to be ready...
+✅ Success: ✓ VS Code is ready for testing
+✅ Success: VS Code is ready for testing
+🔹 Step: Ensuring extension 'elazarcoh.simply-view-image-for-python-debugging' is activated...
+✅ Success: Extension commands are available - extension is activated
+✅ Success: Extension command executed successfully - extension is fully activated
+✅ Success: ✓ Extension activation verification completed
+✅ Success: Extension activation verification completed
+✅ Success: Test environment setup completed successfully
+✅ Success: Extension "View Image for Python Debugging" is installed and visible
+    ✔ extension should be installed
+ℹ️ Info: Extension metadata - Author: "Elazar Cohen", Version: "4.0.19"
+ℹ️ Info: Extension description: "simply view the image of the image variables when debugging python"
+✅ Success: Extension metadata verification passed
+    ✔ extension should have correct metadata
+✅ Success: Extension "View Image for Python Debugging" appears to be properly enabled
+    ✔ extension should be enabled
+
+  python debugging with enhanced DebugTestHelper
+🔹 Step: Opening workspace
+🔹 Step: Opening workspace (attempt 1/3)
+✅ Success: Workspace opened successfully on attempt 1
+🔹 Step: Workspace opened
+🚀 Test Start: Starting enhanced debug test with high-level methods
+🔹 Step: Setting up editor for debug - /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: Opening file /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: File /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py is opened in an editor
+🔹 Step: Opening editor for debug_test.py
+🔹 Step: Editor for debug_test.py is displayed
+🔹 Step: Debug view not valid, opening debug panel
+🔹 Step: Opening debug panel
+🔹 Step: Debug panel opened
+🔹 Step: Debug view already open and valid
+🔹 Step: Getting launch configurations matching "Python: Current File"
+🔹 Step: Launch configuration "Python: Current File (workspace)" selected
+🔹 Step: Editor setup completed for /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: Debug view already open and valid
+🔹 Step: Starting debug session
+🔹 Step: Debug session started
+🔹 Step: Waiting for debug toolbar
+✅ Success: Debug toolbar is displayed
+🔹 Step: Waiting for breakpoint to be hit
+✅ Success: Breakpoint hit
+🔹 Step: Finding variable "x" of type "variable"
+🐞 Debug: Looking for container "Variables" for variable "x"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section not valid, expanding section
+🔹 Step: Debug view already open and valid
+🔹 Step: Expanding Image Watch section
+✅ Success: Image Watch section expanded
+🔹 Step: Finding tree item "Variables"
+ℹ️ Info: No items found in Image Watch section, waiting... (attempt 1/3)
+🐞 Debug: Debugging tree structure in Image Watch section...
+ℹ️ Info: Found 4 visible items in Image Watch section
+ℹ️ Info: Available items in Image Watch section:
+0: "Variables" (hasChildren: true, expanded: true)
+1: "x" (hasChildren: true, expanded: true)
+2: "Expressions" (hasChildren: false, expanded: true)
+3: "dtype" (hasChildren: false, expanded: false)
+🐞 Debug: Performing shallow search for container "Variables"
+🐞 Debug: Checking visible item: "Variables"
+✅ Success: Found matching container item with label: "Variables"
+✅ Success: Found item for "Variables", validating...
+ℹ️ Info: Found item details: label="Variables", hasChildren=true, expanded=true
+✅ Success: Tree item "Variables" found and processed
+ℹ️ Info: Container validation: expected="Variables", actual="Variables", hasChildren=true
+✅ Success: Container validation passed
+🔹 Step: Attempt 1/3: Looking for variable "x" in Variables
+✅ Success: Variable "x" found on attempt 1
+🔹 Step: Variable "x" found
+🔹 Step: Getting action buttons for "x"
+ℹ️ Info: Found 3 action buttons for variable "x"
+🔹 Step: Found button label: "View Image"
+🔹 Step: Clicking "View Image" button
+✅ Success: Action "View Image" performed on variable "x"
+🔹 Step: Getting webview
+🔹 Step: Webview not valid, finding/opening webview
+🔹 Step: Finding Image View webview
+ℹ️ Info: Found 2 editor groups
+ℹ️ Info: Group 0 has open editors: [debug_test.py]
+ℹ️ Info: Group 1 has open editors: [Image View]
+✅ Success: Found 'Image View' in group 1
+✅ Success: Image View webview found and focused
+🔹 Step: Webview is ready
+🔹 Step: Getting Image View webview editor
+ℹ️ Info: Searching for Image View editor across 2 editor groups
+ℹ️ Info: Group 0 editors: [debug_test.py]
+ℹ️ Info: Group 1 editors: [Image View]
+✅ Success: Found 'Image View' in group 1, attempting to open...
+✅ Success: Successfully opened Image View editor
+✅ Success: Image View webview editor obtained successfully
+📸 Screenshot: Taking screenshot "mvp-setup-success-mvp-webview"
+📸 Screenshot: Screenshot "mvp-setup-success-mvp-webview" saved
+📸 Screenshot: Taking screenshot "mvp-setup-success-mvp-fullscreen"
+📸 Screenshot: Screenshot "mvp-setup-success-mvp-fullscreen" saved
+✅ Success: Enhanced debug test completed successfully
+    ✔ should set up editor for debug and inspect variables using high-level methods (21930ms)
+🧹 Cleanup: Starting comprehensive cleanup of DebugTestHelper resources
+🔹 Step: Stopping debugger
+🔹 Step: Debugger stopped
+🧹 Cleanup: Closing all editors
+🧹 Cleanup: Dismissing any open dialogs
+🧹 Cleanup: Resetting workbench state
+🧹 Cleanup: Comprehensive DebugTestHelper cleanup completed
+
+  python expression debugging tests
+🔹 Step: Opening workspace for expression tests
+🔹 Step: Opening workspace (attempt 1/3)
+✅ Success: Workspace opened successfully on attempt 1
+🔹 Step: Workspace opened
+🚀 Test Start: Starting comprehensive expression test
+🔹 Step: Setting up editor for debug - /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: Opening file /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: File /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py is opened in an editor
+🔹 Step: Opening editor for debug_test.py
+🔹 Step: Editor for debug_test.py is displayed
+🔹 Step: Debug view not valid, opening debug panel
+🔹 Step: Opening debug panel
+🔹 Step: Debug panel opened
+🔹 Step: Debug view already open and valid
+🔹 Step: Getting launch configurations matching "Python: Current File"
+🔹 Step: Launch configuration "Python: Current File (workspace)" selected
+🔹 Step: Editor setup completed for /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: Debug view already open and valid
+🔹 Step: Starting debug session
+🔹 Step: Debug session started
+🔹 Step: Waiting for debug toolbar
+✅ Success: Debug toolbar is displayed
+🔹 Step: Waiting for breakpoint to be hit
+✅ Success: Breakpoint hit
+🔹 Step: Debug view already open and valid
+🔹 Step: Expanding Image Watch section
+✅ Success: Image Watch section expanded
+🔹 Step: Adding simple expression: x
+📝 Expression: Adding expression "x"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Looking for "Add Expression" tree item in Image Watch section...
+🔹 Step: Found "Add Expression" tree item, clicking...
+🔹 Step: Waiting for input box to appear...
+🔹 Step: Input box appeared, setting text...
+🔹 Step: Confirming input...
+✅ Success: Expression "x" added successfully
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+📸 Screenshot: Taking screenshot "expr-eval-after-first-expression"
+📸 Screenshot: Screenshot "expr-eval-after-first-expression" saved
+🔹 Step: Adding second expression: x.reshape(4, 3)
+📝 Expression: Adding expression "x.reshape(4, 3)"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Looking for "Add Expression" tree item in Image Watch section...
+🔹 Step: Found "Add Expression" tree item, clicking...
+🔹 Step: Waiting for input box to appear...
+🔹 Step: Input box appeared, setting text...
+🔹 Step: Confirming input...
+✅ Success: Expression "x.reshape(4, 3)" added successfully
+🔹 Step: Waiting for expressions to be evaluated...
+🔹 Step: Refreshing Image Watch section...
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+📸 Screenshot: Taking screenshot "expr-eval-after-adding-expressions"
+📸 Screenshot: Screenshot "expr-eval-after-adding-expressions" saved
+🔹 Step: Finding variable "x" of type "expression"
+🐞 Debug: Looking for container "Expressions" for variable "x"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Finding tree item "Expressions"
+🐞 Debug: Debugging tree structure in Image Watch section...
+ℹ️ Info: Found 6 visible items in Image Watch section
+ℹ️ Info: Available items in Image Watch section:
+0: "Variables" (hasChildren: true, expanded: true)
+1: "x" (hasChildren: true, expanded: true)
+2: "Expressions" (hasChildren: false, expanded: true)
+3: "type" (hasChildren: false, expanded: false)
+4: "shape" (hasChildren: false, expanded: false)
+5: "dtype" (hasChildren: false, expanded: false)
+🐞 Debug: Performing shallow search for container "Expressions"
+🐞 Debug: Checking visible item: "Variables"
+🐞 Debug: Checking visible item: "x"
+🐞 Debug: Checking visible item: "type"
+🐞 Debug: Checking visible item: "shape"
+🐞 Debug: Checking visible item: "dtype"
+🐞 Debug: Checking visible item: "Expressions"
+✅ Success: Found matching container item with label: "Expressions"
+✅ Success: Found item for "Expressions", validating...
+ℹ️ Info: Found item details: label="Expressions", hasChildren=false, expanded=true
+⚠️ Warning: Warning: Container "Expressions" has no children. This might indicate an issue.
+📸 Screenshot: Taking screenshot "expr-eval-container-no-children-Expressions"
+📸 Screenshot: Screenshot "expr-eval-container-no-children-Expressions" saved
+✅ Success: Tree item "Expressions" found and processed
+ℹ️ Info: Container validation: expected="Expressions", actual="Expressions", hasChildren=false
+⚠️ Warning: Container "Expressions" has no children - this might indicate no variables are available
+✅ Success: Container validation passed
+🔹 Step: Attempt 1/3: Looking for variable "x" in Expressions
+⚠️ Warning: Variable "x" not found, listing available variables and running setup (attempt 1)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-1-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-1-x" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 2/3: Looking for variable "x" in Expressions
+⚠️ Warning: Variable "x" not found, listing available variables and running setup (attempt 2)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-2-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-2-x" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 3/3: Looking for variable "x" in Expressions
+⚠️ Warning: Variable "x" not found, listing available variables and running setup (attempt 3)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-3-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-3-x" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+❌ Error: Variable "x" not found after 3 attempts
+ℹ️ Info: Final check - Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-final-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-final-x" saved
+⚠️ Warning: Could not view simple expression as image: Variable "x" not found after 3 attempts. Available variables: []
+📸 Screenshot: Taking screenshot "expr-eval-error-simple-expression-missing-step-view-simple-expression"
+📸 Screenshot: Screenshot "expr-eval-error-simple-expression-missing-step-view-simple-expression" saved
+ℹ️ Info: Debug state (simple failure): Debug view is available
+ℹ️ Info: Debug state (simple failure): Available debug sections: [Variables, Watch, Call Stack, Breakpoints, Image Watch]
+ℹ️ Info: Debug state (simple failure): Debug toolbar is available
+ℹ️ Info: Debug state (simple failure): Image Watch section is available
+ℹ️ Info: Debug state (simple failure): Image Watch section expanded: true
+ℹ️ Info: Debug state (simple failure): Webview tab not available
+🔹 Step: Finding variable "x.reshape(4, 3)" of type "expression"
+🐞 Debug: Looking for container "Expressions" for variable "x.reshape(4, 3)"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Finding tree item "Expressions"
+🐞 Debug: Debugging tree structure in Image Watch section...
+ℹ️ Info: Found 6 visible items in Image Watch section
+ℹ️ Info: Available items in Image Watch section:
+0: "Variables" (hasChildren: true, expanded: true)
+1: "x" (hasChildren: true, expanded: true)
+2: "type" (hasChildren: false, expanded: false)
+3: "shape" (hasChildren: false, expanded: false)
+4: "dtype" (hasChildren: false, expanded: false)
+5: "Expressions" (hasChildren: false, expanded: true)
+🐞 Debug: Performing shallow search for container "Expressions"
+🐞 Debug: Checking visible item: "Variables"
+🐞 Debug: Checking visible item: "x"
+🐞 Debug: Checking visible item: "type"
+🐞 Debug: Checking visible item: "shape"
+🐞 Debug: Checking visible item: "dtype"
+🐞 Debug: Checking visible item: "Expressions"
+✅ Success: Found matching container item with label: "Expressions"
+✅ Success: Found item for "Expressions", validating...
+ℹ️ Info: Found item details: label="Expressions", hasChildren=false, expanded=true
+⚠️ Warning: Warning: Container "Expressions" has no children. This might indicate an issue.
+📸 Screenshot: Taking screenshot "expr-eval-container-no-children-Expressions"
+📸 Screenshot: Screenshot "expr-eval-container-no-children-Expressions" saved
+✅ Success: Tree item "Expressions" found and processed
+ℹ️ Info: Container validation: expected="Expressions", actual="Expressions", hasChildren=false
+⚠️ Warning: Container "Expressions" has no children - this might indicate no variables are available
+✅ Success: Container validation passed
+🔹 Step: Attempt 1/3: Looking for variable "x.reshape(4, 3)" in Expressions
+⚠️ Warning: Variable "x.reshape(4, 3)" not found, listing available variables and running setup (attempt 1)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-1-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-1-x-reshape-4--3-" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 2/3: Looking for variable "x.reshape(4, 3)" in Expressions
+⚠️ Warning: Variable "x.reshape(4, 3)" not found, listing available variables and running setup (attempt 2)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-2-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-2-x-reshape-4--3-" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 3/3: Looking for variable "x.reshape(4, 3)" in Expressions
+⚠️ Warning: Variable "x.reshape(4, 3)" not found, listing available variables and running setup (attempt 3)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-3-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-3-x-reshape-4--3-" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+❌ Error: Variable "x.reshape(4, 3)" not found after 3 attempts
+ℹ️ Info: Final check - Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-final-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-final-x-reshape-4--3-" saved
+⚠️ Warning: Could not view reshaped expression as image: Variable "x.reshape(4, 3)" not found after 3 attempts. Available variables: []
+📸 Screenshot: Taking screenshot "expr-eval-error-reshaped-expression-missing-step-view-reshaped-expression"
+📸 Screenshot: Screenshot "expr-eval-error-reshaped-expression-missing-step-view-reshaped-expression" saved
+ℹ️ Info: Debug state (reshaped failure): Debug view is available
+ℹ️ Info: Debug state (reshaped failure): Available debug sections: [Variables, Watch, Call Stack, Breakpoints, Image Watch]
+ℹ️ Info: Debug state (reshaped failure): Debug toolbar is available
+ℹ️ Info: Debug state (reshaped failure): Image Watch section is available
+ℹ️ Info: Debug state (reshaped failure): Image Watch section expanded: true
+ℹ️ Info: Debug state (reshaped failure): Webview tab not available
+❌ Error: Expression test failed at step "view-reshaped-expression": AssertionError: At least one expression view should succeed. Errors: simple: Variable "x" not found after 3 attempts. Available variables: []; reshaped: Variable "x.reshape(4, 3)" not found after 3 attempts. Available variables: []: expected +0 to be above +0
+📸 Screenshot: Taking screenshot "expr-eval-expression-test-error-at-view-reshaped-expression"
+📸 Screenshot: Screenshot "expr-eval-expression-test-error-at-view-reshaped-expression" saved
+ℹ️ Info: Debug state (error): Debug view is available
+ℹ️ Info: Debug state (error): Available debug sections: [Variables, Watch, Call Stack, Breakpoints, Image Watch]
+ℹ️ Info: Debug state (error): Debug toolbar is available
+ℹ️ Info: Debug state (error): Image Watch section is available
+ℹ️ Info: Debug state (error): Image Watch section expanded: true
+ℹ️ Info: Debug state (error): Webview tab not available
+📸 Screenshot: Taking screenshot "expr-eval-expression-test-debug-state-view-reshaped-expression"
+📸 Screenshot: Screenshot "expr-eval-expression-test-debug-state-view-reshaped-expression" saved
+🧹 Cleanup: Starting comprehensive cleanup of DebugTestHelper resources
+🔹 Step: Stopping debugger
+🔹 Step: Debugger stopped
+🧹 Cleanup: Closing all editors
+🧹 Cleanup: Dismissing any open dialogs
+🧹 Cleanup: Resetting workbench state
+🧹 Cleanup: Comprehensive DebugTestHelper cleanup completed
+🚀 Test Start: Starting comprehensive expression test
+🔹 Step: Setting up editor for debug - /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: Opening file /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: File /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py is opened in an editor
+🔹 Step: Opening editor for debug_test.py
+🔹 Step: Editor for debug_test.py is displayed
+🔹 Step: Debug view not valid, opening debug panel
+🔹 Step: Opening debug panel
+🔹 Step: Debug panel opened
+🔹 Step: Debug view already open and valid
+🔹 Step: Getting launch configurations matching "Python: Current File"
+🔹 Step: Launch configuration "Python: Current File (workspace)" selected
+🔹 Step: Editor setup completed for /home/elazar/devel/simply-view-image-for-python-debugging/tests/test-data/workspace/debug_test.py
+🔹 Step: Debug view already open and valid
+🔹 Step: Starting debug session
+🔹 Step: Debug session started
+🔹 Step: Waiting for debug toolbar
+✅ Success: Debug toolbar is displayed
+🔹 Step: Waiting for breakpoint to be hit
+✅ Success: Breakpoint hit
+🔹 Step: Debug view already open and valid
+🔹 Step: Expanding Image Watch section
+✅ Success: Image Watch section expanded
+🔹 Step: Adding simple expression: x
+📝 Expression: Adding expression "x"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Looking for "Add Expression" tree item in Image Watch section...
+🔹 Step: Found "Add Expression" tree item, clicking...
+🔹 Step: Waiting for input box to appear...
+🔹 Step: Input box appeared, setting text...
+🔹 Step: Confirming input...
+✅ Success: Expression "x" added successfully
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+📸 Screenshot: Taking screenshot "expr-eval-after-first-expression"
+📸 Screenshot: Screenshot "expr-eval-after-first-expression" saved
+🔹 Step: Adding second expression: x.reshape(4, 3)
+📝 Expression: Adding expression "x.reshape(4, 3)"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Looking for "Add Expression" tree item in Image Watch section...
+🔹 Step: Using command palette to add expression...
+🔹 Step: Waiting for input box to appear...
+🔹 Step: Input box appeared, setting text...
+🔹 Step: Confirming input...
+✅ Success: Expression "x.reshape(4, 3)" added successfully
+🔹 Step: Waiting for expressions to be evaluated...
+🔹 Step: Refreshing Image Watch section...
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+📸 Screenshot: Taking screenshot "expr-eval-after-adding-expressions"
+📸 Screenshot: Screenshot "expr-eval-after-adding-expressions" saved
+🔹 Step: Finding variable "x" of type "expression"
+🐞 Debug: Looking for container "Expressions" for variable "x"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Finding tree item "Expressions"
+🐞 Debug: Debugging tree structure in Image Watch section...
+ℹ️ Info: Found 6 visible items in Image Watch section
+ℹ️ Info: Available items in Image Watch section:
+0: "Variables" (hasChildren: true, expanded: true)
+1: "x" (hasChildren: true, expanded: true)
+2: "Expressions" (hasChildren: false, expanded: true)
+3: "type" (hasChildren: false, expanded: false)
+4: "shape" (hasChildren: false, expanded: false)
+5: "dtype" (hasChildren: false, expanded: false)
+🐞 Debug: Performing shallow search for container "Expressions"
+🐞 Debug: Checking visible item: "Variables"
+🐞 Debug: Checking visible item: "x"
+🐞 Debug: Checking visible item: "type"
+🐞 Debug: Checking visible item: "shape"
+🐞 Debug: Checking visible item: "dtype"
+🐞 Debug: Checking visible item: "Expressions"
+✅ Success: Found matching container item with label: "Expressions"
+✅ Success: Found item for "Expressions", validating...
+ℹ️ Info: Found item details: label="Expressions", hasChildren=false, expanded=true
+⚠️ Warning: Warning: Container "Expressions" has no children. This might indicate an issue.
+📸 Screenshot: Taking screenshot "expr-eval-container-no-children-Expressions"
+📸 Screenshot: Screenshot "expr-eval-container-no-children-Expressions" saved
+✅ Success: Tree item "Expressions" found and processed
+ℹ️ Info: Container validation: expected="Expressions", actual="Expressions", hasChildren=false
+⚠️ Warning: Container "Expressions" has no children - this might indicate no variables are available
+✅ Success: Container validation passed
+🔹 Step: Attempt 1/3: Looking for variable "x" in Expressions
+⚠️ Warning: Variable "x" not found, listing available variables and running setup (attempt 1)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-1-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-1-x" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 2/3: Looking for variable "x" in Expressions
+⚠️ Warning: Variable "x" not found, listing available variables and running setup (attempt 2)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-2-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-2-x" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 3/3: Looking for variable "x" in Expressions
+⚠️ Warning: Variable "x" not found, listing available variables and running setup (attempt 3)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-3-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-3-x" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+❌ Error: Variable "x" not found after 3 attempts
+ℹ️ Info: Final check - Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-final-x"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-final-x" saved
+⚠️ Warning: Could not view simple expression as image: Variable "x" not found after 3 attempts. Available variables: []
+📸 Screenshot: Taking screenshot "expr-eval-error-simple-expression-missing-step-view-simple-expression"
+📸 Screenshot: Screenshot "expr-eval-error-simple-expression-missing-step-view-simple-expression" saved
+ℹ️ Info: Debug state (simple failure): Debug view is available
+ℹ️ Info: Debug state (simple failure): Available debug sections: [Variables, Watch, Call Stack, Breakpoints, Image Watch]
+ℹ️ Info: Debug state (simple failure): Debug toolbar is available
+ℹ️ Info: Debug state (simple failure): Image Watch section is available
+ℹ️ Info: Debug state (simple failure): Image Watch section expanded: true
+ℹ️ Info: Debug state (simple failure): Webview tab not available
+🔹 Step: Finding variable "x.reshape(4, 3)" of type "expression"
+🐞 Debug: Looking for container "Expressions" for variable "x.reshape(4, 3)"
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Finding tree item "Expressions"
+🐞 Debug: Debugging tree structure in Image Watch section...
+ℹ️ Info: Found 6 visible items in Image Watch section
+ℹ️ Info: Available items in Image Watch section:
+0: "Variables" (hasChildren: true, expanded: true)
+1: "x" (hasChildren: true, expanded: true)
+2: "type" (hasChildren: false, expanded: false)
+3: "shape" (hasChildren: false, expanded: false)
+4: "dtype" (hasChildren: false, expanded: false)
+5: "Expressions" (hasChildren: false, expanded: true)
+🐞 Debug: Performing shallow search for container "Expressions"
+🐞 Debug: Checking visible item: "Variables"
+🐞 Debug: Checking visible item: "x"
+🐞 Debug: Checking visible item: "type"
+🐞 Debug: Checking visible item: "shape"
+🐞 Debug: Checking visible item: "dtype"
+🐞 Debug: Checking visible item: "Expressions"
+✅ Success: Found matching container item with label: "Expressions"
+✅ Success: Found item for "Expressions", validating...
+ℹ️ Info: Found item details: label="Expressions", hasChildren=false, expanded=true
+⚠️ Warning: Warning: Container "Expressions" has no children. This might indicate an issue.
+📸 Screenshot: Taking screenshot "expr-eval-container-no-children-Expressions"
+📸 Screenshot: Screenshot "expr-eval-container-no-children-Expressions" saved
+✅ Success: Tree item "Expressions" found and processed
+ℹ️ Info: Container validation: expected="Expressions", actual="Expressions", hasChildren=false
+⚠️ Warning: Container "Expressions" has no children - this might indicate no variables are available
+✅ Success: Container validation passed
+🔹 Step: Attempt 1/3: Looking for variable "x.reshape(4, 3)" in Expressions
+⚠️ Warning: Variable "x.reshape(4, 3)" not found, listing available variables and running setup (attempt 1)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-1-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-1-x-reshape-4--3-" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 2/3: Looking for variable "x.reshape(4, 3)" in Expressions
+⚠️ Warning: Variable "x.reshape(4, 3)" not found, listing available variables and running setup (attempt 2)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-2-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-2-x-reshape-4--3-" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+🔹 Step: Attempt 3/3: Looking for variable "x.reshape(4, 3)" in Expressions
+⚠️ Warning: Variable "x.reshape(4, 3)" not found, listing available variables and running setup (attempt 3)
+ℹ️ Info: Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-attempt-3-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-attempt-3-x-reshape-4--3-" saved
+🔹 Step: Debug view already open and valid
+🔹 Step: Image Watch section already expanded and valid
+🔹 Step: Refreshing Image Watch section
+🔹 Step: Image Watch section refreshed
+❌ Error: Variable "x.reshape(4, 3)" not found after 3 attempts
+ℹ️ Info: Final check - Available variables in Expressions: []
+📸 Screenshot: Taking screenshot "expr-eval-variable-not-found-final-x-reshape-4--3-"
+📸 Screenshot: Screenshot "expr-eval-variable-not-found-final-x-reshape-4--3-" saved
+⚠️ Warning: Could not view reshaped expression as image: Variable "x.reshape(4, 3)" not found after 3 attempts. Available variables: []
+📸 Screenshot: Taking screenshot "expr-eval-error-reshaped-expression-missing-step-view-reshaped-expression"
+📸 Screenshot: Screenshot "expr-eval-error-reshaped-expression-missing-step-view-reshaped-expression" saved
+ℹ️ Info: Debug state (reshaped failure): Debug view is available
+ℹ️ Info: Debug state (reshaped failure): Available debug sections: [Variables, Watch, Call Stack, Breakpoints, Image Watch]
+ℹ️ Info: Debug state (reshaped failure): Debug toolbar is available
+ℹ️ Info: Debug state (reshaped failure): Image Watch section is available
+ℹ️ Info: Debug state (reshaped failure): Image Watch section expanded: true
+ℹ️ Info: Debug state (reshaped failure): Webview tab not available
+❌ Error: Expression test failed at step "view-reshaped-expression": AssertionError: At least one expression view should succeed. Errors: simple: Variable "x" not found after 3 attempts. Available variables: []; reshaped: Variable "x.reshape(4, 3)" not found after 3 attempts. Available variables: []: expected +0 to be above +0
+📸 Screenshot: Taking screenshot "expr-eval-expression-test-error-at-view-reshaped-expression"
+📸 Screenshot: Screenshot "expr-eval-expression-test-error-at-view-reshaped-expression" saved
+ℹ️ Info: Debug state (error): Debug view is available
+ℹ️ Info: Debug state (error): Available debug sections: [Variables, Watch, Call Stack, Breakpoints, Image Watch]
+ℹ️ Info: Debug state (error): Debug toolbar is available
+ℹ️ Info: Debug state (error): Image Watch section is available
+ℹ️ Info: Debug state (error): Image Watch section expanded: true
+ℹ️ Info: Debug state (error): Webview tab not available
+📸 Screenshot: Taking screenshot "expr-eval-expression-test-debug-state-view-reshaped-expression"
+📸 Screenshot: Screenshot "expr-eval-expression-test-debug-state-view-reshaped-expression" saved
+    1) should be able to add and evaluate various expressions
+🧹 Cleanup: Starting comprehensive cleanup of DebugTestHelper resources
+🔹 Step: Stopping debugger
+🔹 Step: Debugger stopped
+🧹 Cleanup: Closing all editors
+🧹 Cleanup: Dismissing any open dialogs
+🧹 Cleanup: Resetting workbench state
+🧹 Cleanup: Comprehensive DebugTestHelper cleanup completed
+
+Shutting down the browser
+
+  4 passing (3m)
+  1 failing
+
+  1) python expression debugging tests
+       should be able to add and evaluate various expressions:
+
+      AssertionError: At least one expression view should succeed. Errors: simple: Variable "x" not found after 3 attempts. Available variables: []; reshaped: Variable "x.reshape(4, 3)" not found after 3 attempts. Available variables: []: expected +0 to be above +0
+      + expected - actual
+
+
+      at /home/elazar/devel/simply-view-image-for-python-debugging/out/tests/ui-test/python-debug-expressions.test.js:79:136
+      at Generator.next (<anonymous>)
+      at fulfilled (out/tests/ui-test/python-debug-expressions.test.js:9:58)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+
+[33mINFO: Screenshots of failures can be found in: /tmp/test-resources/screenshots/20251130T234102
+[0m

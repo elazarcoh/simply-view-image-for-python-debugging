@@ -281,10 +281,27 @@ export async function openWorkspaceFile(workspacePath: string) {
   await new Workbench().executeCommand('workbench.action.openWorkspace');
   const input = await InputBox.create();
   await input.setText(workspacePath);
-  // Use keyboard Enter instead of input.confirm() — confirm() calls input.click() first which
-  // can fail when a VS Code notification banner overlaps the input at the top of the screen.
-  // After setText(), the input element is already focused so we can send Enter directly.
-  await VSBrowser.instance.driver.actions().sendKeys('\uE006').perform();
+  await sendEnterKey();
+}
+
+/**
+ * Send a plain Enter/Return key, first releasing any modifier keys (Ctrl, Shift, Alt, Meta)
+ * that may be stuck from previous executeCommand() calls.
+ *
+ * Workbench.executeCommand() opens the command palette with Ctrl+Shift+P via
+ * `driver.actions().keyDown(Ctrl).keyDown(Shift).sendKeys('p').perform()` but never
+ * releases Ctrl+Shift. Subsequent driver.actions().sendKeys() calls then send
+ * Ctrl+Shift+<key> instead of a plain key, which VS Code ignores for dialog confirmation.
+ */
+export async function sendEnterKey(): Promise<void> {
+  await VSBrowser.instance.driver
+    .actions()
+    .keyUp('\uE009') // Ctrl
+    .keyUp('\uE008') // Shift
+    .keyUp('\uE00A') // Alt
+    .keyUp('\uE03D') // Meta/Super
+    .sendKeys('\uE006') // Return
+    .perform();
 }
 
 export async function openEditor(file: string) {

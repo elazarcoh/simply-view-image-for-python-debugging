@@ -284,7 +284,7 @@ export async function openWorkspaceFile(workspacePath: string) {
   // Use keyboard Enter instead of input.confirm() — confirm() calls input.click() first which
   // can fail when a VS Code notification banner overlaps the input at the top of the screen.
   // After setText(), the input element is already focused so we can send Enter directly.
-  await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
+  await VSBrowser.instance.driver.actions().sendKeys('\uE006').perform();
 }
 
 export async function openEditor(file: string) {

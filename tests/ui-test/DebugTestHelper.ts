@@ -132,7 +132,7 @@ export class DebugTestHelper {
     // can fail when a VS Code notification banner overlaps the input at the top of the screen.
     // After setText(), the input element is already focused so we can send Enter directly.
     for (let attempt = 0; attempt < 3; attempt++) {
-      await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
+      await VSBrowser.instance.driver.actions().sendKeys('\uE006').perform();
       await this.sleep(500);
       const isOpened = await checkFileOpen();
       if (isOpened) {
@@ -324,7 +324,7 @@ export class DebugTestHelper {
     const input = await InputBox.create(this.options.timeout);
     await input.setText(lineNumber.toString());
     // Use keyboard Enter instead of confirm() to avoid click interception issues
-    await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
+    await VSBrowser.instance.driver.actions().sendKeys('\uE006').perform();
     await VSBrowser.instance.driver.sleep(500);
 
     // Toggle breakpoint using command
@@ -935,7 +935,7 @@ export class DebugTestHelper {
       const input = await InputBox.create(timeout);
       await input.setText(expression);
       // Use keyboard Enter to avoid click interception by notification banners
-      await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
+      await VSBrowser.instance.driver.actions().sendKeys('\uE006').perform();
       await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
       DebugTestHelper.logger.step(`Expression "${expression}" added`);
@@ -962,7 +962,7 @@ export class DebugTestHelper {
       const input = await InputBox.create();
       await input.setText(newExpression);
       // Use keyboard Enter to avoid click interception by notification banners
-      await VSBrowser.instance.driver.actions().sendKeys('\uE007').perform();
+      await VSBrowser.instance.driver.actions().sendKeys('\uE006').perform();
       await VSBrowser.instance.driver.sleep(this.options.sleepDuration!);
 
       DebugTestHelper.logger.step(`Expression edited to "${newExpression}"`);

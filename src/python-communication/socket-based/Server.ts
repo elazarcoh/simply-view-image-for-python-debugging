@@ -168,6 +168,14 @@ export class SocketServer {
       callback(header, data);
     });
   }
+
+  close(): void {
+    if (this.started) {
+      this.server.close();
+      this.started = false;
+      logInfo('SocketServer closed');
+    }
+  }
 }
 
 export function setDefault<K, V>(map: Map<K, V>, key: K, ctor: () => V): V {

@@ -4,7 +4,7 @@ import * as net from 'node:net';
 import { Service } from 'typedi';
 import { logDebug, logInfo, logTrace } from '../../Logging';
 import { MessageChunks } from './MessageChunks';
-import { splitHeaderContentRest } from './protocol';
+import { HEADER_LENGTH, MAX_MESSAGE_SIZE, splitHeaderContentRest } from './protocol';
 import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
@@ -92,6 +92,20 @@ export class SocketServer {
         }
 
         const [header, content, rest] = parsed.safeUnwrap();
+
+        if (header.messageLength > MAX_MESSAGE_SIZE) {
+          logDebug(
+            `Rejecting message: length ${header.messageLength} exceeds max ${MAX_MESSAGE_SIZE}`,
+          );
+          return;
+        }
+        if (header.messageLength < HEADER_LENGTH) {
+          logDebug(
+            `Rejecting message: length ${header.messageLength} shorter than header ${HEADER_LENGTH}`,
+          );
+          return;
+        }
+
         if (rest.length > 0) {
           logTrace('Received more data than expected');
           waitingForHandling = rest;

@@ -55,6 +55,9 @@ export const HEADER_LENGTH = Object.entries(BytesPerKey).reduce(
   0,
 );
 
+/** Maximum allowed message size (256 MB). Prevents unbounded memory allocation from malformed or malicious headers. */
+export const MAX_MESSAGE_SIZE = 256 * 1024 * 1024;
+
 export enum Sender {
   Server = 0x01,
   Python = 0x02,

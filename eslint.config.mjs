@@ -45,10 +45,12 @@ export default antfu(
   {
     files: [
       'tests/**/*.ts',
+      'tests/**/*.js',
       '**/*.test.ts',
     ],
     rules: {
       'no-console': 'off',
+      'node/prefer-global/process': 'off',
       'ts/no-require-imports': 'off',
       'ts/no-unused-expressions': 'off',
       'unused-imports/no-unused-vars': 'off',

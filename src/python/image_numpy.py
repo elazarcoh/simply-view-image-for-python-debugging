@@ -126,9 +126,12 @@ def numpy():
             except:
                 return img
         elif preprocess_method == "normalize":
-            img = img - img.min()
-            img = img / img.max()
-            img = img * 255
+            img_min = img.min()
+            img_max = img.max()
+            if img_max - img_min > 0:
+                img = (img - img_min) / (img_max - img_min) * 255
+            else:
+                img = np.zeros_like(img)
             img = img.astype(np.uint8)
             return img
         else:

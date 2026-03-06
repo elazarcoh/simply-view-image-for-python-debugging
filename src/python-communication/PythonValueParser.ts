@@ -2,6 +2,49 @@ import type { Result } from '../utils/Result';
 import * as P from 'parsimmon';
 import { Err, Ok } from '../utils/Result';
 
+function stripReprQuoting(s: string): string {
+  if (s.length < 2)
+    return s;
+  const quote = s[0];
+  if ((quote !== '\'' && quote !== '"') || s[s.length - 1] !== quote) {
+    return s;
+  }
+  const inner = s.slice(1, -1);
+  let result = '';
+  for (let i = 0; i < inner.length; i++) {
+    if (inner[i] === '\\' && i + 1 < inner.length) {
+      const next = inner[i + 1];
+      if (next === '\\') {
+        result += '\\';
+        i++;
+      }
+      else if (next === quote) {
+        result += quote;
+        i++;
+      }
+      else if (next === 'n') {
+        result += '\n';
+        i++;
+      }
+      else if (next === 't') {
+        result += '\t';
+        i++;
+      }
+      else if (next === 'r') {
+        result += '\r';
+        i++;
+      }
+      else {
+        result += inner[i];
+      }
+    }
+    else {
+      result += inner[i];
+    }
+  }
+  return result;
+}
+
 function ListOf<T>(parser: P.Parser<T>) {
   return parser
     .sepBy(P.string(',').trim(P.optWhitespace))
@@ -17,9 +60,15 @@ const PythonConstructs = P.createLanguage({
     ) as P.Parser<unknown[]>,
   List: r => ListOf(r.PythonValue),
   String: r =>
-    r.Quote.chain(quote =>
-      P.takeWhile(c => c !== quote).skip(P.string(quote)),
-    ),
+    r.Quote.chain((quote) => {
+      const escapedQuote = P.string(`\\${quote}`).map(() => quote);
+      const escapedBackslash = P.string('\\\\').map(() => '\\');
+      const regular = P.test(c => c !== quote && c !== '\\');
+      return P.alt(escapedQuote, escapedBackslash, regular)
+        .many()
+        .map(chars => chars.join(''))
+        .skip(P.string(quote));
+    }),
   None: _ => P.string('None').result(null),
   Boolean: _ =>
     P.alt(P.string('True').result(true), P.string('False').result(false)),
@@ -78,7 +127,8 @@ const PythonConstructs = P.createLanguage({
 });
 
 export function parsePythonResult<T = unknown>(value: string): Result<T> {
-  const res = PythonConstructs.ValidPythonResultStringified.parse(value);
+  const stripped = stripReprQuoting(value);
+  const res = PythonConstructs.ValidPythonResult.parse(stripped);
 
   if (res.status) {
     return Ok(res.value);

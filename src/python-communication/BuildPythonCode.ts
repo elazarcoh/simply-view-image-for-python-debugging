@@ -218,7 +218,8 @@ export type OpenSendAndCloseOptions
 
 function asPythonValue(value: string | number | boolean | null): string {
   if (typeof value === 'string') {
-    return `'${value}'`;
+    const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
+    return `'${escaped}'`;
   }
   else if (typeof value === 'number') {
     return value.toString();

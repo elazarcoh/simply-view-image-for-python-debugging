@@ -199,6 +199,11 @@ def numpy():
 
     def save(path, img, backend, preprocess):
         func = get_function(backend)
+        if func is None:
+            raise RuntimeError(
+                "No image saving backend available. "
+                "Install one of: opencv-python, imageio, Pillow"
+            )
         img = prepare_image(img, preprocess)
         func(path, img)
 

@@ -224,6 +224,7 @@ export function constructOpenSendAndCloseCode(
   request_id: number,
   expression: string,
   options?: OpenSendAndCloseOptions,
+  secret?: string,
 ): EvalCodePython<Result<PythonObjectShape>> {
   function makeOptionsString(options: OpenSendAndCloseOptions): string {
     return `dict(${Object.entries(options)
@@ -232,8 +233,9 @@ export function constructOpenSendAndCloseCode(
       .join(', ')})`;
   }
   const optionsStr = options ? makeOptionsString(options) : '{}';
+  const secretArg = secret ? `, secret="${secret}"` : '';
   return convertExpressionIntoValueWrappedExpression(
-    `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${optionsStr})`,
+    `${OPEN_SEND_AND_CLOSE}(${port}, ${request_id}, ${expression}, ${optionsStr}${secretArg})`,
   );
 }
 

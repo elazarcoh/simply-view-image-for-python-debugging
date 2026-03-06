@@ -55,6 +55,9 @@ export const HEADER_LENGTH = Object.entries(BytesPerKey).reduce(
   0,
 );
 
+/** Length of the authentication secret in bytes. */
+export const AUTH_SECRET_LENGTH = 32;
+
 export enum Sender {
   Server = 0x01,
   Python = 0x02,

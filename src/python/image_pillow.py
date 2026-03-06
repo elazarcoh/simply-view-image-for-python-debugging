@@ -17,7 +17,7 @@ def pillow():
             shape = str(img.shape)
             dtype = str(img.dtype)
             return {"type": obj_type, "shape": shape, "dtype": dtype}
-        except:
+        except Exception:
             return {"type": obj_type}
 
     def save(path, img, *args, **kwargs):

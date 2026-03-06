@@ -85,13 +85,18 @@ export class SavePathHelper {
     return p.replace(/\\/g, '/');
   }
 
+  private static sanitizeForFilename(name: string): string {
+    return name.replace(/[^\w\-.]/g, '_');
+  }
+
   public savePathFor(object: PythonObjectRepresentation): string {
     if ('expression' in object) {
       return SavePathHelper.normalizePath(path.join(this.saveDir, shortId()));
     }
     else {
+      const safeName = SavePathHelper.sanitizeForFilename(object.variable);
       return SavePathHelper.normalizePath(
-        path.join(this.saveDir, `${object.variable}`),
+        path.join(this.saveDir, `${safeName}`),
       );
     }
   }

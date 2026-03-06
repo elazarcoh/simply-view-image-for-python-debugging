@@ -162,3 +162,12 @@ export function activate(context: vscode.ExtensionContext) {
   // TODO: Disabled for now, until I decide it's ready to be used.
   // return { ...api };
 }
+
+export function deactivate(): void {
+  try {
+    Container.get(SocketServer).close();
+  }
+  catch {
+    // SocketServer may not be initialized
+  }
+}

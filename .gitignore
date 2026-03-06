@@ -16,3 +16,4 @@ __pycache__/
 !.yarn/versions
 /test-results/test.log
 test.log
+.pytest_cache

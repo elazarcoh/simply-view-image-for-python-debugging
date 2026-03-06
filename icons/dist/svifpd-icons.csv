@@ -1,5 +1,5 @@
 Error: Unsupported OpenType signature wOF2
-    at parseBuffer (/home/elazar/devel/simply-view-image-for-python-debugging/node_modules/opentype.js/dist/opentype.js:14230:16)
-    at /home/elazar/devel/simply-view-image-for-python-debugging/node_modules/opentype.js/dist/opentype.js:14421:25
-    at /home/elazar/devel/simply-view-image-for-python-debugging/node_modules/opentype.js/dist/opentype.js:14076:10
+    at parseBuffer (/home/runner/work/simply-view-image-for-python-debugging/simply-view-image-for-python-debugging/node_modules/opentype.js/dist/opentype.js:14230:16)
+    at /home/runner/work/simply-view-image-for-python-debugging/simply-view-image-for-python-debugging/node_modules/opentype.js/dist/opentype.js:14421:25
+    at /home/runner/work/simply-view-image-for-python-debugging/simply-view-image-for-python-debugging/node_modules/opentype.js/dist/opentype.js:14076:10
     at FSReqCallback.readFileAfterClose [as oncomplete] (node:internal/fs/read/context:68:3)

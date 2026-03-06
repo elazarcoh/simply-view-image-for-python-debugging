@@ -109,6 +109,7 @@ export class SocketServer {
         if (chunks.isComplete()) {
           logTrace('Message is complete');
           const fullMessage = chunks.fullMessage();
+          this.chunksByMessageId.delete(header.messageID);
           handleMessage(header, fullMessage);
         }
       }

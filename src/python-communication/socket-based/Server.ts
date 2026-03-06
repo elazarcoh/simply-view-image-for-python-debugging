@@ -9,6 +9,8 @@ import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
+const RESPONSE_TIMEOUT_MS = 30_000;
+
 @Service()
 export class SocketServer {
   public readonly server: net.Server;
@@ -141,8 +143,18 @@ export class SocketServer {
   onResponse(
     requestId: number,
     callback: (header: MessageChunkHeader, data: Buffer) => void,
+    onTimeout?: () => void,
   ) {
+    const timer = setTimeout(() => {
+      if (this.outgoingRequestsManager.hasRequest(requestId)) {
+        logDebug(`Socket response timeout after ${RESPONSE_TIMEOUT_MS}ms for request ${requestId}`);
+        this.outgoingRequestsManager.unsubscribeRequest(requestId);
+        onTimeout?.();
+      }
+    }, RESPONSE_TIMEOUT_MS);
+
     this.outgoingRequestsManager.subscribeRequest(requestId, (header, data) => {
+      clearTimeout(timer);
       this.outgoingRequestsManager.unsubscribeRequest(requestId);
       callback(header, data);
     });

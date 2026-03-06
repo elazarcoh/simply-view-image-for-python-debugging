@@ -19,7 +19,7 @@ def numpy():
                     img.ndim == 3 and (img.shape[2] <= 4 or img.shape[0] <= 4)
                 )
                 return is_image
-            except:
+            except Exception:
                 return False
 
     def info(img):
@@ -30,7 +30,7 @@ def numpy():
             shape = str(img.shape)
             dtype = str(img.dtype)
             return {"type": obj_type, "shape": shape, "dtype": dtype}
-        except:
+        except Exception:
             return {"type": obj_type}
 
     #
@@ -123,7 +123,7 @@ def numpy():
                 from skimage import img_as_ubyte
 
                 return img_as_ubyte(img)
-            except:
+            except Exception:
                 return img
         elif preprocess_method == "normalize":
             img = img - img.min()

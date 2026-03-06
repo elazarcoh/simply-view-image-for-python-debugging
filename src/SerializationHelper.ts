@@ -43,7 +43,7 @@ export function setSaveLocation(context: vscode.ExtensionContext): void {
     logDebug('create save directory');
     mkdirSync(saveDir, { recursive: true });
     if (saveLocation === 'tmp' || saveLocation === undefined) {
-      chmodSync(saveDir, 0o777); // make the folder world writable for other users uses the extension
+      chmodSync(saveDir, 0o700);
     }
   }
 

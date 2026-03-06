@@ -101,6 +101,7 @@ export async function serializePythonObjectUsingSocketServer(
     requestId,
     objectAsString,
     makeOptions(options),
+    socketServer.secretHex,
   );
   logDebug('Sending code to python: ', code);
   logDebug('Sending request to python with reqId ', requestId);

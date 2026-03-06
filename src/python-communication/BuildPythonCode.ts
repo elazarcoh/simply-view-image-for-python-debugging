@@ -1,6 +1,7 @@
 import type { Result } from '../utils/Result';
 import Container from 'typedi';
 import { AllViewables } from '../AllViewables';
+import { logError } from '../Logging';
 import COMMON from '../python/common.py?raw';
 import SOCKET_CLIENT from '../python/socket_client.py?raw';
 import { indent } from '../utils/Utils';
@@ -13,6 +14,10 @@ const EVAL_OR_RETURN_EXCEPTION_FUNCTION = `${PYTHON_MODULE_NAME}.eval_or_return_
 const STRINGIFY = `${PYTHON_MODULE_NAME}.stringify`;
 const OBJECT_SHAPE_IF_IT_HAS_ONE = `${PYTHON_MODULE_NAME}.object_shape_if_it_has_one`;
 const OPEN_SEND_AND_CLOSE = `${PYTHON_MODULE_NAME}.open_send_and_close`;
+
+// Guard: static Python sources must not contain triple single quotes
+assertNoTripleQuotes(COMMON, 'common.py');
+assertNoTripleQuotes(SOCKET_CLIENT, 'socket_client.py');
 
 const CREATE_MODULE_IF_NOT_EXISTS = `
 try:
@@ -34,12 +39,22 @@ except:
             ${SETUP_RESULT_VARIABLE_NAME} = repr(e)
 `;
 
+function assertNoTripleQuotes(content: string, context: string): void {
+  if (content.includes('\'\'\'')) {
+    logError(
+      `Python code for ${context} contains triple single quotes which would break exec() embedding.`,
+    );
+  }
+}
+
 function execInModuleCode(
   moduleName: string,
   content: string,
   tryExpression: string,
   errorCapturingVariableName: string,
 ): string {
+  assertNoTripleQuotes(content, 'setupCode');
+  assertNoTripleQuotes(tryExpression, 'testSetupCode');
   const code: string = `
 exec('''
 ${errorCapturingVariableName} = "OK"

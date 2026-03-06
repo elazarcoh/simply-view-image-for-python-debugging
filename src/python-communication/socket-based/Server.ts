@@ -1,10 +1,11 @@
 import type { MessageChunkHeader } from './protocol';
 import { Buffer } from 'node:buffer';
+import * as crypto from 'node:crypto';
 import * as net from 'node:net';
 import { Service } from 'typedi';
 import { logDebug, logInfo, logTrace } from '../../Logging';
 import { MessageChunks } from './MessageChunks';
-import { splitHeaderContentRest } from './protocol';
+import { AUTH_SECRET_LENGTH, splitHeaderContentRest } from './protocol';
 import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
@@ -17,6 +18,7 @@ export class SocketServer {
 
   private outgoingRequestsManager: RequestsManager = new RequestsManager();
   private chunksByMessageId: Map<number, MessageChunks> = new Map();
+  private readonly secret: Buffer = crypto.randomBytes(AUTH_SECRET_LENGTH);
 
   constructor() {
     const options: net.ServerOpts = {
@@ -57,6 +59,10 @@ export class SocketServer {
       throw new Error('SocketServer is not listening');
     }
     return this.port;
+  }
+
+  get secretHex(): string {
+    return this.secret.toString('hex');
   }
 
   onClientConnected(socket: net.Socket): void {
@@ -113,6 +119,33 @@ export class SocketServer {
         }
       }
     };
+
+    // Authentication state per connection
+    let authenticated = false;
+    let authBuffer: Buffer = EMPTY_BUFFER;
+    const serverSecret = this.secret;
+
+    const handleAuth = (data: Buffer) => {
+      authBuffer = authBuffer.length > 0 ? Buffer.concat([authBuffer, data]) : data;
+      if (authBuffer.length < AUTH_SECRET_LENGTH) {
+        logTrace(`Auth: waiting for more bytes (${authBuffer.length}/${AUTH_SECRET_LENGTH})`);
+        return;
+      }
+      const token = authBuffer.subarray(0, AUTH_SECRET_LENGTH);
+      const rest = authBuffer.subarray(AUTH_SECRET_LENGTH);
+      authBuffer = EMPTY_BUFFER;
+      if (!crypto.timingSafeEqual(token, serverSecret)) {
+        logDebug('Socket auth failed: invalid secret');
+        socket.destroy();
+        return;
+      }
+      logTrace('Socket auth succeeded');
+      authenticated = true;
+      if (rest.length > 0) {
+        handleData(rest);
+      }
+    };
+
     const makeSafe = (fn: (...args: any[]) => void) => {
       return (...args: any[]) => {
         try {
@@ -125,7 +158,14 @@ export class SocketServer {
       };
     };
 
-    socket.on('data', makeSafe(handleData));
+    socket.on('data', makeSafe((data: Buffer) => {
+      if (!authenticated) {
+        handleAuth(data);
+      }
+      else {
+        handleData(data);
+      }
+    }));
     socket.on('close', () => {
       logTrace('Client closed connection');
     });

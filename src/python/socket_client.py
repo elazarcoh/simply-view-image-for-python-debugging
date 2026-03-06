@@ -553,9 +553,12 @@ class _Internal:
         return tensor.numpy()
 
 
-def open_send_and_close(port, request_id, obj, options=None):
+def open_send_and_close(port, request_id, obj, options=None, secret=None):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect(("localhost", port))
+
+        if secret is not None:
+            s.sendall(bytes.fromhex(secret))
 
         try:
             if _Internal.is_numpy_array(obj):

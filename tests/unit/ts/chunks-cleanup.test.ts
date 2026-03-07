@@ -70,7 +70,8 @@ async function sendAndWaitForProcessed(
       if (server.pendingChunkCount === 0) {
         clearTimeout(timeout);
         resolve();
-      } else {
+      }
+      else {
         setImmediate(check);
       }
     };
@@ -89,7 +90,8 @@ function waitForPendingCount(server: SocketServer, count: number): Promise<void>
       if (server.pendingChunkCount === count) {
         clearTimeout(timeout);
         resolve();
-      } else {
+      }
+      else {
         setImmediate(check);
       }
     };
@@ -130,7 +132,10 @@ afterEach(async () => {
   serverSideConnections.clear();
   await new Promise<void>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('server.close() timed out')), 2000);
-    server.server.close(() => { clearTimeout(t); resolve(); });
+    server.server.close(() => {
+      clearTimeout(t);
+      resolve();
+    });
   });
 });
 
@@ -203,7 +208,8 @@ describe('socketServer — chunksByMessageId cleanup', () => {
         });
         if (j < parts.length - 1) {
           client.write(chunk);
-        } else {
+        }
+        else {
           await sendAndWaitForProcessed(client, chunk, server);
         }
       }

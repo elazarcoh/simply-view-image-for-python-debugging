@@ -19,6 +19,10 @@ function makeHeader(overrides: Partial<MessageChunkHeader> = {}): MessageChunkHe
 }
 
 describe('messageChunks', () => {
+  it('isComplete() returns false on a new instance', () => {
+    expect(new MessageChunks(10, 2).isComplete()).toBe(false);
+  });
+
   describe('single chunk messages', () => {
     it('isComplete() returns true after adding the single chunk', () => {
       const data = Buffer.from('hello');
@@ -103,7 +107,7 @@ describe('messageChunks', () => {
   });
 
   describe('validation (error cases)', () => {
-    it('throws when adding a duplicate chunk with different data', () => {
+    it('throws when adding a duplicate chunk with different header fields', () => {
       const data = Buffer.from('hello');
       const other = Buffer.from('world');
       const totalLen = data.length;
@@ -115,11 +119,62 @@ describe('messageChunks', () => {
       expect(() => chunks.addChunk(dupHeader, other)).toThrow();
     });
 
+    it('throws when adding a duplicate chunk with different data bytes', () => {
+      const data = Buffer.from('hello');
+      const other = Buffer.from('world');
+      const totalLen = data.length;
+      const chunks = new MessageChunks(totalLen, 1);
+      // Inject the chunk directly (bypassing header storage) so the data-content
+      // comparison code path is reachable (messageChunks[0] set, messageHeaders[0] null).
+      (chunks as any).messageChunks[0] = data;
+      const header = makeHeader({ messageLength: totalLen, chunkCount: 1, chunkNumber: 0, chunkLength: data.length });
+      expect(() => chunks.addChunk(header, other)).toThrow();
+    });
+
+    it('throws when header chunkCount does not match constructor', () => {
+      const data = Buffer.from('hi');
+      const chunks = new MessageChunks(data.length, 1);
+      const header = makeHeader({ messageLength: data.length, chunkCount: 2, chunkNumber: 0, chunkLength: data.length });
+      expect(() => chunks.addChunk(header, data)).toThrow();
+    });
+
+    it('throws when header messageLength does not match constructor', () => {
+      const data = Buffer.from('hi');
+      const chunks = new MessageChunks(data.length, 1);
+      const header = makeHeader({ messageLength: data.length + 5, chunkCount: 1, chunkNumber: 0, chunkLength: data.length });
+      expect(() => chunks.addChunk(header, data)).toThrow();
+    });
+
+    it('throws when declared chunkLength does not match buffer size', () => {
+      const data = Buffer.from('hi');
+      const chunks = new MessageChunks(data.length, 1);
+      const header = makeHeader({ messageLength: data.length, chunkCount: 1, chunkNumber: 0, chunkLength: 99 });
+      expect(() => chunks.addChunk(header, data)).toThrow();
+    });
+
     it('throws when chunk number is out of valid range', () => {
       const data = Buffer.from('hello');
       const chunks = new MessageChunks(data.length, 1);
       const header = makeHeader({ messageLength: data.length, chunkCount: 1, chunkNumber: 1, chunkLength: data.length });
       expect(() => chunks.addChunk(header, data)).toThrow();
+    });
+  });
+
+  describe('fullMessage() and idempotency', () => {
+    it('fullMessage() throws if called before all chunks are received', () => {
+      const chunks = new MessageChunks(6, 2);
+      chunks.addChunk(makeHeader({ messageLength: 6, chunkCount: 2, chunkNumber: 0, chunkLength: 3 }), Buffer.from('foo'));
+      expect(() => chunks.fullMessage()).toThrow('Message is not complete');
+    });
+
+    it('adding the same chunk twice is idempotent', () => {
+      const data = Buffer.from('hello');
+      const chunks = new MessageChunks(data.length, 1);
+      const header = makeHeader({ messageLength: data.length, chunkCount: 1, chunkNumber: 0, chunkLength: data.length });
+      chunks.addChunk(header, data);
+      expect(() => chunks.addChunk(header, data)).not.toThrow();
+      expect(chunks.isComplete()).toBe(true);
+      expect(chunks.fullMessage()).toEqual(data);
     });
   });
 

@@ -20,11 +20,16 @@ export const Uri = {
   parse: (p: string) => ({ fsPath: p, toString: () => p }),
 };
 export const EventEmitter = class {
-  event = () => {};
+  event = (_listener: () => void) => ({ dispose: () => {} });
   fire = () => {};
   dispose = () => {};
 };
-export const Disposable = { from: () => ({ dispose: () => {} }) };
+export class Disposable {
+  constructor(public dispose: () => void = () => {}) {}
+  static from(...disposables: { dispose: () => void }[]) {
+    return new Disposable(() => disposables.forEach(d => d.dispose()));
+  }
+}
 export const ExtensionMode = { Production: 1, Development: 2, Test: 3 };
 export const commands = { registerCommand: () => ({ dispose: () => {} }) };
 export const debug = { onDidStartDebugSession: () => ({ dispose: () => {} }) };

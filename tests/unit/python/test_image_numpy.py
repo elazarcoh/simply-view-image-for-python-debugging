@@ -33,6 +33,11 @@ def _load_prepare_image():
             [c.cell_contents for c in save.__closure__],
         )
     )
+    assert 'prepare_image' in cells, (
+        f"'prepare_image' not found in save.__closure__; "
+        f"available vars: {list(cells)}. "
+        f"Source structure may have changed."
+    )
     return cells['prepare_image']
 
 

@@ -35,7 +35,7 @@ def numpy_tensor():
             shape = str(obj.shape)
             dtype = str(obj.dtype)
             return {"type": obj_type, "shape": shape, "dtype": dtype}
-        except:
+        except Exception:
             return {"type": obj_type}
 
     def save(path, obj, normalize=True, pad=10, *args, **kwargs):

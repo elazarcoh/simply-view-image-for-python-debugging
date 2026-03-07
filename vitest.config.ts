@@ -13,7 +13,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      vscode: path.resolve(__dirname, 'tests/unit/ts/__mocks__/vscode.ts'),
+      'vscode': path.resolve(__dirname, 'tests/unit/ts/__mocks__/vscode.ts'),
+      'vscode-extensions-json-generator/utils': path.resolve(
+        __dirname,
+        'tests/unit/ts/__mocks__/vscode-extensions-json-generator-utils.ts',
+      ),
     },
   },
 });

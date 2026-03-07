@@ -77,3 +77,36 @@ class TestStringify:
         result = stringify({"key": 42})
         assert '"key"' in result
         assert "42" in result
+
+
+class TestSanitizeEmbedding:
+    """
+    Verify that sanitize() survives being embedded inside exec(\"\"\"...\"\"\").
+
+    This is the actual bug: when common.py is injected into the debugged process,
+    its code is wrapped in exec(\"\"\"...\"\"\") by execInPython(). If sanitize()
+    uses backslash escapes like \"\\\\\" or \"\\\"\", Python processes them a second
+    time as escape sequences inside the triple-double-quoted string, breaking the code.
+
+    The fix uses chr(92) / chr(34) instead of literal escape sequences.
+    """
+
+    def test_survives_exec_triple_double_quote_embedding(self):
+        """
+        Simulate exec(\"\"\"${COMMON}\"\"\") as done in execInPython() / BuildPythonCode.ts.
+        This must not raise a SyntaxError.
+        """
+        common_path = os.path.join(
+            os.path.dirname(__file__), '..', '..', '..', 'src', 'python', 'common.py'
+        )
+        with open(common_path) as f:
+            common_src = f.read()
+
+        scope = {}
+        exec('exec("""' + common_src + '""")', scope)
+        sanitize = scope['sanitize']
+
+        # Basic sanity checks after the embedded exec
+        assert sanitize('') == ''
+        assert sanitize('hello "world"') == 'hello \\"world\\"'
+        assert sanitize('path\\to') == 'path\\\\to'

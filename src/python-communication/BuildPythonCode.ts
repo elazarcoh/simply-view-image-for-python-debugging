@@ -216,7 +216,7 @@ export type OpenSendAndCloseOptions
   = | BaseSendAndCloseOptions
     | OpenSendAndCloseTensorOptions;
 
-function asPythonValue(value: string | number | boolean | null): string {
+export function asPythonValue(value: string | number | boolean | null): string {
   if (typeof value === 'string') {
     const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
     return `'${escaped}'`;

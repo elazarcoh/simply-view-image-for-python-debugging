@@ -54,12 +54,47 @@ function buildChunk(params: {
   return Buffer.concat([headerBuf, data]);
 }
 
-/** Send bytes to the server and wait long enough for loopback TCP delivery. */
-async function sendAndWait(socket: net.Socket, buf: Buffer): Promise<void> {
-  socket.write(buf);
-  // A short timer ensures we yield past the I/O poll phase so the server's
-  // 'data' handler has time to run before we check the map.
-  await new Promise<void>(resolve => setTimeout(resolve, 10));
+/** Send bytes to the server and poll until the server has processed them (pendingChunkCount === 0). */
+async function sendAndWaitForProcessed(
+  socket: net.Socket,
+  buf: Buffer,
+  server: SocketServer,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error('timed out waiting for server to process message')),
+      500,
+    );
+    socket.write(buf);
+    const check = () => {
+      if (server.pendingChunkCount === 0) {
+        clearTimeout(timeout);
+        resolve();
+      } else {
+        setImmediate(check);
+      }
+    };
+    setImmediate(check);
+  });
+}
+
+/** Poll until pendingChunkCount reaches the expected value. */
+function waitForPendingCount(server: SocketServer, count: number): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error(`timed out waiting for pendingChunkCount to reach ${count}`)),
+      500,
+    );
+    const check = () => {
+      if (server.pendingChunkCount === count) {
+        clearTimeout(timeout);
+        resolve();
+      } else {
+        setImmediate(check);
+      }
+    };
+    setImmediate(check);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -93,7 +128,10 @@ afterEach(async () => {
     socket.destroy();
   }
   serverSideConnections.clear();
-  await new Promise<void>(resolve => server.server.close(() => resolve()));
+  await new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('server.close() timed out')), 2000);
+    server.server.close(() => { clearTimeout(t); resolve(); });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -115,7 +153,7 @@ describe('socketServer — chunksByMessageId cleanup', () => {
       chunkNumber: 0,
       data,
     });
-    await sendAndWait(client, chunk);
+    await sendAndWaitForProcessed(client, chunk, server);
     expect(server.pendingChunkCount).toBe(0);
   });
 
@@ -132,7 +170,8 @@ describe('socketServer — chunksByMessageId cleanup', () => {
       chunkNumber: 0,
       data: part1,
     });
-    await sendAndWait(client, chunk1);
+    client.write(chunk1);
+    await waitForPendingCount(server, 1);
     expect(server.pendingChunkCount).toBe(1);
 
     // send the completing chunk
@@ -144,7 +183,7 @@ describe('socketServer — chunksByMessageId cleanup', () => {
       chunkNumber: 1,
       data: part2,
     });
-    await sendAndWait(client, chunk2);
+    await sendAndWaitForProcessed(client, chunk2, server);
     expect(server.pendingChunkCount).toBe(0);
   });
 
@@ -162,7 +201,11 @@ describe('socketServer — chunksByMessageId cleanup', () => {
           chunkNumber: j,
           data: parts[j],
         });
-        await sendAndWait(client, chunk);
+        if (j < parts.length - 1) {
+          client.write(chunk);
+        } else {
+          await sendAndWaitForProcessed(client, chunk, server);
+        }
       }
     }
     expect(server.pendingChunkCount).toBe(0);
@@ -179,7 +222,27 @@ describe('socketServer — chunksByMessageId cleanup', () => {
         chunkNumber: 0,
         data,
       });
-      await sendAndWait(client, chunk);
+      await sendAndWaitForProcessed(client, chunk, server);
+    }
+    expect(server.pendingChunkCount).toBe(0);
+
+    // Phase 2: reuse IDs 200-209 ten more times each to verify no stale state
+    for (let round = 0; round < 10; round++) {
+      for (let i = 0; i < 10; i++) {
+        const data = Buffer.from(`reuse-${round}-${i}`);
+        await sendAndWaitForProcessed(
+          client,
+          buildChunk({
+            messageId: 200 + i,
+            requestId: 1,
+            messageLength: data.length,
+            chunkCount: 1,
+            chunkNumber: 0,
+            data,
+          }),
+          server,
+        );
+      }
     }
     expect(server.pendingChunkCount).toBe(0);
   });

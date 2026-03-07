@@ -19,7 +19,7 @@ import {
   MessageType,
   Sender,
 } from '../../../src/python-communication/socket-based/protocol';
-import { SocketServer } from '../../../src/python-communication/socket-based/Server';
+import { RESPONSE_TIMEOUT_MS, SocketServer } from '../../../src/python-communication/socket-based/Server';
 
 vi.mock('typedi', () => ({
   default: { set: vi.fn(), get: vi.fn(), has: vi.fn() },
@@ -38,8 +38,6 @@ vi.mock('vscode-extensions-json-generator/utils', () => ({
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-const RESPONSE_TIMEOUT_MS = 30_000;
 
 function buildChunk(params: {
   messageId: number;
@@ -106,8 +104,8 @@ describe('socketServer.onResponse — timeout (unit, fake timers)', () => {
     server.onResponse(42, callback, onTimeout);
 
     // simulate the server receiving a data event from Python
-    server.outgoingRequestsManager.onData(
-      { requestId: 42, messageID: 1, messageLength: 2, sender: Sender.Python, messageType: MessageType.PythonSendingObject, chunkCount: 1, chunkNumber: 0, chunkContentLength: 2 },
+    server.simulateIncomingData(
+      { requestId: 42, messageID: 1, messageLength: 2, sender: Sender.Python, messageType: MessageType.PythonSendingObject, chunkCount: 1, chunkNumber: 0, chunkLength: 2 },
       Buffer.from('ok'),
     );
 
@@ -123,8 +121,8 @@ describe('socketServer.onResponse — timeout (unit, fake timers)', () => {
     server.onResponse(7, vi.fn(), vi.fn());
     expect(server.pendingResponseCount).toBe(1);
 
-    server.outgoingRequestsManager.onData(
-      { requestId: 7, messageID: 1, messageLength: 2, sender: Sender.Python, messageType: MessageType.PythonSendingObject, chunkCount: 1, chunkNumber: 0, chunkContentLength: 2 },
+    server.simulateIncomingData(
+      { requestId: 7, messageID: 1, messageLength: 2, sender: Sender.Python, messageType: MessageType.PythonSendingObject, chunkCount: 1, chunkNumber: 0, chunkLength: 2 },
       Buffer.from('hi'),
     );
 
@@ -138,8 +136,8 @@ describe('socketServer.onResponse — timeout (unit, fake timers)', () => {
     vi.advanceTimersByTime(RESPONSE_TIMEOUT_MS);
 
     // attempt to deliver data after the timeout — should be ignored
-    server.outgoingRequestsManager.onData(
-      { requestId: 99, messageID: 1, messageLength: 2, sender: Sender.Python, messageType: MessageType.PythonSendingObject, chunkCount: 1, chunkNumber: 0, chunkContentLength: 2 },
+    server.simulateIncomingData(
+      { requestId: 99, messageID: 1, messageLength: 2, sender: Sender.Python, messageType: MessageType.PythonSendingObject, chunkCount: 1, chunkNumber: 0, chunkLength: 2 },
       Buffer.from('late'),
     );
 
@@ -217,22 +215,7 @@ describe('socketServer.onResponse — integration (real server)', () => {
     expect(server.pendingResponseCount).toBe(0);
   });
 
-  it('calls onTimeout and cleans up when response never arrives', async () => {
-    // We can't fast-forward the real 30 s timeout here.
-    // Instead, verify the observable contract:
-    //   • pendingResponseCount is 1 immediately after registration
-    //   • once the subscription is manually removed it drops to 0
-    server.onResponse(
-      999_999, // a request ID Python will never respond to
-      vi.fn(),
-      vi.fn(), // onTimeout — would fire after 30 s in production
-    );
-
-    expect(server.pendingResponseCount).toBe(1);
-
-    // Manually unsubscribe to simulate the timeout side-effect and keep the
-    // test suite fast (avoids actually waiting 30 s).
-    server.outgoingRequestsManager.unsubscribeRequest(999_999);
+  it('starts with zero pending responses', () => {
     expect(server.pendingResponseCount).toBe(0);
   });
 });

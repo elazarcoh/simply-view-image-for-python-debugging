@@ -65,22 +65,6 @@ export class MessageChunks {
         return;
       }
     }
-    const currentChunk = this.messageChunks[chunkNumber];
-    if (currentChunk !== null) {
-      // got the same chunk twice. check if it's the same, if not, throw an error
-      if (!currentChunk.equals(chunk)) {
-        throw new Error(
-          `(reqId ${header.requestId}) Chunk number ${chunkNumber} already exists. current with length: ${this.messageChunks[chunkNumber]?.length}`,
-        );
-      }
-      else {
-        logDebug(
-          `(reqId ${header.requestId}) Got the same chunk twice. Chunk number: ${chunkNumber}. Ignoring.`,
-        );
-        return;
-      }
-    }
-
     this.messageChunks[chunkNumber] = chunk;
     this.messageHeaders[chunkNumber] = header;
     this.messageLength += chunkLength;

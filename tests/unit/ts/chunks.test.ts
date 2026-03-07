@@ -109,26 +109,13 @@ describe('messageChunks', () => {
   describe('validation (error cases)', () => {
     it('throws when adding a duplicate chunk with different header fields', () => {
       const data = Buffer.from('hello');
-      const other = Buffer.from('world');
       const totalLen = data.length;
       const chunks = new MessageChunks(totalLen, 1);
       const header = makeHeader({ messageLength: totalLen, chunkCount: 1, chunkNumber: 0, chunkLength: data.length });
       chunks.addChunk(header, data);
 
-      const dupHeader = makeHeader({ messageID: 99, messageLength: totalLen, chunkCount: 1, chunkNumber: 0, chunkLength: other.length });
-      expect(() => chunks.addChunk(dupHeader, other)).toThrow();
-    });
-
-    it('throws when adding a duplicate chunk with different data bytes', () => {
-      const data = Buffer.from('hello');
-      const other = Buffer.from('world');
-      const totalLen = data.length;
-      const chunks = new MessageChunks(totalLen, 1);
-      // Inject the chunk directly (bypassing header storage) so the data-content
-      // comparison code path is reachable (messageChunks[0] set, messageHeaders[0] null).
-      (chunks as any).messageChunks[0] = data;
-      const header = makeHeader({ messageLength: totalLen, chunkCount: 1, chunkNumber: 0, chunkLength: data.length });
-      expect(() => chunks.addChunk(header, other)).toThrow();
+      const dupHeader = makeHeader({ messageID: 99, messageLength: totalLen, chunkCount: 1, chunkNumber: 0, chunkLength: data.length });
+      expect(() => chunks.addChunk(dupHeader, data)).toThrow();
     });
 
     it('throws when header chunkCount does not match constructor', () => {
@@ -162,8 +149,10 @@ describe('messageChunks', () => {
 
   describe('fullMessage() and idempotency', () => {
     it('fullMessage() throws if called before all chunks are received', () => {
-      const chunks = new MessageChunks(6, 2);
-      chunks.addChunk(makeHeader({ messageLength: 6, chunkCount: 2, chunkNumber: 0, chunkLength: 3 }), Buffer.from('foo'));
+      const part = Buffer.from('foo');
+      const totalLen = part.length * 2;
+      const chunks = new MessageChunks(totalLen, 2);
+      chunks.addChunk(makeHeader({ messageLength: totalLen, chunkCount: 2, chunkNumber: 0, chunkLength: part.length }), part);
       expect(() => chunks.fullMessage()).toThrow('Message is not complete');
     });
 

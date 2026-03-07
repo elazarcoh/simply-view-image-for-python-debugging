@@ -51,6 +51,10 @@ export class SocketServer {
     return this.server.listening;
   }
 
+  get pendingResponseCount() {
+    return this.outgoingRequestsManager.count;
+  }
+
   get portNumber() {
     if (!this.started) {
       throw new Error('SocketServer is not started');

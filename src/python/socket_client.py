@@ -434,27 +434,6 @@ def create_exception_message(
 
     return message_pack
 
-    # Create the message body
-    exception_type = ExceptionTypes.get(type(exception), ExceptionTypes[None])
-    exception_message = traceback.format_exc().encode()
-
-    # Create the message
-    message = [
-        message_type,
-        request_id,
-        object_id,
-        object_type,
-        exception_type,
-        exception_message,
-    ]
-
-    # Create the message format string
-    message_format = f"!BIIBB{len(exception_message)}s"
-
-    # Pack the message
-    message_pack = struct.pack(message_format, *message)
-
-    return message_pack
 
 
 def message_chunks(

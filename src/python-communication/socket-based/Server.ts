@@ -49,6 +49,10 @@ export class SocketServer {
     return this.server.listening;
   }
 
+  get pendingChunkCount(): number {
+    return this.chunksByMessageId.size;
+  }
+
   get portNumber() {
     if (!this.started) {
       throw new Error('SocketServer is not started');

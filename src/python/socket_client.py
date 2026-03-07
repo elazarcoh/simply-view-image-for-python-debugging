@@ -589,12 +589,9 @@ def open_send_and_close(port, request_id, obj, options=None):
         # print(f'Sending message {message_id}')
         chunks = message_chunks(message_length, message_id, request_id, message)
 
-        all_data = b""
-
         # Send the message
         for chunk in chunks:
             s.sendall(chunk)
-            all_data += chunk
 
         # Close the socket
         s.close()

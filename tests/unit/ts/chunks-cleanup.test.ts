@@ -54,20 +54,21 @@ function buildChunk(params: {
   return Buffer.concat([headerBuf, data]);
 }
 
-/** Send bytes to the server and poll until the server has processed them (pendingChunkCount === 0). */
+/** Send bytes to the server and poll until the server has processed them (processedMessageCount increases). */
 async function sendAndWaitForProcessed(
   socket: net.Socket,
   buf: Buffer,
   server: SocketServer,
 ): Promise<void> {
+  const before = server.processedMessageCount;
+  socket.write(buf);
   return new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(
       () => reject(new Error('timed out waiting for server to process message')),
       500,
     );
-    socket.write(buf);
     const check = () => {
-      if (server.pendingChunkCount === 0) {
+      if (server.processedMessageCount > before) {
         clearTimeout(timeout);
         resolve();
       }
@@ -119,7 +120,13 @@ beforeEach(async () => {
   await server.start();
 
   client = await new Promise<net.Socket>((resolve, reject) => {
-    const s = net.createConnection({ port: server.portNumber }, () => resolve(s));
+    const s = net.createConnection({ port: server.portNumber });
+    s.once('connect', () => {
+      // Send auth token first (required by socket server)
+      const secret = Buffer.from(server.secretHex, 'hex');
+      s.write(secret);
+      resolve(s);
+    });
     s.once('error', reject);
   });
 });

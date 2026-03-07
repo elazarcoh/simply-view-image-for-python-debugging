@@ -20,6 +20,8 @@ export class SocketServer {
 
   private outgoingRequestsManager: RequestsManager = new RequestsManager();
   private chunksByMessageId: Map<number, MessageChunks> = new Map();
+  private _processedMessageCount: number = 0;
+  get processedMessageCount(): number { return this._processedMessageCount; }
   private readonly secret: Buffer = crypto.randomBytes(AUTH_SECRET_LENGTH);
 
   constructor() {
@@ -140,6 +142,7 @@ export class SocketServer {
           logTrace('Message is complete');
           const fullMessage = chunks.fullMessage();
           this.chunksByMessageId.delete(header.messageID);
+          this._processedMessageCount++;
           handleMessage(header, fullMessage);
         }
       }

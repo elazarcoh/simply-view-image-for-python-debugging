@@ -86,7 +86,7 @@ export class SavePathHelper {
   }
 
   private static sanitizeForFilename(name: string): string {
-    return name.replace(/[^\w\-.]/g, '_');
+    return name.replace(/[^\w\-]/g, '_');
   }
 
   public savePathFor(object: PythonObjectRepresentation): string {

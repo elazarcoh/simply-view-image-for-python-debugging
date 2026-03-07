@@ -9,7 +9,7 @@ import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
-const RESPONSE_TIMEOUT_MS = 30_000;
+export const RESPONSE_TIMEOUT_MS = 30_000;
 
 @Service()
 export class SocketServer {
@@ -163,6 +163,11 @@ export class SocketServer {
       logDebug('Client connection error');
       logDebug(err);
     });
+  }
+
+  /** @internal */
+  simulateIncomingData(header: MessageChunkHeader, data: Buffer): void {
+    this.outgoingRequestsManager.onData(header, data);
   }
 
   onResponse(

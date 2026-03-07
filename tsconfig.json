@@ -28,6 +28,7 @@
     "temp-ignore",
     "example-plugin",
     "vscode-extension-tester-example",
-    "test-resources"
+    "test-resources",
+    "tests"
   ]
 }

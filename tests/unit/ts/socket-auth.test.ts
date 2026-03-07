@@ -119,7 +119,7 @@ describe('socketServer — shared secret authentication (S4)', () => {
 
     it('accepts connection when secret arrives in two fragments', async () => {
       const secret = Buffer.from(server.secretHex, 'hex');
-      const firstHalf  = secret.subarray(0, 16);
+      const firstHalf = secret.subarray(0, 16);
       const secondHalf = secret.subarray(16);
 
       await new Promise<void>((resolve, reject) => {
@@ -131,7 +131,8 @@ describe('socketServer — shared secret authentication (S4)', () => {
             if (!client.destroyed) {
               client.destroy();
               resolve();
-            } else {
+            }
+            else {
               reject(new Error('Socket destroyed after fragmented correct secret'));
             }
           }, 300);
@@ -151,7 +152,10 @@ describe('socketServer — shared secret authentication (S4)', () => {
         const client = net.connect(server.portNumber, 'localhost', () => {
           client.write(secret, () => {
             // Give server time to process
-            setTimeout(() => { client.destroy(); resolve(); }, 100);
+            setTimeout(() => {
+              client.destroy();
+              resolve();
+            }, 100);
           });
         });
         client.on('error', reject);

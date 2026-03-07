@@ -28,9 +28,19 @@ describe('asPythonValue', () => {
   });
 
   it('escapes backslash before single quote (both present)', () => {
-    // Input: it\'s  (backslash then quote)
-    // Backslash → \\\\ then quote → \\'  → 'it\\\\'s'
+    // Input (5 chars): i t \ ' s
+    // Step 1 — escape backslash: i t \ \ ' s
+    // Step 2 — escape quote:     i t \ \ \ ' s
+    // Wrapped Python literal:    'it\\\'s'  (Python reads: it\'s)
     expect(asPythonValue('it\\\'s')).toBe('\'it\\\\\\\'s\'');
+  });
+
+  it('escapes newlines', () => {
+    expect(asPythonValue('line1\nline2')).toBe('\'line1\\nline2\'');
+  });
+
+  it('escapes carriage returns', () => {
+    expect(asPythonValue('line1\rline2')).toBe('\'line1\\rline2\'');
   });
 
   it('handles an empty string', () => {

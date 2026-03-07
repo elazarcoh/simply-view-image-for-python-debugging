@@ -203,7 +203,7 @@ export type OpenSendAndCloseOptions
 
 export function asPythonValue(value: string | number | boolean | null): string {
   if (typeof value === 'string') {
-    const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
+    const escaped = value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/'/g, '\\\'');
     return `'${escaped}'`;
   }
   else if (typeof value === 'number') {

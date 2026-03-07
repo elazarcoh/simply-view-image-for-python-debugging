@@ -86,3 +86,59 @@ impl Default for ImageViews {
         Self::new()
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct OverlayItem {
+    pub(crate) view_id: ViewId,
+    pub(crate) id: ViewableObjectId,
+    pub(crate) hidden: bool,
+}
+
+impl OverlayItem {
+    fn new(view_id: ViewId, id: ViewableObjectId) -> Self {
+        Self {
+            view_id,
+            id,
+            hidden: false,
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct Overlays {
+    overlays: HashMap<(ViewId, ViewableObjectId), OverlayItem>,
+}
+
+impl Overlays {
+    pub(crate) fn add_overlay_to_image(
+        &mut self,
+        view_id: ViewId,
+        image_id: ViewableObjectId,
+        overlay_id: ViewableObjectId,
+    ) {
+        self.overlays.insert(
+            (view_id, image_id.clone()),
+            OverlayItem::new(view_id, overlay_id),
+        );
+    }
+
+    pub(crate) fn get_image_overlay(
+        &self,
+        view_id: ViewId,
+        image_id: &ViewableObjectId,
+    ) -> Option<&OverlayItem> {
+        self.overlays.get(&(view_id, image_id.clone()))
+    }
+
+    pub(crate) fn get_image_overlay_mut(
+        &mut self,
+        view_id: ViewId,
+        image_id: &ViewableObjectId,
+    ) -> Option<&mut OverlayItem> {
+        self.overlays.get_mut(&(view_id, image_id.clone()))
+    }
+
+    pub(crate) fn clear_overlay(&mut self, view_id: ViewId, image_id: &ViewableObjectId) {
+        self.overlays.remove(&(view_id, image_id.clone()));
+    }
+}

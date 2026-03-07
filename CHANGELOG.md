@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.1.0] - Pre-release
+
+### Added
+- Edges mode (colorize like segmentation but only show edges).
+- Overlay one image on another.
+
 ## [4.0.19] - Pre-release
 
 ### Added

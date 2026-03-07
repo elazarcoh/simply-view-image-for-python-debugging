@@ -17,3 +17,4 @@ __pycache__/
 /test-results/test.log
 test.log
 .pytest_cache
+test-results/

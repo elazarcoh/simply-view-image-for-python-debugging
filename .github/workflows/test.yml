@@ -254,14 +254,14 @@ jobs:
       - name: Run TypeScript unit tests
         run: |
           mkdir -p test-results
-          node tests/unit/ts/run-all.mjs --junitxml test-results/ts-unit-junit.xml
+          MOCHA_JUNIT=true yarn test:unit:ts
 
       - name: Upload TS unit test results to GitHub
         uses: dorny/test-reporter@v1
         if: always()
         with:
           name: TypeScript Unit Test Results
-          path: test-results/ts-unit-junit.xml
+          path: test-results/ts-unit.xml
           reporter: java-junit
           fail-on-error: false
 
@@ -270,7 +270,7 @@ jobs:
         if: always()
         with:
           name: ts-unit-test-results
-          path: test-results/ts-unit-junit.xml
+          path: test-results/ts-unit.xml
 
       - name: Extract test statistics
         id: stats
@@ -279,7 +279,7 @@ jobs:
           python3 - <<'EOF'
           import xml.etree.ElementTree as ET, os, sys
           try:
-              root = ET.parse('test-results/ts-unit-junit.xml').getroot()
+              root = ET.parse('test-results/ts-unit.xml').getroot()
               if root.tag == 'testsuites':
                   tests = failures = errors = skipped = 0
                   for suite in root.findall('testsuite'):

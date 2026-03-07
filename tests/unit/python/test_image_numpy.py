@@ -4,32 +4,41 @@ Bug C1: When all pixels have the same value, `img - img.min()` produces
 all zeros, then `img / img.max()` divides by zero. Numpy produces NaN
 and a RuntimeWarning. The astype(uint8) silently converts NaN to 0.
 """
+import importlib.util
 import numpy as np
 import pytest
 import os
-import re
-import textwrap
 import warnings
 
-_src_path = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'src', 'python', 'image_numpy.py'
-)
+_SRC_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src', 'python')
+
+
+def _import_module(name, filename):
+    path = os.path.join(_SRC_DIR, filename)
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def _load_prepare_image():
-    """Extract and compile the prepare_image function from source."""
-    with open(_src_path) as f:
-        source = f.read()
-    match = re.search(
-        r'(    def prepare_image\(.*?\n)(?=    def [a-z]|\n    options)',
-        source,
-        re.DOTALL,
+    """Load prepare_image from image_numpy via its save closure."""
+    image_numpy = _import_module('image_numpy', 'image_numpy.py')
+    # numpy() returns (is_numpy_image, info, save); prepare_image is a closure
+    # variable inside save — extract it from the cell contents.
+    _is_numpy_image, _info, save = image_numpy.numpy()
+    cells = dict(
+        zip(
+            save.__code__.co_freevars,
+            [c.cell_contents for c in save.__closure__],
+        )
     )
-    assert match, "Could not find prepare_image in source"
-    func_source = textwrap.dedent(match.group(0))
-    ns = {}
-    exec(func_source, ns)
-    return ns['prepare_image']
+    assert 'prepare_image' in cells, (
+        f"'prepare_image' not found in save.__closure__; "
+        f"available vars: {list(cells)}. "
+        f"Source structure may have changed."
+    )
+    return cells['prepare_image']
 
 
 class TestPrepareImageFixed:

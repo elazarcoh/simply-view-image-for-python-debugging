@@ -4,23 +4,27 @@ Bug: When no image backend (cv2, imageio, PIL) is available AND numpy
 standalone fails, get_function() returns None. save() then calls
 None(path, img) → TypeError.
 """
+import importlib.util
 import numpy as np
 import pytest
 import os
-import re
-import textwrap
+import tempfile
 
-_src_path = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'src', 'python', 'image_numpy.py'
-)
+_SRC_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src', 'python')
 
 
-def _load_save_and_get_function():
-    """Load save() and get_function() from source."""
-    ns = {}
-    exec(open(_src_path).read(), ns)
-    # numpy_image_save is the exported save function
-    return ns['numpy_image_save']
+def _import_module(module_name: str, filename: str):
+    src_path = os.path.join(_SRC_DIR, filename)
+    spec = importlib.util.spec_from_file_location(module_name, src_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_save():
+    """Load numpy_image_save from image_numpy via importlib."""
+    image_numpy = _import_module('image_numpy', 'image_numpy.py')
+    return image_numpy.numpy_image_save
 
 
 class TestSaveNoBackend:
@@ -28,7 +32,7 @@ class TestSaveNoBackend:
 
     @pytest.fixture(autouse=True)
     def load_function(self):
-        self.save = _load_save_and_get_function()
+        self.save = _load_save()
 
     def test_save_no_backend_raises_descriptive_error(self):
         """save() should raise a clear error when no backend is found."""
@@ -56,21 +60,24 @@ class TestSaveNoBackend:
 
     def test_save_with_valid_backend_works(self):
         """save() with an available backend should succeed."""
-        import tempfile
         img = np.random.randint(0, 255, (10, 10, 3), dtype=np.uint8)
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as f:
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
             path = f.name
-        self.save(path, img, None, "normalize")
-        assert os.path.exists(path)
-        os.unlink(path)
+        try:
+            self.save(path, img, None, "normalize")
+            assert os.path.exists(path)
+        finally:
+            os.unlink(path)
 
     def test_save_with_preferred_backend(self):
         """save() with a preferred backend that exists should work."""
-        import tempfile
         img = np.random.randint(0, 255, (10, 10, 3), dtype=np.uint8)
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as f:
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
             path = f.name
-        # 'Standalone' always works since it only needs numpy
-        self.save(path, img, "Standalone", "normalize")
-        assert os.path.exists(path)
-        os.unlink(path)
+        try:
+            # 'Standalone' always works since it only needs numpy
+            self.save(path, img, "Standalone", "normalize")
+            assert os.path.exists(path)
+        finally:
+            os.unlink(path)
+

@@ -83,6 +83,22 @@ describe('savePathHelper — path traversal prevention (S7)', () => {
     });
   });
 
+  describe('path traversal — bare dot sequences', () => {
+    it('blocks bare ".." variable (single-level traversal)', async () => {
+      const helper = await makeSavePathHelper();
+      const result = helper.savePathFor({ variable: '..' });
+      const normalizedSaveDir = saveDir.replace(/\\/g, '/');
+      expect(result.startsWith(`${normalizedSaveDir}/`)).toBe(true);
+    });
+
+    it('blocks single "." variable', async () => {
+      const helper = await makeSavePathHelper();
+      const result = helper.savePathFor({ variable: '.' });
+      const normalizedSaveDir = saveDir.replace(/\\/g, '/');
+      expect(result.startsWith(`${normalizedSaveDir}/`)).toBe(true);
+    });
+  });
+
   describe('null byte injection', () => {
     it('strips null bytes from variable names', async () => {
       const helper = await makeSavePathHelper();

@@ -51,6 +51,11 @@ class TestSanitize:
         sanitize, _ = get_sanitize()
         assert sanitize("") == ""
 
+    def test_backslash_and_double_quote_combined(self):
+        sanitize, _ = get_sanitize()
+        result = sanitize('C:\\path "to"')
+        assert result == 'C:\\\\path \\"to\\"'
+
 
 class TestStringify:
     def test_string_roundtrip(self):

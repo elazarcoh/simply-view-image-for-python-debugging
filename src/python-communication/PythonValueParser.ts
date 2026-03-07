@@ -122,8 +122,6 @@ const PythonConstructs = P.createLanguage({
       r.None.map(() => Ok(null)),
       ListOf(r.ValidPythonResult),
     ),
-  ValidPythonResultStringified: r =>
-    r.Quote.chain(quote => r.ValidPythonResult.skip(P.string(quote))),
 });
 
 export function parsePythonResult<T = unknown>(value: string): Result<T> {

@@ -1,6 +1,15 @@
 import { Buffer } from 'node:buffer';
+import * as crypto from 'node:crypto';
 import * as net from 'node:net';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('node:crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:crypto')>();
+  return {
+    ...actual,
+    timingSafeEqual: vi.fn(actual.timingSafeEqual) as typeof actual.timingSafeEqual,
+  };
+});
 
 vi.mock('typedi', () => ({
   default: { set: vi.fn(), get: vi.fn(), has: vi.fn() },
@@ -39,6 +48,11 @@ describe('socketServer — shared secret authentication (S4)', () => {
       const a = new SocketServer();
       const b = new SocketServer();
       expect(a.secretHex).not.toBe(b.secretHex);
+    });
+
+    it('returns the same secretHex on repeated accesses', () => {
+      const s = new SocketServer();
+      expect(s.secretHex).toBe(s.secretHex);
     });
   });
 
@@ -86,7 +100,7 @@ describe('socketServer — shared secret authentication (S4)', () => {
         const client = net.connect(server.portNumber, 'localhost', () => {
           client.write(secret);
           // Give the server a moment to process auth, then verify socket is still open
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             if (!client.destroyed) {
               client.destroy();
               resolve();
@@ -97,9 +111,53 @@ describe('socketServer — shared secret authentication (S4)', () => {
           }, 200);
         });
         client.on('error', (err) => {
+          clearTimeout(timeoutId);
           reject(err);
         });
       });
     });
+
+    it('accepts connection when secret arrives in two fragments', async () => {
+      const secret = Buffer.from(server.secretHex, 'hex');
+      const firstHalf  = secret.subarray(0, 16);
+      const secondHalf = secret.subarray(16);
+
+      await new Promise<void>((resolve, reject) => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+        const client = net.connect(server.portNumber, 'localhost', () => {
+          client.write(firstHalf);
+          setTimeout(() => client.write(secondHalf), 20);
+          timeoutId = setTimeout(() => {
+            if (!client.destroyed) {
+              client.destroy();
+              resolve();
+            } else {
+              reject(new Error('Socket destroyed after fragmented correct secret'));
+            }
+          }, 300);
+        });
+        client.on('error', (err) => {
+          clearTimeout(timeoutId);
+          reject(err);
+        });
+      });
+    }, 5000);
+
+    it('uses crypto.timingSafeEqual for comparison', async () => {
+      vi.mocked(crypto.timingSafeEqual).mockClear();
+      const secret = Buffer.from(server.secretHex, 'hex');
+
+      await new Promise<void>((resolve, reject) => {
+        const client = net.connect(server.portNumber, 'localhost', () => {
+          client.write(secret, () => {
+            // Give server time to process
+            setTimeout(() => { client.destroy(); resolve(); }, 100);
+          });
+        });
+        client.on('error', reject);
+      });
+
+      expect(vi.mocked(crypto.timingSafeEqual)).toHaveBeenCalled();
+    }, 5000);
   });
 });

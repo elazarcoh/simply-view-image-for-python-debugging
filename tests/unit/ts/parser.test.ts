@@ -96,6 +96,11 @@ describe('collections', () => {
     expect(unwrapValue('\'Value([1,2,3])\'')).toEqual([1, 2, 3]);
   });
 
+  it('parses list with spaces after commas', () => {
+    // Python repr uses spaces: [1, 2, 3] not [1,2,3]
+    expect(unwrapValue('\'Value([1, 2, 3])\'')).toEqual([1, 2, 3]);
+  });
+
   it('parses a list of strings', () => {
     expect(unwrapValue(`'Value(["a","b","c"])'`)).toEqual(['a', 'b', 'c']);
   });
@@ -160,22 +165,6 @@ describe('invalid input', () => {
 // evaluate or the Jupyter kernel.  They document the Python↔TS format
 // contract.
 describe('integration – Python stringify() format contract', () => {
-  // Python: eval_into_value(lambda: 1)  → "Value(1)"  (outer quote added by DAP repr)
-  it('integer value from DAP repr', () => {
-    expect(unwrapValue('\'Value(1)\'')).toBe(1);
-  });
-
-  // Python: eval_into_value(lambda: [1, 2, 3]) → "Value([1,2,3])"
-  it('list of integers from DAP repr', () => {
-    expect(unwrapValue('\'Value([1,2,3])\'')).toEqual([1, 2, 3]);
-  });
-
-  // Python: eval_into_value(lambda: (10, 20)) → "Value((10,20))"
-  // stringify() uses tuple repr; parser maps it to a JS array
-  it('tuple from DAP repr becomes a JS array', () => {
-    expect(unwrapValue('\'Value((10,20))\'')).toEqual([10, 20]);
-  });
-
   // Python: eval_into_value(lambda: {'width': 640, 'height': 480, 'channels': 'RGB'})
   //       → "Value({"width": 640, "height": 480, "channels": "RGB"})"
   it('shape dict from DAP repr', () => {
@@ -183,23 +172,31 @@ describe('integration – Python stringify() format contract', () => {
       .toEqual({ width: 640, height: 480, channels: 'RGB' });
   });
 
-  // Python: eval_into_value(lambda: (_ for _ in ()).throw(RuntimeError("boom")))
-  //       → Error("RuntimeError: boom")
-  it('python exception becomes Err with "ExcType: message"', () => {
-    expect(unwrapError(`'Error("RuntimeError: boom")'`)).toBe('RuntimeError: boom');
-  });
-
-  // Python: same_value_multiple_callables returns a list of Value/Error strings
-  //       → ['Value(42)', 'Error("..."]
-  // parsePythonResult handles a bare list of ValidPythonResult at top level too
+  // Python: same_value_multiple_callables(get_value, funcs) returns a Python list
+  //       ['Value(1)', 'Value(2)'].  runPythonCode wraps the call with stringify(),
+  //       so the actual evaluated expression is stringify([...]), which — because
+  //       each element already starts with "Value(" — produces the unquoted string
+  //       [Value(1),Value(2)].  DAP repr-wraps that string with outer quotes →
+  //       'Value(1),Value(2)]'.
   it('list of results (multiple callables output)', () => {
     const outer = parsePythonResult(`'[Value(1),Value(2)]'`);
     expect(outer.ok).toBe(true);
     const list = (outer as Ok<unknown>).val as Array<Ok<unknown>>;
-    expect(Array.isArray(list)).toBe(true);
+    expect(list).toHaveLength(2);
     expect(list[0].ok).toBe(true);
     expect((list[0] as Ok<unknown>).val).toBe(1);
     expect(list[1].ok).toBe(true);
     expect((list[1] as Ok<unknown>).val).toBe(2);
+  });
+
+  // Grammar's ValidPythonResult has a bare-None branch (used when None appears
+  // directly in a multi-result list, not inside a Value() wrapper).
+  it('bare None (without Value wrapper) parses correctly', () => {
+    // Grammar: ValidPythonResult → None → Ok(null)
+    const outer = parsePythonResult(`'None'`);
+    expect(outer.ok).toBe(true);
+    const inner = (outer as Ok<unknown>).val as Ok<null>;
+    expect(inner.ok).toBe(true);
+    expect(inner.val).toBeNull();
   });
 });

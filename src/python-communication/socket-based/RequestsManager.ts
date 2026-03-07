@@ -10,6 +10,10 @@ export class RequestsManager {
     return Math.floor(Math.random() * 2 ** 32);
   }
 
+  get count() {
+    return this.requests.size;
+  }
+
   hasRequest(request_id: RequestId) {
     return this.requests.has(request_id);
   }

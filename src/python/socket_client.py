@@ -149,14 +149,16 @@ def is_64bit(array):
     return str(array.dtype) in DATATYPE_64BIT
 
 
-def check_can_fit_in_32bit(array_64bit):
+def check_can_fit_in_32bit(array_64bit, array_min=None, array_max=None):
     corresponding_32bit_type = CORRESPONDING_32BIT_TYPE.get(
         str(array_64bit.dtype), None
     )
     if corresponding_32bit_type is None:
         return False
-    array_min = np.min(array_64bit)
-    array_max = np.max(array_64bit)
+    if array_min is None:
+        array_min = np.min(array_64bit)
+    if array_max is None:
+        array_max = np.max(array_64bit)
     return array_min >= MIN_INT32 and array_max <= MAX_INT32
 
 
@@ -274,9 +276,13 @@ def create_numpy_message(
     num_stats = NumStatsType(len(min_stats))
 
     # The webview only supports up to 32 bit integers and floats. If the array is 64 bit, try to convert it to 32 bit.
-    if is_64bit(array) and check_can_fit_in_32bit(array):
-        array = array.astype(CORRESPONDING_32BIT_TYPE[str(array.dtype)])
-        actual_datatype = array_dtype_to_array_data_type[str(array.dtype)]
+    if is_64bit(array):
+        # Reuse min/max from array_stats if available to avoid redundant full-array scans
+        global_min = min(min_stats) if len(min_stats) > 0 else None
+        global_max = max(max_stats) if len(max_stats) > 0 else None
+        if check_can_fit_in_32bit(array, array_min=global_min, array_max=global_max):
+            array = array.astype(CORRESPONDING_32BIT_TYPE[str(array.dtype)])
+            actual_datatype = array_dtype_to_array_data_type[str(array.dtype)]
 
     array_data = array.tobytes("C")
 

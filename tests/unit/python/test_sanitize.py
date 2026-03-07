@@ -6,18 +6,22 @@ Fix: escape " as \" and \\ as \\\\ to preserve data.
 
 Run: python -m pytest tests/unit/python/test_sanitize.py -v
 """
-import textwrap
+import importlib.util
+import os
+
+
+def _import_module(name, filename):
+    path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src', 'python', filename)
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def get_sanitize():
-    """Extract sanitize function from common.py source."""
-    source_path = "src/python/common.py"
-    with open(source_path) as f:
-        source = f.read()
-
-    namespace = {}
-    exec(compile(source, source_path, "exec"), namespace)
-    return namespace["sanitize"], namespace["stringify"]
+    """Import sanitize and stringify from common.py via importlib."""
+    common = _import_module('common', 'common.py')
+    return common.sanitize, common.stringify
 
 
 class TestSanitize:

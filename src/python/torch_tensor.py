@@ -30,7 +30,13 @@ def torch_tensor():
             return {"type": obj_type}
 
     def save(path, obj, normalize=True, pad=10, *args, **kwargs):
-        import torchvision
+        try:
+            import torchvision
+        except ImportError:
+            raise RuntimeError(
+                "torchvision is required to save torch tensors as images. "
+                "Install it with: pip install torchvision"
+            )
 
         pad_value = 255
         torchvision.utils.save_image(

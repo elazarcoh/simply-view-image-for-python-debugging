@@ -84,6 +84,26 @@ export class SocketServer {
           data = fullData;
         }
 
+        // Early validation: once the header is available, reject oversized or
+        // malformed messages immediately — before buffering the full payload.
+        if (data.length >= HEADER_LENGTH) {
+          const messageLength = data.readUInt32BE(0);
+          if (messageLength > MAX_MESSAGE_SIZE) {
+            logDebug(
+              `Rejecting message: length ${messageLength} exceeds max ${MAX_MESSAGE_SIZE}`,
+            );
+            socket.destroy();
+            return;
+          }
+          if (messageLength < HEADER_LENGTH) {
+            logDebug(
+              `Rejecting message: length ${messageLength} shorter than header ${HEADER_LENGTH}`,
+            );
+            socket.destroy();
+            return;
+          }
+        }
+
         const parsed = splitHeaderContentRest(data);
         if (parsed.err) {
           logTrace('Waiting for more data');
@@ -92,19 +112,6 @@ export class SocketServer {
         }
 
         const [header, content, rest] = parsed.safeUnwrap();
-
-        if (header.messageLength > MAX_MESSAGE_SIZE) {
-          logDebug(
-            `Rejecting message: length ${header.messageLength} exceeds max ${MAX_MESSAGE_SIZE}`,
-          );
-          return;
-        }
-        if (header.messageLength < HEADER_LENGTH) {
-          logDebug(
-            `Rejecting message: length ${header.messageLength} shorter than header ${HEADER_LENGTH}`,
-          );
-          return;
-        }
 
         if (rest.length > 0) {
           logTrace('Received more data than expected');

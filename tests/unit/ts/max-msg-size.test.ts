@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
-import { describe, expect, it } from 'vitest';
+import * as net from 'node:net';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   HEADER_LENGTH,
   MAX_MESSAGE_SIZE,
@@ -7,6 +8,21 @@ import {
   Sender,
   splitHeaderContentRest,
 } from '../../../src/python-communication/socket-based/protocol';
+import { SocketServer } from '../../../src/python-communication/socket-based/Server';
+
+vi.mock('typedi', () => ({
+  default: { set: vi.fn(), get: vi.fn(), has: vi.fn() },
+  Service: () => (c: unknown) => c,
+  Inject: () => () => {},
+}));
+
+vi.mock('../../../src/Logging', () => ({
+  logDebug: vi.fn(),
+  logInfo: vi.fn(),
+  logTrace: vi.fn(),
+  logWarn: vi.fn(),
+  logError: vi.fn(),
+}));
 
 /**
  * Builds a minimal valid header buffer with the given field values.
@@ -56,11 +72,11 @@ function buildBuffer(opts: {
 }
 
 describe('protocol constants', () => {
-  it('hEADER_LENGTH is 26 bytes', () => {
+  it('constant HEADER_LENGTH equals 26 bytes', () => {
     expect(HEADER_LENGTH).toBe(26);
   });
 
-  it('mAX_MESSAGE_SIZE is 256 MB', () => {
+  it('constant MAX_MESSAGE_SIZE equals 256 MB', () => {
     expect(MAX_MESSAGE_SIZE).toBe(256 * 1024 * 1024);
   });
 
@@ -198,6 +214,136 @@ describe('splitHeaderContentRest', () => {
       const buf = buildBuffer({ messageLength: HEADER_LENGTH });
       const result = splitHeaderContentRest(buf);
       expect(result.ok).toBe(true);
+    });
+  });
+
+  describe('partial payload — full header but insufficient chunk data', () => {
+    it('returns Err when header declares chunkLength=16 but only 4 bytes of payload follow', () => {
+      // Build a buffer with 4 bytes of chunk data, then overwrite chunkLength
+      // field (offset 22) to declare 16 bytes expected.  The resulting buffer
+      // has HEADER_LENGTH + 4 bytes total, so data.length - HEADER_LENGTH (4)
+      // < chunkLength (16) → splitHeaderContentRest must return Err.
+      const chunkData = Buffer.alloc(4);
+      const buf = buildBuffer({
+        messageLength: HEADER_LENGTH + 16,
+        chunkData,
+      });
+      // chunkLength field is at offset 22 (sum of preceding field widths)
+      buf.writeUInt32BE(16, 22);
+      const result = splitHeaderContentRest(buf);
+      expect(result.err).toBe(true);
+    });
+  });
+});
+
+describe('socketServer integration — MAX_MESSAGE_SIZE rejection', () => {
+  let serverInstance: SocketServer | undefined;
+
+  afterEach(async () => {
+    if (serverInstance) {
+      const s = serverInstance;
+      serverInstance = undefined;
+      await new Promise<void>((resolve) => {
+        s.server.close(() => resolve());
+      });
+    }
+  });
+
+  it('destroys the client socket when messageLength exceeds MAX_MESSAGE_SIZE', async () => {
+    serverInstance = new SocketServer();
+    await serverInstance.start();
+    const port = serverInstance.portNumber;
+
+    await new Promise<void>((resolve, reject) => {
+      const client = new net.Socket();
+      const timer = setTimeout(() => reject(new Error('timed out waiting for socket close')), 5000);
+      client.connect(port, '127.0.0.1', () => {
+        const buf = buildBuffer({ messageLength: MAX_MESSAGE_SIZE + 1 });
+        client.write(buf);
+      });
+      client.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      client.once('error', (err) => {
+        clearTimeout(timer);
+        // ECONNRESET is expected when the server destroys the socket
+        if ((err as NodeJS.ErrnoException).code === 'ECONNRESET') {
+          resolve();
+        }
+        else {
+          reject(err);
+        }
+      });
+    });
+  });
+
+  it('does not invoke the message handler when messageLength exceeds MAX_MESSAGE_SIZE', async () => {
+    serverInstance = new SocketServer();
+    await serverInstance.start();
+    const port = serverInstance.portNumber;
+
+    let handlerCalled = false;
+    // requestId in buildBuffer defaults to 42; register a response listener for it
+    serverInstance.onResponse(42, () => {
+      handlerCalled = true;
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const client = new net.Socket();
+      const timer = setTimeout(() => reject(new Error('timed out')), 5000);
+      client.connect(port, '127.0.0.1', () => {
+        const buf = buildBuffer({ messageLength: MAX_MESSAGE_SIZE + 1 });
+        client.write(buf);
+      });
+      client.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      client.once('error', (err) => {
+        clearTimeout(timer);
+        if ((err as NodeJS.ErrnoException).code === 'ECONNRESET') {
+          resolve();
+        }
+        else {
+          reject(err);
+        }
+      });
+    });
+
+    expect(handlerCalled).toBe(false);
+  });
+
+  it('sends oversized header in two chunks — still rejected once full header arrives', async () => {
+    serverInstance = new SocketServer();
+    await serverInstance.start();
+    const port = serverInstance.portNumber;
+
+    await new Promise<void>((resolve, reject) => {
+      const client = new net.Socket();
+      const timer = setTimeout(() => reject(new Error('timed out')), 5000);
+      client.connect(port, '127.0.0.1', () => {
+        // Send the full header split into two writes: first 4 bytes (messageLength),
+        // then the rest.  After the second write the server has >= HEADER_LENGTH
+        // bytes and should detect the oversized messageLength and destroy the socket.
+        const buf = buildBuffer({ messageLength: MAX_MESSAGE_SIZE + 1 });
+        client.write(buf.subarray(0, 4), () => {
+          client.write(buf.subarray(4));
+        });
+      });
+      client.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      client.once('error', (err) => {
+        clearTimeout(timer);
+        if ((err as NodeJS.ErrnoException).code === 'ECONNRESET') {
+          resolve();
+        }
+        else {
+          reject(err);
+        }
+      });
     });
   });
 });

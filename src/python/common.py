@@ -4,7 +4,9 @@ def keyvalue(pair):
 
 
 def sanitize(s):
-    return s.replace("\\", "\\\\").replace('"', '\\"')
+    backslash = chr(92)
+    dq = chr(34)
+    return s.replace(backslash, backslash + backslash).replace(dq, backslash + dq)
 
 
 def stringify(value):

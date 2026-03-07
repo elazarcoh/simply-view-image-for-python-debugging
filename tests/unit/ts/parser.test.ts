@@ -177,7 +177,7 @@ describe('integration – Python stringify() format contract', () => {
   //       so the actual evaluated expression is stringify([...]), which — because
   //       each element already starts with "Value(" — produces the unquoted string
   //       [Value(1),Value(2)].  DAP repr-wraps that string with outer quotes →
-  //       'Value(1),Value(2)]'.
+  //       '[Value(1),Value(2)]'.
   it('list of results (multiple callables output)', () => {
     const outer = parsePythonResult(`'[Value(1),Value(2)]'`);
     expect(outer.ok).toBe(true);

@@ -4,7 +4,8 @@
     "lib": ["ES2021", "DOM"],
     "rootDir": ".",
     "types": ["node", "mocha", "chai"],
-    "outDir": "out"
+    "outDir": "out",
+    "skipLibCheck": true
   },
   "include": [
     "tests/ui-test/**/*"

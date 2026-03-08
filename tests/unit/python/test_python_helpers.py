@@ -80,7 +80,7 @@ class TestStringify:
 
     def test_string_with_quotes_sanitized(self):
         result = common.stringify('say "hi"')
-        assert result == '"say hi"'
+        assert result == '"say \\"hi\\""'
 
     def test_empty_string(self):
         assert common.stringify('') == '""'

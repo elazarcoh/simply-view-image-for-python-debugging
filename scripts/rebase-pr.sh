@@ -12,8 +12,15 @@ fi
 
 PR_NUMBER="$1"
 
-echo "==> Fetching origin main..."
-git fetch origin main:main
+# Check if current branch is main; if so, pull, otherwise, fetch
+current_branch=$(git branch --show-current)
+if [ "$current_branch" = "main" ]; then
+  echo "==> Pulling latest changes on main..."
+  git pull origin main
+else
+  echo "==> Fetching latest changes on main..."
+  git fetch origin main:main
+fi
 
 echo "==> Looking up PR #${PR_NUMBER} branch..."
 BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')

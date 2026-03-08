@@ -36,7 +36,7 @@ function onConfigChange(): void {
 }
 
 // ts-unused-exports:disable-next-line
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   Container.set('vscode.ExtensionContext', context);
 
   // Container.set(WebviewClient, new WebviewClient());
@@ -153,7 +153,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   try {
     const socketServer = Container.get(SocketServer);
-    socketServer.start();
+    await socketServer.start();
   }
   catch (e) {
     logError('Failed to start socket server', e);

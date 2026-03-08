@@ -17,7 +17,7 @@ def torch_tensor():
             elif len(obj.shape) == 4:
                 is_valid &= obj.shape[1] in valid_channels
             return is_valid
-        except:
+        except Exception:
             return False
 
     def info(obj):
@@ -26,7 +26,7 @@ def torch_tensor():
             shape = str(tuple(obj.shape))
             dtype = str(obj.dtype)
             return {"type": obj_type, "shape": shape, "dtype": dtype}
-        except:
+        except Exception:
             return {"type": obj_type}
 
     def save(path, obj, normalize=True, pad=10, *args, **kwargs):

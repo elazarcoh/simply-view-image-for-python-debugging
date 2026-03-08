@@ -3,7 +3,7 @@ def set_matplotlib_agg(to_set):
         try:
             import matplotlib
             matplotlib.use('agg')
-        except:
+        except Exception:
             pass
 
 import matplotlib.pyplot as plt

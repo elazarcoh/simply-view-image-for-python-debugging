@@ -40,14 +40,20 @@ class TestSanitize:
     def test_no_special_chars(self):
         assert common.sanitize('hello world') == 'hello world'
 
-    def test_strips_single_quotes(self):
-        assert common.sanitize("it's") == 'its'
+    def test_preserves_single_quotes(self):
+        assert common.sanitize("it's") == "it's"
 
-    def test_strips_double_quotes(self):
-        assert common.sanitize('say "hi"') == 'say hi'
+    def test_escapes_double_quotes(self):
+        assert common.sanitize('say "hi"') == r'say \"hi\"'
 
-    def test_strips_both_quotes(self):
-        assert common.sanitize("""he said "it's fine" """) == 'he said its fine '
+    def test_escapes_double_quotes_preserves_single(self):
+        assert common.sanitize("""he said "it's fine" """) == r'''he said \"it's fine\" '''
+
+    def test_escapes_backslash(self):
+        assert common.sanitize('a\\b') == 'a\\\\b'
+
+    def test_escapes_backslash_before_double_quote(self):
+        assert common.sanitize('\\"') == '\\\\\\"'
 
     def test_empty_string(self):
         assert common.sanitize('') == ''

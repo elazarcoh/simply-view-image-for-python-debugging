@@ -20,6 +20,12 @@ import { By } from 'selenium-webdriver';
 import { VSBrowser } from 'vscode-extension-tester';
 import { DebugTestHelper } from './DebugTestHelper';
 import { fileInWorkspace, openWorkspace } from './globals';
+import {
+  assertBrighterThan,
+  assertChannelSwapped,
+  assertDominantChannel,
+  sampleRegion,
+} from './image-verification-utils';
 
 describe('display options tests', () => {
   let debugHelper: DebugTestHelper;
@@ -251,6 +257,17 @@ describe('display options tests', () => {
     const redClicked = await testDisplayOption('Red Channel', 'rgb-red-channel');
     if (redClicked) {
       DebugTestHelper.logger.success('Red channel filter applied');
+
+      // Verify pixel rendering: left region (pure red) should remain red;
+      // middle region (pure green) should become dark since its red content is zero.
+      const imgAfterRed = await debugHelper.captureCanvasImage();
+      if (imgAfterRed) {
+        const leftAfterRed = sampleRegion(imgAfterRed, 0.05, 0.2, 0.25, 0.6);
+        const middleAfterRed = sampleRegion(imgAfterRed, 0.38, 0.2, 0.25, 0.6);
+        DebugTestHelper.logger.info(`Red filter — left: ${JSON.stringify(leftAfterRed)}, middle: ${JSON.stringify(middleAfterRed)}`);
+        assertDominantChannel(leftAfterRed, 'r', 40, 'left region after red channel filter');
+        assertBrighterThan(leftAfterRed, middleAfterRed, 40, 'left/red brighter than middle/green after red filter');
+      }
     }
 
     // Reset before next test
@@ -317,11 +334,22 @@ describe('display options tests', () => {
     // Test Ignore Alpha
     await testDisplayOption('Ignore Alpha', 'rgba-ignore-alpha');
 
-    // View the BGR test image
+    // View the BGR test image — capture BEFORE swap for comparison
     await viewVariableAndScreenshot('bgr_test', 'success-bgr-default');
+    const imgBeforeBgr = await debugHelper.captureCanvasImage();
 
     // Test Swap RGB/BGR
     await testDisplayOption('Swap RGB/BGR', 'bgr-swapped');
+
+    // Verify channel swap: bgr_test right half is pure red (R=255, G=0, B=0) before swap,
+    // and should become pure blue (R=0, G=0, B=255) after swap.
+    const imgAfterBgr = await debugHelper.captureCanvasImage();
+    if (imgBeforeBgr && imgAfterBgr) {
+      const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
+      const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
+      DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
+      assertChannelSwapped(rightBefore, rightAfter, 'r', 'b', 40, 'right region after Swap RGB/BGR');
+    }
 
     DebugTestHelper.logger.success('All display options tests completed');
   }).timeout(300000);

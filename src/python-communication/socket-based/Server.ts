@@ -101,13 +101,6 @@ export class SocketServer {
             socket.destroy();
             return;
           }
-          if (messageLength < HEADER_LENGTH) {
-            logDebug(
-              `Rejecting message: length ${messageLength} shorter than header ${HEADER_LENGTH}`,
-            );
-            socket.destroy();
-            return;
-          }
         }
 
         const parsed = splitHeaderContentRest(data);

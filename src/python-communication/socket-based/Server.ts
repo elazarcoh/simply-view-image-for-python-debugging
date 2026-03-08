@@ -4,7 +4,7 @@ import * as net from 'node:net';
 import { Service } from 'typedi';
 import { logDebug, logInfo, logTrace } from '../../Logging';
 import { MessageChunks } from './MessageChunks';
-import { splitHeaderContentRest } from './protocol';
+import { HEADER_LENGTH, MAX_MESSAGE_SIZE, splitHeaderContentRest } from './protocol';
 import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
@@ -84,6 +84,26 @@ export class SocketServer {
           data = fullData;
         }
 
+        // Early validation: once the header is available, reject oversized or
+        // malformed messages immediately — before buffering the full payload.
+        if (data.length >= HEADER_LENGTH) {
+          const messageLength = data.readUInt32BE(0);
+          if (messageLength > MAX_MESSAGE_SIZE) {
+            logDebug(
+              `Rejecting message: length ${messageLength} exceeds max ${MAX_MESSAGE_SIZE}`,
+            );
+            socket.destroy();
+            return;
+          }
+          if (messageLength < HEADER_LENGTH) {
+            logDebug(
+              `Rejecting message: length ${messageLength} shorter than header ${HEADER_LENGTH}`,
+            );
+            socket.destroy();
+            return;
+          }
+        }
+
         const parsed = splitHeaderContentRest(data);
         if (parsed.err) {
           logTrace('Waiting for more data');
@@ -92,6 +112,7 @@ export class SocketServer {
         }
 
         const [header, content, rest] = parsed.safeUnwrap();
+
         if (rest.length > 0) {
           logTrace('Received more data than expected');
           waitingForHandling = rest;

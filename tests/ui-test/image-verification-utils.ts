@@ -41,13 +41,29 @@ async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
         if (className && className.includes('webview')) {
           await driver.switchTo().frame(iframe);
 
-          // VS Code webviews have a second nested iframe
-          const nestedIframes = await driver.findElements(By.css('iframe'));
-          if (nestedIframes.length > 0) {
-            await driver.switchTo().frame(nestedIframes[0]);
+          // VS Code webviews nest the actual content in a second iframe
+          // (src="vscode-webview://..."). Wait up to 8 seconds for it to appear —
+          // on a fresh session the inner iframe may still be loading.
+          let nestedIframe = null;
+          for (let attempt = 0; attempt < 16; attempt++) {
+            const nestedIframes = await driver.findElements(By.css('iframe'));
+            if (nestedIframes.length > 0) {
+              nestedIframe = nestedIframes[0];
+              DebugTestHelper.logger.debug(`switchToWebviewFrame: nested iframe found after ${attempt * 500}ms`);
+              break;
+            }
+            await driver.sleep(500);
           }
 
-          DebugTestHelper.logger.debug('switchToWebviewFrame: switched to webview iframe');
+          if (nestedIframe) {
+            await driver.switchTo().frame(nestedIframe);
+            DebugTestHelper.logger.debug('switchToWebviewFrame: switched to nested content iframe');
+          }
+          else {
+            // Some VS Code versions load content directly in the outer iframe.
+            DebugTestHelper.logger.debug('switchToWebviewFrame: no nested iframe found, using outer frame');
+          }
+
           return true;
         }
       }

@@ -77,10 +77,19 @@ describe('display options tests', () => {
             await driver.switchTo().frame(iframe);
             DebugTestHelper.logger.success('Switched to webview iframe');
 
-            // There might be a nested iframe inside
-            const nestedIframes = await driver.findElements(By.css('iframe'));
-            if (nestedIframes.length > 0) {
-              await driver.switchTo().frame(nestedIframes[0]);
+            // VS Code nests the actual webview content in a second iframe.
+            // Wait up to 8 s for it to appear on fresh sessions.
+            let nestedIframe = null;
+            for (let attempt = 0; attempt < 16; attempt++) {
+              const nestedIframes = await driver.findElements(By.css('iframe'));
+              if (nestedIframes.length > 0) {
+                nestedIframe = nestedIframes[0];
+                break;
+              }
+              await driver.sleep(500);
+            }
+            if (nestedIframe) {
+              await driver.switchTo().frame(nestedIframe);
               DebugTestHelper.logger.success('Switched to nested iframe');
             }
 

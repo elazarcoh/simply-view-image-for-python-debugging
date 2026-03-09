@@ -81,6 +81,12 @@ export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | n
   }
 
   try {
+    // Dispatch a resize event to force the WebGL renderer to re-render the canvas.
+    // Without this, the canvas backbuffer may have been cleared since the last render
+    // (WebGL default: preserveDrawingBuffer=false), resulting in a blank capture.
+    await driver.executeScript('window.dispatchEvent(new Event(\'resize\'))');
+    await driver.sleep(400);
+
     const canvasElements = await driver.findElements(By.css('#gl-canvas'));
     if (canvasElements.length === 0) {
       DebugTestHelper.logger.warn('captureCanvasImage: #gl-canvas not found');
@@ -94,7 +100,11 @@ export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | n
     }
 
     const img = await Jimp.fromBuffer(Buffer.from(base64, 'base64'));
-    DebugTestHelper.logger.debug(`captureCanvasImage: captured ${img.width}×${img.height} canvas`);
+    // Log a center sample to aid debugging when pixels look wrong.
+    const centerSample = sampleRegion(img, 0.45, 0.45, 0.1, 0.1);
+    DebugTestHelper.logger.debug(
+      `captureCanvasImage: captured ${img.width}×${img.height} canvas, center sample: r=${centerSample.r.toFixed(1)} g=${centerSample.g.toFixed(1)} b=${centerSample.b.toFixed(1)}`,
+    );
     return img;
   }
   finally {
@@ -284,36 +294,47 @@ export async function clickDisplayOption(
   buttonLabel: string,
   postClickMs: number = 600,
 ): Promise<boolean> {
-  const switched = await switchToWebviewFrame(driver);
-  if (!switched) {
-    DebugTestHelper.logger.warn(`clickDisplayOption: could not switch to webview iframe for "${buttonLabel}"`);
-    return false;
-  }
+  const selectors = [
+    `button[aria-label="${buttonLabel}"]`,
+    `button[title="${buttonLabel}"]`,
+    `[aria-label="${buttonLabel}"]`,
+    `[title="${buttonLabel}"]`,
+  ];
 
-  try {
-    const selectors = [
-      `button[aria-label="${buttonLabel}"]`,
-      `button[title="${buttonLabel}"]`,
-      `[aria-label="${buttonLabel}"]`,
-      `[title="${buttonLabel}"]`,
-    ];
-
-    for (const selector of selectors) {
-      const elements = await driver.findElements(By.css(selector));
-      if (elements.length > 0) {
-        await elements[0].click();
-        DebugTestHelper.logger.debug(`clickDisplayOption: clicked "${buttonLabel}" via "${selector}"`);
-        await driver.sleep(postClickMs);
-        return true;
-      }
+  // Retry a few times to handle webview render delays.
+  const maxAttempts = 5;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const switched = await switchToWebviewFrame(driver);
+    if (!switched) {
+      DebugTestHelper.logger.warn(`clickDisplayOption: could not switch to webview iframe for "${buttonLabel}" (attempt ${attempt})`);
+      await driver.sleep(500);
+      continue;
     }
 
-    DebugTestHelper.logger.warn(`clickDisplayOption: button "${buttonLabel}" not found`);
-    return false;
+    try {
+      for (const selector of selectors) {
+        const elements = await driver.findElements(By.css(selector));
+        if (elements.length > 0) {
+          await elements[0].click();
+          DebugTestHelper.logger.debug(`clickDisplayOption: clicked "${buttonLabel}" via "${selector}" (attempt ${attempt})`);
+          await driver.sleep(postClickMs);
+          return true;
+        }
+      }
+
+      DebugTestHelper.logger.warn(`clickDisplayOption: button "${buttonLabel}" not found (attempt ${attempt}/${maxAttempts})`);
+    }
+    finally {
+      await driver.switchTo().defaultContent();
+    }
+
+    if (attempt < maxAttempts) {
+      await driver.sleep(600);
+    }
   }
-  finally {
-    await driver.switchTo().defaultContent();
-  }
+
+  DebugTestHelper.logger.warn(`clickDisplayOption: button "${buttonLabel}" not found after ${maxAttempts} attempts`);
+  return false;
 }
 
 /**

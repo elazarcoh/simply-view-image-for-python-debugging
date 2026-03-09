@@ -81,8 +81,12 @@ describe('image rendering verification', () => {
       setupRetries: 5,
       type: 'variable',
     });
-    // Focus the Image View panel so subsequent element screenshots capture the GL canvas.
+    // Wait for the image to load before focusing the editor, matching the
+    // viewVariableAndScreenshot pattern in display-options.test.ts.
+    await debugHelper.wait(1000);
+    // Focus the Image View panel — activating the tab triggers a re-render.
     await debugHelper.getWebviewEditor();
+    // Give the webview extra time to fully render the image and its display options.
     await debugHelper.wait(1500);
   }
 

@@ -34,7 +34,7 @@ export type Channel = 'r' | 'g' | 'b';
  *
  * Returns true if successfully switched into the innermost user-content frame.
  */
-async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
+export async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
   try {
     // Dump top-level iframe structure for diagnostics.
     const topIframes = await driver.findElements(By.css('iframe'));

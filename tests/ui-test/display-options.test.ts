@@ -14,9 +14,7 @@
  * - Low contrast image: For high contrast enhancement test
  */
 
-import type { WebElement } from 'selenium-webdriver';
 import type { WebDriver } from 'vscode-extension-tester';
-import { By } from 'selenium-webdriver';
 import { VSBrowser } from 'vscode-extension-tester';
 import { DebugTestHelper } from './DebugTestHelper';
 import { fileInWorkspace, openWorkspace } from './globals';
@@ -24,6 +22,7 @@ import {
   assertBrighterThan,
   assertChannelSwapped,
   assertDominantChannel,
+  clickDisplayOption,
   sampleRegion,
 } from './image-verification-utils';
 
@@ -57,164 +56,7 @@ describe('display options tests', () => {
     DebugTestHelper.reset();
   }).timeout(5000);
 
-  /**
-   * Helper to switch to the webview iframe — navigates into the webview content
-   * frame so that button clicks and canvas access work correctly.
-   *
-   * Structure observed in practice:
-   *   Level 1: main window → <iframe class="webview [ready]"> (outer container)
-   *   Level 2: <iframe src="vscode-webview://..."> (VS Code content — user HTML lives here
-   *            OR in a child #active-frame depending on VS Code version)
-   */
-  async function switchToWebviewFrame(): Promise<boolean> {
-    try {
-      const iframes = await driver.findElements(By.css('iframe'));
-      DebugTestHelper.logger.info(`Found ${iframes.length} iframes at main level`);
-      for (let i = 0; i < iframes.length; i++) {
-        const cls = await iframes[i].getAttribute('class').catch(() => '?');
-        const id = await iframes[i].getAttribute('id').catch(() => '?');
-        const name = await iframes[i].getAttribute('name').catch(() => '?');
-        DebugTestHelper.logger.debug(`  iframe[${i}] class="${cls}" id="${id}" name="${name}"`);
-      }
-
-      let outerSwitched = false;
-      for (const iframe of iframes) {
-        try {
-          const className = await iframe.getAttribute('class');
-          if (className && className.includes('webview')) {
-            await driver.switchTo().frame(iframe);
-            outerSwitched = true;
-            DebugTestHelper.logger.info('Switched to outer webview iframe');
-            break;
-          }
-        }
-        catch (e) {
-          DebugTestHelper.logger.debug(`Could not process iframe: ${e}`);
-        }
-      }
-
-      if (!outerSwitched) {
-        DebugTestHelper.logger.warn('No outer webview iframe found');
-        return false;
-      }
-
-      // Find the nested content-manager iframe. Wait up to 8 s.
-      let level2Frame = null;
-      for (let attempt = 0; attempt < 16; attempt++) {
-        const nested = await driver.findElements(By.css('iframe'));
-        if (nested.length > 0) {
-          level2Frame = nested[0];
-          DebugTestHelper.logger.debug(`level-2 iframe found after ${attempt * 500}ms`);
-          break;
-        }
-        await driver.sleep(500);
-      }
-
-      if (!level2Frame) {
-        DebugTestHelper.logger.debug('No level-2 iframe; using outer frame');
-        return true;
-      }
-
-      const l2cls = await level2Frame.getAttribute('class').catch(() => '?');
-      const l2id = await level2Frame.getAttribute('id').catch(() => '?');
-      const l2name = await level2Frame.getAttribute('name').catch(() => '?');
-      DebugTestHelper.logger.debug(`level-2: class="${l2cls}" id="${l2id}" name="${l2name}"`);
-
-      await driver.switchTo().frame(level2Frame);
-      DebugTestHelper.logger.info('Switched to level-2 (vscode-webview://)');
-
-      // Immediately check for level-3 iframes (do NOT wait — a long wait causes
-      // #active-frame to load and intercept clicks from this level).
-      const l3iframes = await driver.findElements(By.css('iframe')).catch(() => []);
-      DebugTestHelper.logger.debug(`Found ${l3iframes.length} iframes inside level-2`);
-      for (let i = 0; i < l3iframes.length; i++) {
-        const cls = await l3iframes[i].getAttribute('class').catch(() => '?');
-        const id = await l3iframes[i].getAttribute('id').catch(() => '?');
-        const name = await l3iframes[i].getAttribute('name').catch(() => '?');
-        DebugTestHelper.logger.debug(`  level-2 child iframe[${i}] class="${cls}" id="${id}" name="${name}"`);
-      }
-
-      // If #active-frame exists already, switch into it; otherwise stay at level-2.
-      for (const f of l3iframes) {
-        const id = await f.getAttribute('id').catch(() => '');
-        if (id === 'active-frame') {
-          await driver.switchTo().frame(f);
-          DebugTestHelper.logger.info('Switched to #active-frame');
-          return true;
-        }
-      }
-
-      DebugTestHelper.logger.info('No #active-frame found at level-2; staying at level-2');
-      return true;
-    }
-    catch (error) {
-      DebugTestHelper.logger.error(`Error switching to webview frame: ${error}`);
-      return false;
-    }
-  }
-
-  /**
-   * Helper to switch back to the main content
-   */
-  async function switchToMainContent(): Promise<void> {
-    await driver.switchTo().defaultContent();
-    DebugTestHelper.logger.debug('Switched back to main content');
-  }
-
-  /**
-   * Helper to find and click a display option button by its aria-label or title
-   */
-  async function clickDisplayOptionButton(buttonLabel: string): Promise<boolean> {
-    try {
-      // Try to find button by aria-label
-      let button: WebElement | null = null;
-
-      const selectors = [
-        `button[aria-label="${buttonLabel}"]`,
-        `button[title="${buttonLabel}"]`,
-        `[aria-label="${buttonLabel}"]`,
-        `[title="${buttonLabel}"]`,
-      ];
-
-      for (const selector of selectors) {
-        try {
-          const elements = await driver.findElements(By.css(selector));
-          if (elements.length > 0) {
-            button = elements[0];
-            DebugTestHelper.logger.success(`Found button with selector: ${selector}`);
-            break;
-          }
-        }
-        catch (_e) {
-          // Try next selector
-        }
-      }
-
-      if (button) {
-        // Use JS click to bypass coordinate-based interception by Monaco panel sashes.
-        await driver.executeScript('arguments[0].scrollIntoView({block:"center"})', button);
-        await driver.executeScript('arguments[0].click()', button);
-        await driver.sleep(500);
-        DebugTestHelper.logger.success(`Clicked "${buttonLabel}" button`);
-        return true;
-      }
-
-      DebugTestHelper.logger.warn(`Button "${buttonLabel}" not found`);
-      return false;
-    }
-    catch (error) {
-      DebugTestHelper.logger.error(`Error clicking button "${buttonLabel}": ${error}`);
-      return false;
-    }
-  }
-
-  /**
-   * View a variable and take a screenshot
-   */
-  async function viewVariableAndScreenshot(
-    variableName: string,
-    screenshotName: string,
-  ): Promise<void> {
+  async function viewVariable(variableName: string): Promise<void> {
     await debugHelper.performVariableAction({
       variableName,
       actionLabel: 'View Image',
@@ -222,57 +64,9 @@ describe('display options tests', () => {
       setupRetries: 5,
       type: 'variable',
     });
-
     await debugHelper.wait(1000);
-
-    // Get the webview editor for screenshot
-    const webviewEditor = await debugHelper.getWebviewEditor();
-
-    await debugHelper.takeScreenshot({
-      name: screenshotName,
-      element: webviewEditor,
-    });
-  }
-
-  /**
-   * Test display option by clicking a button and taking a screenshot
-   */
-  async function testDisplayOption(
-    buttonLabel: string,
-    screenshotSuffix: string,
-  ): Promise<boolean> {
-    // Switch to webview frame
-    const switched = await switchToWebviewFrame();
-    if (!switched) {
-      DebugTestHelper.logger.warn('Could not switch to webview frame, skipping button click');
-      await switchToMainContent();
-      return false;
-    }
-
-    // Click the display option button
-    const clicked = await clickDisplayOptionButton(buttonLabel);
-
-    // Switch back to main content
-    await switchToMainContent();
-
-    if (clicked) {
-      await debugHelper.wait(500);
-
-      // Take screenshot of the result
-      const webviewEditor = await debugHelper.getWebviewEditor();
-      await debugHelper.takeScreenshot({
-        name: `display-option-${screenshotSuffix}`,
-        element: webviewEditor,
-      });
-
-      // Also take fullscreen
-      await debugHelper.takeScreenshot({
-        name: `display-option-${screenshotSuffix}-fullscreen`,
-        element: 'screen',
-      });
-    }
-
-    return clicked;
+    await debugHelper.getWebviewEditor();
+    await debugHelper.wait(500);
   }
 
   /**
@@ -306,10 +100,10 @@ describe('display options tests', () => {
     // ===== Test 1: RGB Channel Filters =====
     DebugTestHelper.logger.step('Testing RGB channel display options on rgb_gradient...');
 
-    await viewVariableAndScreenshot('rgb_gradient', 'success-rgb-default');
+    await viewVariable('rgb_gradient');
 
     // Test Red channel filter
-    const redClicked = await testDisplayOption('Red Channel', 'rgb-red-channel');
+    const redClicked = await clickDisplayOption(driver, 'Red Channel');
     if (redClicked) {
       DebugTestHelper.logger.success('Red channel filter applied');
 
@@ -326,75 +120,75 @@ describe('display options tests', () => {
     }
 
     // Reset before next test
-    await testDisplayOption('Reset', 'rgb-after-reset');
+    await clickDisplayOption(driver, 'Reset');
 
     // Test Green channel filter
-    const greenClicked = await testDisplayOption('Green Channel', 'rgb-green-channel');
+    const greenClicked = await clickDisplayOption(driver, 'Green Channel');
     if (greenClicked) {
       DebugTestHelper.logger.success('Green channel filter applied');
     }
 
     // Reset before next test
-    await testDisplayOption('Reset', 'rgb-after-reset-2');
+    await clickDisplayOption(driver, 'Reset');
 
     // Test Blue channel filter
-    const blueClicked = await testDisplayOption('Blue Channel', 'rgb-blue-channel');
+    const blueClicked = await clickDisplayOption(driver, 'Blue Channel');
     if (blueClicked) {
       DebugTestHelper.logger.success('Blue channel filter applied');
     }
 
     // Reset and test Grayscale
-    await testDisplayOption('Reset', 'rgb-after-reset-3');
-    await testDisplayOption('Grayscale', 'rgb-grayscale');
+    await clickDisplayOption(driver, 'Reset');
+    await clickDisplayOption(driver, 'Grayscale');
 
     // ===== Test 2: Grayscale and Contrast Options =====
     DebugTestHelper.logger.step('Testing grayscale and contrast display options...');
 
     // View the grayscale gradient
-    await viewVariableAndScreenshot('grayscale', 'success-grayscale-default');
+    await viewVariable('grayscale');
 
     // Test Invert
-    await testDisplayOption('Invert Colors', 'grayscale-inverted');
+    await clickDisplayOption(driver, 'Invert Colors');
 
     // Reset
-    await testDisplayOption('Reset', 'grayscale-reset');
+    await clickDisplayOption(driver, 'Reset');
 
     // View the low contrast image
-    await viewVariableAndScreenshot('low_contrast', 'success-low-contrast-default');
+    await viewVariable('low_contrast');
 
     // Test High Contrast
-    await testDisplayOption('High Contrast', 'low-contrast-enhanced');
+    await clickDisplayOption(driver, 'High Contrast');
 
     // ===== Test 3: Heatmap and Segmentation Colormaps =====
     DebugTestHelper.logger.step('Testing heatmap and segmentation display options...');
 
     // View the heatmap image (float32 gaussian)
-    await viewVariableAndScreenshot('heatmap', 'success-heatmap-default');
+    await viewVariable('heatmap');
 
     // Test Heatmap colormap
-    await testDisplayOption('Heatmap', 'heatmap-colormap');
+    await clickDisplayOption(driver, 'Heatmap');
 
     // View the segmentation image
-    await viewVariableAndScreenshot('segmentation', 'success-segmentation-default');
+    await viewVariable('segmentation');
 
     // Test Segmentation colormap
-    await testDisplayOption('Segmentation', 'segmentation-colormap');
+    await clickDisplayOption(driver, 'Segmentation');
 
     // ===== Test 4: RGBA and BGR Options =====
     DebugTestHelper.logger.step('Testing RGBA and BGR display options...');
 
     // View the RGBA image
-    await viewVariableAndScreenshot('rgba', 'success-rgba-default');
+    await viewVariable('rgba');
 
     // Test Ignore Alpha
-    await testDisplayOption('Ignore Alpha', 'rgba-ignore-alpha');
+    await clickDisplayOption(driver, 'Ignore Alpha');
 
     // View the BGR test image — capture BEFORE swap for comparison
-    await viewVariableAndScreenshot('bgr_test', 'success-bgr-default');
+    await viewVariable('bgr_test');
     const imgBeforeBgr = await debugHelper.captureCanvasImage();
 
     // Test Swap RGB/BGR
-    await testDisplayOption('Swap RGB/BGR', 'bgr-swapped');
+    await clickDisplayOption(driver, 'Swap RGB/BGR');
 
     // Verify channel swap: bgr_test right half is stored as BGR-red ([0,0,255]) which
     // the extension displays as blue before swap (b>r), and red after swap (r>b).

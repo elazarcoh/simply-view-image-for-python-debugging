@@ -218,6 +218,10 @@ export class DebugAnnotator {
     if (!process.env.SVIFPD_DEBUG_IMAGES) {
       return;
     }
+    if (this.annotations.length === 0) {
+      DebugTestHelper.logger.info(`DebugAnnotator: no annotations for '${this.testName}', skipping HTML`);
+      return;
+    }
     const outputDir = process.env.SVIFPD_DEBUG_DIR ?? '/tmp/svifpd-debug';
     fs.mkdirSync(outputDir, { recursive: true });
 
@@ -233,12 +237,14 @@ export class DebugAnnotator {
       const stroke = a.pass === true ? '#00ff00' : a.pass === false ? '#ff0000' : '#888888';
       const swatch = `rgb(${Math.round(a.sampledColor.r)},${Math.round(a.sampledColor.g)},${Math.round(a.sampledColor.b)})`;
       const labelText = `${a.label} | r=${Math.round(a.sampledColor.r)} g=${Math.round(a.sampledColor.g)} b=${Math.round(a.sampledColor.b)}`;
+      const swatchY = (y + rh + 15 > h) ? y - 16 : y + rh + 2;
+      const labelY = (y + rh + 15 > h) ? y - 4 : y + rh + 13;
       return [
         `  <rect x="${x}" y="${y}" width="${rw}" height="${rh}"`,
         `        fill="none" stroke="${stroke}" stroke-width="2"/>`,
-        `  <rect x="${x}" y="${y + rh + 2}" width="12" height="12"`,
+        `  <rect x="${x}" y="${swatchY}" width="12" height="12"`,
         `        fill="${swatch}" stroke="${stroke}" stroke-width="1"/>`,
-        `  <text x="${x + 16}" y="${y + rh + 13}" fill="${stroke}"`,
+        `  <text x="${x + 16}" y="${labelY}" fill="${stroke}"`,
         `        font-size="11" font-family="monospace">${escapeHtml(labelText)}</text>`,
       ].join('\n');
     }).join('\n');

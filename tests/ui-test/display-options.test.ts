@@ -200,21 +200,27 @@ describe('display options tests', () => {
 
     // Capture AFTER swap and verify channel swap if both captures succeeded.
     const capturedAfter = await captureAnnotatedCanvas(driver, 'display-options-bgr-after');
-    if (capturedBefore && capturedAfter) {
+    if (capturedBefore) {
       const { img: imgBeforeBgr, annotator: annotatorBefore } = capturedBefore;
-      const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
       try {
-        // bgr_test right half is stored as BGR-red ([0,0,255]) which
-        // the extension displays as blue before swap (b>r), and red after swap (r>b).
-        const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
-        const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
-        DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
-        annotatorBefore.addRegion(0.55, 0.2, 0.35, 0.6, rightBefore, 'right-before-swap');
-        annotatorAfter.record(0.55, 0.2, 0.35, 0.6, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
+        if (capturedAfter) {
+          const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
+          try {
+            // bgr_test right half is stored as BGR-red ([0,0,255]) which
+            // the extension displays as blue before swap (b>r), and red after swap (r>b).
+            const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
+            const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
+            DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
+            annotatorBefore.addRegion(0.55, 0.2, 0.35, 0.6, rightBefore, 'right-before-swap');
+            annotatorAfter.record(0.55, 0.2, 0.35, 0.6, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
+          }
+          finally {
+            await annotatorAfter.saveHtml();
+          }
+        }
       }
       finally {
         await annotatorBefore.saveHtml();
-        await annotatorAfter.saveHtml();
       }
     }
 

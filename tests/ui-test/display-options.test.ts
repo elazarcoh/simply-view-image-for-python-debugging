@@ -191,7 +191,9 @@ describe('display options tests', () => {
       }
 
       if (button) {
-        await button.click();
+        // Use JS click to bypass coordinate-based interception by Monaco panel sashes.
+        await driver.executeScript('arguments[0].scrollIntoView({block:"center"})', button);
+        await driver.executeScript('arguments[0].click()', button);
         await driver.sleep(500);
         DebugTestHelper.logger.success(`Clicked "${buttonLabel}" button`);
         return true;

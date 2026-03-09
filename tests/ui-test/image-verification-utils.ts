@@ -391,7 +391,9 @@ export async function clickDisplayOption(
       for (const selector of selectors) {
         const elements = await driver.findElements(By.css(selector));
         if (elements.length > 0) {
-          await elements[0].click();
+          // Use JS click to bypass coordinate-based interception by Monaco panel sashes.
+          await driver.executeScript('arguments[0].scrollIntoView({block:"center"})', elements[0]);
+          await driver.executeScript('arguments[0].click()', elements[0]);
           DebugTestHelper.logger.debug(`clickDisplayOption: clicked "${buttonLabel}" via "${selector}" (attempt ${attempt})`);
           await driver.sleep(postClickMs);
           return true;

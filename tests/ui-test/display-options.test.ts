@@ -22,6 +22,7 @@ import {
   assertBrighterThan,
   assertChannelSwapped,
   assertDominantChannel,
+  captureAnnotatedCanvas,
   clickDisplayOption,
   sampleRegion,
 } from './image-verification-utils';
@@ -110,13 +111,19 @@ describe('display options tests', () => {
 
       // Verify pixel rendering: left region (pure red) should remain red;
       // middle region (pure green) should become dark since its red content is zero.
-      const imgAfterRed = await debugHelper.captureCanvasImage();
-      if (imgAfterRed) {
-        const leftAfterRed = sampleRegion(imgAfterRed, 0.05, 0.2, 0.25, 0.6);
-        const middleAfterRed = sampleRegion(imgAfterRed, 0.38, 0.2, 0.25, 0.6);
-        DebugTestHelper.logger.info(`Red filter — left: ${JSON.stringify(leftAfterRed)}, middle: ${JSON.stringify(middleAfterRed)}`);
-        assertDominantChannel(leftAfterRed, 'r', 40, 'left region after red channel filter');
-        assertBrighterThan(leftAfterRed, middleAfterRed, 40, 'left/red brighter than middle/green after red filter');
+      const capturedRed = await captureAnnotatedCanvas(driver, 'display-options-red-channel');
+      if (capturedRed) {
+        const { img: imgAfterRed, annotator: annotatorRed } = capturedRed;
+        try {
+          const leftAfterRed = sampleRegion(imgAfterRed, 0.05, 0.2, 0.25, 0.6);
+          const middleAfterRed = sampleRegion(imgAfterRed, 0.38, 0.2, 0.25, 0.6);
+          DebugTestHelper.logger.info(`Red filter — left: ${JSON.stringify(leftAfterRed)}, middle: ${JSON.stringify(middleAfterRed)}`);
+          annotatorRed.record(0.05, 0.2, 0.25, 0.6, leftAfterRed, () => assertDominantChannel(leftAfterRed, 'r', 40, 'left region after red channel filter'), 'left-red');
+          annotatorRed.record(0.38, 0.2, 0.25, 0.6, middleAfterRed, () => assertBrighterThan(leftAfterRed, middleAfterRed, 40, 'left/red brighter than middle/green after red filter'), 'middle-green-dark');
+        }
+        finally {
+          await annotatorRed.saveHtml();
+        }
       }
     }
 
@@ -186,19 +193,29 @@ describe('display options tests', () => {
 
     // View the BGR test image — capture BEFORE swap for comparison
     await viewVariable('bgr_test');
-    const imgBeforeBgr = await debugHelper.captureCanvasImage();
+    const capturedBefore = await captureAnnotatedCanvas(driver, 'display-options-bgr-before');
 
     // Test Swap RGB/BGR
     await clickDisplayOption(driver, 'Swap RGB/BGR');
 
-    // Verify channel swap: bgr_test right half is stored as BGR-red ([0,0,255]) which
-    // the extension displays as blue before swap (b>r), and red after swap (r>b).
-    const imgAfterBgr = await debugHelper.captureCanvasImage();
-    if (imgBeforeBgr && imgAfterBgr) {
-      const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
-      const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
-      DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
-      assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after Swap RGB/BGR');
+    // Capture AFTER swap and verify channel swap if both captures succeeded.
+    const capturedAfter = await captureAnnotatedCanvas(driver, 'display-options-bgr-after');
+    if (capturedBefore && capturedAfter) {
+      const { img: imgBeforeBgr, annotator: annotatorBefore } = capturedBefore;
+      const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
+      try {
+        // bgr_test right half is stored as BGR-red ([0,0,255]) which
+        // the extension displays as blue before swap (b>r), and red after swap (r>b).
+        const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
+        const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
+        DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
+        annotatorBefore.addRegion(0.55, 0.2, 0.35, 0.6, rightBefore, 'right-before-swap');
+        annotatorAfter.record(0.55, 0.2, 0.35, 0.6, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
+      }
+      finally {
+        await annotatorBefore.saveHtml();
+        await annotatorAfter.saveHtml();
+      }
     }
 
     DebugTestHelper.logger.success('All display options tests completed');

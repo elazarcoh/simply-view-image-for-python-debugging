@@ -19,6 +19,7 @@ import {
   assertChannelSwapped,
   assertDominantChannel,
   assertGrayscale,
+  captureAnnotatedCanvas,
   clickDisplayOption,
   samplePoint,
   sampleRegion,
@@ -132,20 +133,22 @@ describe('image rendering verification', () => {
 
     await viewVariable('rgb_gradient');
 
-    const img = await debugHelper.captureCanvasImage();
-    expect(img, 'canvas capture returned null').to.not.be.null;
+    const driver = VSBrowser.instance.driver;
+    const captured = await captureAnnotatedCanvas(driver, 'rendering-rgb-left-red');
+    expect(captured, 'canvas capture returned null').to.not.be.null;
+    if (!captured) {
+      throw new Error('canvas capture returned null');
+    }
+    const { img, annotator } = captured;
 
-    // The canvas screenshot includes the Image Watch sidebar on the left (~47% of width).
-    // The image is scaled so it overflows the right edge; empirical x-ranges (confirmed
-    // by horizontal color profile scans):
-    //   Red   (cols   0– 50): screenshot x ≈ 0.47–0.67
-    //   Green (cols  50–100): screenshot x ≈ 0.70–0.88
-    //   Blue  (cols 100–150): screenshot x ≈ 0.92–1.00  (partial, right side clipped)
-    // Image y-extent: ≈ 0.13–0.56.  Use y=0.22–0.52 to stay safely inside.
-    const leftRegion = sampleRegion(img!, 0.52, 0.22, 0.10, 0.30);
-    DebugTestHelper.logger.info(`rgb_gradient left region mean: ${JSON.stringify(leftRegion)}`);
-
-    assertDominantChannel(leftRegion, 'r', 50, 'left region should be red');
+    try {
+      const leftRegion = sampleRegion(img, 0.52, 0.22, 0.10, 0.30);
+      DebugTestHelper.logger.info(`rgb_gradient left region mean: ${JSON.stringify(leftRegion)}`);
+      annotator.record(0.52, 0.22, 0.10, 0.30, leftRegion, () => assertDominantChannel(leftRegion, 'r', 50, 'left region should be red'), 'left-red');
+    }
+    finally {
+      await annotator.saveHtml();
+    }
   }).timeout(300000);
 
   it('should render the middle region of rgb_gradient as green', async () => {
@@ -153,13 +156,22 @@ describe('image rendering verification', () => {
 
     await viewVariable('rgb_gradient');
 
-    const img = await debugHelper.captureCanvasImage();
-    expect(img, 'canvas capture returned null').to.not.be.null;
+    const driver = VSBrowser.instance.driver;
+    const captured = await captureAnnotatedCanvas(driver, 'rendering-rgb-middle-green');
+    expect(captured, 'canvas capture returned null').to.not.be.null;
+    if (!captured) {
+      throw new Error('canvas capture returned null');
+    }
+    const { img, annotator } = captured;
 
-    const middleRegion = sampleRegion(img!, 0.75, 0.22, 0.10, 0.30);
-    DebugTestHelper.logger.info(`rgb_gradient middle region mean: ${JSON.stringify(middleRegion)}`);
-
-    assertDominantChannel(middleRegion, 'g', 50, 'middle region should be green');
+    try {
+      const middleRegion = sampleRegion(img, 0.75, 0.22, 0.10, 0.30);
+      DebugTestHelper.logger.info(`rgb_gradient middle region mean: ${JSON.stringify(middleRegion)}`);
+      annotator.record(0.75, 0.22, 0.10, 0.30, middleRegion, () => assertDominantChannel(middleRegion, 'g', 50, 'middle region should be green'), 'middle-green');
+    }
+    finally {
+      await annotator.saveHtml();
+    }
   }).timeout(300000);
 
   it('should render the right region of rgb_gradient as blue', async () => {
@@ -167,14 +179,23 @@ describe('image rendering verification', () => {
 
     await viewVariable('rgb_gradient');
 
-    const img = await debugHelper.captureCanvasImage();
-    expect(img, 'canvas capture returned null').to.not.be.null;
+    const driver = VSBrowser.instance.driver;
+    const captured = await captureAnnotatedCanvas(driver, 'rendering-rgb-right-blue');
+    expect(captured, 'canvas capture returned null').to.not.be.null;
+    if (!captured) {
+      throw new Error('canvas capture returned null');
+    }
+    const { img, annotator } = captured;
 
-    // Blue band: x≈0.92–1.0 (image overflows right canvas edge; only ~8% visible).
-    const rightRegion = sampleRegion(img!, 0.93, 0.22, 0.05, 0.30);
-    DebugTestHelper.logger.info(`rgb_gradient right region mean: ${JSON.stringify(rightRegion)}`);
-
-    assertDominantChannel(rightRegion, 'b', 50, 'right region should be blue');
+    try {
+      // Blue band: x≈0.92–1.0 (image overflows right canvas edge; only ~8% visible).
+      const rightRegion = sampleRegion(img, 0.93, 0.22, 0.05, 0.30);
+      DebugTestHelper.logger.info(`rgb_gradient right region mean: ${JSON.stringify(rightRegion)}`);
+      annotator.record(0.93, 0.22, 0.05, 0.30, rightRegion, () => assertDominantChannel(rightRegion, 'b', 50, 'right region should be blue'), 'right-blue');
+    }
+    finally {
+      await annotator.saveHtml();
+    }
   }).timeout(300000);
 
   // ---------------------------------------------------------------------------
@@ -189,20 +210,30 @@ describe('image rendering verification', () => {
 
     await viewVariable('grayscale');
 
-    const img = await debugHelper.captureCanvasImage();
-    expect(img, 'canvas capture returned null').to.not.be.null;
+    const driver = VSBrowser.instance.driver;
+    const captured = await captureAnnotatedCanvas(driver, 'rendering-grayscale-equal-channels');
+    expect(captured, 'canvas capture returned null').to.not.be.null;
+    if (!captured) {
+      throw new Error('canvas capture returned null');
+    }
+    const { img, annotator } = captured;
 
-    // grayscale (100×200 uint8) is horizontally centred in the render area (x≈0.446–1.0,
-    // y≈0.38–0.65).  The gradient runs left→right (0→255) so the centre column is ~127.
-    // Both sample points must be inside the render area (x > 0.50).
-    const midPoint = samplePoint(img!, 0.72, 0.38, 0.06);
-    DebugTestHelper.logger.info(`grayscale mid point mean: ${JSON.stringify(midPoint)}`);
-    assertGrayscale(midPoint, 25, 'mid-brightness point of grayscale gradient');
+    try {
+      // grayscale (100×200 uint8) is horizontally centred in the render area (x≈0.446–1.0,
+      // y≈0.38–0.65).  The gradient runs left→right (0→255) so the centre column is ~127.
+      // Both sample points must be inside the render area (x > 0.50).
+      const midPoint = samplePoint(img, 0.72, 0.38, 0.06);
+      DebugTestHelper.logger.info(`grayscale mid point mean: ${JSON.stringify(midPoint)}`);
+      annotator.record(0.66, 0.32, 0.12, 0.12, midPoint, () => assertGrayscale(midPoint, 25, 'mid-brightness point of grayscale gradient'), 'mid-grayscale');
 
-    // Sample a darker point near the left edge of the image (close to col 0 = value 0).
-    const darkPoint = samplePoint(img!, 0.49, 0.38, 0.02);
-    DebugTestHelper.logger.info(`grayscale dark point mean: ${JSON.stringify(darkPoint)}`);
-    assertGrayscale(darkPoint, 25, 'dark point of grayscale gradient');
+      // Sample a darker point near the left edge of the image (close to col 0 = value 0).
+      const darkPoint = samplePoint(img, 0.49, 0.38, 0.02);
+      DebugTestHelper.logger.info(`grayscale dark point mean: ${JSON.stringify(darkPoint)}`);
+      annotator.record(0.47, 0.36, 0.04, 0.04, darkPoint, () => assertGrayscale(darkPoint, 25, 'dark point of grayscale gradient'), 'dark-grayscale');
+    }
+    finally {
+      await annotator.saveHtml();
+    }
   }).timeout(300000);
 
   // ---------------------------------------------------------------------------
@@ -216,17 +247,31 @@ describe('image rendering verification', () => {
 
     await viewVariable('heatmap');
 
-    const img = await debugHelper.captureCanvasImage();
-    expect(img, 'canvas capture returned null').to.not.be.null;
+    const driver = VSBrowser.instance.driver;
+    const captured = await captureAnnotatedCanvas(driver, 'rendering-heatmap-brightness');
+    expect(captured, 'canvas capture returned null').to.not.be.null;
+    if (!captured) {
+      throw new Error('canvas capture returned null');
+    }
+    const { img, annotator } = captured;
 
-    // heatmap (100×150 float32) is positioned the same as rgb_gradient in the render area
-    // (x≈0.446–1.0, y≈0.34–0.69).  The Gaussian peak is at the image centre.
-    const centre = samplePoint(img!, 0.72, 0.38, 0.05);
-    // Corner of the image (near zero of the Gaussian) — use top-left corner with margin.
-    const corner = samplePoint(img!, 0.49, 0.22, 0.03);
-    DebugTestHelper.logger.info(`heatmap centre: ${JSON.stringify(centre)}, corner: ${JSON.stringify(corner)}`);
+    try {
+      // heatmap (100×150 float32) is positioned the same as rgb_gradient in the render area
+      // (x≈0.446–1.0, y≈0.34–0.69).  The Gaussian peak is at the image centre.
+      const centre = samplePoint(img, 0.72, 0.38, 0.05);
+      // Corner of the image (near zero of the Gaussian) — use top-left corner with margin.
+      const corner = samplePoint(img, 0.49, 0.22, 0.03);
+      DebugTestHelper.logger.info(`heatmap centre: ${JSON.stringify(centre)}, corner: ${JSON.stringify(corner)}`);
 
-    assertBrighterThan(centre, corner, 30, 'Gaussian peak should be brighter than corner');
+      // Record both regions as info-only (bounding boxes derived from samplePoint params).
+      annotator.addRegion(0.67, 0.33, 0.10, 0.10, centre, 'centre');
+      annotator.addRegion(0.46, 0.19, 0.06, 0.06, corner, 'corner');
+
+      assertBrighterThan(centre, corner, 30, 'Gaussian peak should be brighter than corner');
+    }
+    finally {
+      await annotator.saveHtml();
+    }
   }).timeout(300000);
 
   // ---------------------------------------------------------------------------
@@ -242,31 +287,49 @@ describe('image rendering verification', () => {
 
     await viewVariable('rgb_gradient');
 
-    // Capture BEFORE swap
-    const before = await debugHelper.captureCanvasImage();
-    expect(before, 'before-swap canvas capture returned null').to.not.be.null;
+    const driver = VSBrowser.instance.driver;
 
-    const leftBefore = sampleRegion(before!, 0.52, 0.22, 0.10, 0.30);
-    const rightBefore = sampleRegion(before!, 0.93, 0.22, 0.05, 0.30);
+    // Capture BEFORE swap
+    const capturedBefore = await captureAnnotatedCanvas(driver, 'rendering-bgr-swap-before');
+    expect(capturedBefore, 'before-swap canvas capture returned null').to.not.be.null;
+    if (!capturedBefore) {
+      throw new Error('before-swap canvas capture returned null');
+    }
+    const { img: before, annotator: annotatorBefore } = capturedBefore;
+
+    const leftBefore = sampleRegion(before, 0.52, 0.22, 0.10, 0.30);
+    const rightBefore = sampleRegion(before, 0.93, 0.22, 0.05, 0.30);
     DebugTestHelper.logger.info(`BEFORE swap — left: ${JSON.stringify(leftBefore)}, right: ${JSON.stringify(rightBefore)}`);
+    annotatorBefore.addRegion(0.52, 0.22, 0.10, 0.30, leftBefore, 'left-before-swap');
+    annotatorBefore.addRegion(0.93, 0.22, 0.05, 0.30, rightBefore, 'right-before-swap');
 
     // Apply BGR swap
-    const driver = VSBrowser.instance.driver;
     const clicked = await clickDisplayOption(driver, 'Swap RGB/BGR');
     expect(clicked, '"Swap RGB/BGR" button not found').to.be.true;
 
     // Capture AFTER swap
-    const after = await debugHelper.captureCanvasImage();
-    expect(after, 'after-swap canvas capture returned null').to.not.be.null;
+    const capturedAfter = await captureAnnotatedCanvas(driver, 'rendering-bgr-swap-after');
+    expect(capturedAfter, 'after-swap canvas capture returned null').to.not.be.null;
+    if (!capturedAfter) {
+      await annotatorBefore.saveHtml();
+      throw new Error('after-swap canvas capture returned null');
+    }
+    const { img: after, annotator: annotatorAfter } = capturedAfter;
 
-    const leftAfter = sampleRegion(after!, 0.52, 0.22, 0.10, 0.30);
-    const rightAfter = sampleRegion(after!, 0.93, 0.22, 0.05, 0.30);
-    DebugTestHelper.logger.info(`AFTER  swap — left: ${JSON.stringify(leftAfter)}, right: ${JSON.stringify(rightAfter)}`);
+    try {
+      const leftAfter = sampleRegion(after, 0.52, 0.22, 0.10, 0.30);
+      const rightAfter = sampleRegion(after, 0.93, 0.22, 0.05, 0.30);
+      DebugTestHelper.logger.info(`AFTER  swap — left: ${JSON.stringify(leftAfter)}, right: ${JSON.stringify(rightAfter)}`);
 
-    // Left was red → should now be blue
-    assertChannelSwapped(leftBefore, leftAfter, 'r', 'b', 40, 'left region after BGR swap');
-    // Right was blue → should now be red
-    assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after BGR swap');
+      // Left was red → should now be blue
+      annotatorAfter.record(0.52, 0.22, 0.10, 0.30, leftAfter, () => assertChannelSwapped(leftBefore, leftAfter, 'r', 'b', 40, 'left region after BGR swap'), 'left-after-swap');
+      // Right was blue → should now be red
+      annotatorAfter.record(0.93, 0.22, 0.05, 0.30, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after BGR swap'), 'right-after-swap');
+    }
+    finally {
+      await annotatorBefore.saveHtml();
+      await annotatorAfter.saveHtml();
+    }
   }).timeout(300000);
 
   // ---------------------------------------------------------------------------
@@ -287,18 +350,27 @@ describe('image rendering verification', () => {
     const clicked = await clickDisplayOption(driver, 'Red Channel');
     expect(clicked, '"Red Channel" button not found').to.be.true;
 
-    const img = await debugHelper.captureCanvasImage();
-    expect(img, 'canvas capture returned null').to.not.be.null;
+    const captured = await captureAnnotatedCanvas(driver, 'rendering-red-channel-filter');
+    expect(captured, 'canvas capture returned null').to.not.be.null;
+    if (!captured) {
+      throw new Error('canvas capture returned null');
+    }
+    const { img, annotator } = captured;
 
-    // Left region was pure red → red channel filter preserves it
-    const leftRegion = sampleRegion(img!, 0.52, 0.22, 0.10, 0.30);
-    DebugTestHelper.logger.info(`Red-channel left region: ${JSON.stringify(leftRegion)}`);
-    assertDominantChannel(leftRegion, 'r', 40, 'left region with red channel filter should be red');
+    try {
+      // Left region was pure red → red channel filter preserves it
+      const leftRegion = sampleRegion(img, 0.52, 0.22, 0.10, 0.30);
+      DebugTestHelper.logger.info(`Red-channel left region: ${JSON.stringify(leftRegion)}`);
+      annotator.record(0.52, 0.22, 0.10, 0.30, leftRegion, () => assertDominantChannel(leftRegion, 'r', 40, 'left region with red channel filter should be red'), 'left-red');
 
-    // Middle region was pure green → no red content → should be near-black (dim)
-    const middleRegion = sampleRegion(img!, 0.75, 0.22, 0.10, 0.30);
-    DebugTestHelper.logger.info(`Red-channel middle region: ${JSON.stringify(middleRegion)}`);
-    // The green region should be significantly darker than the red region after red-channel filter
-    assertBrighterThan(leftRegion, middleRegion, 40, 'red region should be brighter than green region after red filter');
+      // Middle region was pure green → no red content → should be near-black (dim)
+      const middleRegion = sampleRegion(img, 0.75, 0.22, 0.10, 0.30);
+      DebugTestHelper.logger.info(`Red-channel middle region: ${JSON.stringify(middleRegion)}`);
+      // The green region should be significantly darker than the red region after red-channel filter
+      annotator.record(0.75, 0.22, 0.10, 0.30, middleRegion, () => assertBrighterThan(leftRegion, middleRegion, 40, 'red region should be brighter than green region after red filter'), 'middle-green-dark');
+    }
+    finally {
+      await annotator.saveHtml();
+    }
   }).timeout(300000);
 });

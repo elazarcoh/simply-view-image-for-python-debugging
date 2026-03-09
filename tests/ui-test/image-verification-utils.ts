@@ -11,6 +11,8 @@
 
 import type { WebDriver } from 'vscode-extension-tester';
 import { Buffer } from 'node:buffer';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { intToRGBA, Jimp } from 'jimp';
 import { By } from 'selenium-webdriver';
 import { DebugTestHelper } from './DebugTestHelper';
@@ -141,6 +143,143 @@ export async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> 
   }
 }
 
+/** A single annotated region recorded by DebugAnnotator. */
+interface Annotation {
+  relX: number;
+  relY: number;
+  relW: number;
+  relH: number;
+  label: string;
+  sampledColor: RgbColor;
+  pass: boolean | null; // null = not yet evaluated / info-only
+}
+
+/**
+ * Accumulates per-region annotations for a canvas capture and writes an HTML
+ * debug report when SVIFPD_DEBUG_IMAGES=1 is set.
+ *
+ * Usage:
+ *   const annotator = new DebugAnnotator(img, 'my-test');
+ *   const color = sampleRegion(img, relX, relY, relW, relH);
+ *   annotator.record(relX, relY, relW, relH, color,
+ *     () => assertDominantChannel(color, 'r', 50, 'left should be red'),
+ *     'left-red');
+ *   // At end of test (e.g. in try/finally):
+ *   await annotator.saveHtml();
+ */
+export class DebugAnnotator {
+  private annotations: Annotation[] = [];
+
+  constructor(
+    private readonly img: JimpImg,
+    private readonly testName: string,
+  ) {}
+
+  /**
+   * Execute `assertFn`, record the region as pass or fail, then re-throw on
+   * failure so the test still fails.
+   */
+  record(
+    relX: number,
+    relY: number,
+    relW: number,
+    relH: number,
+    sampledColor: RgbColor,
+    assertFn: () => void,
+    label: string,
+  ): void {
+    try {
+      assertFn();
+      this.annotations.push({ relX, relY, relW, relH, label, sampledColor, pass: true });
+    }
+    catch (error) {
+      this.annotations.push({ relX, relY, relW, relH, label, sampledColor, pass: false });
+      throw error;
+    }
+  }
+
+  /** Record a region without an assertion (shown grey in the report). */
+  addRegion(
+    relX: number,
+    relY: number,
+    relW: number,
+    relH: number,
+    sampledColor: RgbColor,
+    label: string,
+  ): void {
+    this.annotations.push({ relX, relY, relW, relH, label, sampledColor, pass: null });
+  }
+
+  /**
+   * Write an HTML debug report to SVIFPD_DEBUG_DIR (default /tmp/svifpd-debug/).
+   * No-ops when SVIFPD_DEBUG_IMAGES is not set.
+   */
+  async saveHtml(): Promise<void> {
+    if (!process.env.SVIFPD_DEBUG_IMAGES) {
+      return;
+    }
+    const outputDir = process.env.SVIFPD_DEBUG_DIR ?? '/tmp/svifpd-debug';
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    const base64 = await this.img.getBase64('image/png');
+    const w = this.img.width;
+    const h = this.img.height;
+
+    const svgOverlays = this.annotations.map((a) => {
+      const x = Math.round(a.relX * w);
+      const y = Math.round(a.relY * h);
+      const rw = Math.round(a.relW * w);
+      const rh = Math.round(a.relH * h);
+      const stroke = a.pass === true ? '#00ff00' : a.pass === false ? '#ff0000' : '#888888';
+      const swatch = `rgb(${Math.round(a.sampledColor.r)},${Math.round(a.sampledColor.g)},${Math.round(a.sampledColor.b)})`;
+      const labelText = `${a.label} | r=${Math.round(a.sampledColor.r)} g=${Math.round(a.sampledColor.g)} b=${Math.round(a.sampledColor.b)}`;
+      return [
+        `  <rect x="${x}" y="${y}" width="${rw}" height="${rh}"`,
+        `        fill="none" stroke="${stroke}" stroke-width="2"/>`,
+        `  <rect x="${x}" y="${y + rh + 2}" width="12" height="12"`,
+        `        fill="${swatch}" stroke="${stroke}" stroke-width="1"/>`,
+        `  <text x="${x + 16}" y="${y + rh + 13}" fill="${stroke}"`,
+        `        font-size="11" font-family="monospace">${escapeHtml(labelText)}</text>`,
+      ].join('\n');
+    }).join('\n');
+
+    const html = [
+      '<!DOCTYPE html>',
+      '<html>',
+      '<head><meta charset="utf-8">',
+      `<title>Debug: ${escapeHtml(this.testName)}</title>`,
+      '<style>',
+      'body { background: #1e1e1e; color: #ccc; font-family: monospace; padding: 16px; }',
+      'h1 { font-size: 14px; margin-bottom: 8px; }',
+      '</style></head>',
+      '<body>',
+      `<h1>Test: ${escapeHtml(this.testName)}</h1>`,
+      '<div style="position: relative; display: inline-block">',
+      `  <img src="${base64}" style="display: block; max-width: 100%"/>`,
+      `  <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none"`,
+      `       viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">`,
+      svgOverlays,
+      '  </svg>',
+      '</div>',
+      '</body></html>',
+    ].join('\n');
+
+    const safeName = this.testName.replace(/[^a-z0-9-]/gi, '_');
+    const filename = path.join(outputDir, `${safeName}.html`);
+    fs.writeFileSync(filename, html, 'utf-8');
+    DebugTestHelper.logger.info(`DebugAnnotator: saved → ${filename}`);
+  }
+}
+
+/** HTML-escape a string for safe embedding in HTML attributes and text nodes. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 /**
  * Capture the rendered canvas (`#gl-canvas`) as a decoded Jimp image.
  *
@@ -182,6 +321,22 @@ export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | n
   finally {
     await driver.switchTo().defaultContent();
   }
+}
+
+/**
+ * Capture canvas and return both the image and a DebugAnnotator pre-loaded
+ * with it. Call `annotator.saveHtml()` at the end of the test (or in a
+ * try/finally) to write an HTML debug report when SVIFPD_DEBUG_IMAGES=1.
+ */
+export async function captureAnnotatedCanvas(
+  driver: WebDriver,
+  testName: string,
+): Promise<{ img: JimpImg; annotator: DebugAnnotator } | null> {
+  const img = await captureCanvasImage(driver);
+  if (!img) {
+    return null;
+  }
+  return { img, annotator: new DebugAnnotator(img, testName) };
 }
 
 /**

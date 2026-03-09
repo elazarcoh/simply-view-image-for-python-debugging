@@ -21,6 +21,7 @@ export default antfu(
       'dist',
       '.yarn',
       'python_test',
+      'docs',
     ],
   },
   {

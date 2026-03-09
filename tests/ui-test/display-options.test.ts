@@ -56,15 +56,16 @@ describe('display options tests', () => {
     DebugTestHelper.reset();
   }).timeout(5000);
 
-  async function viewVariable(variableName: string): Promise<void> {
+  async function viewVariable(name: string): Promise<void> {
     await debugHelper.performVariableAction({
-      variableName,
+      variableName: name,
       actionLabel: 'View Image',
       retrySetup: true,
       setupRetries: 5,
       type: 'variable',
     });
     await debugHelper.wait(1000);
+    // Focus the Image View panel — activating the tab triggers a re-render.
     await debugHelper.getWebviewEditor();
     await debugHelper.wait(500);
   }

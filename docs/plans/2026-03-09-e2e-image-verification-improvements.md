@@ -9,6 +9,7 @@
 **Tech Stack:** TypeScript, Jimp 1.x (`img.autocrop()`, `img.getBase64()`, `img.crop()`), Mocha/Chai, vscode-extension-tester, xvfb-run.
 
 **Run tests locally with:**
+
 ```bash
 cd /path/to/repo
 yarn test:compile
@@ -16,7 +17,9 @@ export VENV_BIN="$(pwd)/.venv/bin"
 PATH="$VENV_BIN:$PATH" xvfb-run -a --server-args="-screen 0 1920x1080x24" \
   ./node_modules/.bin/extest run-tests './out/tests/ui-test/image-rendering.test.js' --storage test-resources
 ```
+
 Also run `display-options` separately:
+
 ```bash
 PATH="$VENV_BIN:$PATH" xvfb-run -a --server-args="-screen 0 1920x1080x24" \
   ./node_modules/.bin/extest run-tests './out/tests/ui-test/display-options.test.js' --storage test-resources
@@ -27,16 +30,20 @@ PATH="$VENV_BIN:$PATH" xvfb-run -a --server-args="-screen 0 1920x1080x24" \
 ## Task 1: Export `switchToWebviewFrame` and de-duplicate `display-options.test.ts`
 
 **Files:**
+
 - Modify: `tests/ui-test/image-verification-utils.ts` — export the private function
 - Modify: `tests/ui-test/display-options.test.ts` — delete local duplicates, import from utils
 
 ### Step 1: Export `switchToWebviewFrame` in image-verification-utils.ts
 
 Change the function declaration from:
+
 ```typescript
 async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
 ```
+
 to:
+
 ```typescript
 export async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
 ```
@@ -44,6 +51,7 @@ export async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> 
 ### Step 2: Update display-options.test.ts imports
 
 Change the import block at the top from:
+
 ```typescript
 import {
   assertBrighterThan,
@@ -52,7 +60,9 @@ import {
   sampleRegion,
 } from './image-verification-utils';
 ```
+
 to:
+
 ```typescript
 import {
   assertBrighterThan,
@@ -65,6 +75,7 @@ import {
 ```
 
 Also remove the `WebElement` type import (it was only used by `clickDisplayOptionButton`):
+
 ```typescript
 // DELETE this line:
 import type { WebElement } from 'selenium-webdriver';
@@ -73,6 +84,7 @@ import type { WebElement } from 'selenium-webdriver';
 ### Step 3: Delete local duplicate functions in display-options.test.ts
 
 Delete the entire bodies of these four local functions (lines ~69–276):
+
 - `switchToWebviewFrame()` (lines ~69–154) — now imported from utils
 - `switchToMainContent()` (lines ~156–162) — replace inline with `driver.switchTo().defaultContent()`
 - `clickDisplayOptionButton()` (lines ~164–209) — replaced by `clickDisplayOption` from utils
@@ -81,27 +93,35 @@ Delete the entire bodies of these four local functions (lines ~69–276):
 ### Step 4: Replace uses of `testDisplayOption` / `clickDisplayOptionButton`
 
 Each call like:
+
 ```typescript
 const redClicked = await testDisplayOption('Red Channel', 'rgb-red-channel');
 ```
+
 becomes:
+
 ```typescript
 const redClicked = await clickDisplayOption(driver, 'Red Channel');
 ```
+
 (Drop the screenshot-suffix argument — the screenshot logic inside `testDisplayOption` was just extra screenshots not needed for assertions.)
 
 For places that used the return value just for a boolean check:
+
 ```typescript
 if (redClicked) { ... }
 ```
+
 Keep the same pattern but use the new form.
 
 For places that didn't use the return value at all (just reset/colormap clicks), simplify to:
+
 ```typescript
 await clickDisplayOption(driver, 'Reset');
 ```
 
 Also delete the `viewVariableAndScreenshot` helper and replace its calls:
+
 ```typescript
 // OLD:
 await viewVariableAndScreenshot('rgb_gradient', 'success-rgb-default');
@@ -117,22 +137,28 @@ await debugHelper.wait(1000);
 await debugHelper.getWebviewEditor();
 await debugHelper.wait(500);
 ```
+
 Or better — extract a `viewVariable(name)` helper matching the one in `image-rendering.test.ts`.
 
 ### Step 5: Verify lint and compile
+
 ```bash
 yarn lint && yarn test:compile
 ```
+
 Expected: no errors.
 
 ### Step 6: Run display-options tests locally
+
 ```bash
 PATH="$VENV_BIN:$PATH" xvfb-run -a --server-args="-screen 0 1920x1080x24" \
   ./node_modules/.bin/extest run-tests './out/tests/ui-test/display-options.test.js' --storage test-resources
 ```
+
 Expected: 1 test passing.
 
 ### Step 7: Commit
+
 ```bash
 git add tests/ui-test/image-verification-utils.ts tests/ui-test/display-options.test.ts
 git commit -m "refactor: de-duplicate switchToWebviewFrame and clickDisplayOption
@@ -149,6 +175,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ## Task 2: Add `DebugAnnotator` for HTML debug reports
 
 **Files:**
+
 - Modify: `tests/ui-test/image-verification-utils.ts` — add `DebugAnnotator` class and `captureAnnotatedCanvas`
 - Modify: `tests/ui-test/image-rendering.test.ts` — integrate annotator
 - Modify: `tests/ui-test/display-options.test.ts` — integrate annotator
@@ -235,17 +262,17 @@ export class DebugAnnotator {
    * Only writes when SVIFPD_DEBUG_IMAGES=1 is set.
    */
   async saveHtml(): Promise<void> {
-    if (!process.env['SVIFPD_DEBUG_IMAGES']) {
+    if (!process.env.SVIFPD_DEBUG_IMAGES) {
       return;
     }
-    const outputDir = process.env['SVIFPD_DEBUG_DIR'] ?? '/tmp/svifpd-debug';
+    const outputDir = process.env.SVIFPD_DEBUG_DIR ?? '/tmp/svifpd-debug';
     fs.mkdirSync(outputDir, { recursive: true });
 
     const base64 = await this.img.getBase64('image/png');
     const w = this.img.width;
     const h = this.img.height;
 
-    const svgOverlays = this.annotations.map(a => {
+    const svgOverlays = this.annotations.map((a) => {
       const x = Math.round(a.relX * w);
       const y = Math.round(a.relY * h);
       const rw = Math.round(a.relW * w);
@@ -313,24 +340,25 @@ export async function captureAnnotatedCanvas(
 For each test, replace the raw `sampleRegion + assertXxx` pairs with `annotator.record(...)`.
 
 Example — current pattern:
+
 ```typescript
 const leftRegion = sampleRegion(img!, 0.52, 0.22, 0.10, 0.30);
 assertDominantChannel(leftRegion, 'r', 50, 'left region should be red');
 ```
 
 New pattern:
+
 ```typescript
 const captured = await captureAnnotatedCanvas(driver, 'rendering-rgb-left-red');
 expect(captured, 'canvas capture returned null').to.not.be.null;
 const { img, annotator } = captured!;
 
 const leftRegion = sampleRegion(img, 0.52, 0.22, 0.10, 0.30);
-annotator.record(0.52, 0.22, 0.10, 0.30, leftRegion,
-  () => assertDominantChannel(leftRegion, 'r', 50, 'left region should be red'),
-  'left-red');
+annotator.record(0.52, 0.22, 0.10, 0.30, leftRegion, () => assertDominantChannel(leftRegion, 'r', 50, 'left region should be red'), 'left-red');
 ```
 
 Add in the `after`/`afterEach` hook (or in a try/finally in each test):
+
 ```typescript
 afterEach(async () => {
   // annotator is defined per-test — no shared state needed
@@ -350,9 +378,7 @@ it('should render the left region of rgb_gradient as red', async () => {
 
   try {
     const leftRegion = sampleRegion(img, 0.52, 0.22, 0.10, 0.30);
-    annotator.record(0.52, 0.22, 0.10, 0.30, leftRegion,
-      () => assertDominantChannel(leftRegion, 'r', 50, 'left region should be red'),
-      'left-red');
+    annotator.record(0.52, 0.22, 0.10, 0.30, leftRegion, () => assertDominantChannel(leftRegion, 'r', 50, 'left region should be red'), 'left-red');
   }
   finally {
     await annotator.saveHtml();
@@ -367,13 +393,14 @@ For `display-options.test.ts`, wrap the two pixel-assertion blocks similarly.
 ### Step 4: Add `captureAnnotatedCanvas` to the imports in both test files
 
 In `image-rendering.test.ts`, change the import:
+
 ```typescript
 import {
   assertBrighterThan,
   assertChannelSwapped,
   assertDominantChannel,
   assertGrayscale,
-  captureAnnotatedCanvas,    // ADD
+  captureAnnotatedCanvas, // ADD
   clickDisplayOption,
   samplePoint,
   sampleRegion,
@@ -393,10 +420,12 @@ SVIFPD_DEBUG_IMAGES=1 SVIFPD_DEBUG_DIR=/tmp/svifpd-debug \
 ```
 
 Expected:
+
 - All 7 tests pass
 - `/tmp/svifpd-debug/*.html` files created — open in browser to inspect annotated regions
 
 ### Step 6: Commit
+
 ```bash
 git add tests/ui-test/image-verification-utils.ts tests/ui-test/image-rendering.test.ts tests/ui-test/display-options.test.ts
 git commit -m "feat: add DebugAnnotator HTML debug reports for pixel assertions
@@ -414,6 +443,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ## Task 3: Switch canvas capture to `.view-container` + autocrop
 
 **Files:**
+
 - Modify: `tests/ui-test/image-verification-utils.ts` — update `captureCanvasImage`
 - Modify: `tests/ui-test/image-rendering.test.ts` — update sample coordinates
 - Modify: `tests/ui-test/display-options.test.ts` — update sample coordinates
@@ -459,7 +489,7 @@ if (!base64) {
   return null;
 }
 
-let img = await Jimp.fromBuffer(Buffer.from(base64, 'base64'));
+const img = await Jimp.fromBuffer(Buffer.from(base64, 'base64'));
 
 // Autocrop: trim the VS Code background color from all 4 edges.
 // The background color is taken from the corner pixels; the rendered image
@@ -471,6 +501,7 @@ return img;
 ```
 
 Also update `waitForCanvasToRender` sampling strips — after autocrop the image fills roughly the whole capture, so use:
+
 ```typescript
 const points = [
   sampleRegion(img, 0.10, 0.30, 0.20, 0.40), // left third
@@ -511,6 +542,7 @@ heatmap (100h × 150w, Gaussian peak at centre):
 ```
 
 Update all `sampleRegion` / `samplePoint` calls accordingly. Example:
+
 ```typescript
 // rgb_gradient left red
 const leftRegion = sampleRegion(img, 0.05, 0.20, 0.22, 0.60);
@@ -525,6 +557,7 @@ const rightRegion = sampleRegion(img, 0.72, 0.20, 0.22, 0.60);
 ### Step 4: Update sample coordinates in display-options.test.ts
 
 Current coords (0.05, 0.38, 0.55) were based on the #gl-canvas layout. After autocrop:
+
 - `imgAfterRed` samples for `rgb_gradient` → use the same new coords as image-rendering.test.ts
 - `imgBeforeBgr` / `imgAfterBgr` samples for `bgr_test` → validate via HTML reports
 
@@ -544,6 +577,7 @@ PATH="$VENV_BIN:$PATH" xvfb-run -a --server-args="-screen 0 1920x1080x24" \
 Iterate (inspect HTML reports → adjust coords → recompile → re-run) until **all tests pass**.
 
 ### Step 6: Commit
+
 ```bash
 git add tests/ui-test/image-verification-utils.ts tests/ui-test/image-rendering.test.ts tests/ui-test/display-options.test.ts
 git commit -m "feat: capture .view-container + autocrop for sidebar-free pixel coords
@@ -564,14 +598,17 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ## Task 4: Push and verify CI
 
 ### Step 1: Push to PR branch
+
 ```bash
 git push origin feat/e2e-image-verification
 ```
 
 ### Step 2: Monitor CI
+
 Wait for GitHub Actions to run. The workflow is `.github/workflows/ci.yml`.
 
 ### Step 3: If CI passes, request review
+
 The PR is #221: https://github.com/elazarcoh/simply-view-image-for-python-debugging/pull/221
 
 ---

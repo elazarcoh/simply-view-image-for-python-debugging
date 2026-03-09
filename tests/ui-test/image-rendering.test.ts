@@ -263,11 +263,9 @@ describe('image rendering verification', () => {
       const corner = samplePoint(img, 0.49, 0.22, 0.03);
       DebugTestHelper.logger.info(`heatmap centre: ${JSON.stringify(centre)}, corner: ${JSON.stringify(corner)}`);
 
-      // Record both regions as info-only (bounding boxes derived from samplePoint params).
-      annotator.addRegion(0.67, 0.33, 0.10, 0.10, centre, 'centre');
-      annotator.addRegion(0.46, 0.19, 0.06, 0.06, corner, 'corner');
-
-      assertBrighterThan(centre, corner, 30, 'Gaussian peak should be brighter than corner');
+      // Corner is info-only reference; centre assertion is recorded for the debug report.
+      annotator.addRegion(0.46, 0.19, 0.06, 0.06, corner, 'corner-reference');
+      annotator.record(0.67, 0.33, 0.10, 0.10, centre, () => assertBrighterThan(centre, corner, 30, 'Gaussian peak should be brighter than corner'), 'centre-peak');
     }
     finally {
       await annotator.saveHtml();
@@ -303,32 +301,35 @@ describe('image rendering verification', () => {
     annotatorBefore.addRegion(0.52, 0.22, 0.10, 0.30, leftBefore, 'left-before-swap');
     annotatorBefore.addRegion(0.93, 0.22, 0.05, 0.30, rightBefore, 'right-before-swap');
 
-    // Apply BGR swap
-    const clicked = await clickDisplayOption(driver, 'Swap RGB/BGR');
-    expect(clicked, '"Swap RGB/BGR" button not found').to.be.true;
-
-    // Capture AFTER swap
-    const capturedAfter = await captureAnnotatedCanvas(driver, 'rendering-bgr-swap-after');
-    expect(capturedAfter, 'after-swap canvas capture returned null').to.not.be.null;
-    if (!capturedAfter) {
-      await annotatorBefore.saveHtml();
-      throw new Error('after-swap canvas capture returned null');
-    }
-    const { img: after, annotator: annotatorAfter } = capturedAfter;
-
     try {
-      const leftAfter = sampleRegion(after, 0.52, 0.22, 0.10, 0.30);
-      const rightAfter = sampleRegion(after, 0.93, 0.22, 0.05, 0.30);
-      DebugTestHelper.logger.info(`AFTER  swap — left: ${JSON.stringify(leftAfter)}, right: ${JSON.stringify(rightAfter)}`);
+      // Apply BGR swap
+      const clicked = await clickDisplayOption(driver, 'Swap RGB/BGR');
+      expect(clicked, '"Swap RGB/BGR" button not found').to.be.true;
 
-      // Left was red → should now be blue
-      annotatorAfter.record(0.52, 0.22, 0.10, 0.30, leftAfter, () => assertChannelSwapped(leftBefore, leftAfter, 'r', 'b', 40, 'left region after BGR swap'), 'left-after-swap');
-      // Right was blue → should now be red
-      annotatorAfter.record(0.93, 0.22, 0.05, 0.30, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after BGR swap'), 'right-after-swap');
+      // Capture AFTER swap
+      const capturedAfter = await captureAnnotatedCanvas(driver, 'rendering-bgr-swap-after');
+      expect(capturedAfter, 'after-swap canvas capture returned null').to.not.be.null;
+      if (!capturedAfter) {
+        throw new Error('after-swap canvas capture returned null');
+      }
+      const { img: after, annotator: annotatorAfter } = capturedAfter;
+
+      try {
+        const leftAfter = sampleRegion(after, 0.52, 0.22, 0.10, 0.30);
+        const rightAfter = sampleRegion(after, 0.93, 0.22, 0.05, 0.30);
+        DebugTestHelper.logger.info(`AFTER  swap — left: ${JSON.stringify(leftAfter)}, right: ${JSON.stringify(rightAfter)}`);
+
+        // Left was red → should now be blue
+        annotatorAfter.record(0.52, 0.22, 0.10, 0.30, leftAfter, () => assertChannelSwapped(leftBefore, leftAfter, 'r', 'b', 40, 'left region after BGR swap'), 'left-after-swap');
+        // Right was blue → should now be red
+        annotatorAfter.record(0.93, 0.22, 0.05, 0.30, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after BGR swap'), 'right-after-swap');
+      }
+      finally {
+        await annotatorAfter.saveHtml();
+      }
     }
     finally {
       await annotatorBefore.saveHtml();
-      await annotatorAfter.saveHtml();
     }
   }).timeout(300000);
 

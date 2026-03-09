@@ -14,12 +14,18 @@
  * - Low contrast image: For high contrast enhancement test
  */
 
-import type { WebElement } from 'selenium-webdriver';
 import type { WebDriver } from 'vscode-extension-tester';
-import { By } from 'selenium-webdriver';
 import { VSBrowser } from 'vscode-extension-tester';
 import { DebugTestHelper } from './DebugTestHelper';
 import { fileInWorkspace, openWorkspace } from './globals';
+import {
+  assertBrighterThan,
+  assertChannelSwapped,
+  assertDominantChannel,
+  captureAnnotatedCanvas,
+  clickDisplayOption,
+  sampleRegion,
+} from './image-verification-utils';
 
 describe('display options tests', () => {
   let debugHelper: DebugTestHelper;
@@ -51,167 +57,18 @@ describe('display options tests', () => {
     DebugTestHelper.reset();
   }).timeout(5000);
 
-  /**
-   * Helper to switch to the webview iframe
-   */
-  async function switchToWebviewFrame(): Promise<boolean> {
-    try {
-      // VS Code webviews are nested in iframes
-      const iframes = await driver.findElements(By.css('iframe'));
-      DebugTestHelper.logger.info(`Found ${iframes.length} iframes`);
-
-      for (const iframe of iframes) {
-        try {
-          const className = await iframe.getAttribute('class');
-          const id = await iframe.getAttribute('id');
-          DebugTestHelper.logger.debug(`Iframe: class="${className}", id="${id}"`);
-
-          // Look for webview iframe (usually has 'webview' in class or is the active one)
-          if (className && className.includes('webview')) {
-            await driver.switchTo().frame(iframe);
-            DebugTestHelper.logger.success('Switched to webview iframe');
-
-            // There might be a nested iframe inside
-            const nestedIframes = await driver.findElements(By.css('iframe'));
-            if (nestedIframes.length > 0) {
-              await driver.switchTo().frame(nestedIframes[0]);
-              DebugTestHelper.logger.success('Switched to nested iframe');
-            }
-
-            return true;
-          }
-        }
-        catch (e) {
-          DebugTestHelper.logger.debug(`Could not process iframe: ${e}`);
-        }
-      }
-
-      return false;
-    }
-    catch (error) {
-      DebugTestHelper.logger.error(`Error switching to webview frame: ${error}`);
-      return false;
-    }
-  }
-
-  /**
-   * Helper to switch back to the main content
-   */
-  async function switchToMainContent(): Promise<void> {
-    await driver.switchTo().defaultContent();
-    DebugTestHelper.logger.debug('Switched back to main content');
-  }
-
-  /**
-   * Helper to find and click a display option button by its aria-label or title
-   */
-  async function clickDisplayOptionButton(buttonLabel: string): Promise<boolean> {
-    try {
-      // Try to find button by aria-label
-      let button: WebElement | null = null;
-
-      const selectors = [
-        `button[aria-label="${buttonLabel}"]`,
-        `button[title="${buttonLabel}"]`,
-        `[aria-label="${buttonLabel}"]`,
-        `[title="${buttonLabel}"]`,
-      ];
-
-      for (const selector of selectors) {
-        try {
-          const elements = await driver.findElements(By.css(selector));
-          if (elements.length > 0) {
-            button = elements[0];
-            DebugTestHelper.logger.success(`Found button with selector: ${selector}`);
-            break;
-          }
-        }
-        catch (_e) {
-          // Try next selector
-        }
-      }
-
-      if (button) {
-        await button.click();
-        await driver.sleep(500);
-        DebugTestHelper.logger.success(`Clicked "${buttonLabel}" button`);
-        return true;
-      }
-
-      DebugTestHelper.logger.warn(`Button "${buttonLabel}" not found`);
-      return false;
-    }
-    catch (error) {
-      DebugTestHelper.logger.error(`Error clicking button "${buttonLabel}": ${error}`);
-      return false;
-    }
-  }
-
-  /**
-   * View a variable and take a screenshot
-   */
-  async function viewVariableAndScreenshot(
-    variableName: string,
-    screenshotName: string,
-  ): Promise<void> {
+  async function viewVariable(name: string): Promise<void> {
     await debugHelper.performVariableAction({
-      variableName,
+      variableName: name,
       actionLabel: 'View Image',
       retrySetup: true,
       setupRetries: 5,
       type: 'variable',
     });
-
     await debugHelper.wait(1000);
-
-    // Get the webview editor for screenshot
-    const webviewEditor = await debugHelper.getWebviewEditor();
-
-    await debugHelper.takeScreenshot({
-      name: screenshotName,
-      element: webviewEditor,
-    });
-  }
-
-  /**
-   * Test display option by clicking a button and taking a screenshot
-   */
-  async function testDisplayOption(
-    buttonLabel: string,
-    screenshotSuffix: string,
-  ): Promise<boolean> {
-    // Switch to webview frame
-    const switched = await switchToWebviewFrame();
-    if (!switched) {
-      DebugTestHelper.logger.warn('Could not switch to webview frame, skipping button click');
-      await switchToMainContent();
-      return false;
-    }
-
-    // Click the display option button
-    const clicked = await clickDisplayOptionButton(buttonLabel);
-
-    // Switch back to main content
-    await switchToMainContent();
-
-    if (clicked) {
-      await debugHelper.wait(500);
-
-      // Take screenshot of the result
-      const webviewEditor = await debugHelper.getWebviewEditor();
-      await debugHelper.takeScreenshot({
-        name: `display-option-${screenshotSuffix}`,
-        element: webviewEditor,
-      });
-
-      // Also take fullscreen
-      await debugHelper.takeScreenshot({
-        name: `display-option-${screenshotSuffix}-fullscreen`,
-        element: 'screen',
-      });
-    }
-
-    return clicked;
+    // Focus the Image View panel — activating the tab triggers a re-render.
+    await debugHelper.getWebviewEditor();
+    await debugHelper.wait(500);
   }
 
   /**
@@ -245,83 +102,149 @@ describe('display options tests', () => {
     // ===== Test 1: RGB Channel Filters =====
     DebugTestHelper.logger.step('Testing RGB channel display options on rgb_gradient...');
 
-    await viewVariableAndScreenshot('rgb_gradient', 'success-rgb-default');
+    await viewVariable('rgb_gradient');
 
     // Test Red channel filter
-    const redClicked = await testDisplayOption('Red Channel', 'rgb-red-channel');
+    const redClicked = await clickDisplayOption(driver, 'Red Channel');
     if (redClicked) {
       DebugTestHelper.logger.success('Red channel filter applied');
+
+      // Verify pixel rendering: left region (pure red) should remain red;
+      // middle region (pure green) should become dark since its red content is zero.
+      const capturedRed = await captureAnnotatedCanvas(driver, 'display-options-red-channel');
+      if (capturedRed) {
+        const { img: imgAfterRed, annotator: annotatorRed } = capturedRed;
+        try {
+          // After autocrop: left red band x≈0.0–0.43, middle green band x≈0.43–0.86.
+          const leftAfterRed = sampleRegion(imgAfterRed, 0.05, 0.25, 0.35, 0.40);
+          const middleAfterRed = sampleRegion(imgAfterRed, 0.48, 0.25, 0.35, 0.40);
+          DebugTestHelper.logger.info(`Red filter — left: ${JSON.stringify(leftAfterRed)}, middle: ${JSON.stringify(middleAfterRed)}`);
+          annotatorRed.record(0.05, 0.25, 0.35, 0.40, leftAfterRed, () => assertDominantChannel(leftAfterRed, 'r', 40, 'left region after red channel filter'), 'left-red');
+          annotatorRed.record(0.48, 0.25, 0.35, 0.40, middleAfterRed, () => assertBrighterThan(leftAfterRed, middleAfterRed, 40, 'left/red brighter than middle/green after red filter'), 'middle-green-dark');
+        }
+        finally {
+          await annotatorRed.saveHtml();
+        }
+      }
     }
 
     // Reset before next test
-    await testDisplayOption('Reset', 'rgb-after-reset');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
 
     // Test Green channel filter
-    const greenClicked = await testDisplayOption('Green Channel', 'rgb-green-channel');
+    const greenClicked = await clickDisplayOption(driver, 'Green Channel');
     if (greenClicked) {
       DebugTestHelper.logger.success('Green channel filter applied');
     }
 
     // Reset before next test
-    await testDisplayOption('Reset', 'rgb-after-reset-2');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
 
     // Test Blue channel filter
-    const blueClicked = await testDisplayOption('Blue Channel', 'rgb-blue-channel');
+    const blueClicked = await clickDisplayOption(driver, 'Blue Channel');
     if (blueClicked) {
       DebugTestHelper.logger.success('Blue channel filter applied');
     }
 
     // Reset and test Grayscale
-    await testDisplayOption('Reset', 'rgb-after-reset-3');
-    await testDisplayOption('Grayscale', 'rgb-grayscale');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
+    await clickDisplayOption(driver, 'Grayscale');
 
     // ===== Test 2: Grayscale and Contrast Options =====
     DebugTestHelper.logger.step('Testing grayscale and contrast display options...');
 
     // View the grayscale gradient
-    await viewVariableAndScreenshot('grayscale', 'success-grayscale-default');
+    await viewVariable('grayscale');
 
     // Test Invert
-    await testDisplayOption('Invert Colors', 'grayscale-inverted');
+    await clickDisplayOption(driver, 'Invert Colors');
 
     // Reset
-    await testDisplayOption('Reset', 'grayscale-reset');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
 
     // View the low contrast image
-    await viewVariableAndScreenshot('low_contrast', 'success-low-contrast-default');
+    await viewVariable('low_contrast');
 
     // Test High Contrast
-    await testDisplayOption('High Contrast', 'low-contrast-enhanced');
+    await clickDisplayOption(driver, 'High Contrast');
 
     // ===== Test 3: Heatmap and Segmentation Colormaps =====
     DebugTestHelper.logger.step('Testing heatmap and segmentation display options...');
 
     // View the heatmap image (float32 gaussian)
-    await viewVariableAndScreenshot('heatmap', 'success-heatmap-default');
+    await viewVariable('heatmap');
 
     // Test Heatmap colormap
-    await testDisplayOption('Heatmap', 'heatmap-colormap');
+    await clickDisplayOption(driver, 'Heatmap');
 
     // View the segmentation image
-    await viewVariableAndScreenshot('segmentation', 'success-segmentation-default');
+    await viewVariable('segmentation');
 
     // Test Segmentation colormap
-    await testDisplayOption('Segmentation', 'segmentation-colormap');
+    await clickDisplayOption(driver, 'Segmentation');
 
     // ===== Test 4: RGBA and BGR Options =====
     DebugTestHelper.logger.step('Testing RGBA and BGR display options...');
 
     // View the RGBA image
-    await viewVariableAndScreenshot('rgba', 'success-rgba-default');
+    await viewVariable('rgba');
 
     // Test Ignore Alpha
-    await testDisplayOption('Ignore Alpha', 'rgba-ignore-alpha');
+    await clickDisplayOption(driver, 'Ignore Alpha');
 
-    // View the BGR test image
-    await viewVariableAndScreenshot('bgr_test', 'success-bgr-default');
+    // View the BGR test image — capture BEFORE swap for comparison
+    await viewVariable('bgr_test');
+    const capturedBefore = await captureAnnotatedCanvas(driver, 'display-options-bgr-before');
 
     // Test Swap RGB/BGR
-    await testDisplayOption('Swap RGB/BGR', 'bgr-swapped');
+    await clickDisplayOption(driver, 'Swap RGB/BGR');
+
+    // Capture AFTER swap and verify channel swap if both captures succeeded.
+    const capturedAfter = await captureAnnotatedCanvas(driver, 'display-options-bgr-after');
+    if (capturedBefore) {
+      const { img: imgBeforeBgr, annotator: annotatorBefore } = capturedBefore;
+      try {
+        if (!capturedAfter) {
+          throw new Error('after-swap canvas capture returned null');
+        }
+        const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
+        try {
+        // bgr_test right half (x≈0.64–0.86): channel[0]=255 displays as Red before
+        // swap, and Blue after swap (BGR→RGB reinterpretation).
+          const rightBefore = sampleRegion(imgBeforeBgr, 0.65, 0.25, 0.20, 0.40);
+          const rightAfter = sampleRegion(imgAfterBgr, 0.65, 0.25, 0.20, 0.40);
+          DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
+          annotatorBefore.addRegion(0.65, 0.25, 0.20, 0.40, rightBefore, 'right-before-swap');
+          annotatorAfter.record(0.65, 0.25, 0.20, 0.40, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'r', 'b', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
+        }
+        finally {
+          await annotatorAfter.saveHtml();
+        }
+      }
+      finally {
+        await annotatorBefore.saveHtml();
+      }
+    }
 
     DebugTestHelper.logger.success('All display options tests completed');
   }).timeout(300000);

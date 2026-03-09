@@ -1118,6 +1118,42 @@ export class DebugTestHelper {
   }
 
   // =============================================================================
+  // CANVAS PIXEL VERIFICATION
+  // =============================================================================
+
+  /**
+   * Capture the rendered view container (.view-container) as a Jimp image for pixel verification.
+   * Falls back to null if the element is unavailable or the screenshot fails.
+   *
+   * Waits briefly for the WebGL render to complete, then takes an element screenshot
+   * of the view container inside the webview iframe.
+   *
+   * @param renderWaitMs - Extra time (ms) to wait for the WebGL render before capturing.
+   */
+  async captureCanvasImage(renderWaitMs: number = 500): Promise<Awaited<ReturnType<typeof import('jimp').Jimp.fromBuffer>> | null> {
+    const { captureCanvasImage: captureCanvas } = await import('./image-verification-utils');
+    const driver = VSBrowser.instance.driver;
+
+    DebugTestHelper.logger.step('Capturing canvas image for pixel verification...');
+    await driver.sleep(renderWaitMs);
+
+    try {
+      const img = await captureCanvas(driver);
+      if (img) {
+        DebugTestHelper.logger.success(`Canvas captured: ${img.width}×${img.height}`);
+      }
+      else {
+        DebugTestHelper.logger.warn('Canvas capture returned null');
+      }
+      return img;
+    }
+    catch (error) {
+      DebugTestHelper.logger.error(`captureCanvasImage failed: ${error}`);
+      return null;
+    }
+  }
+
+  // =============================================================================
   // SCREENSHOT OPERATIONS
   // =============================================================================
 

@@ -22,11 +22,17 @@ import {
   clickDisplayOption,
   samplePoint,
   sampleRegion,
+  waitForCanvasToRender,
 } from './image-verification-utils';
 
 describe('image rendering verification', () => {
   let debugHelper: DebugTestHelper;
 
+  /**
+   * One shared debug session for all rendering tests.
+   * Starting a fresh session per-test causes Image Watch to fail to repopulate
+   * variables on subsequent runs (matching the pattern used in display-options.test.ts).
+   */
   before(async () => {
     DebugTestHelper.logger.step('Opening workspace for image rendering tests');
     await openWorkspace();
@@ -36,23 +42,31 @@ describe('image rendering verification', () => {
       retryCount: 5,
       sleepDuration: 1000,
     });
-  }).timeout(60000);
 
-  afterEach(async () => {
+    // Start the single shared debug session.
+    await startDebugSession();
+  }).timeout(300000);
+
+  after(async () => {
     if (debugHelper) {
       await debugHelper.cleanup();
     }
-  }).timeout(60000);
-
-  after(async () => {
     DebugTestHelper.reset();
-  }).timeout(5000);
+  }).timeout(60000);
 
   /**
    * Helper: start the display_options_test.py debug session and wait at the breakpoint.
    * All test images are available at that breakpoint.
    */
   async function startDebugSession(): Promise<void> {
+    // Close all editors carried over from a previous test run. VS Code persists
+    // the editor layout (including Image View) in --storage test-resources, so
+    // without this the Image View may already be open with stale content and
+    // drawing options when the first test of a fresh run begins.
+    const { EditorView } = await import('vscode-extension-tester');
+    await new EditorView().closeAllEditors();
+    await debugHelper.wait(500);
+
     await debugHelper.setupEditorForDebug({
       fileName: fileInWorkspace('display_options_test.py'),
       debugConfig: 'Python: Current File',
@@ -81,20 +95,27 @@ describe('image rendering verification', () => {
       setupRetries: 5,
       type: 'variable',
     });
-    // Wait for the image to load before focusing the editor, matching the
-    // viewVariableAndScreenshot pattern in display-options.test.ts.
     await debugHelper.wait(1000);
     // Focus the Image View panel — activating the tab triggers a re-render.
     await debugHelper.getWebviewEditor();
-    // Give the webview time to fully initialize.
-    await debugHelper.wait(1000);
-    // Click "Reset" to warm up the WebGL rendering loop.
-    // Without a button click, requestAnimationFrame may be throttled in a freshly-opened
-    // webview, leaving the canvas blank. Clicking any display-option button causes Yew
-    // to call requestAnimationFrame at full speed. "Reset" has no visual side-effect when
-    // the image is already at its default display settings.
+    await debugHelper.wait(500);
+
     const driver = VSBrowser.instance.driver;
+
+    // Wait until the canvas actually shows a rendered image before asserting.
+    // The extension sends image data asynchronously; the canvas stays dark until
+    // the first frame renders. We must wait here to avoid capturing a blank canvas.
+    const rendered = await waitForCanvasToRender(driver, 15000);
+    if (!rendered) {
+      DebugTestHelper.logger.warn(`viewVariable: canvas did not render within 15s for "${name}"`);
+    }
+
+    // Click "Reset" AFTER the image is loaded so it properly clears any stale
+    // display options (BGR swap, channel filters) that may have persisted from a
+    // previous test run via VS Code's workbench state.
     await clickDisplayOption(driver, 'Reset');
+    // Give Yew one frame to re-render after the Reset action.
+    await debugHelper.wait(500);
   }
 
   // ---------------------------------------------------------------------------
@@ -109,14 +130,19 @@ describe('image rendering verification', () => {
   it('should render the left region of rgb_gradient as red', async () => {
     debugHelper.setCurrentTest('rendering-rgb-left-red');
 
-    await startDebugSession();
     await viewVariable('rgb_gradient');
 
     const img = await debugHelper.captureCanvasImage();
     expect(img, 'canvas capture returned null').to.not.be.null;
 
-    // Sample the centre of the left third (relative coords)
-    const leftRegion = sampleRegion(img!, 0.05, 0.2, 0.25, 0.6);
+    // The canvas screenshot includes the Image Watch sidebar on the left (~47% of width).
+    // The image is scaled so it overflows the right edge; empirical x-ranges (confirmed
+    // by horizontal color profile scans):
+    //   Red   (cols   0– 50): screenshot x ≈ 0.47–0.67
+    //   Green (cols  50–100): screenshot x ≈ 0.70–0.88
+    //   Blue  (cols 100–150): screenshot x ≈ 0.92–1.00  (partial, right side clipped)
+    // Image y-extent: ≈ 0.13–0.56.  Use y=0.22–0.52 to stay safely inside.
+    const leftRegion = sampleRegion(img!, 0.52, 0.22, 0.10, 0.30);
     DebugTestHelper.logger.info(`rgb_gradient left region mean: ${JSON.stringify(leftRegion)}`);
 
     assertDominantChannel(leftRegion, 'r', 50, 'left region should be red');
@@ -125,13 +151,12 @@ describe('image rendering verification', () => {
   it('should render the middle region of rgb_gradient as green', async () => {
     debugHelper.setCurrentTest('rendering-rgb-middle-green');
 
-    await startDebugSession();
     await viewVariable('rgb_gradient');
 
     const img = await debugHelper.captureCanvasImage();
     expect(img, 'canvas capture returned null').to.not.be.null;
 
-    const middleRegion = sampleRegion(img!, 0.38, 0.2, 0.25, 0.6);
+    const middleRegion = sampleRegion(img!, 0.75, 0.22, 0.10, 0.30);
     DebugTestHelper.logger.info(`rgb_gradient middle region mean: ${JSON.stringify(middleRegion)}`);
 
     assertDominantChannel(middleRegion, 'g', 50, 'middle region should be green');
@@ -140,13 +165,13 @@ describe('image rendering verification', () => {
   it('should render the right region of rgb_gradient as blue', async () => {
     debugHelper.setCurrentTest('rendering-rgb-right-blue');
 
-    await startDebugSession();
     await viewVariable('rgb_gradient');
 
     const img = await debugHelper.captureCanvasImage();
     expect(img, 'canvas capture returned null').to.not.be.null;
 
-    const rightRegion = sampleRegion(img!, 0.70, 0.2, 0.25, 0.6);
+    // Blue band: x≈0.92–1.0 (image overflows right canvas edge; only ~8% visible).
+    const rightRegion = sampleRegion(img!, 0.93, 0.22, 0.05, 0.30);
     DebugTestHelper.logger.info(`rgb_gradient right region mean: ${JSON.stringify(rightRegion)}`);
 
     assertDominantChannel(rightRegion, 'b', 50, 'right region should be blue');
@@ -162,19 +187,20 @@ describe('image rendering verification', () => {
   it('should render grayscale_gradient with equal R/G/B channels', async () => {
     debugHelper.setCurrentTest('rendering-grayscale-equal-channels');
 
-    await startDebugSession();
     await viewVariable('grayscale');
 
     const img = await debugHelper.captureCanvasImage();
     expect(img, 'canvas capture returned null').to.not.be.null;
 
-    // Sample a mid-brightness point (around 50% width = ~127 intensity)
-    const midPoint = samplePoint(img!, 0.5, 0.5, 0.08);
+    // grayscale (100×200 uint8) is horizontally centred in the render area (x≈0.446–1.0,
+    // y≈0.38–0.65).  The gradient runs left→right (0→255) so the centre column is ~127.
+    // Both sample points must be inside the render area (x > 0.50).
+    const midPoint = samplePoint(img!, 0.72, 0.38, 0.06);
     DebugTestHelper.logger.info(`grayscale mid point mean: ${JSON.stringify(midPoint)}`);
     assertGrayscale(midPoint, 25, 'mid-brightness point of grayscale gradient');
 
-    // Sample a dark point (near left edge)
-    const darkPoint = samplePoint(img!, 0.05, 0.5, 0.04);
+    // Sample a darker point near the left edge of the image (close to col 0 = value 0).
+    const darkPoint = samplePoint(img!, 0.49, 0.38, 0.02);
     DebugTestHelper.logger.info(`grayscale dark point mean: ${JSON.stringify(darkPoint)}`);
     assertGrayscale(darkPoint, 25, 'dark point of grayscale gradient');
   }).timeout(300000);
@@ -188,14 +214,16 @@ describe('image rendering verification', () => {
   it('should render heatmap_image with brighter centre than corners', async () => {
     debugHelper.setCurrentTest('rendering-heatmap-brightness');
 
-    await startDebugSession();
     await viewVariable('heatmap');
 
     const img = await debugHelper.captureCanvasImage();
     expect(img, 'canvas capture returned null').to.not.be.null;
 
-    const centre = samplePoint(img!, 0.5, 0.5, 0.05);
-    const corner = samplePoint(img!, 0.05, 0.05, 0.04);
+    // heatmap (100×150 float32) is positioned the same as rgb_gradient in the render area
+    // (x≈0.446–1.0, y≈0.34–0.69).  The Gaussian peak is at the image centre.
+    const centre = samplePoint(img!, 0.72, 0.38, 0.05);
+    // Corner of the image (near zero of the Gaussian) — use top-left corner with margin.
+    const corner = samplePoint(img!, 0.49, 0.22, 0.03);
     DebugTestHelper.logger.info(`heatmap centre: ${JSON.stringify(centre)}, corner: ${JSON.stringify(corner)}`);
 
     assertBrighterThan(centre, corner, 30, 'Gaussian peak should be brighter than corner');
@@ -212,15 +240,14 @@ describe('image rendering verification', () => {
   it('should swap R and B channels when "Swap RGB/BGR" is applied', async () => {
     debugHelper.setCurrentTest('rendering-bgr-swap');
 
-    await startDebugSession();
     await viewVariable('rgb_gradient');
 
     // Capture BEFORE swap
     const before = await debugHelper.captureCanvasImage();
     expect(before, 'before-swap canvas capture returned null').to.not.be.null;
 
-    const leftBefore = sampleRegion(before!, 0.05, 0.2, 0.25, 0.6);
-    const rightBefore = sampleRegion(before!, 0.70, 0.2, 0.25, 0.6);
+    const leftBefore = sampleRegion(before!, 0.52, 0.22, 0.10, 0.30);
+    const rightBefore = sampleRegion(before!, 0.93, 0.22, 0.05, 0.30);
     DebugTestHelper.logger.info(`BEFORE swap — left: ${JSON.stringify(leftBefore)}, right: ${JSON.stringify(rightBefore)}`);
 
     // Apply BGR swap
@@ -232,8 +259,8 @@ describe('image rendering verification', () => {
     const after = await debugHelper.captureCanvasImage();
     expect(after, 'after-swap canvas capture returned null').to.not.be.null;
 
-    const leftAfter = sampleRegion(after!, 0.05, 0.2, 0.25, 0.6);
-    const rightAfter = sampleRegion(after!, 0.70, 0.2, 0.25, 0.6);
+    const leftAfter = sampleRegion(after!, 0.52, 0.22, 0.10, 0.30);
+    const rightAfter = sampleRegion(after!, 0.93, 0.22, 0.05, 0.30);
     DebugTestHelper.logger.info(`AFTER  swap — left: ${JSON.stringify(leftAfter)}, right: ${JSON.stringify(rightAfter)}`);
 
     // Left was red → should now be blue
@@ -253,7 +280,6 @@ describe('image rendering verification', () => {
   it('should isolate red channel when "Red Channel" filter is applied', async () => {
     debugHelper.setCurrentTest('rendering-red-channel-filter');
 
-    await startDebugSession();
     await viewVariable('rgb_gradient');
 
     // Apply the red channel filter
@@ -265,12 +291,12 @@ describe('image rendering verification', () => {
     expect(img, 'canvas capture returned null').to.not.be.null;
 
     // Left region was pure red → red channel filter preserves it
-    const leftRegion = sampleRegion(img!, 0.05, 0.2, 0.25, 0.6);
+    const leftRegion = sampleRegion(img!, 0.52, 0.22, 0.10, 0.30);
     DebugTestHelper.logger.info(`Red-channel left region: ${JSON.stringify(leftRegion)}`);
     assertDominantChannel(leftRegion, 'r', 40, 'left region with red channel filter should be red');
 
     // Middle region was pure green → no red content → should be near-black (dim)
-    const middleRegion = sampleRegion(img!, 0.38, 0.2, 0.25, 0.6);
+    const middleRegion = sampleRegion(img!, 0.75, 0.22, 0.10, 0.30);
     DebugTestHelper.logger.info(`Red-channel middle region: ${JSON.stringify(middleRegion)}`);
     // The green region should be significantly darker than the red region after red-channel filter
     assertBrighterThan(leftRegion, middleRegion, 40, 'red region should be brighter than green region after red filter');

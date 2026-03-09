@@ -176,16 +176,59 @@ export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | n
     }
 
     const img = await Jimp.fromBuffer(Buffer.from(base64, 'base64'));
-    // Log a center sample to aid debugging when pixels look wrong.
-    const centerSample = sampleRegion(img, 0.45, 0.45, 0.1, 0.1);
-    DebugTestHelper.logger.debug(
-      `captureCanvasImage: captured ${img.width}×${img.height} canvas, center sample: r=${centerSample.r.toFixed(1)} g=${centerSample.g.toFixed(1)} b=${centerSample.b.toFixed(1)}`,
-    );
+    DebugTestHelper.logger.info(`captureCanvasImage: ${img.width}×${img.height}`);
     return img;
   }
   finally {
     await driver.switchTo().defaultContent();
   }
+}
+
+/**
+ * Poll the canvas until it shows a rendered image (i.e. any sampled point has
+ * luminance above `minLuminance`). Returns true if the canvas became active
+ * before `timeoutMs`, false on timeout.
+ *
+ * This is needed because the extension sends image data to the webview
+ * asynchronously after "View Image" is clicked. The canvas stays dark
+ * (~lum 13) until the first render completes.
+ *
+ * Samples only the central band of the canvas (y=35–65%, x=15–85%) to avoid
+ * VS Code toolbar/button chrome that may be visible at the canvas edges in the
+ * element screenshot. These toolbar pixels can produce a false-positive
+ * luminance value (~44) on an otherwise dark canvas.
+ */
+export async function waitForCanvasToRender(
+  driver: WebDriver,
+  timeoutMs = 15000,
+  minLuminance = 30,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const img = await captureCanvasImage(driver);
+    if (img !== null) {
+      // Sample from the render area only (x > 0.50), which is right of the
+      // Image Watch sidebar that occupies the left ~44% of the canvas screenshot.
+      // Sampling the sidebar would give false-positive luminance from variable
+      // name text even when no image has been rendered yet.
+      const points = [
+        sampleRegion(img, 0.50, 0.35, 0.14, 0.30), // left portion of render area
+        sampleRegion(img, 0.65, 0.35, 0.14, 0.30), // centre of render area
+        sampleRegion(img, 0.82, 0.35, 0.14, 0.30), // right portion of render area
+      ];
+      const maxLum = Math.max(...points.map(luminance));
+      DebugTestHelper.logger.debug(
+        `waitForCanvasToRender: maxLum=${maxLum.toFixed(1)} `
+        + `(L=${luminance(points[0]).toFixed(1)} C=${luminance(points[1]).toFixed(1)} R=${luminance(points[2]).toFixed(1)})`,
+      );
+      if (maxLum > minLuminance) {
+        return true;
+      }
+    }
+    await driver.sleep(800);
+  }
+  DebugTestHelper.logger.warn(`waitForCanvasToRender: timed out after ${timeoutMs}ms — canvas still dark`);
+  return false;
 }
 
 /**

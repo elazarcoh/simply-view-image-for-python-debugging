@@ -58,28 +58,33 @@ describe('display options tests', () => {
   }).timeout(5000);
 
   /**
-   * Helper to switch to the webview iframe — navigates all 3 iframe levels that
-   * VS Code uses for webviews so that button clicks are not intercepted.
+   * Helper to switch to the webview iframe — navigates into the webview content
+   * frame so that button clicks and canvas access work correctly.
    *
-   * Structure:
+   * Structure observed in practice:
    *   Level 1: main window → <iframe class="webview [ready]"> (outer container)
-   *   Level 2: <iframe src="vscode-webview://..."> (VS Code content manager)
-   *   Level 3: <iframe id="active-frame"> (actual user HTML)
+   *   Level 2: <iframe src="vscode-webview://..."> (VS Code content — user HTML lives here
+   *            OR in a child #active-frame depending on VS Code version)
    */
   async function switchToWebviewFrame(): Promise<boolean> {
     try {
       const iframes = await driver.findElements(By.css('iframe'));
       DebugTestHelper.logger.info(`Found ${iframes.length} iframes at main level`);
+      for (let i = 0; i < iframes.length; i++) {
+        const cls = await iframes[i].getAttribute('class').catch(() => '?');
+        const id = await iframes[i].getAttribute('id').catch(() => '?');
+        const name = await iframes[i].getAttribute('name').catch(() => '?');
+        DebugTestHelper.logger.debug(`  iframe[${i}] class="${cls}" id="${id}" name="${name}"`);
+      }
 
       let outerSwitched = false;
       for (const iframe of iframes) {
         try {
           const className = await iframe.getAttribute('class');
-          DebugTestHelper.logger.debug(`Iframe class="${className}"`);
           if (className && className.includes('webview')) {
             await driver.switchTo().frame(iframe);
             outerSwitched = true;
-            DebugTestHelper.logger.success('Switched to outer webview iframe');
+            DebugTestHelper.logger.info('Switched to outer webview iframe');
             break;
           }
         }
@@ -89,40 +94,57 @@ describe('display options tests', () => {
       }
 
       if (!outerSwitched) {
+        DebugTestHelper.logger.warn('No outer webview iframe found');
         return false;
       }
 
-      // Find and switch to the vscode-webview:// content-manager iframe.
+      // Find the nested content-manager iframe. Wait up to 8 s.
       let level2Frame = null;
       for (let attempt = 0; attempt < 16; attempt++) {
         const nested = await driver.findElements(By.css('iframe'));
         if (nested.length > 0) {
           level2Frame = nested[0];
+          DebugTestHelper.logger.debug(`level-2 iframe found after ${attempt * 500}ms`);
           break;
         }
         await driver.sleep(500);
       }
-      if (level2Frame) {
-        await driver.switchTo().frame(level2Frame);
-        DebugTestHelper.logger.success('Switched to level-2 (vscode-webview://)');
+
+      if (!level2Frame) {
+        DebugTestHelper.logger.debug('No level-2 iframe; using outer frame');
+        return true;
       }
 
-      // Switch into #active-frame — the actual user HTML where buttons live.
-      // Without this, clicks are intercepted by the vscode-webview:// iframe.
-      let activeFrame = null;
-      for (let attempt = 0; attempt < 30; attempt++) {
-        const frames = await driver.findElements(By.id('active-frame'));
-        if (frames.length > 0) {
-          activeFrame = frames[0];
-          break;
+      const l2cls = await level2Frame.getAttribute('class').catch(() => '?');
+      const l2id = await level2Frame.getAttribute('id').catch(() => '?');
+      const l2name = await level2Frame.getAttribute('name').catch(() => '?');
+      DebugTestHelper.logger.debug(`level-2: class="${l2cls}" id="${l2id}" name="${l2name}"`);
+
+      await driver.switchTo().frame(level2Frame);
+      DebugTestHelper.logger.info('Switched to level-2 (vscode-webview://)');
+
+      // Immediately check for level-3 iframes (do NOT wait — a long wait causes
+      // #active-frame to load and intercept clicks from this level).
+      const l3iframes = await driver.findElements(By.css('iframe')).catch(() => []);
+      DebugTestHelper.logger.debug(`Found ${l3iframes.length} iframes inside level-2`);
+      for (let i = 0; i < l3iframes.length; i++) {
+        const cls = await l3iframes[i].getAttribute('class').catch(() => '?');
+        const id = await l3iframes[i].getAttribute('id').catch(() => '?');
+        const name = await l3iframes[i].getAttribute('name').catch(() => '?');
+        DebugTestHelper.logger.debug(`  level-2 child iframe[${i}] class="${cls}" id="${id}" name="${name}"`);
+      }
+
+      // If #active-frame exists already, switch into it; otherwise stay at level-2.
+      for (const f of l3iframes) {
+        const id = await f.getAttribute('id').catch(() => '');
+        if (id === 'active-frame') {
+          await driver.switchTo().frame(f);
+          DebugTestHelper.logger.info('Switched to #active-frame');
+          return true;
         }
-        await driver.sleep(500);
-      }
-      if (activeFrame) {
-        await driver.switchTo().frame(activeFrame);
-        DebugTestHelper.logger.success('Switched to #active-frame (user HTML)');
       }
 
+      DebugTestHelper.logger.info('No #active-frame found at level-2; staying at level-2');
       return true;
     }
     catch (error) {

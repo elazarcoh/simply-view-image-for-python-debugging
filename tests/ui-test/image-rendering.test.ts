@@ -70,7 +70,8 @@ describe('image rendering verification', () => {
   }
 
   /**
-   * Helper: open a variable in the Image View webview.
+   * Helper: open a variable in the Image View webview and ensure the panel is
+   * focused so that element screenshots capture the canvas correctly.
    */
   async function viewVariable(name: string): Promise<void> {
     await debugHelper.performVariableAction({
@@ -80,7 +81,9 @@ describe('image rendering verification', () => {
       setupRetries: 5,
       type: 'variable',
     });
-    await debugHelper.wait(1000);
+    // Focus the Image View panel so subsequent element screenshots capture the GL canvas.
+    await debugHelper.getWebviewEditor();
+    await debugHelper.wait(1500);
   }
 
   // ---------------------------------------------------------------------------

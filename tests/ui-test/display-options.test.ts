@@ -341,14 +341,14 @@ describe('display options tests', () => {
     // Test Swap RGB/BGR
     await testDisplayOption('Swap RGB/BGR', 'bgr-swapped');
 
-    // Verify channel swap: bgr_test right half is pure red (R=255, G=0, B=0) before swap,
-    // and should become pure blue (R=0, G=0, B=255) after swap.
+    // Verify channel swap: bgr_test right half is stored as BGR-red ([0,0,255]) which
+    // the extension displays as blue before swap (b>r), and red after swap (r>b).
     const imgAfterBgr = await debugHelper.captureCanvasImage();
     if (imgBeforeBgr && imgAfterBgr) {
       const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
       const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
       DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
-      assertChannelSwapped(rightBefore, rightAfter, 'r', 'b', 40, 'right region after Swap RGB/BGR');
+      assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after Swap RGB/BGR');
     }
 
     DebugTestHelper.logger.success('All display options tests completed');

@@ -404,18 +404,18 @@ export function sampleRegion(
   relW: number,
   relH: number,
 ): RgbColor {
-  const x = Math.round(relX * img.width);
-  const y = Math.round(relY * img.height);
-  const w = Math.max(1, Math.round(relW * img.width));
-  const h = Math.max(1, Math.round(relH * img.height));
+  const x0 = Math.max(0, Math.round(relX * img.width));
+  const y0 = Math.max(0, Math.round(relY * img.height));
+  const x1 = Math.min(img.width, x0 + Math.max(1, Math.round(relW * img.width)));
+  const y1 = Math.min(img.height, y0 + Math.max(1, Math.round(relH * img.height)));
 
   let r = 0;
   let g = 0;
   let b = 0;
   let count = 0;
 
-  for (let px = x; px < Math.min(x + w, img.width); px++) {
-    for (let py = y; py < Math.min(y + h, img.height); py++) {
+  for (let px = x0; px < x1; px++) {
+    for (let py = y0; py < y1; py++) {
       const rgba = intToRGBA(img.getPixelColor(px, py));
       r += rgba.r;
       g += rgba.g;

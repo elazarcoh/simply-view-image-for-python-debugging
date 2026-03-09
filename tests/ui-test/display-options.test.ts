@@ -129,7 +129,12 @@ describe('display options tests', () => {
     }
 
     // Reset before next test
-    await clickDisplayOption(driver, 'Reset');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
 
     // Test Green channel filter
     const greenClicked = await clickDisplayOption(driver, 'Green Channel');
@@ -138,7 +143,12 @@ describe('display options tests', () => {
     }
 
     // Reset before next test
-    await clickDisplayOption(driver, 'Reset');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
 
     // Test Blue channel filter
     const blueClicked = await clickDisplayOption(driver, 'Blue Channel');
@@ -147,7 +157,12 @@ describe('display options tests', () => {
     }
 
     // Reset and test Grayscale
-    await clickDisplayOption(driver, 'Reset');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
     await clickDisplayOption(driver, 'Grayscale');
 
     // ===== Test 2: Grayscale and Contrast Options =====
@@ -160,7 +175,12 @@ describe('display options tests', () => {
     await clickDisplayOption(driver, 'Invert Colors');
 
     // Reset
-    await clickDisplayOption(driver, 'Reset');
+    {
+      const resetOk = await clickDisplayOption(driver, 'Reset');
+      if (!resetOk) {
+        throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+      }
+    }
 
     // View the low contrast image
     await viewVariable('low_contrast');
@@ -204,20 +224,21 @@ describe('display options tests', () => {
     if (capturedBefore) {
       const { img: imgBeforeBgr, annotator: annotatorBefore } = capturedBefore;
       try {
-        if (capturedAfter) {
-          const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
-          try {
-          // bgr_test right half (x≈0.64–0.86): channel[0]=255 displays as Red before
-          // swap, and Blue after swap (BGR→RGB reinterpretation).
-            const rightBefore = sampleRegion(imgBeforeBgr, 0.65, 0.25, 0.20, 0.40);
-            const rightAfter = sampleRegion(imgAfterBgr, 0.65, 0.25, 0.20, 0.40);
-            DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
-            annotatorBefore.addRegion(0.65, 0.25, 0.20, 0.40, rightBefore, 'right-before-swap');
-            annotatorAfter.record(0.65, 0.25, 0.20, 0.40, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'r', 'b', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
-          }
-          finally {
-            await annotatorAfter.saveHtml();
-          }
+        if (!capturedAfter) {
+          throw new Error('after-swap canvas capture returned null');
+        }
+        const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
+        try {
+        // bgr_test right half (x≈0.64–0.86): channel[0]=255 displays as Red before
+        // swap, and Blue after swap (BGR→RGB reinterpretation).
+          const rightBefore = sampleRegion(imgBeforeBgr, 0.65, 0.25, 0.20, 0.40);
+          const rightAfter = sampleRegion(imgAfterBgr, 0.65, 0.25, 0.20, 0.40);
+          DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
+          annotatorBefore.addRegion(0.65, 0.25, 0.20, 0.40, rightBefore, 'right-before-swap');
+          annotatorAfter.record(0.65, 0.25, 0.20, 0.40, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'r', 'b', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
+        }
+        finally {
+          await annotatorAfter.saveHtml();
         }
       }
       finally {

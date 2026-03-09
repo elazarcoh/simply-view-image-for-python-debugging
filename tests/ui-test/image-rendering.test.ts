@@ -114,7 +114,10 @@ describe('image rendering verification', () => {
     // Click "Reset" AFTER the image is loaded so it properly clears any stale
     // display options (BGR swap, channel filters) that may have persisted from a
     // previous test run via VS Code's workbench state.
-    await clickDisplayOption(driver, 'Reset');
+    const resetOk = await clickDisplayOption(driver, 'Reset');
+    if (!resetOk) {
+      throw new Error('clickDisplayOption: Reset button not found — cannot guarantee clean state for next test');
+    }
     // Give Yew one frame to re-render after the Reset action.
     await debugHelper.wait(500);
   }

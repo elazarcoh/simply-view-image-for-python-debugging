@@ -1122,10 +1122,11 @@ export class DebugTestHelper {
   // =============================================================================
 
   /**
-   * Capture the rendered canvas (#gl-canvas) as a Jimp image for pixel verification.
+   * Capture the rendered view container (.view-container) as a Jimp image for pixel verification.
+   * Falls back to null if the element is unavailable or the screenshot fails.
    *
    * Waits briefly for the WebGL render to complete, then takes an element screenshot
-   * of the canvas inside the webview iframe. Returns null if the canvas is not found.
+   * of the view container inside the webview iframe.
    *
    * @param renderWaitMs - Extra time (ms) to wait for the WebGL render before capturing.
    */

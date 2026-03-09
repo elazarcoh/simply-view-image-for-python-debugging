@@ -308,20 +308,33 @@ export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | n
     await driver.executeScript('window.dispatchEvent(new Event(\'resize\'))');
     await driver.sleep(400);
 
-    const canvasElements = await driver.findElements(By.css('#gl-canvas'));
-    if (canvasElements.length === 0) {
-      DebugTestHelper.logger.warn('captureCanvasImage: #gl-canvas not found');
-      return null;
+    // Try .view-container first: this is the main grid cell (no sidebar, no toolbar).
+    // Its element screenshot is already cropped to the rendering area.
+    let base64: string | null = null;
+    const viewContainerEls = await driver.findElements(By.css('.view-container'));
+    if (viewContainerEls.length > 0) {
+      base64 = await viewContainerEls[0].takeScreenshot().catch(() => null);
+      DebugTestHelper.logger.debug('captureCanvasImage: used .view-container');
     }
-
-    const base64 = await canvasElements[0].takeScreenshot();
     if (!base64) {
-      DebugTestHelper.logger.warn('captureCanvasImage: empty screenshot returned');
+      // Fallback: #gl-canvas covers the full webview viewport (includes sidebar).
+      const canvasEls = await driver.findElements(By.css('#gl-canvas'));
+      if (canvasEls.length === 0) {
+        DebugTestHelper.logger.warn('captureCanvasImage: neither .view-container nor #gl-canvas found');
+        return null;
+      }
+      base64 = await canvasEls[0].takeScreenshot().catch(() => null);
+      DebugTestHelper.logger.debug('captureCanvasImage: used #gl-canvas (fallback)');
+    }
+    if (!base64) {
+      DebugTestHelper.logger.warn('captureCanvasImage: screenshot returned empty');
       return null;
     }
 
     const img = await Jimp.fromBuffer(Buffer.from(base64, 'base64'));
-    DebugTestHelper.logger.info(`captureCanvasImage: ${img.width}×${img.height}`);
+    const preCrop = `${img.width}×${img.height}`;
+    img.autocrop({ tolerance: 0.05, leaveBorder: 2 });
+    DebugTestHelper.logger.info(`captureCanvasImage: ${preCrop} → ${img.width}×${img.height} (autocropped)`);
     return img;
   }
   finally {
@@ -368,14 +381,11 @@ export async function waitForCanvasToRender(
   while (Date.now() < deadline) {
     const img = await captureCanvasImage(driver);
     if (img !== null) {
-      // Sample from the render area only (x > 0.50), which is right of the
-      // Image Watch sidebar that occupies the left ~44% of the canvas screenshot.
-      // Sampling the sidebar would give false-positive luminance from variable
-      // name text even when no image has been rendered yet.
+      // Sample three strips across the render area (sidebar is no longer in the screenshot)
       const points = [
-        sampleRegion(img, 0.50, 0.35, 0.14, 0.30), // left portion of render area
-        sampleRegion(img, 0.65, 0.35, 0.14, 0.30), // centre of render area
-        sampleRegion(img, 0.82, 0.35, 0.14, 0.30), // right portion of render area
+        sampleRegion(img, 0.10, 0.30, 0.20, 0.40),
+        sampleRegion(img, 0.40, 0.30, 0.20, 0.40),
+        sampleRegion(img, 0.70, 0.30, 0.20, 0.40),
       ];
       const maxLum = Math.max(...points.map(luminance));
       DebugTestHelper.logger.debug(

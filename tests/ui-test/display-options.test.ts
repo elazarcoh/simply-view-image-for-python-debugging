@@ -115,11 +115,12 @@ describe('display options tests', () => {
       if (capturedRed) {
         const { img: imgAfterRed, annotator: annotatorRed } = capturedRed;
         try {
-          const leftAfterRed = sampleRegion(imgAfterRed, 0.05, 0.2, 0.25, 0.6);
-          const middleAfterRed = sampleRegion(imgAfterRed, 0.38, 0.2, 0.25, 0.6);
+          // After autocrop: left red band x≈0.0–0.43, middle green band x≈0.43–0.86.
+          const leftAfterRed = sampleRegion(imgAfterRed, 0.05, 0.25, 0.35, 0.40);
+          const middleAfterRed = sampleRegion(imgAfterRed, 0.48, 0.25, 0.35, 0.40);
           DebugTestHelper.logger.info(`Red filter — left: ${JSON.stringify(leftAfterRed)}, middle: ${JSON.stringify(middleAfterRed)}`);
-          annotatorRed.record(0.05, 0.2, 0.25, 0.6, leftAfterRed, () => assertDominantChannel(leftAfterRed, 'r', 40, 'left region after red channel filter'), 'left-red');
-          annotatorRed.record(0.38, 0.2, 0.25, 0.6, middleAfterRed, () => assertBrighterThan(leftAfterRed, middleAfterRed, 40, 'left/red brighter than middle/green after red filter'), 'middle-green-dark');
+          annotatorRed.record(0.05, 0.25, 0.35, 0.40, leftAfterRed, () => assertDominantChannel(leftAfterRed, 'r', 40, 'left region after red channel filter'), 'left-red');
+          annotatorRed.record(0.48, 0.25, 0.35, 0.40, middleAfterRed, () => assertBrighterThan(leftAfterRed, middleAfterRed, 40, 'left/red brighter than middle/green after red filter'), 'middle-green-dark');
         }
         finally {
           await annotatorRed.saveHtml();
@@ -206,13 +207,13 @@ describe('display options tests', () => {
         if (capturedAfter) {
           const { img: imgAfterBgr, annotator: annotatorAfter } = capturedAfter;
           try {
-            // bgr_test right half is stored as BGR-red ([0,0,255]) which
-            // the extension displays as blue before swap (b>r), and red after swap (r>b).
-            const rightBefore = sampleRegion(imgBeforeBgr, 0.55, 0.2, 0.35, 0.6);
-            const rightAfter = sampleRegion(imgAfterBgr, 0.55, 0.2, 0.35, 0.6);
+          // bgr_test right half (x≈0.64–0.86): channel[0]=255 displays as Red before
+          // swap, and Blue after swap (BGR→RGB reinterpretation).
+            const rightBefore = sampleRegion(imgBeforeBgr, 0.65, 0.25, 0.20, 0.40);
+            const rightAfter = sampleRegion(imgAfterBgr, 0.65, 0.25, 0.20, 0.40);
             DebugTestHelper.logger.info(`BGR swap right half — before: ${JSON.stringify(rightBefore)}, after: ${JSON.stringify(rightAfter)}`);
-            annotatorBefore.addRegion(0.55, 0.2, 0.35, 0.6, rightBefore, 'right-before-swap');
-            annotatorAfter.record(0.55, 0.2, 0.35, 0.6, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'b', 'r', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
+            annotatorBefore.addRegion(0.65, 0.25, 0.20, 0.40, rightBefore, 'right-before-swap');
+            annotatorAfter.record(0.65, 0.25, 0.20, 0.40, rightAfter, () => assertChannelSwapped(rightBefore, rightAfter, 'r', 'b', 40, 'right region after Swap RGB/BGR'), 'right-after-swap');
           }
           finally {
             await annotatorAfter.saveHtml();

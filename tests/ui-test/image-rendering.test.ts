@@ -86,8 +86,15 @@ describe('image rendering verification', () => {
     await debugHelper.wait(1000);
     // Focus the Image View panel — activating the tab triggers a re-render.
     await debugHelper.getWebviewEditor();
-    // Give the webview extra time to fully render the image and its display options.
-    await debugHelper.wait(1500);
+    // Give the webview time to fully initialize.
+    await debugHelper.wait(1000);
+    // Click "Reset" to warm up the WebGL rendering loop.
+    // Without a button click, requestAnimationFrame may be throttled in a freshly-opened
+    // webview, leaving the canvas blank. Clicking any display-option button causes Yew
+    // to call requestAnimationFrame at full speed. "Reset" has no visual side-effect when
+    // the image is already at its default display settings.
+    const driver = VSBrowser.instance.driver;
+    await clickDisplayOption(driver, 'Reset');
   }
 
   // ---------------------------------------------------------------------------

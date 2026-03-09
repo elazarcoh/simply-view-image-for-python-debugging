@@ -287,12 +287,8 @@ function escapeHtml(s: string): string {
 }
 
 /**
- * Capture the rendered canvas (`#gl-canvas`) as a decoded Jimp image.
- *
- * Uses WebDriver element screenshot, which captures the composited screen
- * output — no need for `preserveDrawingBuffer` on the WebGL context.
- *
- * Returns null if the canvas could not be found or the screenshot failed.
+ * Capture the rendered view container (`.view-container`) as a decoded Jimp image.
+ * Returns null if the element is not found or screenshot fails.
  */
 export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | null> {
   const switched = await switchToWebviewFrame(driver);
@@ -313,21 +309,18 @@ export async function captureCanvasImage(driver: WebDriver): Promise<JimpImg | n
     let base64: string | null = null;
     const viewContainerEls = await driver.findElements(By.css('.view-container'));
     if (viewContainerEls.length > 0) {
-      base64 = await viewContainerEls[0].takeScreenshot().catch(() => null);
-      DebugTestHelper.logger.debug('captureCanvasImage: used .view-container');
-    }
-    if (!base64) {
-      // Fallback: #gl-canvas covers the full webview viewport (includes sidebar).
-      const canvasEls = await driver.findElements(By.css('#gl-canvas'));
-      if (canvasEls.length === 0) {
-        DebugTestHelper.logger.warn('captureCanvasImage: neither .view-container nor #gl-canvas found');
+      base64 = await viewContainerEls[0].takeScreenshot().catch((err: unknown) => {
+        DebugTestHelper.logger.warn(`captureCanvasImage: .view-container screenshot failed: ${String(err)}`);
         return null;
+      });
+      if (base64) {
+        DebugTestHelper.logger.debug('captureCanvasImage: used .view-container');
       }
-      base64 = await canvasEls[0].takeScreenshot().catch(() => null);
-      DebugTestHelper.logger.debug('captureCanvasImage: used #gl-canvas (fallback)');
     }
     if (!base64) {
-      DebugTestHelper.logger.warn('captureCanvasImage: screenshot returned empty');
+      DebugTestHelper.logger.warn(
+        'captureCanvasImage: .view-container not available; aborting — test coordinates are calibrated for .view-container geometry only',
+      );
       return null;
     }
 
@@ -367,10 +360,8 @@ export async function captureAnnotatedCanvas(
  * asynchronously after "View Image" is clicked. The canvas stays dark
  * (~lum 13) until the first render completes.
  *
- * Samples only the central band of the canvas (y=35–65%, x=15–85%) to avoid
- * VS Code toolbar/button chrome that may be visible at the canvas edges in the
- * element screenshot. These toolbar pixels can produce a false-positive
- * luminance value (~44) on an otherwise dark canvas.
+ * Samples three discrete strips across the render area (x=0.10–0.30, 0.40–0.60, 0.70–0.90)
+ * to avoid VS Code chrome at the edges producing false-positive luminance values.
  */
 export async function waitForCanvasToRender(
   driver: WebDriver,

@@ -27,44 +27,34 @@ export interface RgbColor {
 export type Channel = 'r' | 'g' | 'b';
 
 /**
- * Switch into the VS Code webview iframe (handles both levels used by VS Code webviews).
- * Returns true if successfully switched into the inner webview content frame.
+ * Switch into the VS Code webview iframe all the way to the user HTML layer.
+ *
+ * VS Code webviews use a 3-level iframe structure:
+ *   Level 1: main window → <iframe class="webview [ready]"> (outer container)
+ *   Level 2: <iframe src="vscode-webview://..."> (VS Code content manager)
+ *   Level 3: <iframe id="active-frame"> (actual user HTML — buttons/canvas live here)
+ *
+ * Clicking elements found from level 2 fails with ElementClickInterceptedError
+ * because the #active-frame iframe intercepts the click. We must navigate all
+ * the way to level 3.
+ *
+ * Returns true if successfully switched into the innermost user-content frame.
  */
 async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
   try {
+    // Level 1 → 2: find the outer webview iframe in the main window.
     const iframes = await driver.findElements(By.css('iframe'));
-    DebugTestHelper.logger.debug(`switchToWebviewFrame: found ${iframes.length} iframes`);
+    DebugTestHelper.logger.debug(`switchToWebviewFrame: found ${iframes.length} iframes at main level`);
 
+    let outerSwitched = false;
     for (const iframe of iframes) {
       try {
         const className = await iframe.getAttribute('class');
         if (className && className.includes('webview')) {
           await driver.switchTo().frame(iframe);
-
-          // VS Code webviews nest the actual content in a second iframe
-          // (src="vscode-webview://..."). Wait up to 8 seconds for it to appear —
-          // on a fresh session the inner iframe may still be loading.
-          let nestedIframe = null;
-          for (let attempt = 0; attempt < 16; attempt++) {
-            const nestedIframes = await driver.findElements(By.css('iframe'));
-            if (nestedIframes.length > 0) {
-              nestedIframe = nestedIframes[0];
-              DebugTestHelper.logger.debug(`switchToWebviewFrame: nested iframe found after ${attempt * 500}ms`);
-              break;
-            }
-            await driver.sleep(500);
-          }
-
-          if (nestedIframe) {
-            await driver.switchTo().frame(nestedIframe);
-            DebugTestHelper.logger.debug('switchToWebviewFrame: switched to nested content iframe');
-          }
-          else {
-            // Some VS Code versions load content directly in the outer iframe.
-            DebugTestHelper.logger.debug('switchToWebviewFrame: no nested iframe found, using outer frame');
-          }
-
-          return true;
+          outerSwitched = true;
+          DebugTestHelper.logger.debug('switchToWebviewFrame: switched to outer webview iframe');
+          break;
         }
       }
       catch {
@@ -72,8 +62,55 @@ async function switchToWebviewFrame(driver: WebDriver): Promise<boolean> {
       }
     }
 
-    DebugTestHelper.logger.warn('switchToWebviewFrame: no webview iframe found');
-    return false;
+    if (!outerSwitched) {
+      DebugTestHelper.logger.warn('switchToWebviewFrame: no outer webview iframe found');
+      return false;
+    }
+
+    // Level 2 → 3: find the vscode-webview:// content-manager iframe.
+    // Wait up to 8 s on fresh sessions.
+    let level2Frame = null;
+    for (let attempt = 0; attempt < 16; attempt++) {
+      const nested = await driver.findElements(By.css('iframe'));
+      if (nested.length > 0) {
+        level2Frame = nested[0];
+        DebugTestHelper.logger.debug(`switchToWebviewFrame: level-2 iframe found after ${attempt * 500}ms`);
+        break;
+      }
+      await driver.sleep(500);
+    }
+
+    if (!level2Frame) {
+      DebugTestHelper.logger.debug('switchToWebviewFrame: no level-2 iframe; using outer frame');
+      return true;
+    }
+
+    await driver.switchTo().frame(level2Frame);
+    DebugTestHelper.logger.debug('switchToWebviewFrame: switched to level-2 (vscode-webview://)');
+
+    // Level 3: #active-frame contains the actual user HTML (Yew app, buttons, canvas).
+    // Without switching here, clicks are intercepted by the vscode-webview:// iframe
+    // boundary (ElementClickInterceptedError). Wait up to 15 s for it to load.
+    let activeFrame = null;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const frames = await driver.findElements(By.id('active-frame'));
+      if (frames.length > 0) {
+        activeFrame = frames[0];
+        DebugTestHelper.logger.debug(`switchToWebviewFrame: #active-frame found after ${attempt * 500}ms`);
+        break;
+      }
+      await driver.sleep(500);
+    }
+
+    if (activeFrame) {
+      await driver.switchTo().frame(activeFrame);
+      DebugTestHelper.logger.debug('switchToWebviewFrame: switched to #active-frame (user HTML)');
+    }
+    else {
+      DebugTestHelper.logger.debug('switchToWebviewFrame: no #active-frame; using vscode-webview:// frame');
+    }
+
+    return true;
   }
   catch (error) {
     DebugTestHelper.logger.warn(`switchToWebviewFrame: error — ${error}`);

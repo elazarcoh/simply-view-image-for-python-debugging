@@ -9,10 +9,14 @@ use yew::prelude::*;
 use yewdux::{prelude::use_selector, use_selector_with_deps, Dispatch};
 
 use crate::{
-    application_state::app_state::{AppState, StoreAction, UpdateGlobalDrawingOptions},
+    application_state::{
+        app_state::{AppState, OverlayAction, StoreAction, UpdateGlobalDrawingOptions},
+        images::DrawingContext,
+        views::OverlayItem,
+    },
     coloring::Coloring,
     colormap::ColorMapKind,
-    common::{AppMode, Image, ViewId},
+    common::{AppMode, CurrentlyViewing, Image, SizeU32, ViewId},
     components::{checkbox::Checkbox, display_options::DisplayOption, icon_button::IconButton},
     vscode::vscode_requests::VSCodeRequests,
 };
@@ -110,6 +114,281 @@ pub fn HeatmapColormapDropdown(props: &HeatmapColormapDropdownProps) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
+pub struct OverlayMenuItemProps {
+    overlay: OverlayItem,
+}
+
+#[function_component]
+pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
+    let OverlayMenuItemProps { overlay } = props;
+    let overlay = overlay.clone();
+
+    let info = use_selector_with_deps(
+        |state: &AppState, overlay: &OverlayItem| {
+            let images = state.images.borrow();
+            let image = images
+                .get(&overlay.id)
+                .unwrap_or_else(|| panic!("Image with id {:?} not found", overlay.id));
+            if let Image::Full(info) = image {
+                info.clone()
+            } else {
+                panic!("Overlay item is not a full image: {:?}", overlay.id);
+            }
+        },
+        overlay.clone(),
+    );
+
+    let cv = use_selector_with_deps(
+        move |state: &AppState, view_id: &ViewId| {
+            state.image_views.borrow().get_currently_viewing(*view_id)
+        },
+        overlay.view_id,
+    );
+    let cv_image_id = cv.as_ref().as_ref().map(|cv| cv.id().clone());
+    if cv_image_id.is_none() {
+        log::warn!(
+            "OverlayMenuItem: No currently viewing image found for view_id {:?}",
+            overlay.view_id
+        );
+        return html! {};
+    }
+    let cv_image_id = cv_image_id.unwrap();
+    let view_id = overlay.view_id;
+
+    let overlay_expression = use_selector_with_deps(
+        |state: &AppState, overlay_id| {
+            let images = state.images.borrow();
+            let info = images
+                .get(overlay_id)
+                .unwrap_or_else(|| panic!("Image with id {:?} not found", overlay_id))
+                .minimal();
+            info.expression.clone()
+        },
+        overlay.id.clone(),
+    );
+
+    let same_size = use_selector_with_deps(
+        {
+            let cv_image_id = cv_image_id.clone();
+            move |state: &AppState, overlay_id| {
+                let images = state.images.borrow();
+                let overlay_size = images.get(overlay_id).and_then(|image| {
+                    if let Image::Full(info) = image {
+                        Some(SizeU32 {
+                            width: info.width,
+                            height: info.height,
+                        })
+                    } else {
+                        None
+                    }
+                });
+                let cv_size = images.get(&cv_image_id).and_then(|image| {
+                    if let Image::Full(info) = image {
+                        Some(SizeU32 {
+                            width: info.width,
+                            height: info.height,
+                        })
+                    } else {
+                        None
+                    }
+                });
+                overlay_size == cv_size
+            }
+        },
+        overlay.id.clone(),
+    );
+
+    let drawing_options = use_selector_with_deps(
+        |state: &AppState, (image_id, drawing_context)| {
+            state
+                .drawing_options
+                .borrow()
+                .get(image_id, drawing_context)
+                .cloned()
+                .unwrap_or_default()
+        },
+        (overlay.id.clone(), DrawingContext::Overlay),
+    );
+
+    let dispatch = Dispatch::<AppState>::global();
+    let hide_button = html! {
+        <IconButton
+            aria_label={"Hide Overlay"}
+            title={"Hide Overlay"}
+            icon={"codicon codicon-eye"}
+            onclick={dispatch.apply_callback({
+                let cv_image_id = cv_image_id.clone();
+                move |_| {
+                    OverlayAction::Hide {
+                        view_id,
+                        image_id: cv_image_id.clone()
+                    }
+                }
+            })}
+        />
+    };
+    let show_button = html! {
+        <IconButton
+            aria_label={"Show Overlay"}
+            title={"Show Overlay"}
+            icon={"codicon codicon-eye-closed"}
+            onclick={dispatch.apply_callback({
+                let cv_image_id = cv_image_id.clone();
+                move |_| {
+                    OverlayAction::Show {
+                        view_id,
+                        image_id: cv_image_id.clone()
+                    }
+                }
+            })}
+        />
+    };
+    let show_hide_button = if overlay.hidden {
+        show_button
+    } else {
+        hide_button
+    };
+
+    let alpha_state = use_state(|| 1.0);
+    use_effect_with(drawing_options.global_alpha, {
+        let alpha_state = alpha_state.clone();
+        move |alpha| {
+            alpha_state.set(*alpha);
+            || ()
+        }
+    });
+    let alpha_throttle = {
+        let alpha_state = alpha_state.clone();
+        let overlay_id = overlay.id.clone();
+        move || {
+            dispatch.apply(OverlayAction::SetAlpha {
+                image_id: overlay_id.clone(),
+                alpha: *alpha_state,
+            });
+        }
+    };
+    let alpha_slider = html! {
+        <input
+            class="slider"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={alpha_state.to_string()}
+            oninput={
+                Callback::from({
+                    let alpha_state = alpha_state.clone();
+                    move |e: InputEvent| {
+                        let value = e
+                            .target()
+                            .unwrap()
+                            .dyn_ref::<web_sys::HtmlInputElement>()
+                            .unwrap()
+                            .value();
+                        if let Ok(value) = value.parse::<f32>() {
+                            alpha_state.set(value);
+                            alpha_throttle();
+                        }
+                    }
+                })
+            }
+        />
+    };
+
+    let display_options = html! {
+        <DisplayOption entry={( *info ).clone()} drawing_context={DrawingContext::Overlay} />
+    };
+
+    let maybe_warning = if !*same_size {
+        html! {
+            <span class={classes!("codicon", "codicon-warning", css!("color: var(--vscode-editorWarning-foreground);"))}
+            title="Overlay image size does not match the currently viewed image size." />
+        }
+    } else {
+        html! {}
+    };
+
+    let style = use_style!(
+        r#"
+            position: relative;
+
+            .top {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                flex-direction: row;
+                gap: 10px;
+            }
+
+            .overlay-id {
+                font-size: 0.9em;
+                color: var(--vscode-foreground);
+            }
+
+            .controls-container {
+                z-index: 10;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                transform: translateY(100%);
+                background-color: var(--vscode-sideBar-background);
+                border: 1px solid var(--vscode-panel-border);
+                padding: 5px;
+                min-width: max-content;
+            }
+
+            &[data-hidden="true"] .controls-container {
+                display: none;
+            }
+
+            .slider-container {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                margin: 0.3em 0;
+            }
+
+            .slider-container label {
+                font-size: 0.75rem;
+                line-height: 0.6em;
+            }
+
+            .slider {
+                width: 100px;
+                margin-left: 10px;
+            }
+        "#
+    );
+
+    html! {
+        <div
+            class={style}
+            data-hidden={overlay.hidden.to_string()}
+        >
+            <div class="top">
+                <span>
+                    {show_hide_button}
+                </span>
+                <span class="overlay-expression">
+                    {overlay_expression}
+                </span>
+                { maybe_warning }
+            </div>
+            <div class="controls-container">
+                <div>
+                    { display_options }
+                </div>
+                <div class="slider-container">
+                    <label for="alpha-slider">{ "Alpha:" }</label>
+                    { alpha_slider }
+                </div>
+            </div>
+        </div>
+    }
+}
+
+#[derive(PartialEq, Properties)]
 pub(crate) struct MainToolbarProps {}
 
 #[function_component]
@@ -126,7 +405,13 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         |state: &AppState, cv| {
             cv.as_ref()
                 .as_ref()
-                .map(|cv| state.drawing_options.borrow().get_or_default(cv.id()))
+                .and_then(|cv| {
+                    state
+                        .drawing_options
+                        .borrow()
+                        .get(cv.id(), &DrawingContext::BaseImage)
+                        .cloned()
+                })
                 .unwrap_or_default()
         },
         cv.clone(),
@@ -134,7 +419,7 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
 
     let app_mode = use_selector(|state: &AppState| state.app_mode);
 
-    let cv_image_info = use_selector_with_deps(
+    let cv_image_info_in_single_mode = use_selector_with_deps(
         |state: &AppState, (cv, app_mode)| {
             if **app_mode == AppMode::SingleImage {
                 cv.as_ref()
@@ -145,6 +430,32 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             }
         },
         (cv.clone(), app_mode.clone()),
+    );
+
+    // Colorbar visibility
+    let display_colorbar =
+        use_selector(|state: &AppState| state.global_drawing_options.display_colorbar);
+    let dispatch = Dispatch::<AppState>::global();
+    let on_colorbar_change = Callback::from(move |checked: bool| {
+        dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
+            UpdateGlobalDrawingOptions::DisplayColorbar(checked),
+        ));
+    });
+
+    // Overlay related
+    let overlay = use_selector_with_deps(
+        {
+            move |state: &AppState, cv: &Option<CurrentlyViewing>| {
+                cv.as_ref().and_then(|cv| {
+                    state
+                        .overlays
+                        .borrow()
+                        .get_image_overlay(ViewId::Primary, cv.id())
+                        .cloned()
+                })
+            }
+        },
+        (*cv).clone(),
     );
 
     let style = use_style!(
@@ -201,15 +512,6 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
         "#
     );
 
-    let display_colorbar =
-        use_selector(|state: &AppState| state.global_drawing_options.display_colorbar);
-    let dispatch = Dispatch::<AppState>::global();
-    let on_colorbar_change = Callback::from(move |checked: bool| {
-        dispatch.apply(StoreAction::UpdateGlobalDrawingOptions(
-            UpdateGlobalDrawingOptions::DisplayColorbar(checked),
-        ));
-    });
-
     // Get image info for save button
     let current_image_info = use_selector_with_deps(
         |state: &AppState, cv| {
@@ -224,10 +526,7 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
     let on_save_click = Callback::from(move |_: MouseEvent| {
         if let Some(ref image) = *current_image_info_for_save {
             let minimal = image.minimal();
-            VSCodeRequests::save_image(
-                minimal.image_id.clone(),
-                minimal.expression.clone(),
-            );
+            VSCodeRequests::save_image(minimal.image_id.clone(), minimal.expression.clone());
         }
     });
 
@@ -236,10 +535,11 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
     html! {
         <div class={style}>
 
-            if let Some(ref cv_image_info) = cv_image_info.as_ref() {
+            if let Some(ref cv_image_info) = cv_image_info_in_single_mode.as_ref() {
                 if let Image::Full(image) = cv_image_info {
                         <DisplayOption
                             entry={image.clone()}
+                            drawing_context={DrawingContext::BaseImage}
                         />
                 }
             }
@@ -251,8 +551,11 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
             >
                 {"Colorbar"}
             </Checkbox>
+
             <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
+
             <HeatmapColormapDropdown disabled={drawing_options.coloring != Coloring::Heatmap} />
+
             <div class={classes!("vscode-vertical-divider", css!("height: 75%;"))} />
             <IconButton
                 icon="codicon codicon-save"
@@ -260,6 +563,13 @@ pub(crate) fn MainToolbar(props: &MainToolbarProps) -> Html {
                 title={Some(AttrValue::from("Save Image"))}
                 disabled={Some(!has_image)}
             />
+
+            if let Some(overlay) = overlay.as_ref() {
+                <div class={classes!("overlay-menu-item")}>
+                    <OverlayMenuItem overlay={overlay.clone()} />
+                </div>
+            }
+
             <div class={classes!("codicon", "codicon-question", "help")} >
                 <span class={classes!("tooltiptext")}>
                     <p>{"Click + Drag to pan"}</p>

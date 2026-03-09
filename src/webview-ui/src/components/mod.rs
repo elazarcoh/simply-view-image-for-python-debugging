@@ -18,5 +18,7 @@ pub(crate) mod status_bar;
 mod types;
 pub(crate) mod view_container;
 pub(crate) mod viewable_info_container;
+pub(crate) mod context_menu;
+pub(crate) mod context_menu_view;
 
 pub(crate) use types::ToggleState;

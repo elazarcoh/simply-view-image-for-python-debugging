@@ -9,6 +9,8 @@ import { RequestsManager } from './RequestsManager';
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
+export const RESPONSE_TIMEOUT_MS = 30_000;
+
 @Service()
 export class SocketServer {
   public readonly server: net.Server;
@@ -47,6 +49,10 @@ export class SocketServer {
 
   get isListening() {
     return this.server.listening;
+  }
+
+  get pendingResponseCount() {
+    return this.outgoingRequestsManager.count;
   }
 
   get portNumber() {
@@ -91,13 +97,6 @@ export class SocketServer {
           if (messageLength > MAX_MESSAGE_SIZE) {
             logDebug(
               `Rejecting message: length ${messageLength} exceeds max ${MAX_MESSAGE_SIZE}`,
-            );
-            socket.destroy();
-            return;
-          }
-          if (messageLength < HEADER_LENGTH) {
-            logDebug(
-              `Rejecting message: length ${messageLength} shorter than header ${HEADER_LENGTH}`,
             );
             socket.destroy();
             return;
@@ -159,11 +158,26 @@ export class SocketServer {
     });
   }
 
+  /** @internal */
+  simulateIncomingData(header: MessageChunkHeader, data: Buffer): void {
+    this.outgoingRequestsManager.onData(header, data);
+  }
+
   onResponse(
     requestId: number,
     callback: (header: MessageChunkHeader, data: Buffer) => void,
+    onTimeout?: () => void,
   ) {
+    const timer = setTimeout(() => {
+      if (this.outgoingRequestsManager.hasRequest(requestId)) {
+        logDebug(`Socket response timeout after ${RESPONSE_TIMEOUT_MS}ms for request ${requestId}`);
+        this.outgoingRequestsManager.unsubscribeRequest(requestId);
+        onTimeout?.();
+      }
+    }, RESPONSE_TIMEOUT_MS);
+
     this.outgoingRequestsManager.subscribeRequest(requestId, (header, data) => {
+      clearTimeout(timer);
       this.outgoingRequestsManager.unsubscribeRequest(requestId);
       callback(header, data);
     });

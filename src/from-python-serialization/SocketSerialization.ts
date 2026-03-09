@@ -110,6 +110,8 @@ export async function serializePythonObjectUsingSocketServer(
     socketServer.onResponse(requestId, (header, data) => {
       logDebug('Received response from python with reqId ', requestId);
       resolve(Ok({ header, data }));
+    }, () => {
+      resolve(Err(`Socket response timeout for request ${requestId}`));
     });
   });
   const result = joinResult(await evaluateInPython(code, session));

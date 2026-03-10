@@ -154,11 +154,16 @@ describe('socketServer.onResponse — integration (real server)', () => {
   const clients: net.Socket[] = [];
   const serverSideConnections = new Set<net.Socket>();
 
-  async function connectClient(port: number): Promise<net.Socket> {
+  async function connectClient(port: number, serverSecret: string): Promise<net.Socket> {
     const client = net.createConnection({ port });
     clients.push(client);
     await new Promise<void>((resolve, reject) => {
-      client.once('connect', resolve);
+      client.once('connect', () => {
+        // Send auth token first (required by socket server)
+        const secret = Buffer.from(serverSecret, 'hex');
+        client.write(secret);
+        resolve();
+      });
       client.once('error', reject);
     });
     return client;
@@ -207,7 +212,7 @@ describe('socketServer.onResponse — integration (real server)', () => {
       server.onResponse(requestId, (_header, data) => resolve(data));
     });
 
-    const client = await connectClient(server.portNumber);
+    const client = await connectClient(server.portNumber, server.secretHex);
     client.write(chunk);
 
     const received = await responsePromise;

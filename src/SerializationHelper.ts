@@ -1,18 +1,44 @@
 import type * as vscode from 'vscode';
 import type { Result } from './utils/Result';
-import { chmodSync, existsSync, mkdirSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import * as fsp from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
 import * as path from 'node:path';
+import process from 'node:process';
 import Container from 'typedi';
 import { getConfiguration } from './config';
 import { EXTENSION_NAME } from './globals';
-import { logDebug } from './Logging';
+import { logDebug, logWarn } from './Logging';
 import { Err, Ok } from './utils/Result';
+
+/**
+ * Returns a user-specific temporary directory that is safe for multi-user systems.
+ *
+ * Tries in order:
+ * 1. XDG_RUNTIME_DIR (Linux/modern systems) — already per-user with proper permissions
+ * 2. User-specific /tmp directory (cross-platform fallback)
+ *
+ * This ensures each user gets an isolated directory where they can safely write without
+ * interfering with other users' work.
+ */
+function getUserSpecificTempDir(): string {
+  // Try XDG_RUNTIME_DIR first (Linux/modern systems, already per-user)
+  const xdgRuntimeDir = process.env.XDG_RUNTIME_DIR;
+  if (xdgRuntimeDir && existsSync(xdgRuntimeDir)) {
+    logDebug(`Using XDG_RUNTIME_DIR: ${xdgRuntimeDir}`);
+    return path.join(xdgRuntimeDir, EXTENSION_NAME, 'images');
+  }
+
+  // Fallback: create user-specific directory in /tmp (e.g., /tmp/svifpd-1000/images)
+  const uid = process.getuid?.() ?? userInfo().uid;
+  const userSpecificTmp = path.join(tmpdir(), `${EXTENSION_NAME}-${uid}`, 'images');
+  logDebug(`Using user-specific temp: ${userSpecificTmp}`);
+  return userSpecificTmp;
+}
 
 function defaultSaveDir(): string {
   return (
-    Container.get('saveDir') ?? path.join(tmpdir(), EXTENSION_NAME, 'images')
+    Container.get('saveDir') ?? getUserSpecificTempDir()
   );
 }
 
@@ -32,8 +58,8 @@ export function setSaveLocation(context: vscode.ExtensionContext): void {
     );
   }
   else {
-    logDebug('Using tmp folder for saving files');
-    saveDir = path.join(tmpdir(), EXTENSION_NAME, 'images');
+    logDebug('Using tmp folder for saving files (multi-user safe)');
+    saveDir = getUserSpecificTempDir();
   }
 
   logDebug(`saveDir: ${saveDir}`);
@@ -43,7 +69,22 @@ export function setSaveLocation(context: vscode.ExtensionContext): void {
     logDebug('create save directory');
     mkdirSync(saveDir, { recursive: true });
     if (saveLocation === 'tmp' || saveLocation === undefined) {
-      chmodSync(saveDir, 0o777); // make the folder world writable for other users uses the extension
+      // Set restrictive permissions for temp directory (owner-only access)
+      chmodSync(saveDir, 0o700);
+    }
+  }
+  else if (saveLocation === 'tmp' || saveLocation === undefined) {
+    // If directory already exists, verify it has safe permissions (owner-only)
+    try {
+      const stats = statSync(saveDir);
+      const mode = stats.mode & 0o777;
+      if (mode !== 0o700) {
+        logWarn(`Temp directory has unexpected permissions ${mode.toString(8)}; fixing to 0o700`);
+        chmodSync(saveDir, 0o700);
+      }
+    }
+    catch (error) {
+      logWarn(`Could not verify permissions on ${saveDir}: ${error}`);
     }
   }
 

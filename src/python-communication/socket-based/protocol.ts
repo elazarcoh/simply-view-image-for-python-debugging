@@ -58,6 +58,9 @@ export const HEADER_LENGTH = Object.entries(BytesPerKey).reduce(
 /** Maximum allowed message size (256 MB). Prevents unbounded memory allocation from malformed or malicious headers. */
 export const MAX_MESSAGE_SIZE = 256 * 1024 * 1024;
 
+/** Length of the authentication secret in bytes. */
+export const AUTH_SECRET_LENGTH = 32;
+
 export enum Sender {
   Server = 0x01,
   Python = 0x02,

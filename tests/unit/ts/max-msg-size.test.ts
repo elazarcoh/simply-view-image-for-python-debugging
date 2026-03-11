@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import * as net from 'node:net';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HEADER_LENGTH,
   MAX_MESSAGE_SIZE,
@@ -258,8 +258,10 @@ describe('socketServer integration — MAX_MESSAGE_SIZE rejection', () => {
       const client = new net.Socket();
       const timer = setTimeout(() => reject(new Error('timed out waiting for socket close')), 5000);
       client.connect(port, '127.0.0.1', () => {
+        // Send auth token first (required by socket server)
+        const secret = Buffer.from(serverInstance!.secretHex, 'hex');
         const buf = buildBuffer({ messageLength: MAX_MESSAGE_SIZE + 1 });
-        client.write(buf);
+        client.write(Buffer.concat([secret, buf]));
       });
       client.once('close', () => {
         clearTimeout(timer);
@@ -293,8 +295,10 @@ describe('socketServer integration — MAX_MESSAGE_SIZE rejection', () => {
       const client = new net.Socket();
       const timer = setTimeout(() => reject(new Error('timed out')), 5000);
       client.connect(port, '127.0.0.1', () => {
+        // Send auth token first (required by socket server)
+        const secret = Buffer.from(serverInstance!.secretHex, 'hex');
         const buf = buildBuffer({ messageLength: MAX_MESSAGE_SIZE + 1 });
-        client.write(buf);
+        client.write(Buffer.concat([secret, buf]));
       });
       client.once('close', () => {
         clearTimeout(timer);
@@ -323,10 +327,13 @@ describe('socketServer integration — MAX_MESSAGE_SIZE rejection', () => {
       const client = new net.Socket();
       const timer = setTimeout(() => reject(new Error('timed out')), 5000);
       client.connect(port, '127.0.0.1', () => {
+        // Send auth token first (required by socket server)
+        const secret = Buffer.from(serverInstance!.secretHex, 'hex');
         // Send the full header split into two writes: first 4 bytes (messageLength),
         // then the rest.  After the second write the server has >= HEADER_LENGTH
         // bytes and should detect the oversized messageLength and destroy the socket.
         const buf = buildBuffer({ messageLength: MAX_MESSAGE_SIZE + 1 });
+        client.write(secret);
         client.write(buf.subarray(0, 4), () => {
           client.write(buf.subarray(4));
         });

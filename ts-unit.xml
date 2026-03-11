@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="104" failures="4" errors="0" time="50.866190686">
+    <testsuite name="tests/unit/ts/as-python-value.test.ts" timestamp="2026-03-10T22:04:37.076Z" hostname="runnervm0kj6c" tests="11" failures="0" errors="0" skipped="0" time="0.004879938">
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; wraps a plain string in single quotes" time="0.001100803">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; escapes a single quote inside a string" time="0.000295378">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; escapes a backslash inside a string" time="0.000152874">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; escapes backslash before single quote (both present)" time="0.000283917">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; escapes newlines" time="0.000171619">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; escapes carriage returns" time="0.000152973">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; handles an empty string" time="0.000185856">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; handles numbers as bare numeric literals" time="0.000235867">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; handles booleans as Python True/False" time="0.000319383">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; handles null as Python None" time="0.000180475">
+        </testcase>
+        <testcase classname="tests/unit/ts/as-python-value.test.ts" name="asPythonValue &gt; produces output that contains no unmatched single quotes" time="0.000376529">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/await-server-start.test.ts" timestamp="2026-03-10T22:04:37.079Z" hostname="runnervm0kj6c" tests="3" failures="0" errors="0" skipped="0" time="0.013373707">
+        <testcase classname="tests/unit/ts/await-server-start.test.ts" name="socketServer.start() await semantics &gt; fire-and-forget swallows synchronous errors (demonstrates the bug)" time="0.011532739">
+        </testcase>
+        <testcase classname="tests/unit/ts/await-server-start.test.ts" name="socketServer.start() await semantics &gt; awaited start propagates errors (demonstrates the fix)" time="0.000320495">
+        </testcase>
+        <testcase classname="tests/unit/ts/await-server-start.test.ts" name="socketServer.start() await semantics &gt; awaited start resolves on success" time="0.000158424">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/chunks.test.ts" timestamp="2026-03-10T22:04:37.080Z" hostname="runnervm0kj6c" tests="16" failures="0" errors="0" skipped="0" time="0.012574583">
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; isComplete() returns false on a new instance" time="0.001203754">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; single chunk messages &gt; isComplete() returns true after adding the single chunk" time="0.000434316">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; single chunk messages &gt; fullMessage() returns exact buffer that was added" time="0.00104492">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; multi-chunk messages (ordered) &gt; is not complete until all chunks are received" time="0.000526277">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; multi-chunk messages (ordered) &gt; is complete after all chunks arrive in order" time="0.000384534">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; multi-chunk messages (ordered) &gt; fullMessage() returns correct concatenation" time="0.000642532">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; multi-chunk messages (out-of-order) &gt; is complete even when chunks arrive out of order" time="0.000487104">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; multi-chunk messages (out-of-order) &gt; fullMessage() assembles in chunk-number order, not receive order" time="0.000626994">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; validation (error cases) &gt; throws when adding a duplicate chunk with different header fields" time="0.001483323">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; validation (error cases) &gt; throws when header chunkCount does not match constructor" time="0.00044164">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; validation (error cases) &gt; throws when header messageLength does not match constructor" time="0.000336585">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; validation (error cases) &gt; throws when declared chunkLength does not match buffer size" time="0.000351853">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; validation (error cases) &gt; throws when chunk number is out of valid range" time="0.000323421">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; fullMessage() and idempotency &gt; fullMessage() throws if called before all chunks are received" time="0.000358345">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; fullMessage() and idempotency &gt; adding the same chunk twice is idempotent" time="0.000642683">
+        </testcase>
+        <testcase classname="tests/unit/ts/chunks.test.ts" name="messageChunks &gt; integration: roundtrip &gt; reassembles original payload split into multiple chunks" time="0.000762436">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/deactivate.test.ts" timestamp="2026-03-10T22:04:37.084Z" hostname="runnervm0kj6c" tests="4" failures="0" errors="0" skipped="0" time="0.097316296">
+        <testcase classname="tests/unit/ts/deactivate.test.ts" name="socketServer.close() &gt; server starts and listens" time="0.013005674">
+        </testcase>
+        <testcase classname="tests/unit/ts/deactivate.test.ts" name="socketServer.close() &gt; close() stops listening" time="0.060910464">
+        </testcase>
+        <testcase classname="tests/unit/ts/deactivate.test.ts" name="socketServer.close() &gt; close() is idempotent" time="0.011383943">
+        </testcase>
+        <testcase classname="tests/unit/ts/deactivate.test.ts" name="socketServer.close() &gt; close() on never-started server is safe" time="0.010701967">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/max-msg-size.test.ts" timestamp="2026-03-10T22:04:37.085Z" hostname="runnervm0kj6c" tests="17" failures="3" errors="0" skipped="0" time="45.050854479">
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="protocol constants &gt; constant HEADER_LENGTH equals 26 bytes" time="0.001327905">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="protocol constants &gt; constant MAX_MESSAGE_SIZE equals 256 MB" time="0.000314433">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="protocol constants &gt; hEADER_LENGTH is less than MAX_MESSAGE_SIZE" time="0.000231981">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; buffer too small for header &gt; returns Err when buffer is empty" time="0.008145752">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; buffer too small for header &gt; returns Err when buffer is shorter than HEADER_LENGTH" time="0.001828839">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; buffer too small for header &gt; error message mentions buffer and header lengths" time="0.000752157">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; valid header — field round-trip &gt; parses a header-only message (chunkLength = 0) correctly" time="0.000965041">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; valid header — field round-trip &gt; parses a message with chunk data and returns it in content" time="0.001165022">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; valid header — field round-trip &gt; returns trailing bytes as rest when buffer contains more than one message" time="0.000559329">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; valid header — field round-trip &gt; all custom field values round-trip through the header" time="0.000358375">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; message size fields — server-side validation surface &gt; parses a header where messageLength exceeds MAX_MESSAGE_SIZE (server must reject it)" time="0.000434607">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; message size fields — server-side validation surface &gt; parses a header where messageLength is exactly MAX_MESSAGE_SIZE" time="0.000273297">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; message size fields — server-side validation surface &gt; parses a header where messageLength equals HEADER_LENGTH (minimal valid)" time="0.000185264">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="splitHeaderContentRest &gt; partial payload — full header but insufficient chunk data &gt; returns Err when header declares chunkLength=16 but only 4 bytes of payload follow" time="0.000622445">
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="socketServer integration — MAX_MESSAGE_SIZE rejection &gt; destroys the client socket when messageLength exceeds MAX_MESSAGE_SIZE" time="15.009279189">
+            <failure message="Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/unit/ts/max-msg-size.test.ts:252:3
+            </failure>
+            <failure message="Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with &quot;hookTimeout&quot;." type="Error">
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with &quot;hookTimeout&quot;.
+ ❯ tests/unit/ts/max-msg-size.test.ts:242:3
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="socketServer integration — MAX_MESSAGE_SIZE rejection &gt; does not invoke the message handler when messageLength exceeds MAX_MESSAGE_SIZE" time="15.016593161">
+            <failure message="Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/unit/ts/max-msg-size.test.ts:281:3
+            </failure>
+            <failure message="Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with &quot;hookTimeout&quot;." type="Error">
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with &quot;hookTimeout&quot;.
+ ❯ tests/unit/ts/max-msg-size.test.ts:242:3
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/ts/max-msg-size.test.ts" name="socketServer integration — MAX_MESSAGE_SIZE rejection &gt; sends oversized header in two chunks — still rejected once full header arrives" time="15.005103704">
+            <failure message="Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/unit/ts/max-msg-size.test.ts:317:3
+            </failure>
+            <failure message="Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with &quot;hookTimeout&quot;." type="Error">
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with &quot;hookTimeout&quot;.
+ ❯ tests/unit/ts/max-msg-size.test.ts:242:3
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/parser-escape.test.ts" timestamp="2026-03-10T22:04:37.092Z" hostname="runnervm0kj6c" tests="10" failures="0" errors="0" skipped="0" time="0.012944219">
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; parses a plain single-quoted string" time="0.003528781">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; parses a string containing escaped double quotes (bug fix)" time="0.000732299">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; parses a string with an escaped backslash" time="0.000467819">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; parses a string with multiple escaped double quotes" time="0.000590908">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; parses a string with both backslash and double quote" time="0.000390636">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; still parses a plain string without escapes correctly" time="0.000309073">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; stripReprQuoting: outer Python repr-quoting is stripped &gt; strips outer single quotes and parses the inner expression" time="0.001092709">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; stripReprQuoting: outer Python repr-quoting is stripped &gt; strips outer double quotes and parses inner single-quoted string" time="0.000244995">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; integration: roundtrip with Python sanitize output &gt; parses an empty string" time="0.000385466">
+        </testcase>
+        <testcase classname="tests/unit/ts/parser-escape.test.ts" name="parsePythonResult — escaped strings &gt; integration: roundtrip with Python sanitize output &gt; parses an Error response" time="0.002955636">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/path-traversal.test.ts" timestamp="2026-03-10T22:04:37.094Z" hostname="runnervm0kj6c" tests="14" failures="0" errors="0" skipped="0" time="0.026364433">
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; sanitization — variable names &gt; preserves a normal variable name unchanged" time="0.020448851">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; sanitization — variable names &gt; preserves a short simple name" time="0.000307751">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; sanitization — variable names &gt; preserves alphanumeric names with underscores and digits" time="0.000257107">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — unix separators &gt; blocks ../ traversal (stays inside saveDir)" time="0.000399081">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — unix separators &gt; blocks ../../ traversal (stays inside saveDir)" time="0.000250114">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — unix separators &gt; does not contain /etc/passwd after sanitizing ../../etc/passwd" time="0.00034465">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — windows backslash separators &gt; blocks ..\  traversal (stays inside saveDir)" time="0.000277054">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — windows backslash separators &gt; blocks ..\..\ traversal (stays inside saveDir)" time="0.000215931">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — bare dot sequences &gt; blocks bare &quot;..&quot; variable (single-level traversal)" time="0.000447471">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; path traversal — bare dot sequences &gt; blocks single &quot;.&quot; variable" time="0.000317039">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; null byte injection &gt; strips null bytes from variable names" time="0.000247509">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; integration — savePathFor with variable &gt; normal variable name produces path.join(saveDir, name)" time="0.000240146">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; integration — savePathFor with variable &gt; traversal variable does not escape saveDir" time="0.00019401">
+        </testcase>
+        <testcase classname="tests/unit/ts/path-traversal.test.ts" name="savePathHelper — path traversal prevention (S7) &gt; integration — savePathFor with variable &gt; expression objects use a short random id (not variable-based)" time="0.000334491">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/response-timeout.test.ts" timestamp="2026-03-10T22:04:37.097Z" hostname="runnervm0kj6c" tests="8" failures="1" errors="0" skipped="0" time="5.016781574">
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — timeout (unit, fake timers) &gt; starts with zero pending responses" time="0.003483567">
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — timeout (unit, fake timers) &gt; registers one pending response after onResponse is called" time="0.00122783">
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — timeout (unit, fake timers) &gt; fires onTimeout and cleans up the callback after timeout" time="0.00178321">
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — timeout (unit, fake timers) &gt; does not fire onTimeout when response arrives before timeout" time="0.001487702">
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — timeout (unit, fake timers) &gt; cleans up pending callback after successful response (no memory leak)" time="0.000909619">
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — timeout (unit, fake timers) &gt; callback is not called after timeout fires" time="0.000709748">
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — integration (real server) &gt; resolves callback when Python sends a real response over the socket" time="5.004785786">
+            <failure message="Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/unit/ts/response-timeout.test.ts:193:3
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/ts/response-timeout.test.ts" name="socketServer.onResponse — integration (real server) &gt; starts with zero pending responses" time="0.000487064">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/smoke.test.ts" timestamp="2026-03-10T22:04:37.099Z" hostname="runnervm0kj6c" tests="2" failures="0" errors="0" skipped="0" time="0.002495182">
+        <testcase classname="tests/unit/ts/smoke.test.ts" name="smoke &gt; framework is operational" time="0.001057593">
+        </testcase>
+        <testcase classname="tests/unit/ts/smoke.test.ts" name="smoke &gt; typescript types work" time="0.000254532">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/socket-auth.test.ts" timestamp="2026-03-10T22:04:37.100Z" hostname="runnervm0kj6c" tests="9" failures="0" errors="0" skipped="0" time="0.624230191">
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; secretHex property &gt; is a non-empty string" time="0.001574022">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; secretHex property &gt; has length AUTH_SECRET_LENGTH * 2" time="0.000925267">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; secretHex property &gt; contains only valid lowercase hex characters" time="0.000277334">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; secretHex property &gt; different SocketServer instances have different secrets" time="0.000850038">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; secretHex property &gt; returns the same secretHex on repeated accesses" time="0.000219497">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; integration — connection auth &gt; rejects connection with wrong secret (socket is destroyed)" time="0.012259028">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; integration — connection auth &gt; accepts connection with correct secret" time="0.203288231">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; integration — connection auth &gt; accepts connection when secret arrives in two fragments" time="0.301755985">
+        </testcase>
+        <testcase classname="tests/unit/ts/socket-auth.test.ts" name="socketServer — shared secret authentication (S4) &gt; integration — connection auth &gt; uses crypto.timingSafeEqual for comparison" time="0.101544526">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/ts/triple-quote-guard.test.ts" timestamp="2026-03-10T22:04:37.102Z" hostname="runnervm0kj6c" tests="10" failures="0" errors="0" skipped="0" time="0.004376084">
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; detects triple single quotes at start of string" time="0.001107856">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; detects triple single quotes in the middle" time="0.000248211">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; detects triple single quotes at end" time="0.000146652">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; does not flag safe Python code" time="0.000277065">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; does not flag content with only double quotes" time="0.000172109">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; does not flag one single quote" time="0.000109924">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; does not flag two consecutive single quotes" time="0.000168984">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; does not flag mixed double and single quotes" time="0.000123159">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; injection risk examples &gt; attacker input that would break exec(&apos;&apos;&apos;...&apos;&apos;&apos;)" time="0.000358777">
+        </testcase>
+        <testcase classname="tests/unit/ts/triple-quote-guard.test.ts" name="assertNoTripleQuotes (triple-quote injection guard) &gt; injection risk examples &gt; safe variable name is clean" time="0.000152733">
+        </testcase>
+    </testsuite>
+</testsuites>

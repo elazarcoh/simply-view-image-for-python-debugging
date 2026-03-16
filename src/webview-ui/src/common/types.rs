@@ -50,7 +50,7 @@ impl CurrentlyViewing {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub(crate) struct Size {
     pub width: f32,
     pub height: f32,
@@ -63,6 +63,12 @@ impl Size {
             height: height as _,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct SizeU32 {
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(tsify::Tsify, serde::Deserialize, Debug, Clone, PartialEq)]

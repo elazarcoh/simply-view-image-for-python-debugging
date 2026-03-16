@@ -3,7 +3,10 @@ use yew::prelude::*;
 use yewdux::{functional::use_selector, Dispatch};
 
 use crate::{
-    application_state::app_state::{AppState, ElementsStoreKey, StoreAction, UpdateDrawingOptions},
+    application_state::{
+        app_state::{AppState, ElementsStoreKey, StoreAction, UpdateDrawingOptions},
+        images::DrawingContext,
+    },
     common::ViewableObjectId,
     hooks::{use_drag, UseDragOptions},
 };
@@ -279,10 +282,12 @@ pub fn Colorbar(props: &ColorbarProps) -> Html {
                     };
                     dispatch.apply(StoreAction::UpdateDrawingOptions(
                         image_id.clone(),
+                        DrawingContext::BaseImage,
                         UpdateDrawingOptions::ClipMin(Some(clip_min)),
                     ));
                     dispatch.apply(StoreAction::UpdateDrawingOptions(
                         image_id.clone(),
+                        DrawingContext::BaseImage,
                         UpdateDrawingOptions::ClipMax(Some(clip_max)),
                     ));
                 }

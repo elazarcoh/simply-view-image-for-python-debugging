@@ -2,7 +2,7 @@
   "publisher": "elazarcoh",
   "name": "simply-view-image-for-python-debugging",
   "displayName": "View Image for Python Debugging",
-  "version": "4.0.19",
+  "version": "4.1.0",
   "packageManager": "yarn@4.4.1",
   "workspaces": [
     "icons"

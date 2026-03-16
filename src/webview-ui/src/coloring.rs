@@ -14,6 +14,7 @@ pub(crate) enum Coloring {
     B,
     SwapRgbBgr,
     Segmentation,
+    Edges,
     Heatmap,
 }
 
@@ -33,6 +34,8 @@ pub(crate) struct DrawingOptions {
     pub ignore_alpha: bool,
     pub batch_item: Option<u32>,
     pub clip: Clip,
+    pub zeros_as_transparent: bool,
+    pub global_alpha: f32,
 }
 
 impl Default for DrawingOptions {
@@ -44,6 +47,8 @@ impl Default for DrawingOptions {
             ignore_alpha: false,
             batch_item: None,
             clip: Clip::default(),
+            zeros_as_transparent: false,
+            global_alpha: 1.0,
         }
     }
 }
@@ -208,8 +213,9 @@ pub(crate) fn calculate_color_matrix(
     let (reorder, reorder_add) = match drawing_options.coloring {
         | Coloring::Default
         // Heatmap and Segmentation coloring using the default coloring
-        | Coloring::Segmentation
-        | Coloring::Heatmap 
+        | Coloring::Segmentation 
+        | Coloring::Edges 
+        | Coloring::Heatmap
          => {
             match datatype {
                 | Datatype::Uint8

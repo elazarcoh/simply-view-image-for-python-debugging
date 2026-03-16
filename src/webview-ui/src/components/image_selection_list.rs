@@ -5,7 +5,7 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
-    application_state::app_state::{AppState, StoreAction},
+    application_state::{app_state::{AppState, StoreAction}, images::DrawingContext},
     common::{CurrentlyViewing, Image, ViewId},
     components::image_list_item::ImageListItem,
 };
@@ -69,7 +69,7 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
             state
                 .drawing_options
                 .borrow()
-                .get(&image_id)
+                .get(&image_id, &DrawingContext::BaseImage)
                 .and_then(|d| d.batch_item)
         }
     });
@@ -106,7 +106,12 @@ fn ImageItemWrapper(props: &ImageItemWrapperProps) -> Html {
             {onclick}
             class={entry_style.clone()}
         >
-            <ImageListItem entry={info.clone()} selected={is_selected} pinned={is_pinned} batch_index={*maybe_batch_item} />
+            <ImageListItem
+                entry={info.clone()}
+                selected={is_selected}
+                pinned={is_pinned}
+                batch_index={*maybe_batch_item}
+            />
         </div>
     }
 }

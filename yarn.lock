@@ -9094,6 +9094,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash@npm:^4.17.23":
+  version: 4.17.23
+  resolution: "lodash@npm:4.17.23"
+  checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
+  languageName: node
+  linkType: hard
+
 "longest-streak@npm:^3.0.0":
   version: 3.1.0
   resolution: "longest-streak@npm:3.1.0"
@@ -12516,7 +12523,7 @@ __metadata:
     husky: "npm:^9.1.7"
     jimp: "npm:^1.6.0"
     lethargy-ts: "npm:^0.1.0"
-    lodash: "npm:^4.17.21"
+    lodash: "npm:^4.17.23"
     lodash-cli: "npm:^4.17.5"
     mini-css-extract-plugin: "npm:^2.9.1"
     mocha: "npm:^11.7.1"

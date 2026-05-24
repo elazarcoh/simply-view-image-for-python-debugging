@@ -45,6 +45,8 @@ export async function dismissVSCodeOverlays(): Promise<void> {
       return; // No overlay
     }
 
+    // Let the dialog fully render and capture keyboard focus before dismissing
+    await driver.sleep(1000);
     DebugTestHelper.logger.info('Dismissing VS Code onboarding overlay...');
 
     // Use JS to find and click the close button inside the overlay;

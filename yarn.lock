@@ -14221,7 +14221,7 @@ __metadata:
 
 "vscode-extension-tester@patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch":
   version: 8.22.1
-  resolution: "vscode-extension-tester@patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch::version=8.22.1&hash=bf645b"
+  resolution: "vscode-extension-tester@patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch::version=8.22.1&hash=b9a20c"
   dependencies:
     "@redhat-developer/locators": "npm:^1.19.1"
     "@redhat-developer/page-objects": "npm:^1.19.1"
@@ -14245,7 +14245,7 @@ __metadata:
     typescript: ">=4.6.2"
   bin:
     extest: out/cli.js
-  checksum: 10c0/2dc99a07a50c4c7291c95a771521ddec4c6cc6ff6e6b953be324b2d6ce408cf42a203187a672d9b74d05ed12e6458dc9b5f786c92592c90e4549c33347d1b760
+  checksum: 10c0/02c35bc18ea52ea27b992ea1484eb136a4f1e73e3726f37aa9df0df693495c91a9b9afab2a74952629930e4fb4bca141c35aaacd9a16e5fc8d75074cc6b23b7e
   languageName: node
   linkType: hard
 

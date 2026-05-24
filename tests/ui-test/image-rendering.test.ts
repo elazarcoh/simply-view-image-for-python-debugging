@@ -131,7 +131,7 @@ describe('image rendering verification', () => {
   //   Right  third (cols 100–150): pure blue   (0, 0, 255)
   //
   // After autocrop the full image is visible; coordinates are expressed as
-  // fractions of the cropped image (left≈0.0–0.43, mid≈0.43–0.86, right≈0.86–1.0).
+  // fractions of the cropped image (left≈0.0–0.33, mid≈0.33–0.67, right≈0.67–1.0).
   // ---------------------------------------------------------------------------
 
   it('should render the left region of rgb_gradient as red', async () => {
@@ -172,10 +172,11 @@ describe('image rendering verification', () => {
     const { img, annotator } = captured;
 
     try {
-      // Middle green band: x≈0.43–0.86 in the autocropped image.
-      const middleRegion = sampleRegion(img, 0.48, 0.25, 0.35, 0.40);
+      // Middle green band: cols 50-99 of the 150-wide image → x≈0.33–0.67 in the canvas.
+      // Sample conservatively within that range to avoid hitting the red or blue regions.
+      const middleRegion = sampleRegion(img, 0.38, 0.25, 0.24, 0.40);
       DebugTestHelper.logger.info(`rgb_gradient middle region mean: ${JSON.stringify(middleRegion)}`);
-      annotator.record(0.48, 0.25, 0.35, 0.40, middleRegion, () => assertDominantChannel(middleRegion, 'g', 50, 'middle region should be green'), 'middle-green');
+      annotator.record(0.38, 0.25, 0.24, 0.40, middleRegion, () => assertDominantChannel(middleRegion, 'g', 50, 'middle region should be green'), 'middle-green');
     }
     finally {
       await annotator.saveHtml();

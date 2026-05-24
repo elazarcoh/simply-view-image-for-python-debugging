@@ -203,6 +203,7 @@ pub(crate) fn ImageSelectionList(props: &ImageSelectionListProps) -> Html {
 
         .inner > div[aria-selected="true"] {
             background-color: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
         }
     "#,
     );

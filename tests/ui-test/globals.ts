@@ -21,7 +21,9 @@ export async function dismissVSCodeOverlays(): Promise<void> {
         const els = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
         return els.length > 0;
       },
-      8000, undefined, 500,
+      8000,
+      undefined,
+      500,
     ).catch(() => null); // Timeout just means overlay didn't appear — that's fine
 
     const overlays = await driver.findElements({ css: '.onboarding-a-overlay.visible' });

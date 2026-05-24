@@ -1609,9 +1609,15 @@ export class DebugTestHelper {
         let closed = false;
         for (const sel of ['.dialog-close-button', 'button[aria-label="Close"]', '.close-button', '.codicon-close']) {
           const btns = await overlays[0].findElements({ css: sel });
-          if (btns.length > 0) { await btns[0].click(); closed = true; break; }
+          if (btns.length > 0) {
+            await btns[0].click();
+            closed = true;
+            break;
+          }
         }
-        if (!closed) { await overlays[0].sendKeys(''); } // Escape
+        if (!closed) {
+          await overlays[0].sendKeys(''); // Escape
+        }
         await VSBrowser.instance.driver.sleep(500);
       }
     }

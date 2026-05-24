@@ -1,10 +1,30 @@
 import * as path from 'node:path';
-import { TitleBar, VSBrowser } from 'vscode-extension-tester';
+import { Key, TitleBar, VSBrowser } from 'vscode-extension-tester';
 import { DebugTestHelper } from './DebugTestHelper';
 import { openWorkspaceFile } from './test-utils';
 
 export const WORKSPACE_DIR = path.join(__dirname, '../../..', 'tests/test-data/workspace');
 const WORKSPACE_FILE = path.join(WORKSPACE_DIR, '.vscode', 'tests.code-workspace');
+
+/**
+ * Dismisses VS Code onboarding/walkthrough overlay modals that block all UI.
+ * These appear as `<div class="onboarding-a-overlay visible">` and intercept all clicks.
+ * Safe to call when no overlay is present.
+ */
+export async function dismissVSCodeOverlays(): Promise<void> {
+  try {
+    const driver = VSBrowser.instance.driver;
+    const overlays = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
+    if (overlays.length > 0) {
+      DebugTestHelper.logger.info('Dismissing VS Code onboarding overlay...');
+      await driver.actions().sendKeys(Key.ESCAPE).perform();
+      await driver.sleep(500);
+    }
+  }
+  catch (_e) {
+    // Overlay may not be present or already dismissed
+  }
+}
 
 /**
  * Waits for the test workspace to be open in VS Code.
@@ -58,6 +78,7 @@ export async function openWorkspace(
   ).catch(() => false);
 
   if (alreadyOpen) {
+    await dismissVSCodeOverlays();
     return;
   }
 
@@ -77,6 +98,7 @@ export async function openWorkspace(
 
       if (isWorkspaceReady) {
         DebugTestHelper.logger.success(`Workspace opened successfully on attempt ${attempt}`);
+        await dismissVSCodeOverlays();
         return;
       }
     }

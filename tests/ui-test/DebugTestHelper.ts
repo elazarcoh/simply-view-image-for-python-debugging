@@ -1601,6 +1601,17 @@ export class DebugTestHelper {
       DebugTestHelper.logger.warn(`Error closing editors during cleanup: ${error}`);
     }
 
+    // Dismiss VS Code onboarding overlay (aria-modal blocks executeCommand / command palette)
+    try {
+      const overlays = await VSBrowser.instance.driver.findElements({ css: '.onboarding-a-overlay.visible' });
+      if (overlays.length > 0) {
+        DebugTestHelper.logger.cleanup('Dismissing VS Code onboarding overlay before cleanup');
+        await VSBrowser.instance.driver.actions().sendKeys('').perform(); // Escape
+        await VSBrowser.instance.driver.sleep(500);
+      }
+    }
+    catch (_e) { /* overlay absent or already dismissed */ }
+
     // Try to close any open dialogs or input boxes
     DebugTestHelper.logger.cleanup('Dismissing any open dialogs');
     await new Workbench().executeCommand('workbench.action.closeQuickOpen');

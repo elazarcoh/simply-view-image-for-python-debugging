@@ -559,7 +559,7 @@
     "test:watch": "tsc --watch -p ./tsconfig.test.json",
     "test:validate": "yarn test:compile && node run-basic-tests.mjs",
     "test:unit:ts": "vitest run --config vitest.config.ts",
-    "ui-test": "yarn test:compile && extest setup-and-run -y --install_dependencies 'ms-python.python' './out/tests/ui-test/*.test.js'",
+    "ui-test": "yarn test:compile && extest setup-and-run -y --install_dependencies 'ms-python.python' './out/tests/ui-test/*.test.js' --open_resource tests/test-data/workspace/.vscode/tests.code-workspace",
     "ui-test:setup": "extest setup-tests --install_dependencies 'ms-python.python'",
     "ui-test:run": "yarn test:compile && extest run-tests './out/tests/ui-test/mvp.test.js'",
     "ui-test:offscreen": "xvfb-run -a yarn ui-test",

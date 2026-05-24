@@ -35,16 +35,30 @@ export async function openWorkspace(
   } = options;
   const workspaceName = path.basename(WORKSPACE_FILE, '.code-workspace');
 
-  // Check if workspace is already open — avoid redundant re-open which can hit notification banners
-  try {
-    const currentTitle = await new TitleBar().getTitle();
-    if (currentTitle.startsWith(workspaceName)) {
-      DebugTestHelper.logger.success(`Workspace already open: "${currentTitle}"`);
-      return;
-    }
-  }
-  catch (_e) {
-    // Ignore — proceed with opening
+  // Poll for the workspace to already be open — VS Code may have loaded it via --open_resource
+  // (passed to extest at launch) which is more reliable than opening via UI dialog in VS Code 1.116+
+  // where workbench.action.openWorkspace switched to a native dialog on Linux.
+  const alreadyOpen = await VSBrowser.instance.driver.wait(
+    async () => {
+      try {
+        const title = await new TitleBar().getTitle();
+        if (title.startsWith(workspaceName)) {
+          DebugTestHelper.logger.success(`Workspace already open: "${title}"`);
+          return true;
+        }
+      }
+      catch (_e) {
+        // ignore, keep polling
+      }
+      return false;
+    },
+    verifyTimeout,
+    undefined,
+    pollInterval,
+  ).catch(() => false);
+
+  if (alreadyOpen) {
+    return;
   }
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {

@@ -74,6 +74,9 @@ jobs:
           MOCHA_JUNIT: 'true'
           # Increase stability for headless testing
           DISPLAY: ':99.0'
+          # Pass workspace path as VS Code startup arg (via patched vscode-extension-tester browser.js)
+          # This bypasses VS Code 1.116+ native dialog for workbench.action.openWorkspace on Linux
+          VSCODE_OPEN_WORKSPACE: ${{ github.workspace }}/tests/test-data/workspace/.vscode/tests.code-workspace
         run: |
           mkdir -p test-results
           yarn test:compile

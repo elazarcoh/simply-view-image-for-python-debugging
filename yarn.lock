@@ -12534,7 +12534,7 @@ __metadata:
     typescript-eslint: "npm:^8.24.0"
     vitest: "npm:^4.0.18"
     vscode-debugprotocol: "npm:^1.51.0"
-    vscode-extension-tester: "npm:^8.17.0"
+    vscode-extension-tester: "patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch"
     vscode-extensions-json-generator: "npm:^0.2.2"
     wasm-pack: "npm:^0.13.1"
     webpack: "npm:^5.97.1"
@@ -14189,7 +14189,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vscode-extension-tester@npm:^8.17.0":
+"vscode-extension-tester@npm:8.22.1":
   version: 8.22.1
   resolution: "vscode-extension-tester@npm:8.22.1"
   dependencies:
@@ -14216,6 +14216,36 @@ __metadata:
   bin:
     extest: out/cli.js
   checksum: 10c0/e35861d66e0e790c76fd901ec2cf4ed96f25ccc57c7b3b3fb1c0c91edb9f6da21d78bdb66a10472d784e341b495593f6228f1307b4a4c0e63d3c4c2a001178d5
+  languageName: node
+  linkType: hard
+
+"vscode-extension-tester@patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch":
+  version: 8.22.1
+  resolution: "vscode-extension-tester@patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch::version=8.22.1&hash=b9a20c"
+  dependencies:
+    "@redhat-developer/locators": "npm:^1.19.1"
+    "@redhat-developer/page-objects": "npm:^1.19.1"
+    "@types/selenium-webdriver": "npm:^4.35.5"
+    "@vscode/vsce": "npm:^3.7.1"
+    c8: "npm:^11.0.0"
+    commander: "npm:^14.0.3"
+    compare-versions: "npm:^6.1.1"
+    find-up: "npm:8.0.0"
+    fs-extra: "npm:^11.3.3"
+    glob: "npm:^13.0.6"
+    got: "npm:^14.6.6"
+    hpagent: "npm:^1.2.0"
+    js-yaml: "npm:^4.1.1"
+    sanitize-filename: "npm:^1.6.3"
+    selenium-webdriver: "npm:^4.41.0"
+    targz: "npm:^1.0.1"
+    unzipper: "npm:^0.12.3"
+  peerDependencies:
+    mocha: ">=5.2.0"
+    typescript: ">=4.6.2"
+  bin:
+    extest: out/cli.js
+  checksum: 10c0/02c35bc18ea52ea27b992ea1484eb136a4f1e73e3726f37aa9df0df693495c91a9b9afab2a74952629930e4fb4bca141c35aaacd9a16e5fc8d75074cc6b23b7e
   languageName: node
   linkType: hard
 

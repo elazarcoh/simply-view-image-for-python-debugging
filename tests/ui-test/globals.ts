@@ -6,27 +6,41 @@ import { openWorkspaceFile } from './test-utils';
 export const WORKSPACE_DIR = path.join(__dirname, '../../..', 'tests/test-data/workspace');
 const WORKSPACE_FILE = path.join(WORKSPACE_DIR, '.vscode', 'tests.code-workspace');
 
+// After the overlay is dismissed once it won't reappear — skip polling on subsequent calls.
+let overlayAlreadyDismissed = false;
+
 /**
  * Dismisses VS Code onboarding/walkthrough overlay modals that block all UI.
  * These appear as `<div class="onboarding-a-overlay visible">` (full-screen modal,
  * intercepts all clicks). The overlay loads asynchronously after startup — we poll.
- * Safe to call when no overlay is present.
+ * Safe to call when no overlay is present (no-op, and fast on subsequent calls).
  */
 export async function dismissVSCodeOverlays(): Promise<void> {
   const driver = VSBrowser.instance.driver;
   try {
-    // Poll up to 8s — the overlay appears asynchronously after workspace loads
-    await driver.wait(
-      async () => {
-        const els = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
-        return els.length > 0;
-      },
-      8000,
-      undefined,
-      500,
-    ).catch(() => null); // Timeout just means overlay didn't appear — that's fine
+    if (overlayAlreadyDismissed) {
+      // Quick check only — skip the 8s poll since overlay won't reappear
+      const els = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
+      if (els.length === 0) {
+        return;
+      }
+      // Overlay reappeared (shouldn't happen) — fall through to dismiss it
+    }
+    else {
+      // First call: poll up to 8s — the overlay appears asynchronously after workspace loads
+      await driver.wait(
+        async () => {
+          const els = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
+          return els.length > 0;
+        },
+        8000,
+        undefined,
+        500,
+      ).catch(() => null); // Timeout just means overlay didn't appear — that's fine
+    }
 
     const overlays = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
+    overlayAlreadyDismissed = true;
     if (overlays.length === 0) {
       return; // No overlay
     }

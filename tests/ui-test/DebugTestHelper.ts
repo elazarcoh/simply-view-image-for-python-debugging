@@ -1616,7 +1616,7 @@ export class DebugTestHelper {
           }
         }
         if (!closed) {
-          await overlays[0].sendKeys(''); // Escape
+          await VSBrowser.instance.driver.actions().sendKeys('').perform(); // Escape
         }
         await VSBrowser.instance.driver.sleep(500);
       }

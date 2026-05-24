@@ -67,9 +67,10 @@ export async function dismissVSCodeOverlays(): Promise<void> {
     `);
 
     if (!dismissed) {
-      // Fall back: send Escape to the overlay element
-      await overlays[0].sendKeys(Key.ESCAPE);
-      DebugTestHelper.logger.info('Dismissed overlay via Escape (no close button found)');
+      // Fall back: send Escape via the active element (focus is trapped in the dialog,
+      // so this reaches whichever button/webview VS Code has focused inside the overlay).
+      await driver.actions().sendKeys(Key.ESCAPE).perform();
+      DebugTestHelper.logger.info('Dismissed overlay via Escape (no close button found in native DOM)');
     }
     else {
       DebugTestHelper.logger.info('Dismissed overlay via close button');

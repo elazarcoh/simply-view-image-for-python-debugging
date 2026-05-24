@@ -8,21 +8,61 @@ const WORKSPACE_FILE = path.join(WORKSPACE_DIR, '.vscode', 'tests.code-workspace
 
 /**
  * Dismisses VS Code onboarding/walkthrough overlay modals that block all UI.
- * These appear as `<div class="onboarding-a-overlay visible">` and intercept all clicks.
+ * These appear as `<div class="onboarding-a-overlay visible">` (full-screen modal,
+ * intercepts all clicks). The overlay loads asynchronously after startup — we poll.
  * Safe to call when no overlay is present.
  */
 export async function dismissVSCodeOverlays(): Promise<void> {
+  const driver = VSBrowser.instance.driver;
   try {
-    const driver = VSBrowser.instance.driver;
+    // Poll up to 8s — the overlay appears asynchronously after workspace loads
+    await driver.wait(
+      async () => {
+        const els = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
+        return els.length > 0;
+      },
+      8000, undefined, 500,
+    ).catch(() => null); // Timeout just means overlay didn't appear — that's fine
+
     const overlays = await driver.findElements({ css: '.onboarding-a-overlay.visible' });
-    if (overlays.length > 0) {
-      DebugTestHelper.logger.info('Dismissing VS Code onboarding overlay...');
-      await driver.actions().sendKeys(Key.ESCAPE).perform();
-      await driver.sleep(500);
+    if (overlays.length === 0) {
+      return; // No overlay
     }
+
+    DebugTestHelper.logger.info('Dismissing VS Code onboarding overlay...');
+
+    // Use JS to find and click the close button inside the overlay;
+    // the button is in native DOM (the webview inside shows sign-in content).
+    const dismissed = await driver.executeScript<boolean>(`
+      const overlay = document.querySelector('.onboarding-a-overlay.visible');
+      if (!overlay) return false;
+      const selectors = [
+        'button[aria-label="Close"]',
+        '.dialog-close-button',
+        '.close-button',
+        'button.codicon-close',
+        '.codicon-close',
+      ];
+      for (const sel of selectors) {
+        const btn = overlay.querySelector(sel);
+        if (btn) { btn.click(); return true; }
+      }
+      return false;
+    `);
+
+    if (!dismissed) {
+      // Fall back: send Escape to the overlay element
+      await overlays[0].sendKeys(Key.ESCAPE);
+      DebugTestHelper.logger.info('Dismissed overlay via Escape (no close button found)');
+    }
+    else {
+      DebugTestHelper.logger.info('Dismissed overlay via close button');
+    }
+
+    await driver.sleep(500);
   }
   catch (_e) {
-    // Overlay may not be present or already dismissed
+    // Overlay absent or already dismissed
   }
 }
 

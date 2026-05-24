@@ -1606,7 +1606,12 @@ export class DebugTestHelper {
       const overlays = await VSBrowser.instance.driver.findElements({ css: '.onboarding-a-overlay.visible' });
       if (overlays.length > 0) {
         DebugTestHelper.logger.cleanup('Dismissing VS Code onboarding overlay before cleanup');
-        await VSBrowser.instance.driver.actions().sendKeys('').perform(); // Escape
+        let closed = false;
+        for (const sel of ['.dialog-close-button', 'button[aria-label="Close"]', '.close-button', '.codicon-close']) {
+          const btns = await overlays[0].findElements({ css: sel });
+          if (btns.length > 0) { await btns[0].click(); closed = true; break; }
+        }
+        if (!closed) { await overlays[0].sendKeys(''); } // Escape
         await VSBrowser.instance.driver.sleep(500);
       }
     }

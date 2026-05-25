@@ -146,7 +146,10 @@ describe('overlay tests', () => {
         const color = sampleRegion(imgBaseline, inner.x, inner.y, inner.w, inner.h);
         DebugTestHelper.logger.info(`Baseline centre: ${JSON.stringify(color)}`);
         annotator.record(
-          inner.x, inner.y, inner.w, inner.h,
+          inner.x,
+          inner.y,
+          inner.w,
+          inner.h,
           color,
           () => assertGrayscale(color, 20, 'baseline — single-channel image must render as grayscale'),
           'centre-baseline',
@@ -165,7 +168,10 @@ describe('overlay tests', () => {
         // The segmentation colormap assigns a distinct hue to label 1.
         // With default alpha 0.8 the circle interior is heavily tinted → not grayscale.
         annotator.record(
-          inner.x, inner.y, inner.w, inner.h,
+          inner.x,
+          inner.y,
+          inner.w,
+          inner.h,
           color,
           () => {
             const maxDelta = Math.max(
@@ -197,7 +203,10 @@ describe('overlay tests', () => {
         // The interior of the circle has NO edge pixel → the base image shows through.
         // The base image is grayscale, so the sampled region must be grey.
         annotator.record(
-          inner.x, inner.y, inner.w, inner.h,
+          inner.x,
+          inner.y,
+          inner.w,
+          inner.h,
           color,
           () => assertGrayscale(color, 25, 'Edges mode — circle interior should show through as grayscale (no edge at centre)'),
           'centre-edges',
@@ -215,7 +224,10 @@ describe('overlay tests', () => {
         DebugTestHelper.logger.info(`Hidden overlay centre: ${JSON.stringify(color)}`);
         // Hiding the overlay should restore the plain grayscale rendering.
         annotator.record(
-          inner.x, inner.y, inner.w, inner.h,
+          inner.x,
+          inner.y,
+          inner.w,
+          inner.h,
           color,
           () => assertGrayscale(color, 20, 'Hidden overlay — canvas should revert to grayscale'),
           'centre-hidden',
@@ -229,4 +241,3 @@ describe('overlay tests', () => {
     DebugTestHelper.logger.success('Overlay feature test completed');
   }).timeout(300000);
 });
-

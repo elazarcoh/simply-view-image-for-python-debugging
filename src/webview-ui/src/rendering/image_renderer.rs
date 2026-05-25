@@ -600,16 +600,8 @@ impl ImageRenderer {
         let gl = &rendering_data.gl;
         let program = ImageRenderer::program_for_texture(texture, &rendering_data.programs);
 
-        let config = rendering_context.rendering_configuration();
-
         let (drawing_options, global_drawing_options) =
             rendering_context.drawing_options(&overlay_item.id, &DrawingContext::Overlay);
-
-        // log::debug!(
-        //     "Rendering overlay {:?} with drawing options: {:?}",
-        //     overlay_item,
-        //     drawing_options
-        // );
 
         let colormap_texture = if Coloring::Heatmap == drawing_options.coloring {
             let color_map_texture = rendering_context
@@ -673,7 +665,6 @@ impl ImageRenderer {
             .and_then(|o| (!o.hidden).then_some(o))
         {
             let texture = rendering_context.texture_by_id(&overlay.id);
-            // log::debug!("Rendering overlay {:?}", overlay);
             if let ImageAvailability::Available(texture) = texture {
                 let texture = texture.borrow();
                 ImageRenderer::render_overlay(

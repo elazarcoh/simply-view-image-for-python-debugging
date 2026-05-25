@@ -239,45 +239,9 @@ pub(crate) fn ImageListItem(props: &ImageListItemProps) -> Html {
         "#
     );
 
-    // let ctx = use_context_menu();
-
-    // let on_context = {
-    //     let image_id = image_id.clone();
-    //     let ctx = ctx.clone();
-    //     Callback::from(move |e: MouseEvent| {
-    //         e.prevent_default();
-    //         ctx.set(Some(ContextMenuData {
-    //             x: e.client_x(),
-    //             y: e.client_y(),
-    //             items: vec![ContextMenuItem {
-    //                 label: "Overlay".into(),
-    //                 action: Callback::from({
-    //                     let image_id = image_id.clone();
-    //                     let ctx = ctx.clone();
-    //                     move |_| {
-    //                         let view_id = ViewId::Primary;
-    //                         let state = Dispatch::<AppState>::global().get();
-    //                         let cv = state.image_views.borrow().get_currently_viewing(view_id);
-    //                         if let Some(cv) = cv {
-    //                             Dispatch::<AppState>::global().apply(OverlayAction::Add {
-    //                                 view_id,
-    //                                 image_id: cv.id().clone(),
-    //                                 overlay_id: image_id.clone(),
-    //                             });
-    //                         }
-    //                         ctx.set(None);
-    //                     }
-    //                 }),
-    //                 disabled: false,
-    //             }],
-    //         }));
-    //     })
-    // };
-
     html! {
         <div
             class={item_style.clone()}
-            // oncontextmenu={on_context}
         >
             <div class="item-label-container">
                 {set_remove_overlay_button}

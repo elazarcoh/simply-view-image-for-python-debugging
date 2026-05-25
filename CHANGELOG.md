@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.0] - Pre-release
+## [4.1.1] - Pre-release - 2026-05-25
 
 ### Added
 - Edges mode (colorize like segmentation but only show edges).

@@ -3208,6 +3208,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vscode/debugprotocol@npm:^1.68.0":
+  version: 1.68.0
+  resolution: "@vscode/debugprotocol@npm:1.68.0"
+  checksum: 10c0/e4b21bad518f7db66f7bd5c07b8303af36dbee920c9250d0f5d3910fb181ee1f7e83c536004b3258041d54d18c86fc361de3c2225958a458dbf5ece99c317870
+  languageName: node
+  linkType: hard
+
 "@vscode/jupyter-extension@npm:^1.1.1":
   version: 1.1.1
   resolution: "@vscode/jupyter-extension@npm:1.1.1"
@@ -9060,6 +9067,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash@npm:^4.18.1":
+  version: 4.18.1
+  resolution: "lodash@npm:4.18.1"
+  checksum: 10c0/757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
+  languageName: node
+  linkType: hard
+
 "log-symbols@npm:^4.1.0":
   version: 4.1.0
   resolution: "log-symbols@npm:4.1.0"
@@ -12502,6 +12516,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:^8.24.0"
     "@vitest/coverage-v8": "npm:^4.0.18"
     "@vscode/codicons": "npm:^0.0.36"
+    "@vscode/debugprotocol": "npm:^1.68.0"
     "@vscode/jupyter-extension": "npm:^1.1.1"
     "@vscode/vsce": "npm:^3.2.2"
     "@wasm-tool/wasm-pack-plugin": "patch:@wasm-tool/wasm-pack-plugin@npm%3A1.7.0#~/.yarn/patches/@wasm-tool-wasm-pack-plugin-npm-1.7.0-05c10ff10e.patch"
@@ -12516,7 +12531,7 @@ __metadata:
     husky: "npm:^9.1.7"
     jimp: "npm:^1.6.0"
     lethargy-ts: "npm:^0.1.0"
-    lodash: "npm:^4.17.21"
+    lodash: "npm:^4.18.1"
     lodash-cli: "npm:^4.17.5"
     mini-css-extract-plugin: "npm:^2.9.1"
     mocha: "npm:^11.7.1"
@@ -12533,7 +12548,6 @@ __metadata:
     typescript: "npm:^5.6.2"
     typescript-eslint: "npm:^8.24.0"
     vitest: "npm:^4.0.18"
-    vscode-debugprotocol: "npm:^1.51.0"
     vscode-extension-tester: "patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch"
     vscode-extensions-json-generator: "npm:^0.2.2"
     wasm-pack: "npm:^0.13.1"
@@ -14179,13 +14193,6 @@ __metadata:
   bin:
     vitest: vitest.mjs
   checksum: 10c0/b913cd32032c95f29ff08c931f4b4c6fd6d2da498908d6770952c561a1b8d75c62499a1f04cadf82fb89cc0f9a33f29fb5dfdb899f6dbb27686a9d91571be5fa
-  languageName: node
-  linkType: hard
-
-"vscode-debugprotocol@npm:^1.51.0":
-  version: 1.51.0
-  resolution: "vscode-debugprotocol@npm:1.51.0"
-  checksum: 10c0/ea51a575aabbbfa9d66bfca48e001435576ed1ec909f17a941aeee3ba7792dae1b27222eadd12a8504aaeab9811f462fcceaf9ae6df02b7e4d5ad9c7da54692e
   languageName: node
   linkType: hard
 

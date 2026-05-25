@@ -1,5 +1,5 @@
 import type { Kernel } from '@vscode/jupyter-extension';
-import type { DebugProtocol } from 'vscode-debugprotocol';
+import type { DebugProtocol } from '@vscode/debugprotocol';
 import type { Session } from '../session/Session';
 import type { Result } from '../utils/Result';
 import * as vscode from 'vscode';

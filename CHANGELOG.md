@@ -1,5 +1,28 @@
 # Change Log
 
+## [4.0.20] - Release - 2026-05-25
+
+### Added
+
+- Support for saving images directly from the webview
+- Setting to control auto-run setup on debug start (`svifpd.autoRunSetupOnDebugStart`) with toggle buttons in the Image Watch view
+- Setting to control whether images are automatically fetched (`svifpd.autoFetchImages`: `true` / `false` / `"pinned"`)
+- Support for "non-restricted types": when `svifpd.restrictImageTypes` is set to `false`, the viewer also supports everything convertible to a numpy array (e.g. `tensorflow.Tensor`)
+- Support for Interactive Python cells
+
+### Fixed
+
+- Fixed indexed-color PNG interpretation (now uses Jimp-expanded channels)
+- Fixed preprocessing for single-channel images in save functions
+- Fixed bug with numpy tensors not being sent correctly to the viewer
+- Fixed bug with font loading in the image viewer
+- Fixed bug with pinned images not being kept when switching debug sessions
+
+### Security
+
+- Bumped `lodash` to 4.18.1 (fixes GHSA-r5fr-rjxr-66jc high severity: code injection via `_.template`; GHSA-f23m-r3pf-42rh moderate severity: prototype pollution)
+- Replaced deprecated `vscode-debugprotocol` with its renamed successor `@vscode/debugprotocol`
+
 ## [4.0.19] - Pre-release
 
 ### Added

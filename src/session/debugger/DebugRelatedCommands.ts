@@ -1,4 +1,4 @@
-import type { DebugProtocol } from 'vscode-debugprotocol';
+import type { DebugProtocol } from '@vscode/debugprotocol';
 import * as vscode from 'vscode';
 import { findExpressionViewables } from '../../PythonObjectInfo';
 import { debugSession } from '../../session/Session';

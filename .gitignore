@@ -18,3 +18,4 @@ __pycache__/
 test.log
 .pytest_cache
 test-results/
+.claude/scheduled_tasks.lock

@@ -22,6 +22,13 @@
 
 - Bumped `lodash` to 4.18.1 (fixes GHSA-r5fr-rjxr-66jc high severity: code injection via `_.template`; GHSA-f23m-r3pf-42rh moderate severity: prototype pollution)
 - Replaced deprecated `vscode-debugprotocol` with its renamed successor `@vscode/debugprotocol`
+- Bumped transitive `ws` to 8.21.0 (fixes HIGH severity remote DoS via malformed headers)
+- Bumped transitive `postcss` to 8.5.15 (fixes XSS via unescaped `</style>` in source maps, introduced in 8.5.10)
+- Bumped transitive `basic-ftp` to 5.3.1 (fixes GHSA-rpmf-866q-6p89, GHSA-rp42-5vxx-qpwr, GHSA-6v7q-wjvx-w8wg, GHSA-chqc-8p9q-pq6q: path traversal and DoS)
+- Bumped transitive `brace-expansion` to 1.1.14 (fixes GHSA-7h2j-956f-4vf2, GHSA-f886-m6hf-6m8v)
+- Bumped transitive `fast-uri` to 3.1.2 (fixes GHSA-v39h-62p7-jpjc, GHSA-q3j6-qgpj-74h6)
+- Bumped transitive `qs` to 6.15.2 (bug fixes)
+- Bumped transitive `@tootallnate/once` to 2.0.1 (bug fix)
 
 ## [4.0.19] - Pre-release
 

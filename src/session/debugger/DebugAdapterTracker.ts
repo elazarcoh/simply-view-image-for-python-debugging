@@ -1,5 +1,5 @@
-import type * as vscode from 'vscode';
 import type { DebugProtocol } from '@vscode/debugprotocol';
+import type * as vscode from 'vscode';
 import _ from 'lodash';
 import { Option } from 'ts-results';
 import Container from 'typedi';

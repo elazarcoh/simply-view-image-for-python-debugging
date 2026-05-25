@@ -130,9 +130,9 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                 .get(&overlay.id)
                 .unwrap_or_else(|| panic!("Image with id {:?} not found", overlay.id));
             if let Image::Full(info) = image {
-                info.clone()
+                Some(info.clone())
             } else {
-                panic!("Overlay item is not a full image: {:?}", overlay.id);
+                None
             }
         },
         overlay.clone(),
@@ -295,19 +295,6 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
         />
     };
 
-    let display_options = html! {
-        <DisplayOption entry={( *info ).clone()} drawing_context={DrawingContext::Overlay} />
-    };
-
-    let maybe_warning = if !*same_size {
-        html! {
-            <span class={classes!("codicon", "codicon-warning", css!("color: var(--vscode-editorWarning-foreground);"))}
-            title="Overlay image size does not match the currently viewed image size." />
-        }
-    } else {
-        html! {}
-    };
-
     let style = use_style!(
         r#"
             position: relative;
@@ -360,6 +347,24 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
             }
         "#
     );
+
+    // All hooks have been called. Now it's safe to return early.
+    let Some(info) = info.as_ref().as_ref() else {
+        return html! {};
+    };
+
+    let display_options = html! {
+        <DisplayOption entry={info.clone()} drawing_context={DrawingContext::Overlay} />
+    };
+
+    let maybe_warning = if !*same_size {
+        html! {
+            <span class={classes!("codicon", "codicon-warning", css!("color: var(--vscode-editorWarning-foreground);"))}
+            title="Overlay image size does not match the currently viewed image size." />
+        }
+    } else {
+        html! {}
+    };
 
     html! {
         <div

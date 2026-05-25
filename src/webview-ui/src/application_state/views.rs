@@ -141,4 +141,8 @@ impl Overlays {
     pub(crate) fn clear_overlay(&mut self, view_id: ViewId, image_id: &ViewableObjectId) {
         self.overlays.remove(&(view_id, image_id.clone()));
     }
+
+    pub(crate) fn all_overlay_ids(&self) -> Vec<ViewableObjectId> {
+        self.overlays.values().map(|item| item.id.clone()).collect()
+    }
 }

@@ -7,7 +7,7 @@ use yewdux::{Dispatch, Listener};
 use anyhow::Result;
 
 use crate::{
-    application_state::images::{DrawingContext, ImageAvailability}, bindings::lodash, common::constants,
+    application_state::images::{DrawingContext, ImageAvailability}, bindings::lodash, common::{constants, ViewableObjectId},
     configurations::AutoUpdateImages, vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -162,6 +162,28 @@ impl ImagesFetcher {
                     } else {
                         log::debug!("ImagesFetcher::on_change: current {:?} ", current);
                     }
+                }
+            }
+        }
+
+        // Also fetch images needed by active overlays
+        let overlay_ids: Vec<ViewableObjectId> =
+            state.overlays.borrow().all_overlay_ids();
+        for overlay_id in overlay_ids {
+            let current = state.image_cache.borrow().get(&overlay_id);
+            if current == ImageAvailability::NotAvailable {
+                if let Some(image_info) = state.images.borrow().get(&overlay_id) {
+                    log::debug!(
+                        "ImagesFetcher: fetching overlay image {:?}",
+                        overlay_id
+                    );
+                    VSCodeRequests::request_image_data(
+                        overlay_id.clone(),
+                        image_info.minimal().expression.clone(),
+                    );
+                    dispatch.reduce_mut(|s| {
+                        s.image_cache.borrow_mut().set_pending(&overlay_id);
+                    });
                 }
             }
         }

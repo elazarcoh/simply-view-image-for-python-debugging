@@ -1,4 +1,4 @@
-import type { DebugProtocol } from 'vscode-debugprotocol';
+import type { DebugProtocol } from '@vscode/debugprotocol';
 
 type DebugProtocolVariable = Required<
   Pick<DebugProtocol.Variable, 'name' | 'evaluateName' | 'type'>

@@ -1,4 +1,4 @@
-import type { DebugProtocol } from 'vscode-debugprotocol';
+import type { DebugProtocol } from '@vscode/debugprotocol';
 import { logDebug } from '../../Logging';
 import { PYTHON_MODULE_NAME } from '../../python-communication/BuildPythonCode';
 

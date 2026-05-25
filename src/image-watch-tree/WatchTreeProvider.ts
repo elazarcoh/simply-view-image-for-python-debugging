@@ -76,10 +76,10 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             info.err
               ? new ErrorWatchTreeItem(exp, errorMessage(info), 'variable')
               : new VariableWatchTreeItem(
-                exp,
-                info.safeUnwrap()[0],
-                info.safeUnwrap()[1],
-              ),
+                  exp,
+                  info.safeUnwrap()[0],
+                  info.safeUnwrap()[1],
+                ),
         ) ?? [];
 
       const expressionsInfoOrNotReady
@@ -95,10 +95,10 @@ export class WatchTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         info.err
           ? new ErrorWatchTreeItem(exp, errorMessage(info), 'expression')
           : new ExpressionWatchTreeItem(
-            exp,
-            info.safeUnwrap()[0],
-            info.safeUnwrap()[1],
-          ),
+              exp,
+              info.safeUnwrap()[0],
+              info.safeUnwrap()[1],
+            ),
       );
 
       // Set the tracking state if was tracked before

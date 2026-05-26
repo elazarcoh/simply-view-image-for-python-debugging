@@ -80,23 +80,23 @@ fn make_uniform_setter(gl_type: GLConstant, location: WebGlUniformLocation) -> U
     let _ = gl_type;
     Box::new(move |gl: &GL, value: &UniformValue| match value {
         UniformValue::Int(v) => gl.uniform1i(Some(&location), **v),
-        UniformValue::Int_(v) => gl.uniform1i(Some(&location), *v),
+        UniformValue::IntOwned(v) => gl.uniform1i(Some(&location), *v),
         UniformValue::Float(v) => gl.uniform1f(Some(&location), **v),
-        UniformValue::Float_(v) => gl.uniform1f(Some(&location), *v),
+        UniformValue::FloatOwned(v) => gl.uniform1f(Some(&location), *v),
         UniformValue::Bool(v) => gl.uniform1i(Some(&location), **v as i32),
-        UniformValue::Bool_(v) => gl.uniform1i(Some(&location), *v as i32),
+        UniformValue::BoolOwned(v) => gl.uniform1i(Some(&location), *v as i32),
         UniformValue::Vec2(v) => gl.uniform2fv_with_f32_array(Some(&location), v.as_ref()),
-        UniformValue::Vec2_(v) => gl.uniform2fv_with_f32_array(Some(&location), v.as_ref()),
+        UniformValue::Vec2Owned(v) => gl.uniform2fv_with_f32_array(Some(&location), v.as_ref()),
         UniformValue::Vec3(v) => gl.uniform3fv_with_f32_array(Some(&location), v.as_ref()),
-        UniformValue::Vec3_(v) => gl.uniform3fv_with_f32_array(Some(&location), v.as_ref()),
+        UniformValue::Vec3Owned(v) => gl.uniform3fv_with_f32_array(Some(&location), v.as_ref()),
         UniformValue::Vec4(v) => gl.uniform4fv_with_f32_array(Some(&location), v.as_ref()),
-        UniformValue::Vec4_(v) => gl.uniform4fv_with_f32_array(Some(&location), v.as_ref()),
+        UniformValue::Vec4Owned(v) => gl.uniform4fv_with_f32_array(Some(&location), v.as_ref()),
         UniformValue::Mat3(v) => gl.uniform_matrix3fv_with_f32_array(
             Some(&location),
             false,
             v.to_cols_array().as_slice(),
         ),
-        UniformValue::Mat3_(v) => gl.uniform_matrix3fv_with_f32_array(
+        UniformValue::Mat3Owned(v) => gl.uniform_matrix3fv_with_f32_array(
             Some(&location),
             false,
             v.to_cols_array().as_slice(),
@@ -106,7 +106,7 @@ fn make_uniform_setter(gl_type: GLConstant, location: WebGlUniformLocation) -> U
             false,
             v.to_cols_array().as_slice(),
         ),
-        UniformValue::Mat4_(v) => gl.uniform_matrix4fv_with_f32_array(
+        UniformValue::Mat4Owned(v) => gl.uniform_matrix4fv_with_f32_array(
             Some(&location),
             false,
             v.to_cols_array().as_slice(),

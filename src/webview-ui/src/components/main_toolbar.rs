@@ -257,7 +257,7 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
             || ()
         }
     });
-    let alpha_throttle = {
+    let on_alpha_change = {
         let alpha_state = alpha_state.clone();
         let overlay_id = overlay.id.clone();
         move || {
@@ -287,7 +287,7 @@ pub fn OverlayMenuItem(props: &OverlayMenuItemProps) -> Html {
                             .value();
                         if let Ok(value) = value.parse::<f32>() {
                             alpha_state.set(value);
-                            alpha_throttle();
+                            on_alpha_change();
                         }
                     }
                 })

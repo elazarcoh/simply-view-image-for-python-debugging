@@ -431,22 +431,22 @@ impl ImageRenderer {
             calculate_color_matrix(texture_info, &texture.computed_info, &drawing_options);
 
         uniform_values.extend(HashMap::from([
-            ("u_projectionMatrix", UniformValue::Mat3_(view_projection)),
-            ("u_enable_borders", UniformValue::Bool_(enable_borders)),
-            ("u_buffer_dimension", UniformValue::Vec2_(image_size_vec)),
+            ("u_projectionMatrix", UniformValue::Mat3Owned(view_projection)),
+            ("u_enable_borders", UniformValue::BoolOwned(enable_borders)),
+            ("u_buffer_dimension", UniformValue::Vec2Owned(image_size_vec)),
             (
                 "u_normalization_factor",
-                UniformValue::Float_(coloring_factors.normalization_factor),
+                UniformValue::FloatOwned(coloring_factors.normalization_factor),
             ),
             (
                 "u_color_multiplier",
-                UniformValue::Mat4_(coloring_factors.color_multiplier),
+                UniformValue::Mat4Owned(coloring_factors.color_multiplier),
             ),
             (
                 "u_color_addition",
-                UniformValue::Vec4_(coloring_factors.color_addition),
+                UniformValue::Vec4Owned(coloring_factors.color_addition),
             ),
-            ("u_invert", UniformValue::Bool_(drawing_options.invert)),
+            ("u_invert", UniformValue::BoolOwned(drawing_options.invert)),
         ]));
 
         let is_batched = batch_item.is_some();
@@ -455,7 +455,7 @@ impl ImageRenderer {
 
         uniform_values.insert(
             "u_edges_only",
-            UniformValue::Bool_(drawing_options.coloring == Coloring::Edges),
+            UniformValue::BoolOwned(drawing_options.coloring == Coloring::Edges),
         );
 
         if let Some(colormap_texture) = colormap_texture {
@@ -472,13 +472,13 @@ impl ImageRenderer {
         if texture_info.channels == Channels::One {
             if let Some(clip_min) = drawing_options.clip.min {
                 uniform_values.insert("u_clip_min", UniformValue::Bool(&true));
-                uniform_values.insert("u_min_clip_value", UniformValue::Float_(clip_min));
+                uniform_values.insert("u_min_clip_value", UniformValue::FloatOwned(clip_min));
             } else {
                 uniform_values.insert("u_clip_min", UniformValue::Bool(&false));
             }
             if let Some(clip_max) = drawing_options.clip.max {
                 uniform_values.insert("u_clip_max", UniformValue::Bool(&true));
-                uniform_values.insert("u_max_clip_value", UniformValue::Float_(clip_max));
+                uniform_values.insert("u_max_clip_value", UniformValue::FloatOwned(clip_max));
             } else {
                 uniform_values.insert("u_clip_max", UniformValue::Bool(&false));
             }
@@ -595,7 +595,6 @@ impl ImageRenderer {
         overlay_item: &OverlayItem,
         batch_item: Option<u32>,
         image_view_data: &ImageViewData,
-        view_name: &ViewId,
     ) {
         let gl = &rendering_data.gl;
         let program = ImageRenderer::program_for_texture(texture, &rendering_data.programs);
@@ -657,7 +656,6 @@ impl ImageRenderer {
         rendering_data: &mut RenderingData,
         batch_item: Option<u32>,
         image_view_data: &ImageViewData,
-        view_name: &ViewId,
     ) {
         if let Some(overlay) = &image_view_data
             .overlay
@@ -674,7 +672,6 @@ impl ImageRenderer {
                     overlay,
                     batch_item,
                     image_view_data,
-                    view_name,
                 );
             }
         }
@@ -756,7 +753,6 @@ impl ImageRenderer {
             rendering_data,
             batch_item,
             image_view_data,
-            view_name,
         );
 
         let to_render_text = {

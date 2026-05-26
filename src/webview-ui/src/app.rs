@@ -4,6 +4,7 @@ use crate::application_state::app_state::GlobalDrawingOptions;
 use crate::application_state::app_state::ImageObject;
 use crate::application_state::app_state::StoreAction;
 use crate::application_state::app_state::UpdateDrawingOptions;
+use crate::application_state::images::DrawingContext;
 use crate::application_state::images::ImageAvailability;
 use crate::coloring::Coloring;
 use crate::coloring::DrawingOptions;
@@ -16,6 +17,8 @@ use crate::common::Size;
 use crate::common::ValueVariableKind;
 use crate::common::ViewId;
 use crate::common::ViewableObjectId;
+use crate::components::context_menu::ContextMenuProvider;
+use crate::components::context_menu_view::ContextMenu;
 use crate::components::main::Main;
 use crate::configurations;
 use crate::keyboard_event::KeyboardHandler;
@@ -32,6 +35,8 @@ use crate::vscode::vscode_listener::VSCodeListener;
 use crate::vscode::vscode_requests::VSCodeRequests;
 use crate::webgl_utils;
 use anyhow::{anyhow, Result};
+use gloo::events::EventListener;
+use gloo::events::EventListenerOptions;
 use itertools::izip;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -64,25 +69,34 @@ fn rendering_context() -> impl RenderingContext {
 
         fn view_data(&self, view_id: ViewId) -> ImageViewData {
             let dispatch = Dispatch::<AppState>::global();
+            let state = dispatch.get();
+            let currently_viewing = state.image_views.borrow().get_currently_viewing(view_id);
+            let overlay = currently_viewing.as_ref().and_then(|cv| {
+                state
+                    .overlays
+                    .borrow()
+                    .get_image_overlay(view_id, cv.id())
+                    .cloned()
+            });
+
+            let camera = state.view_cameras.borrow().get(view_id);
+            let html_element = state
+                .image_views
+                .borrow()
+                .get_node_ref(view_id)
+                .cast::<HtmlElement>()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Unable to cast node ref to HtmlElement for view {:?}",
+                        view_id
+                    )
+                });
+
             ImageViewData {
-                camera: dispatch.get().view_cameras.borrow().get(view_id),
-                html_element: dispatch
-                    .get()
-                    .image_views
-                    .borrow()
-                    .get_node_ref(view_id)
-                    .cast::<HtmlElement>()
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "Unable to cast node ref to HtmlElement for view {:?}",
-                            view_id
-                        )
-                    }),
-                currently_viewing: dispatch
-                    .get()
-                    .image_views
-                    .borrow()
-                    .get_currently_viewing(view_id),
+                camera,
+                html_element,
+                currently_viewing,
+                overlay,
             }
         }
 
@@ -94,10 +108,16 @@ fn rendering_context() -> impl RenderingContext {
         fn drawing_options(
             &self,
             image_id: &ViewableObjectId,
+            drawing_context: &DrawingContext,
         ) -> (DrawingOptions, GlobalDrawingOptions) {
             let dispatch = Dispatch::<AppState>::global();
             let state = dispatch.get();
-            let drawing_options = state.drawing_options.borrow().get_or_default(image_id);
+            let drawing_options = state
+                .drawing_options
+                .borrow()
+                .get(image_id, drawing_context)
+                .cloned()
+                .unwrap_or_default();
             let global_drawing_options = state.global_drawing_options.clone();
             (drawing_options, global_drawing_options)
         }
@@ -139,8 +159,9 @@ fn rendering_context() -> impl RenderingContext {
             let drawing_options = state
                 .drawing_options
                 .borrow()
-                .get(cv.id())
-                .take_if(|drawing_options| drawing_options.coloring == Coloring::Heatmap);
+                .get(cv.id(), &DrawingContext::BaseImage)
+                .take_if(|drawing_options| drawing_options.coloring == Coloring::Heatmap)
+                .cloned();
             let global_drawing_options = state.global_drawing_options.clone();
             if let ImageAvailability::Available(texture_image) = self.texture_by_id(cv.id()) {
                 html_element
@@ -272,6 +293,7 @@ pub(crate) fn App() -> Html {
             )));
             dispatch.apply(StoreAction::UpdateDrawingOptions(
                 id.clone(),
+                DrawingContext::BaseImage,
                 UpdateDrawingOptions::Full(drawing_options.clone()),
             ));
             dispatch.apply(StoreAction::SetImageToView(id.clone(), view_id));
@@ -358,6 +380,23 @@ pub(crate) fn App() -> Html {
         }
     });
 
+    // disable right-click context menu globally
+    use_effect_with((), |_| {
+        let document = web_sys::window().unwrap().document().unwrap();
+        let listener = EventListener::new_with_options(
+            &document,
+            "contextmenu",
+            EventListenerOptions::enable_prevent_default(),
+            move |event| {
+                event.prevent_default();
+            },
+        );
+
+        move || {
+            drop(listener);
+        }
+    });
+
     let main_style = use_style!(
         r#"
 
@@ -381,7 +420,10 @@ pub(crate) fn App() -> Html {
     html! {
         <div class={main_style}>
             <canvas id="gl-canvas" ref={canvas_ref}></canvas>
-            <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
+            <ContextMenuProvider>
+                <Main view_id={ViewId::Primary} view_context={Rc::clone(&view_context_rc)} />
+                <ContextMenu />
+            </ContextMenuProvider>
         </div>
     }
 }

@@ -9,7 +9,7 @@ use yewdux::{functional::use_selector, Dispatch};
 use crate::{
     application_state::{
         app_state::{AppState, StoreAction, UpdateDrawingOptions},
-        images::ImageAvailability,
+        images::{DrawingContext, ImageAvailability},
         vscode_data_fetcher::ImagesFetcher,
     },
     coloring::{self, Coloring, DrawingOptions},
@@ -51,8 +51,10 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
             state
                 .drawing_options
                 .borrow()
-                .get_or_default(&image_id)
-                .clip
+                .get(&image_id, &DrawingContext::BaseImage)
+                .map(|d| &d.clip)
+                .cloned()
+                .unwrap_or_default()
         })
     };
     let style = use_style!(
@@ -98,6 +100,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
                 let value: Option<f32> = value_str.parse().ok();
                 dispatch.apply(StoreAction::UpdateDrawingOptions(
                     image_id.clone(),
+                    DrawingContext::BaseImage,
                     match clip {
                         ClippingInputType::Min => UpdateDrawingOptions::ClipMin(value),
                         ClippingInputType::Max => UpdateDrawingOptions::ClipMax(value),
@@ -112,6 +115,7 @@ pub fn ClippingInput(props: &ClippingInputProps) -> Html {
         Callback::from(move |_| {
             dispatch.apply(StoreAction::UpdateDrawingOptions(
                 image_id.clone(),
+                DrawingContext::BaseImage,
                 match clip {
                     ClippingInputType::Min => UpdateDrawingOptions::ClipMin(None),
                     ClippingInputType::Max => UpdateDrawingOptions::ClipMax(None),
@@ -294,25 +298,25 @@ pub fn ColorbarContainer(props: &ColorbarContainerProps) -> Html {
     let current_image = {
         let view_id = *view_id;
         use_selector(
-            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, Option<DrawingOptions>)> {
+            move |state: &AppState| -> Option<(ViewableObjectId, ImageAvailability, DrawingOptions)> {
                 let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
                 let image_id = binding.id();
                 let availability = state.image_cache.borrow().get(image_id);
-                let drawing_options = state.drawing_options.borrow().get(image_id);
+                let drawing_options = state.drawing_options.borrow().get(image_id, &DrawingContext::BaseImage).cloned().unwrap_or_default();
                 Some((image_id.clone(), availability, drawing_options))
             },
         )
     };
 
     if let Some((_, availability, drawing_options)) = current_image.as_ref() {
-        if drawing_options.as_ref().map(|o| o.coloring) == Some(Coloring::Heatmap) {
+        if drawing_options.coloring == Coloring::Heatmap {
             if let ImageAvailability::Available(texture) = availability {
                 let image_info = &texture.borrow().computed_info;
                 let image_id = texture.borrow().info.image_id.clone();
                 let min = image_info.min.as_rgba_f32()[0];
                 let max = image_info.max.as_rgba_f32()[0];
-                let clip_min = drawing_options.as_ref().and_then(|o| o.clip.min);
-                let clip_max = drawing_options.as_ref().and_then(|o| o.clip.max);
+                let clip_min = drawing_options.clip.min;
+                let clip_max = drawing_options.clip.max;
 
                 return html! {
                     <Colorbar image_id={image_id} min={min} max={max} clip_min={clip_min} clip_max={clip_max} />
@@ -345,13 +349,19 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             move |state: &AppState| -> Option<(
                 ViewableObjectId,
                 ImageAvailability,
-                Option<DrawingOptions>,
+                DrawingOptions,
                 bool,
             )> {
                 let binding = state.image_views.borrow().get_currently_viewing(view_id)?;
                 let image_id = binding.id();
                 let availability = state.image_cache.borrow().get(image_id);
-                let drawing_options = state.drawing_options.borrow().get(image_id);
+                let drawing_options = state
+                    .drawing_options
+                    .borrow()
+                    .get(image_id, &DrawingContext::BaseImage)
+                    .cloned()
+                    .unwrap_or_default();
+
                 let is_batch_item = matches!(binding, CurrentlyViewing::BatchItem(_));
                 Some((
                     image_id.clone(),
@@ -370,9 +380,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
             .as_ref()
             .as_ref()
             .map(|(_, availability, drawing_options, is_batch_item)| {
-                let batch_item = is_batch_item
-                    .then(|| drawing_options.as_ref()?.batch_item)
-                    .flatten();
+                let batch_item = is_batch_item.then(|| drawing_options.batch_item).flatten();
 
                 match (batch_item, availability) {
                     (Some(item), ImageAvailability::Available(image)) => {
@@ -402,8 +410,7 @@ pub(crate) fn ViewContainer(props: &ViewContainerProps) -> Html {
 
     let info_items =
         if let Some((image_id, availability, drawing_options, _)) = current_image.as_ref() {
-            let drawing_options = drawing_options.clone().unwrap_or_default();
-            make_info_items(image_id, availability, &drawing_options)
+            make_info_items(image_id, availability, drawing_options)
         } else {
             None
         }

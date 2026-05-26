@@ -19,18 +19,27 @@ pub(crate) type GLConstant = u32;
 pub(crate) trait GLValue: GLVerifyType + GLSet {}
 impl<T> GLValue for T where T: GLVerifyType + GLSet {}
 
+#[derive(Debug)]
 #[enum_dispatch(GLVerifyType, GLSet)]
 pub(crate) enum UniformValue<'a> {
     Int(&'a i32),
+    IntOwned(i32),
     Float(&'a f32),
+    FloatOwned(f32),
     Bool(&'a bool),
+    BoolOwned(bool),
     Texture(&'a WebGlTexture),
 
     Vec2(&'a glam::Vec2),
+    Vec2Owned(glam::Vec2),
     Vec3(&'a glam::Vec3),
+    Vec3Owned(glam::Vec3),
     Vec4(&'a glam::Vec4),
+    Vec4Owned(glam::Vec4),
     Mat3(&'a glam::Mat3),
+    Mat3Owned(glam::Mat3),
     Mat4(&'a glam::Mat4),
+    Mat4Owned(glam::Mat4),
 }
 
 pub(crate) type UniformSetter = Box<dyn Fn(&GL, &UniformValue)>;

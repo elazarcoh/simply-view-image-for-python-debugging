@@ -7,7 +7,7 @@ use yewdux::{Dispatch, Listener};
 use anyhow::Result;
 
 use crate::{
-    application_state::images::ImageAvailability, bindings::lodash, common::constants,
+    application_state::images::{DrawingContext, ImageAvailability}, bindings::lodash, common::{constants, ViewableObjectId},
     configurations::AutoUpdateImages, vscode::vscode_requests::VSCodeRequests,
 };
 
@@ -77,9 +77,8 @@ impl ImagesFetcher {
                     let current_index = state
                         .drawing_options
                         .borrow()
-                        .get_or_default(&image_id)
-                        .batch_item
-                        // batch item is not set, so we default to 0 (first time we see the image)
+                        .get(&image_id, &DrawingContext::BaseImage)
+                        .and_then(|d| d.batch_item)
                         .unwrap_or(0);
 
                     if let ImageAvailability::NotAvailable = current {
@@ -111,8 +110,9 @@ impl ImagesFetcher {
                         let current_drawing_options = state
                             .drawing_options
                             .borrow()
-                            .get_or_default(&image_id)
-                            .clone();
+                            .get(&image_id, &DrawingContext::BaseImage)
+                            .cloned()
+                            .unwrap_or_default();
 
                         if let Some(item) = current_drawing_options.batch_item {
                             let has_item = image.borrow().textures.contains_key(&item);
@@ -162,6 +162,28 @@ impl ImagesFetcher {
                     } else {
                         log::debug!("ImagesFetcher::on_change: current {:?} ", current);
                     }
+                }
+            }
+        }
+
+        // Also fetch images needed by active overlays
+        let overlay_ids: Vec<ViewableObjectId> =
+            state.overlays.borrow().all_overlay_ids();
+        for overlay_id in overlay_ids {
+            let current = state.image_cache.borrow().get(&overlay_id);
+            if current == ImageAvailability::NotAvailable {
+                if let Some(image_info) = state.images.borrow().get(&overlay_id) {
+                    log::debug!(
+                        "ImagesFetcher: fetching overlay image {:?}",
+                        overlay_id
+                    );
+                    VSCodeRequests::request_image_data(
+                        overlay_id.clone(),
+                        image_info.minimal().expression.clone(),
+                    );
+                    dispatch.reduce_mut(|s| {
+                        s.image_cache.borrow_mut().set_pending(&overlay_id);
+                    });
                 }
             }
         }

@@ -109,5 +109,8 @@
   "extesterRunner.additionalArgs": [
     "--install_dependencies",
     "ms-python.python"
+  ],
+  "rust-analyzer.linkedProjects": [
+    "./src/webview-ui/Cargo.toml"
   ]
 }

@@ -621,6 +621,100 @@ export async function clickDisplayOption(
 }
 
 /**
+ * Click the overlay-related button (e.g. "Overlay" or "Remove Overlay") for a specific
+ * image-list item identified by its expression label inside the webview panel.
+ *
+ * The webview renders each image as a row whose label element carries the Python expression
+ * as its text content.  The overlay button is the sibling button inside the same
+ * `.item-label-container` wrapper.  Since multiple items can show the same button label
+ * ("Overlay") at once, this helper targets the correct row by expression text rather than
+ * using a generic CSS selector.
+ *
+ * @param driver        The Selenium WebDriver.
+ * @param expression    The Python expression shown in the image list (e.g. `"overlay_mask"`).
+ * @param buttonLabel   The aria-label / title of the button to click (default: `"Overlay"`).
+ * @param postClickMs   Milliseconds to wait after a successful click (default: 600).
+ * @returns `true` if the button was found and clicked, `false` otherwise.
+ */
+export async function clickOverlayButtonForExpression(
+  driver: WebDriver,
+  expression: string,
+  buttonLabel: string = 'Overlay',
+  postClickMs: number = 600,
+): Promise<boolean> {
+  const maxAttempts = 5;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const switched = await switchToWebviewFrame(driver);
+    if (!switched) {
+      DebugTestHelper.logger.warn(
+        `clickOverlayButtonForExpression: could not switch to webview iframe for expression "${expression}" (attempt ${attempt})`,
+      );
+      await driver.sleep(500);
+      continue;
+    }
+
+    try {
+      // Use JavaScript to locate the button adjacent to the matching label.
+      // The markup produced by image_list_item.rs is:
+      //   <div class="item-label-container">
+      //     <button aria-label="Overlay" title="Overlay">…</button>
+      //     <button>…</button>  <!-- pin/unpin -->
+      //     <label class="item-label" title="<expression>"><expression></label>
+      //   </div>
+      const clicked = await driver.executeScript<boolean>(
+        `
+        var expression = arguments[0];
+        var buttonLabel = arguments[1];
+        var labels = document.querySelectorAll('.item-label');
+        for (var i = 0; i < labels.length; i++) {
+          if (labels[i].textContent.trim() === expression) {
+            var container = labels[i].closest('.item-label-container');
+            if (!container) continue;
+            var btn = container.querySelector(
+              'button[aria-label="' + buttonLabel + '"], button[title="' + buttonLabel + '"]'
+            );
+            if (btn) {
+              btn.scrollIntoView({ block: 'center' });
+              btn.click();
+              return true;
+            }
+          }
+        }
+        return false;
+        `,
+        expression,
+        buttonLabel,
+      );
+
+      if (clicked) {
+        DebugTestHelper.logger.debug(
+          `clickOverlayButtonForExpression: clicked "${buttonLabel}" for expression "${expression}" (attempt ${attempt})`,
+        );
+        await driver.sleep(postClickMs);
+        return true;
+      }
+
+      DebugTestHelper.logger.warn(
+        `clickOverlayButtonForExpression: button "${buttonLabel}" for expression "${expression}" not found (attempt ${attempt}/${maxAttempts})`,
+      );
+    }
+    finally {
+      await driver.switchTo().defaultContent();
+    }
+
+    if (attempt < maxAttempts) {
+      await driver.sleep(600);
+    }
+  }
+
+  DebugTestHelper.logger.warn(
+    `clickOverlayButtonForExpression: button "${buttonLabel}" for expression "${expression}" not found after ${maxAttempts} attempts`,
+  );
+  return false;
+}
+
+/**
  * Assert that two colors are approximately equal (per-channel absolute distance ≤ tolerance).
  */
 export function assertApproxColor(

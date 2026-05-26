@@ -54,3 +54,4 @@ yarn.lock
 .yarn/cache/**
 .yarn/unplugged/**
 svgo.config.js
+scripts/**

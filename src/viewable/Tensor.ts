@@ -38,6 +38,14 @@ export const NumpyTensor: Viewable<NumpyTensorInfo> = {
   suffix: '.png',
   supportsImageViewer: (() =>
     getConfiguration('tensorsInViewer') ?? false) as Initializer<boolean>,
+  fastExclude: (t: string): boolean => {
+    if (!t)
+      return false;
+    if (getConfiguration('restrictImageTypes') ?? true) {
+      return t !== 'ndarray';
+    }
+    return t === 'Tensor' || t === 'Figure' || t === 'FigureWidget' || t.startsWith('Axes');
+  },
 };
 
 export type TorchTensorInfo = NumpyTensorInfo;
@@ -65,4 +73,6 @@ export const TorchTensor: Viewable<TorchTensorInfo> = {
   suffix: '.png',
   supportsImageViewer: (() =>
     getConfiguration('tensorsInViewer') ?? false) as Initializer<boolean>,
+  // Only torch.Tensor instances have DAP type 'Tensor'
+  fastExclude: (t: string): boolean => t !== '' && t !== 'Tensor',
 };

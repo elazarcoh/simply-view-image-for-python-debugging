@@ -20,6 +20,8 @@ export class SocketServer {
 
   private outgoingRequestsManager: RequestsManager = new RequestsManager();
   private chunksByMessageId: Map<number, MessageChunks> = new Map();
+  private _processedMessageCount: number = 0;
+  get processedMessageCount(): number { return this._processedMessageCount; }
   private readonly secret: Buffer = crypto.randomBytes(AUTH_SECRET_LENGTH);
 
   constructor() {
@@ -55,6 +57,10 @@ export class SocketServer {
 
   get pendingResponseCount() {
     return this.outgoingRequestsManager.count;
+  }
+
+  get pendingChunkCount(): number {
+    return this.chunksByMessageId.size;
   }
 
   get portNumber() {
@@ -135,6 +141,8 @@ export class SocketServer {
         if (chunks.isComplete()) {
           logTrace('Message is complete');
           const fullMessage = chunks.fullMessage();
+          this.chunksByMessageId.delete(header.messageID);
+          this._processedMessageCount++;
           handleMessage(header, fullMessage);
         }
       }

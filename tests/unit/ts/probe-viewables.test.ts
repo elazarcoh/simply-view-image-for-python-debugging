@@ -252,11 +252,13 @@ describe('constructProbeViewablesAndInfoCode', () => {
     expect(result.pythonCode).toContain('lambda _x: test_info(_x)');
   });
 
-  it('wraps the call in stringify()', () => {
+  it('calls probe_viewables_and_info (stringify added by evaluateInPython)', () => {
     const result = constructProbeViewablesAndInfoCode([
       { expression: 'v', viewableSubset: [MOCK_VIEWABLE] },
     ]);
-    expect(result.pythonCode).toContain('.stringify(');
+    // No stringify() here — evaluateInPython wraps the result; having it here
+    // would double-encode the output and break result parsing.
+    expect(result.pythonCode).not.toContain('.stringify(');
     expect(result.pythonCode).toContain('.probe_viewables_and_info(');
   });
 

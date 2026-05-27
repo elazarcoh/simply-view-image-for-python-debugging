@@ -291,7 +291,7 @@ export function constructProbeViewablesAndInfoCode(
     return `(lambda: ${expression}, [${checkers.join(', ')}])`;
   });
 
-  const pythonCode = `${STRINGIFY}(${PROBE_FN}([${perVar.join(', ')}]))`;
+  const pythonCode = `${PROBE_FN}([${perVar.join(', ')}])`;
   return { pythonCode };
 }
 

@@ -3586,10 +3586,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xmldom/xmldom@npm:^0.9.4":
-  version: 0.9.8
-  resolution: "@xmldom/xmldom@npm:0.9.8"
-  checksum: 10c0/2ea984270832de2843ab0bbb6df71bde9aa02126b69e5fd56b5512b98ace48e94aff7186e77d0b22fe4b6780483862be752bcf8577436638a9210109029a0503
+"@xmldom/xmldom@npm:^0.9.9":
+  version: 0.9.10
+  resolution: "@xmldom/xmldom@npm:0.9.10"
+  checksum: 10c0/38a9c9b95450d7fccebc61371c8e0b90ceaae992886484108333d29ccbd2640e3555b6af012f15ce1beb5067aeb40486659b6183fad38af179e82d28028bfc5d
   languageName: node
   linkType: hard
 
@@ -6668,15 +6668,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"exifreader@npm:^4.26.1":
-  version: 4.36.2
-  resolution: "exifreader@npm:4.36.2"
+"exifreader@npm:^4.39.0":
+  version: 4.39.0
+  resolution: "exifreader@npm:4.39.0"
   dependencies:
-    "@xmldom/xmldom": "npm:^0.9.4"
+    "@xmldom/xmldom": "npm:^0.9.9"
   dependenciesMeta:
     "@xmldom/xmldom":
       optional: true
-  checksum: 10c0/d5cf87a10952b53727a9a356c4272453ae6371868afe31c69f3d934f20644ca72822047b1cec5f4e0bcd9a9a80c2dc94b199474d74c9e56a1dff28edd122026d
+  checksum: 10c0/8ee3bfa4117e2e874bf31de4127908e615aa3bfe6819cf9bc12039318e742c3f7680ca48c697590af15647bb4fafa5cdeea7ac01d1e3f91eafb38ef7870c2646
   languageName: node
   linkType: hard
 
@@ -12486,7 +12486,7 @@ __metadata:
     eslint: "npm:^9.33.0"
     eslint-plugin-format: "npm:^1.0.1"
     eslint-webpack-plugin: "npm:^4.2.0"
-    exifreader: "npm:^4.26.1"
+    exifreader: "npm:^4.39.0"
     globals: "npm:^15.14.0"
     html-webpack-plugin: "npm:^5.6.0"
     husky: "npm:^9.1.7"

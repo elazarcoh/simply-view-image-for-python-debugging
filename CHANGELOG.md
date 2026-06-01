@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## [4.1.2] - Release - 2026-06-01
+
 ### Fixed
 
 - Fixed memory leak in socket server: completed message chunks are now removed from the reassembly map, preventing unbounded memory growth during long debug sessions.
+- Fixed selected image-list item styling so all child elements inherit `activeSelectionForeground` in the webview list.
 
 ## [4.1.1] - Pre-release - 2026-05-25
 

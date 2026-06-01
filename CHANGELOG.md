@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.1.2] - Release - 2026-06-01
+
 ### Fixed
 
 - Fixed memory leak in socket server: completed message chunks are now removed from the reassembly map, preventing unbounded memory growth during long debug sessions.

@@ -1,0 +1,133 @@
+# Dependabot configuration
+#
+# Goal: a small, predictable number of grouped PRs (roughly 2-3 on the 1st of
+# each month), instead of one PR per dependency. Security updates are grouped
+# too, so an advisory burst arrives as a single PR per ecosystem.
+#
+# Docs: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+
+updates:
+  # ── npm / yarn 4 ────────────────────────────────────────────────────────────
+  # The root manifest also covers the `icons` workspace member (package.json
+  # `workspaces: ["icons"]`), so no separate entry is needed for it.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: monthly # runs on the 1st of the month
+      time: "05:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore # -> "chore(deps):" / "chore(deps-dev):"
+      include: scope
+    labels: ["dependencies", "javascript"]
+    cooldown:
+      # Let releases settle before picking them up, so we don't chase
+      # same-week regressions.
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      npm-runtime:
+        # Ships inside the .vsix - the group that actually needs review.
+        applies-to: version-updates
+        dependency-type: production
+        update-types: [minor, patch]
+      npm-tooling:
+        # Build / lint / test only. Safe to merge on green CI.
+        applies-to: version-updates
+        dependency-type: development
+        update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+    ignore:
+      # These are consumed through yarn's `patch:` protocol
+      # (.yarn/patches/*.patch). A version bump silently invalidates the patch
+      # and breaks `yarn install --immutable`.
+      - dependency-name: "vscode-extension-tester"
+      - dependency-name: "@wasm-tool/wasm-pack-plugin"
+      # @types/vscode must stay <= engines.vscode (^1.63.0). Even a minor bump
+      # raises the minimum VS Code version the extension claims to support.
+      - dependency-name: "@types/vscode"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+      # Pinned deliberately.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "05:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: ci
+      include: scope
+    labels: ["dependencies", "github-actions"]
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # ── Rust / wasm webview ─────────────────────────────────────────────────────
+  # Patch-only on purpose: nearly every crate here is 0.x (yew 0.21, image 0.24,
+  # ndarray 0.15, strum 0.25, ...), where a "minor" bump is a breaking change,
+  # and there is no committed Cargo.lock to catch drift.
+  - package-ecosystem: cargo
+    directories:
+      - "/src/webview-ui"
+      - "/src/webview-ui/shaders"
+    schedule:
+      interval: quarterly
+      time: "05:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: chore
+      include: scope
+    labels: ["dependencies", "rust"]
+    cooldown:
+      default-days: 14
+    groups:
+      cargo-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [patch]
+      cargo-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # ── example-plugin ──────────────────────────────────────────────────────────
+  # Demo code with its own yarn.lock and no CI. No version updates (limit 0),
+  # but keep security fixes flowing as a single grouped PR.
+  - package-ecosystem: npm
+    directory: "/example-plugin"
+    schedule:
+      interval: monthly
+      time: "05:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: chore
+      include: scope
+    labels: ["dependencies", "example-plugin"]
+    groups:
+      example-plugin-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # NOTE: tests/unit/python/requirements.txt and
+  # tests/test-data/workspace/requirements.txt are intentionally NOT configured.
+  # They are unpinned (pytest / numpy / matplotlib / Pillow), so there are no
+  # version constraints for Dependabot to update.

@@ -9,19 +9,19 @@ version: 2
 
 updates:
   # ── npm / yarn 4 ────────────────────────────────────────────────────────────
-  # The root manifest also covers the `icons` workspace member (package.json
-  # `workspaces: ["icons"]`), so no separate entry is needed for it.
+  # The root manifest also covers the `icons` workspace member (the `workspaces`
+  # field in package.json), so no separate entry is needed for it.
   - package-ecosystem: npm
-    directory: "/"
+    directory: /
     schedule:
       interval: monthly # runs on the 1st of the month
-      time: "05:00"
-      timezone: "Etc/UTC"
+      time: '05:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 3
     commit-message:
-      prefix: chore # -> "chore(deps):" / "chore(deps-dev):"
+      prefix: chore # -> chore(deps): / chore(deps-dev):
       include: scope
-    labels: ["dependencies", "javascript"]
+    labels: [dependencies, javascript]
     cooldown:
       # Let releases settle before picking them up, so we don't chase
       # same-week regressions.
@@ -40,45 +40,45 @@ updates:
         update-types: [minor, patch]
       npm-security:
         applies-to: security-updates
-        patterns: ["*"]
+        patterns: ['*']
     ignore:
       # These are consumed through yarn's `patch:` protocol
       # (.yarn/patches/*.patch). A version bump silently invalidates the patch
       # and breaks `yarn install --immutable`.
-      - dependency-name: "vscode-extension-tester"
-      - dependency-name: "@wasm-tool/wasm-pack-plugin"
+      - dependency-name: vscode-extension-tester
+      - dependency-name: '@wasm-tool/wasm-pack-plugin'
       # @types/vscode must stay <= engines.vscode (^1.63.0). Even a minor bump
       # raises the minimum VS Code version the extension claims to support.
-      - dependency-name: "@types/vscode"
+      - dependency-name: '@types/vscode'
         update-types:
-          - "version-update:semver-major"
-          - "version-update:semver-minor"
+          - 'version-update:semver-major'
+          - 'version-update:semver-minor'
       # Pinned deliberately.
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   # ── GitHub Actions ──────────────────────────────────────────────────────────
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: /
     schedule:
       interval: monthly
-      time: "05:00"
-      timezone: "Etc/UTC"
+      time: '05:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 1
     commit-message:
       prefix: ci
       include: scope
-    labels: ["dependencies", "github-actions"]
+    labels: [dependencies, github-actions]
     cooldown:
       default-days: 7
       semver-major-days: 30
     groups:
       github-actions:
-        patterns: ["*"]
+        patterns: ['*']
 
   # ── Rust / wasm webview ─────────────────────────────────────────────────────
   # Patch-only on purpose: nearly every crate here is 0.x (yew 0.21, image 0.24,
@@ -86,46 +86,46 @@ updates:
   # and there is no committed Cargo.lock to catch drift.
   - package-ecosystem: cargo
     directories:
-      - "/src/webview-ui"
-      - "/src/webview-ui/shaders"
+      - /src/webview-ui
+      - /src/webview-ui/shaders
     schedule:
       interval: quarterly
-      time: "05:00"
-      timezone: "Etc/UTC"
+      time: '05:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 1
     commit-message:
       prefix: chore
       include: scope
-    labels: ["dependencies", "rust"]
+    labels: [dependencies, rust]
     cooldown:
       default-days: 14
     groups:
       cargo-patch:
         applies-to: version-updates
-        patterns: ["*"]
+        patterns: ['*']
         update-types: [patch]
       cargo-security:
         applies-to: security-updates
-        patterns: ["*"]
+        patterns: ['*']
 
   # ── example-plugin ──────────────────────────────────────────────────────────
   # Demo code with its own yarn.lock and no CI. No version updates (limit 0),
   # but keep security fixes flowing as a single grouped PR.
   - package-ecosystem: npm
-    directory: "/example-plugin"
+    directory: /example-plugin
     schedule:
       interval: monthly
-      time: "05:00"
-      timezone: "Etc/UTC"
+      time: '05:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 0
     commit-message:
       prefix: chore
       include: scope
-    labels: ["dependencies", "example-plugin"]
+    labels: [dependencies, example-plugin]
     groups:
       example-plugin-security:
         applies-to: security-updates
-        patterns: ["*"]
+        patterns: ['*']
 
   # NOTE: tests/unit/python/requirements.txt and
   # tests/test-data/workspace/requirements.txt are intentionally NOT configured.

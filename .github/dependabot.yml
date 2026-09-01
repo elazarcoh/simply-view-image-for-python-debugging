@@ -74,8 +74,9 @@ updates:
       include: scope
     labels: [dependencies, github-actions]
     cooldown:
+      # Only `default-days` is supported for the github-actions ecosystem;
+      # the semver-* variants are rejected at config-validation time.
       default-days: 7
-      semver-major-days: 30
     groups:
       github-actions:
         patterns: ['*']

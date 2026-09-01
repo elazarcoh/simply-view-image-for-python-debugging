@@ -569,12 +569,12 @@
     "test:unit:ts:watch": "vitest --config vitest.config.ts"
   },
   "dependencies": {
-    "@jupyterlab/services": "^7.3.5",
-    "@vscode/codicons": "^0.0.36",
+    "@jupyterlab/services": "^7.6.3",
+    "@vscode/codicons": "^0.0.45",
     "@vscode/debugprotocol": "^1.68.0",
     "@vscode/jupyter-extension": "^1.1.1",
-    "exifreader": "^4.40.1",
-    "jimp": "^1.6.0",
+    "exifreader": "^4.44.0",
+    "jimp": "^1.6.1",
     "lodash": "^4.18.1",
     "parsimmon": "^1.18.1",
     "reflect-metadata": "^0.2.2",

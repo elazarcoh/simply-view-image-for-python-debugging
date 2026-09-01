@@ -1,4 +1,5 @@
 import type { Result } from '../utils/Result';
+import type { Viewable } from '../viewable/Viewable';
 import Container from 'typedi';
 import { AllViewables } from '../AllViewables';
 import { logError } from '../Logging';
@@ -261,6 +262,37 @@ export function constructGetMainModuleErrorCode(): EvalCodePython<
   return {
     pythonCode: `'Value("' + ${SETUP_RESULT_VARIABLE_NAME} + '")'`,
   };
+}
+
+/**
+ * Build a single-eval probe that tests each variable against its filtered
+ * subset of viewables AND fetches info for matching ones, all in one round-trip.
+ *
+ * Returns a code string whose evaluated result is:
+ *   Array<Array<Result<PythonObjectInformation>>>
+ * – Outer array: one entry per variable (same order as input).
+ * – Inner array: one entry per viewable that matched that variable.
+ *   Each entry's dict has an extra "viewable_type" key set to Viewable.type.
+ */
+export function constructProbeViewablesAndInfoCode(
+  variablesWithViewables: ReadonlyArray<{
+    expression: string;
+    viewableSubset: ReadonlyArray<Viewable>;
+  }>,
+): EvalCodePython<unknown> {
+  const PROBE_FN = `${PYTHON_MODULE_NAME}.probe_viewables_and_info`;
+
+  const perVar = variablesWithViewables.map(({ expression, viewableSubset }) => {
+    const checkers = viewableSubset.map((v) => {
+      const testLambda = `lambda _x: ${v.testTypePythonCode.evalCode('_x')}`;
+      const infoLambda = `lambda _x: ${v.infoPythonCode.evalCode('_x')}`;
+      return `("${v.type}", ${testLambda}, ${infoLambda})`;
+    });
+    return `(lambda: ${expression}, [${checkers.join(', ')}])`;
+  });
+
+  const pythonCode = `${PROBE_FN}([${perVar.join(', ')}])`;
+  return { pythonCode };
 }
 
 export function constructGetViewablesErrorsCode(): EvalCodePython<

@@ -1,0 +1,55 @@
+# Enables GitHub's auto-merge on the low-risk Dependabot groups, so they land
+# on their own once "🚦 Status Check" (the required check on main) goes green.
+#
+# Everything else - the npm-runtime group, security groups, and any major bump -
+# is left for manual review.
+#
+# Prerequisites, all already satisfied on this repo:
+#   * Settings -> "Allow auto-merge" is enabled
+#   * `🚦 Status Check` is a required status check on `main`
+#   * Dependabot PRs receive a write GITHUB_TOKEN here (verified: the CI summary
+#     comment in test.yml posts successfully on Dependabot PRs)
+name: Dependabot auto-merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge
+        # Dev-only tooling, CI actions, and anything that is patch-only.
+        # `update-type` on a grouped PR is the highest bump in the group, so a
+        # major sneaking into a group disqualifies the whole PR.
+        if: >-
+          steps.meta.outputs.dependency-group == 'npm-tooling' ||
+          steps.meta.outputs.dependency-group == 'github-actions' ||
+          steps.meta.outputs.dependency-group == 'cargo-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-patch'
+        # Merge commit is the only method enabled on this repo.
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          {
+            echo "| field | value |"
+            echo "|---|---|"
+            echo "| group | \`${{ steps.meta.outputs.dependency-group }}\` |"
+            echo "| update-type | \`${{ steps.meta.outputs.update-type }}\` |"
+            echo "| ecosystem | \`${{ steps.meta.outputs.package-ecosystem }}\` |"
+            echo "| dependencies | ${{ steps.meta.outputs.dependency-names }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -108,8 +108,39 @@ updates:
       cargo-security:
         applies-to: security-updates
         patterns: ['*']
+    ignore:
+      # `groups.update-types` above only controls how updates are *bundled*, not
+      # whether Dependabot opens a PR at all - anything outside a group still
+      # arrives as its own PR. Without this, `strum = "0.25"` -> "0.28" showed up
+      # individually (#266), which is exactly what patch-only was meant to avoid.
+      #
+      # Trade-off: `ignore` suppresses security updates too, so a Rust advisory
+      # that needs a minor bump will show as an alert in the Security tab with no
+      # PR attached. Deliberate - these crates are all 0.x, where a minor bump is
+      # a breaking change, and there is no Cargo.lock to pin what resolved.
+      - dependency-name: '*'
+        update-types:
+          - 'version-update:semver-major'
+          - 'version-update:semver-minor'
+
+  # ── icons workspace member ──────────────────────────────────────────────────
+  # `icons` is a yarn workspace member with no lockfile of its own, so a
+  # directory-scoped update edits icons/package.json and leaves the root
+  # yarn.lock untouched - which `yarn install --immutable` rejects outright
+  # (YN0028), as seen in #267. The root `/` entry above already updates these
+  # dependencies correctly through the workspace (svgo 2.8.3 arrived that way in
+  # #270), so this entry exists only to suppress the duplicate.
+  - package-ecosystem: npm
+    directory: /icons
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: '*'
 
   # ── example-plugin ──────────────────────────────────────────────────────────
+  # Unlike `icons`, this one has its own yarn.lock, so directory-scoped updates
+  # here resolve cleanly.
   # Demo code with its own yarn.lock and no CI. No version updates (limit 0),
   # but keep security fixes flowing as a single grouped PR.
   - package-ecosystem: npm

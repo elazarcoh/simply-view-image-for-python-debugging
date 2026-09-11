@@ -1,0 +1,32 @@
+# After anything merges into `main`, any other open Dependabot PR touching
+# the same lockfile (yarn.lock, Cargo.lock) is left behind and needs a manual
+# `@dependabot rebase` comment to catch up - Dependabot only auto-rebases when
+# it can do so without a conflict. This asks it to rebase every open
+# Dependabot PR so that never has to be done by hand.
+name: Rebase Dependabot PRs
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: dependabot-rebase
+  cancel-in-progress: false
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask Dependabot to rebase open PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh pr list --author "app/dependabot" --state open --json number \
+            --jq '.[].number' | while read -r pr; do
+              echo "Requesting rebase for #$pr"
+              gh pr comment "$pr" --body '@dependabot rebase'
+            done

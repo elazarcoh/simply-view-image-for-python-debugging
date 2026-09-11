@@ -620,7 +620,7 @@
     "vitest": "^4.1.11",
     "vscode-extension-tester": "patch:vscode-extension-tester@npm%3A8.22.1#~/.yarn/patches/vscode-extension-tester-npm-8.22.1-1ba05efd5d.patch",
     "wasm-pack": "^0.15.0",
-    "webpack": "^5.110.3",
+    "webpack": "5.105.4",
     "webpack-cli": "^5.1.4",
     "webpack-shell-plugin-next": "^2.3.2"
   },

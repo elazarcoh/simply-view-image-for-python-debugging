@@ -5862,9 +5862,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-format@npm:^1.0.1":
-  version: 1.5.0
-  resolution: "eslint-plugin-format@npm:1.5.0"
+"eslint-plugin-format@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "eslint-plugin-format@npm:2.0.1"
   dependencies:
     "@dprint/formatter": "npm:^0.5.1"
     "@dprint/markdown": "npm:^0.21.1"
@@ -5877,7 +5877,7 @@ __metadata:
     synckit: "npm:^0.11.12"
   peerDependencies:
     eslint: ^8.40.0 || ^9.0.0 || ^10.0.0
-  checksum: 10c0/923646ac32d565b8ea36eb82b2bfda41bc5fda7cf8098ed7f766795a0c7b495000221529b196c6e6cb0d0297261b9b0c8c4e451fab89c86fc95fb00b81290252
+  checksum: 10c0/eb1e82a185771b22cee824dc0ef0d964c4de215a4f0a105f6df7469e674f6d587556153778e2cbe72934f2f68aa0934b73770609ea63d41891b5c0c3d8871db7
   languageName: node
   linkType: hard
 
@@ -12305,7 +12305,7 @@ __metadata:
     chai: "npm:^6.0.1"
     copy-webpack-plugin: "npm:^12.0.2"
     eslint: "npm:^9.33.0"
-    eslint-plugin-format: "npm:^1.0.1"
+    eslint-plugin-format: "npm:^2.0.1"
     eslint-webpack-plugin: "npm:^4.2.0"
     exifreader: "npm:^4.44.0"
     globals: "npm:^15.14.0"

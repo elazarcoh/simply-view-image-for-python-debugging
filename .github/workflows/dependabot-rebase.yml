@@ -3,6 +3,14 @@
 # `@dependabot rebase` comment to catch up - Dependabot only auto-rebases when
 # it can do so without a conflict. This asks it to rebase every open
 # Dependabot PR so that never has to be done by hand.
+#
+# Dependabot rejects command comments ("Sorry, only users with push access
+# can use that command") posted as github-actions[bot] via the default
+# GITHUB_TOKEN - the command check looks at the actual commenting identity,
+# and the workflow token's bot identity doesn't count, even though it has
+# write access to post the comment. A PAT from a real collaborator with push
+# access is required instead. `DEPENDABOT_REBASE_TOKEN` is a fine-grained PAT
+# scoped to this repo only, with "Pull requests: Read and write" permission.
 name: Rebase Dependabot PRs
 
 on:
@@ -10,7 +18,7 @@ on:
     branches: [main]
 
 permissions:
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: dependabot-rebase
@@ -22,7 +30,7 @@ jobs:
     steps:
       - name: Ask Dependabot to rebase open PRs
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DEPENDABOT_REBASE_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           gh pr list --author "app/dependabot" --state open --json number \

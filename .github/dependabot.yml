@@ -60,6 +60,12 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # webpack 5.106-5.110.3 makes the webview toolbar (Reset/Overlay/channel
+      # buttons) render too late for the e2e tests' retry budget - reproduced
+      # via bisection in #275, fixed there by pinning back to 5.105.4. Exact
+      # upstream cause not identified; lift this once it's tracked down.
+      - dependency-name: webpack
+        versions: ['>5.105.4']
 
   # ── GitHub Actions ──────────────────────────────────────────────────────────
   - package-ecosystem: github-actions

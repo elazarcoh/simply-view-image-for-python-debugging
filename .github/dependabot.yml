@@ -63,9 +63,15 @@ updates:
       # webpack 5.106-5.110.3 makes the webview toolbar (Reset/Overlay/channel
       # buttons) render too late for the e2e tests' retry budget - reproduced
       # via bisection in #275, fixed there by pinning back to 5.105.4. Exact
-      # upstream cause not identified; lift this once it's tracked down.
+      # upstream cause not identified.
+      #
+      # Bounded on purpose, not `>5.105.4` open-ended: once a webpack release
+      # past 5.110.3 exists, this range no longer covers it, so Dependabot
+      # proposes it again on its own - that PR's CI result is our signal that
+      # it's fixed (or not) upstream, no manual polling needed. If it's still
+      # broken on the next release, bump the upper bound to cover it too.
       - dependency-name: webpack
-        versions: ['>5.105.4']
+        versions: ['> 5.105.4, <= 5.110.3']
 
   # ── GitHub Actions ──────────────────────────────────────────────────────────
   - package-ecosystem: github-actions

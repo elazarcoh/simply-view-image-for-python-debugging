@@ -6528,9 +6528,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"exifreader@npm:^4.44.0":
-  version: 4.44.0
-  resolution: "exifreader@npm:4.44.0"
+"exifreader@npm:^4.44.1":
+  version: 4.44.1
+  resolution: "exifreader@npm:4.44.1"
   dependencies:
     "@xmldom/xmldom": "npm:^0.9.10"
   dependenciesMeta:
@@ -6538,7 +6538,7 @@ __metadata:
       optional: true
   bin:
     exifreader: bin/cli.js
-  checksum: 10c0/4ce2f7bf919410228f7f24870dcf5db902492c8285fedb2b749246f1f136b5b58a364e3bf0add47aaeb598a3ac2fac4d3fc0354cff366d4f690e2411c3dc7bba
+  checksum: 10c0/8acd5a1ce664b917e34baba7ee74ee1fb9e4a41e46886c925c686b2ed7a60610eed4a2115ce2e5bf8a2adad7cd66f727a7c7fdb595c27493d0578e72aed13fa0
   languageName: node
   linkType: hard
 
@@ -12397,7 +12397,7 @@ __metadata:
     eslint: "npm:^9.33.0"
     eslint-plugin-format: "npm:^2.0.1"
     eslint-webpack-plugin: "npm:^4.2.0"
-    exifreader: "npm:^4.44.0"
+    exifreader: "npm:^4.44.1"
     globals: "npm:^15.14.0"
     html-webpack-plugin: "npm:^5.6.8"
     husky: "npm:^9.1.7"

@@ -39,6 +39,15 @@ export const NumpyImage: Viewable<NumpyImageInfo> = {
   },
   suffix: '.png',
   supportsImageViewer: true,
+  fastExclude: (t: string): boolean => {
+    if (!t)
+      return false;
+    if (getConfiguration('restrictImageTypes') ?? false) {
+      return t !== 'ndarray';
+    }
+    // permissive mode: only exclude types that can never be a numpy-array-like image
+    return t === 'Tensor' || t === 'Figure' || t === 'FigureWidget' || t.startsWith('Axes');
+  },
 };
 
 export type PillowImageInfo = NumpyImageInfo;
@@ -65,4 +74,6 @@ export const PillowImage: Viewable<PillowImageInfo> = {
   },
   suffix: '.png',
   supportsImageViewer: true,
+  // PIL image type names: 'Image' (base) or subclasses ending in 'ImageFile'
+  fastExclude: (t: string): boolean => !!t && t !== 'Image' && !t.endsWith('ImageFile'),
 };

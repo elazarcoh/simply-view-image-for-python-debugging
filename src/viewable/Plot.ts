@@ -29,6 +29,7 @@ export const PlotlyFigure: Viewable<{ type: string }> = {
   },
   suffix: '.png',
   supportsImageViewer: false,
+  fastExclude: (t: string): boolean => !!t && t !== 'Figure' && t !== 'FigureWidget',
 };
 
 export const PyplotFigure: Viewable<{ type: string }> = {
@@ -59,6 +60,8 @@ export const PyplotFigure: Viewable<{ type: string }> = {
   },
   suffix: '.png',
   supportsImageViewer: false,
+  // matplotlib.figure.Figure and plotly.graph_objects.Figure both appear as 'Figure'
+  fastExclude: (t: string): boolean => !!t && t !== 'Figure',
 };
 
 export const PyplotAxes: Viewable<{ type: string }> = {
@@ -88,4 +91,6 @@ export const PyplotAxes: Viewable<{ type: string }> = {
   },
   suffix: '.png',
   supportsImageViewer: false,
+  // Axes subclasses: 'Axes', 'AxesSubplot' (deprecated mpl 3.8+), 'Axes3D', etc.
+  fastExclude: (t: string): boolean => !!t && t !== 'Axes' && !t.startsWith('Axes'),
 };

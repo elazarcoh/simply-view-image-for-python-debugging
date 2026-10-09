@@ -29,6 +29,7 @@
     "example-plugin",
     "vscode-extension-tester-example",
     "test-resources",
-    "tests"
+    "tests",
+    "docs"
   ]
 }

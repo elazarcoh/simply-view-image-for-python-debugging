@@ -2,7 +2,7 @@ import type { DebugProtocol } from '@vscode/debugprotocol';
 import { logDebug } from '../../Logging';
 import { PYTHON_MODULE_NAME } from '../../python-communication/BuildPythonCode';
 
-interface TrackedVariable {
+export interface TrackedVariable {
   name: string;
   evaluateName: string;
   frameId: number;
